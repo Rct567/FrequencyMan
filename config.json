@@ -1,0 +1,11 @@
+{
+    "fm_reorder_target": [
+        {
+            "deck": "Spanish",
+            "notes": [{
+                "name": "-- My spanish --",
+                "fields": [["Sentence", "ES"], ["Meaning", "EN"]]
+            }]
+        }
+    ]
+}

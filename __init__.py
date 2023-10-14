@@ -1,9 +1,23 @@
+<<<<<<< HEAD
+=======
+from ast import dump
+import json
+>>>>>>> f7ead1b (Anki FrequencyMan)
 from aqt import QAction, QHBoxLayout, mw as anki_main_window # type: ignore
 from aqt.qt import *
 from aqt.utils import showInfo
 from PyQt6.QtCore import Qt 
 from typing import Tuple
 
+<<<<<<< HEAD
+=======
+
+def dump_var(var):
+    showInfo(str(var))
+    showInfo(repr(var))
+
+
+>>>>>>> f7ead1b (Anki FrequencyMan)
 # FrequencyMan Main Window class
 class FrequencyManMainWindow(QDialog):
     def __init__(self):
@@ -41,70 +55,44 @@ class FrequencyManMainWindow(QDialog):
         return (tab_layout, tab)
     
 
+def validate_target_data(json_data: str) -> int:
+    try:
+        data:dict = json.loads(json_data)
+        if type(data) is dict and data.get("fm_reorder_target"):
+            return 1
+        return 0
+    except json.JSONDecodeError:
+        return -1
 
 def create_tab_sort_cards(frequencyman_window: FrequencyManMainWindow):
     # Create a new tab and its layout
-    (tab_layout, tab) = frequencyman_window.create_new_tab('sort_cards', "Sort cards")  
+    (tab_layout, tab) = frequencyman_window.create_new_tab('sort_cards', "Sort cards")
 
-    # Create new target, input field for target name and button
-    target_name_input = QLineEdit()
-    target_name_input.setPlaceholderText("Enter target name")
-    add_target_button = QPushButton("Create new target")
-    create_new_target_form = QHBoxLayout()
-    create_new_target_form.addWidget(target_name_input)
-    create_new_target_form.addWidget(add_target_button)
-    
-    # Create a dynamic list for targets
-    target_list = QVBoxLayout()
-    target_list.setContentsMargins(2, 20, 2, 20)
-    
-    # Function to create a new target and add it to the list
-    def create_new_target():
-        new_target_name = target_name_input.text()
-        target_name_input.clear()
+    # Create a QTextEdit widget for the JSON textarea
+    target_data_textarea = QTextEdit()
+    target_data_textarea.setAcceptRichText(False)
+
+     # Function to check if the JSON is valid
+    def check_json_validity():
+        validity_state = validate_target_data(target_data_textarea.toPlainText());
+        palette = QPalette()
+        if (validity_state == 1):
+            palette.setColor(QPalette.ColorRole.Text, QColor(Qt.GlobalColor.green)) 
+        if (validity_state == -1):
+            palette.setColor(QPalette.ColorRole.Text, QColor(Qt.GlobalColor.red)) 
+        target_data_textarea.setPalette(palette)   
         
-        if not new_target_name:
-            return
-        
-        # Create a new row for the target
-        new_target_row_layout = QHBoxLayout()
-        
-        # Label to display the target name
-        target_name_label = QLabel(new_target_name)
-        
-        # Dropdown for Anki decks
-        deck_dropdown = QComboBox()
-        decks = anki_main_window.col.decks.allNames() # Anki decks
-        deck_dropdown.addItems(decks)
-        
-        # Dropdown for Anki note types
-        note_type_dropdown = QComboBox()
-        note_types = anki_main_window.col.models.allNames() # Anki note types
-        note_type_dropdown.addItems(note_types)
-        
-        # Add the elements to the target row layout
-        new_target_row_layout.addWidget(target_name_label)
-        new_target_row_layout.addWidget(deck_dropdown)
-        new_target_row_layout.addWidget(note_type_dropdown)
-        
-        # Add the target row to the reorder target list
-        target_list.addLayout(new_target_row_layout)
-        
-    
-    # Connect the "Add Target" button to the add_target function
-    add_target_button.clicked.connect(create_new_target)
-    
+
+    # Connect the check_json_validity function to textChanged signal
+    target_data_textarea.textChanged.connect(check_json_validity)
+
     # Create the "Reorder Cards" button
     reorder_cards_button = QPushButton("Reorder Cards")
     reorder_cards_button.setStyleSheet("font-size: 16px; font-weight: bold; background-color: green; color: white;")
     
-    # Add all components to the main tab layout
-    tab_layout.addLayout(create_new_target_form)
-    tab_layout.addLayout(target_list)
+    tab_layout.addWidget(target_data_textarea)
     tab_layout.addWidget(reorder_cards_button)
-    spacer = QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-    tab_layout.addItem(spacer) # Add an empty spacer row to compress the rows above
-
+    tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)) # Add an empty spacer row to compress the rows above
     
 
 def create_tab_word_overview(frequencyman_window: FrequencyManMainWindow):

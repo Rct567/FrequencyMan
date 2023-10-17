@@ -1,23 +1,17 @@
-<<<<<<< HEAD
-=======
 from ast import dump
 import json
->>>>>>> f7ead1b (Anki FrequencyMan)
 from aqt import QAction, QHBoxLayout, mw as anki_main_window # type: ignore
 from aqt.qt import *
 from aqt.utils import showInfo
 from PyQt6.QtCore import Qt 
 from typing import Tuple
 
-<<<<<<< HEAD
-=======
 
 def dump_var(var):
     showInfo(str(var))
     showInfo(repr(var))
 
 
->>>>>>> f7ead1b (Anki FrequencyMan)
 # FrequencyMan Main Window class
 class FrequencyManMainWindow(QDialog):
     def __init__(self):

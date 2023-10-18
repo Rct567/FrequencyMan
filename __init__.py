@@ -8,7 +8,7 @@ from typing import Tuple
 
 
 def dump_var(var):
-    showInfo(str(var))
+    #showInfo(str(var))
     showInfo(repr(var))
 
 
@@ -33,7 +33,7 @@ class FrequencyManMainWindow(QDialog):
         # Set the layout for the main window/dialog
         self.setLayout(window_layout)
         
-        self.config = anki_main_window.addonManager.getConfig(__name__)
+        self.fm_config:dict = anki_main_window.addonManager.getConfig(__name__)
         
     def create_new_tab(self, tab_id: str, tab_name: str) -> Tuple[QVBoxLayout, QWidget]:
         tab = QWidget()
@@ -51,22 +51,31 @@ class FrequencyManMainWindow(QDialog):
 
 def validate_target_data(json_data: str) -> int:
     try:
-        data:dict = json.loads(json_data)
-        if type(data) is dict and data.get("fm_reorder_target"):
+        data:list = json.loads(json_data)
+        if type(data) == list:
+            if len(data) < 1:
+                return 0
+            for target in data:
+                if type(target) != dict or len(target.keys()) == 0:
+                    return 0
+                for key in target.keys():
+                    if key not in ("deck", "notes"):
+                        return 0
             return 1
-        return 0
+        return -1
     except json.JSONDecodeError:
         return -1
 
-def create_tab_sort_cards(frequencyman_window: FrequencyManMainWindow):
+def create_tab_sort_cards(fm_window: FrequencyManMainWindow):
     # Create a new tab and its layout
-    (tab_layout, tab) = frequencyman_window.create_new_tab('sort_cards', "Sort cards")
+    (tab_layout, tab) = fm_window.create_new_tab('sort_cards', "Sort cards")
 
     # Create a QTextEdit widget for the JSON textarea
     target_data_textarea = QTextEdit()
     target_data_textarea.setAcceptRichText(False)
+    
 
-     # Function to check if the JSON is valid
+    # Function to check if the JSON is valid
     def check_json_validity():
         validity_state = validate_target_data(target_data_textarea.toPlainText());
         palette = QPalette()
@@ -76,9 +85,12 @@ def create_tab_sort_cards(frequencyman_window: FrequencyManMainWindow):
             palette.setColor(QPalette.ColorRole.Text, QColor(Qt.GlobalColor.red)) 
         target_data_textarea.setPalette(palette)   
         
+    if fm_window.fm_config and "fm_reorder_target" in fm_window.fm_config:
+        target_data_textarea.setText(json.dumps(fm_window.fm_config.get("fm_reorder_target"), indent=4))
 
     # Connect the check_json_validity function to textChanged signal
     target_data_textarea.textChanged.connect(check_json_validity)
+    check_json_validity()
 
     # Create the "Reorder Cards" button
     reorder_cards_button = QPushButton("Reorder Cards")
@@ -89,8 +101,8 @@ def create_tab_sort_cards(frequencyman_window: FrequencyManMainWindow):
     tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)) # Add an empty spacer row to compress the rows above
     
 
-def create_tab_word_overview(frequencyman_window: FrequencyManMainWindow):
-    (tab_layout, tab) = frequencyman_window.create_new_tab('word_overview', "Word overview")
+def create_tab_word_overview(fm_window: FrequencyManMainWindow):
+    (tab_layout, tab) = fm_window.create_new_tab('word_overview', "Word overview")
     # Create a label to display "Test" in the panel
     label = QLabel("** Overview of easy and hard words....")
     tab_layout.addWidget(label)
@@ -98,10 +110,10 @@ def create_tab_word_overview(frequencyman_window: FrequencyManMainWindow):
      
 # Open the 'FrequencyMan main window'
 def open_frequencyman_main_window():
-    frequencyman_window = FrequencyManMainWindow()
-    create_tab_sort_cards(frequencyman_window);
-    create_tab_word_overview(frequencyman_window);
-    frequencyman_window.exec_()
+    fm_window = FrequencyManMainWindow()
+    create_tab_sort_cards(fm_window);
+    create_tab_word_overview(fm_window);
+    fm_window.exec_()
 
 
 # Add "FrequencyMan" menu option in the "Tools" menu of the main Anki window

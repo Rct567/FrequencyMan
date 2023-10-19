@@ -1,11 +1,12 @@
 import json
 from aqt import QAction, mw as anki_main_window # type: ignore
 from aqt.qt import *
+import aqt
 from aqt.utils import showInfo
 from typing import List, Optional, Tuple
 import pprint
 
-def dump_var(var):
+def var_dump(var):
     #showInfo(str(var))
     showInfo(pprint.pformat(var))
 
@@ -57,22 +58,83 @@ def validate_target_data(target_data: list) -> int:
                 return 0
     return 1
 
-def validate_json_target_data(json_data: str) -> Tuple[int, Optional[List]]:
+def handle_json_target_data(json_data: str) -> Tuple[int, List]:
     try:
         data:list = json.loads(json_data)
         if type(data) == list:
             return (validate_target_data(data), data)
-        return (-1, None)
+        return (-1, [])
     except json.JSONDecodeError:
-        return (-1, None)
+        return (-1, [])
     
-def execute_reorder(target_data_textarea: QTextEdit):
+def get_cards_corpus_data(cards:list):
+    pass
+    
+def get_card_ranking(card, cards_corpus_data) -> int:
+    return 1
+    
+ 
+def reorder_target_cards(target:dict) -> bool:
+     
+    target_notes = target.get("notes", []) if type(target.get("notes")) == list else []
+    note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if type(note_type['name']) == str]
+    
+    if len(note_queries) < 1:
+        showInfo("No valid note type defined to find cards to reorder. At least one note is required for reordering!")
+        return False
+
+    search_query = "(" + " OR ".join(note_queries) + ")";
+     
+    if "deck" in target: 
+        if type(target.get("deck")) == str and len(target.get("deck", '')) > 0:
+            target_decks = [target.get("deck", '')]
+        elif type(target.get("deck")) == list:
+            target_decks = [deck_name for deck_name in target.get("deck", []) if type(deck_name) == str and len(deck_name) > 0]
+        else:
+            target_decks = []
+            
+        if len(target_decks) > 0:
+            deck_queries = ['"deck:' + deck_name + '"' for deck_name in target_decks if len(deck_name) > 0]
+            target_decks_query = " OR ".join(deck_queries)
+            search_query = "("+target_decks_query+")" + search_query
+
+    cards_ids = anki_main_window.col.find_cards(search_query, order="c.due asc")
+    cards = [anki_main_window.col.get_card(card_id) for card_id in cards_ids]
+    new_cards = [card for card in cards if card.queue == 0]
+    new_cards_ids = [card.id for card in new_cards]
+    cards_corpus_data = get_cards_corpus_data(cards)
+    
+    var_dump({'num_cards': len(cards), 'num_new_cards': len(new_cards), 'query': search_query})
+    
+    # Sort cards
+    sorted_cards = sorted(new_cards, key=lambda card: get_card_ranking(card, cards_corpus_data))
+    sorted_card_ids = [card.id for card in sorted_cards]
+    
+
+    # Avoid making unnecessary changes
+    if new_cards_ids == sorted_card_ids:
+        showInfo("No card needed sorting!")
+        return False
+    
+    # Reposition cards and apply changes
+    """ return mw.col.sched.reposition_new_cards(
+        card_ids=sorted_card_ids,
+        starting_from=0, step_size=1,
+        randomize=False, shift_existing=True
+    ) """
+    
+    return True
+    
+def execute_reorder(target_data_json:str):
     showInfo("Reordering!")
-    (validity_state, data) = validate_json_target_data(target_data_textarea.toPlainText());
-    if validity_state == -1:
+    (target_data_validity_state, target_data) = handle_json_target_data(target_data_json);
+    if target_data_validity_state == -1:
         showInfo('JSON Format is not valid. Fail to parse JSON.')
-    elif validity_state == 0:
+    elif target_data_validity_state == 0:
         showInfo('Target data is not valid. Check necessary such as "deck" and "notes" keys are present.')
+      
+    for target in target_data:
+        reorder_target_cards(target)
     
 
 def create_tab_sort_cards(fm_window: FrequencyManMainWindow):
@@ -91,7 +153,7 @@ def create_tab_sort_cards(fm_window: FrequencyManMainWindow):
     
     # Check if the JSON and target data is valid
     def check_textarea_json_validity():
-        (validity_state, _) = validate_json_target_data(target_data_textarea.toPlainText());
+        (validity_state, _) = handle_json_target_data(target_data_textarea.toPlainText());
         palette = QPalette()
         if (validity_state == 1):
             palette.setColor(QPalette.ColorRole.Text, QColor("#23b442")) # Green
@@ -106,7 +168,7 @@ def create_tab_sort_cards(fm_window: FrequencyManMainWindow):
     # Create the "Reorder Cards" button
     exec_reorder_button = QPushButton("Reorder Cards")
     exec_reorder_button.setStyleSheet("font-size: 16px; font-weight: bold; background-color: #23b442; color: white; border:2px solid #23a03e")
-    exec_reorder_button.clicked.connect(lambda: execute_reorder(target_data_textarea))
+    exec_reorder_button.clicked.connect(lambda: execute_reorder(target_data_textarea.toPlainText()))
     
     tab_layout.addWidget(target_data_textarea)
     tab_layout.addWidget(exec_reorder_button)

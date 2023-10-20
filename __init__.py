@@ -1,4 +1,5 @@
 import json
+import random
 from aqt import QAction, mw as anki_main_window # type: ignore
 from aqt.qt import *
 import aqt
@@ -6,7 +7,7 @@ from aqt.utils import showInfo
 from typing import List, Optional, Tuple
 import pprint
 
-def var_dump(var):
+def var_dump(var) -> None:
     #showInfo(str(var))
     showInfo(pprint.pformat(var))
 
@@ -51,7 +52,7 @@ def validate_target_data(target_data: list) -> int:
     if len(target_data) < 1:
         return 0
     for target in target_data:
-        if type(target) != dict or len(target.keys()) == 0:
+        if not isinstance(target, dict) or len(target.keys()) == 0:
             return 0
         for key in target.keys():
             if key not in ("deck", "notes"):
@@ -61,7 +62,7 @@ def validate_target_data(target_data: list) -> int:
 def handle_json_target_data(json_data: str) -> Tuple[int, List]:
     try:
         data:list = json.loads(json_data)
-        if type(data) == list:
+        if isinstance(data, list):
             return (validate_target_data(data), data)
         return (-1, [])
     except json.JSONDecodeError:
@@ -71,25 +72,22 @@ def get_cards_corpus_data(cards:list):
     pass
     
 def get_card_ranking(card, cards_corpus_data) -> int:
-    return 1
+    return random.randint(1, 256)
     
- 
-def reorder_target_cards(target:dict) -> bool:
-     
-    target_notes = target.get("notes", []) if type(target.get("notes")) == list else []
-    note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if type(note_type['name']) == str]
+def get_target_search_query(target:dict) -> str:
+    target_notes = target.get("notes", []) if isinstance(target.get("notes"), list) else []
+    note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
     
     if len(note_queries) < 1:
-        showInfo("No valid note type defined to find cards to reorder. At least one note is required for reordering!")
-        return False
+        return ''
 
     search_query = "(" + " OR ".join(note_queries) + ")";
      
     if "deck" in target: 
-        if type(target.get("deck")) == str and len(target.get("deck", '')) > 0:
+        if isinstance(target.get("deck"), str) and len(target.get("deck", '')) > 0:
             target_decks = [target.get("deck", '')]
-        elif type(target.get("deck")) == list:
-            target_decks = [deck_name for deck_name in target.get("deck", []) if type(deck_name) == str and len(deck_name) > 0]
+        elif isinstance(target.get("deck"), list):
+            target_decks = [deck_name for deck_name in target.get("deck", []) if isinstance(deck_name, str) and len(deck_name) > 0]
         else:
             target_decks = []
             
@@ -97,7 +95,16 @@ def reorder_target_cards(target:dict) -> bool:
             deck_queries = ['"deck:' + deck_name + '"' for deck_name in target_decks if len(deck_name) > 0]
             target_decks_query = " OR ".join(deck_queries)
             search_query = "("+target_decks_query+")" + search_query
+    
+    return search_query
+ 
+def reorder_target_cards(target:dict) -> bool:
+    search_query = get_target_search_query(target)
+    if "note:" not in search_query:
+        showInfo("No valid note type defined. At least one note is required for reordering!")
+        return False
 
+    # Get results for target
     cards_ids = anki_main_window.col.find_cards(search_query, order="c.due asc")
     cards = [anki_main_window.col.get_card(card_id) for card_id in cards_ids]
     new_cards = [card for card in cards if card.queue == 0]
@@ -106,10 +113,9 @@ def reorder_target_cards(target:dict) -> bool:
     
     var_dump({'num_cards': len(cards), 'num_new_cards': len(new_cards), 'query': search_query})
     
-    # Sort cards
+    # Sorted cards
     sorted_cards = sorted(new_cards, key=lambda card: get_card_ranking(card, cards_corpus_data))
     sorted_card_ids = [card.id for card in sorted_cards]
-    
 
     # Avoid making unnecessary changes
     if new_cards_ids == sorted_card_ids:
@@ -141,7 +147,7 @@ def create_tab_sort_cards(fm_window: FrequencyManMainWindow):
     # Create a new tab and its layout
     (tab_layout, tab) = fm_window.create_new_tab('sort_cards', "Sort cards")
 
-    # Create textarea widget
+    # Textarea widget
     target_data_textarea = QTextEdit()
     target_data_textarea.setMinimumHeight(300);
     target_data_textarea.setAcceptRichText(False)

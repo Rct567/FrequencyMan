@@ -4,7 +4,7 @@
             "deck": "Spanish",
             "notes": [{
                 "name": "-- My spanish --",
-                "fields": [{"Sentence": "ES", "Meaning": "EN"}]
+                "fields": {"Sentence": "ES", "Meaning": "EN"}
             }]
         }
     ],

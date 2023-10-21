@@ -1,21 +1,23 @@
 import json
 import random
-from aqt import QAction, mw as anki_main_window # type: ignore
+from aqt import QAction, mw# type: ignore
 from aqt.qt import *
 import aqt
+import anki.cards
+from anki.models import NoteType
+from anki.cards import Card
+from anki.utils import strip_html
 from aqt.utils import showInfo
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, TypedDict
 import pprint
 
 def var_dump(var) -> None:
-    #showInfo(str(var))
     showInfo(pprint.pformat(var))
-
 
 # FrequencyMan Main Window class
 class FrequencyManMainWindow(QDialog):
     def __init__(self):
-        super().__init__(anki_main_window) 
+        super().__init__(mw) 
         self.setWindowTitle("FrequencyMan")
         
         self.setMinimumSize(650, 600)
@@ -33,7 +35,7 @@ class FrequencyManMainWindow(QDialog):
         # Set the layout for the main window/dialog
         self.setLayout(window_layout)
         
-        self.fm_config:dict = anki_main_window.addonManager.getConfig(__name__)
+        self.fm_config:dict = mw.addonManager.getConfig(__name__)
         
     def create_new_tab(self, tab_id: str, tab_name: str) -> Tuple[QVBoxLayout, QWidget]:
         tab = QWidget()
@@ -57,24 +59,44 @@ def validate_target_data(target_data: list) -> int:
         for key in target.keys():
             if key not in ("deck", "notes"):
                 return 0
-    return 1
+        if not isinstance(target.get('notes'), list):
+            return 0
+    return 1 
 
-def handle_json_target_data(json_data: str) -> Tuple[int, List]:
+TargetDataNotes = TypedDict('TargetDataNotes', {'name': str, 'fields': dict[str, str]})
+TargetData = TypedDict('TargetData', {'deck': str, 'notes': list[TargetDataNotes]})
+
+def handle_json_target_data(json_data: str) -> Tuple[int, list[TargetData]]:
     try:
-        data:list = json.loads(json_data)
+        data:TargetData = json.loads(json_data)
         if isinstance(data, list):
             return (validate_target_data(data), data)
         return (-1, [])
     except json.JSONDecodeError:
         return (-1, [])
     
-def get_cards_corpus_data(cards:list):
-    pass
+def get_cards_corpus_data(target_cards:list[anki.cards.Card], notes:list[TargetDataNotes]) -> dict:
     
-def get_card_ranking(card, cards_corpus_data) -> int:
+    target_fields_by_notes_name = {note.get('name'): note.get('fields', {}) for note in notes}
+    
+    for card in target_cards:
+        note = mw.col.getNote(card.nid)
+        note_name = note.model()['name']
+        if note_name in target_fields_by_notes_name:
+            target_fields = target_fields_by_notes_name[note_name]
+            note_items_accepted = [{"field_name": key, "field_value": strip_html(val), "target_language": target_fields[key]} for (key, val) in note.items() if key in target_fields.keys()]
+            var_dump({'note_name':note_name, 'note_items_accepted': note_items_accepted, 'target_fields':target_fields})
+            showInfo('Hora!!')
+            return {} 
+
+    return {
+        
+    }
+    
+def get_card_ranking(card:anki.cards.Card, cards_corpus_data) -> int:
     return random.randint(1, 256)
     
-def get_target_search_query(target:dict) -> str:
+def get_target_search_query(target:TargetData) -> str:
     target_notes = target.get("notes", []) if isinstance(target.get("notes"), list) else []
     note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
     
@@ -98,27 +120,27 @@ def get_target_search_query(target:dict) -> str:
     
     return search_query
  
-def reorder_target_cards(target:dict) -> bool:
-    search_query = get_target_search_query(target)
-    if "note:" not in search_query:
+def reorder_target_cards(target:TargetData) -> bool:
+    target_search_query = get_target_search_query(target)
+    if "note:" not in target_search_query:
         showInfo("No valid note type defined. At least one note is required for reordering!")
         return False
 
     # Get results for target
-    cards_ids = anki_main_window.col.find_cards(search_query, order="c.due asc")
-    cards = [anki_main_window.col.get_card(card_id) for card_id in cards_ids]
-    new_cards = [card for card in cards if card.queue == 0]
-    new_cards_ids = [card.id for card in new_cards]
-    cards_corpus_data = get_cards_corpus_data(cards)
+    target_cards_ids = mw.col.find_cards(target_search_query, order="c.due asc")
+    target_cards = [mw.col.get_card(card_id) for card_id in target_cards_ids]
+    target_new_cards = [card for card in target_cards if card.queue == 0]
+    target_new_cards_ids = [card.id for card in target_new_cards]
+    cards_corpus_data = get_cards_corpus_data(target_cards, target.get('notes'))
     
-    var_dump({'num_cards': len(cards), 'num_new_cards': len(new_cards), 'query': search_query})
+    var_dump({'num_cards': len(target_cards), 'num_new_cards': len(target_new_cards), 'query': target_search_query})
     
     # Sorted cards
-    sorted_cards = sorted(new_cards, key=lambda card: get_card_ranking(card, cards_corpus_data))
+    sorted_cards = sorted(target_new_cards, key=lambda card: get_card_ranking(card, cards_corpus_data))
     sorted_card_ids = [card.id for card in sorted_cards]
 
     # Avoid making unnecessary changes
-    if new_cards_ids == sorted_card_ids:
+    if target_new_cards_ids == sorted_card_ids:
         showInfo("No card needed sorting!")
         return False
     
@@ -135,9 +157,9 @@ def execute_reorder(target_data_json:str):
     showInfo("Reordering!")
     (target_data_validity_state, target_data) = handle_json_target_data(target_data_json);
     if target_data_validity_state == -1:
-        showInfo('JSON Format is not valid. Fail to parse JSON.')
+        showInfo('JSON Format is not valid. Failed to parse JSON!')
     elif target_data_validity_state == 0:
-        showInfo('Target data is not valid. Check necessary such as "deck" and "notes" keys are present.')
+        showInfo('Target data is not valid. Check if necessary keys such as "deck" and "notes" are present.')
       
     for target in target_data:
         reorder_target_cards(target)
@@ -198,9 +220,9 @@ def open_frequencyman_main_window():
 
 # Add "FrequencyMan" menu option in the "Tools" menu of the main Anki window
 def add_frequencyman_menu_option_to_anki_tools_menu():
-    action = QAction("FrequencyMan", anki_main_window)
+    action = QAction("FrequencyMan", mw)
     action.triggered.connect(open_frequencyman_main_window)
-    anki_main_window.form.menuTools.addAction(action)
+    mw.form.menuTools.addAction(action)
 
 
 # Main components

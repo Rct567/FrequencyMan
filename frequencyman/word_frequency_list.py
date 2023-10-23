@@ -5,18 +5,18 @@ from ..frequencyman.text_processing import TextProcessing
 import os
 
 class WordFrequencyList:
-    def __init__(self) -> None:
+    def __init__(self):
         pass
     
 
 class WordFrequencyLists:
     
     list_dir:str
-    word_frequency_lists:dict[str, dict]
+    word_frequency_lists:dict[str, dict[str, float]] = {}
     
     def __init__(self, list_dir) -> None:
         if not os.path.isdir(list_dir):
-            raise ValueError("Invalid 'word frequency list' directory: "+list_dir)
+            raise ValueError("Invalid 'word frequency list' directory. Directory not found: "+list_dir)
         self.list_dir = list_dir
     
     def __getitem__(self, key:str):
@@ -31,6 +31,10 @@ class WordFrequencyLists:
         self.load_frequency_list_if_needed(key)
         return self.word_frequency_lists.get(key, default)
     
+    def getWordFrequency(self, key:str, word:str, default:float):
+        self.load_frequency_list_if_needed(key)
+        return self.word_frequency_lists[key].get(word, default)
+    
     def alreadyLoaded(self, key:str):
         return key in self.word_frequency_lists
     
@@ -38,15 +42,16 @@ class WordFrequencyLists:
         if self.alreadyLoaded(key):
             return True
         
-        possible_file = self.list_dir+"/"+key+".txt"
-        possible_dir = self.list_dir+"/"+key+"/"
+        key = key.lower()
+        possible_file = os.path.join(self.list_dir, key+".txt")
+        possible_dir = os.path.join(self.list_dir, key)
         
         if os.path.isfile(possible_file):
-            file_or_dir = possible_dir
-        elif os.path.isdir(possible_dir):
             file_or_dir = possible_file
+        elif os.path.isdir(possible_dir):
+            file_or_dir = possible_dir
         else:
-           return False
+            raise ValueError(f"Not word frequency list found for key '{key}'.")
         
         word_frequency_list = self.load_word_frequency_list(file_or_dir)
         self.word_frequency_lists[key] = word_frequency_list;

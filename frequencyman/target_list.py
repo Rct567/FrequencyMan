@@ -29,11 +29,8 @@ class Target:
     def get(self, key, default=None):
         return self.target.get(key, default)
     
-    def getNotes(self) -> dict[str, dict]:
-        return {note.get('name'): note.get('fields', {}) for note in self.target.get('notes', [])}
-    
-    def __len__(self):
-        return len(self.target)
+    def getNotes(self) -> dict[str, dict[str, str]]:
+        return {note.get('name'): note.get('fields', {}) for note in self.target.get('notes', [])} 
     
     def construct_search_query(self) -> str:
         target_notes = self.get("notes", []) if isinstance(self.get("notes"), list) else []

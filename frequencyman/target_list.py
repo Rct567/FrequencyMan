@@ -29,7 +29,7 @@ class Target:
     def get(self, key, default=None):
         return self.target.get(key, default)
     
-    def getNotes(self) -> dict[str, dict[str, str]]:
+    def get_notes(self) -> dict[str, dict[str, str]]:
         return {note.get('name'): note.get('fields', {}) for note in self.target.get('notes', [])} 
     
     def construct_search_query(self) -> str:

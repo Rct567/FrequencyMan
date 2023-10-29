@@ -100,11 +100,11 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
     
     card_ranking_factors:dict[str, float] = {}
     
-    card_fr_scores:list[float] = [] # Avg frequency of words, avg per field | Card with common words should go up
-    card_focus_word_fr_scores:list[float] = [] # Lowest frequency of unseen words, avg per fields | Cards introducing MOSTLY a common word should go up
-    # card_words_unfamiliarity_scores:list[float] = [] # | Card with words seen a lot should go down
-    # card_words_problematic_occurrence_scores:list[float] = [] # Problematic_occurrence_score of words, avg per field | Cards with problematic words should go up
-    # card_words_fresh_occurrence_scores:list[float] = [] # Freshness of words, avg per field | Cards with fresh words (recently matured?) should go up
+    fields_fr_scores:list[float] = [] # Avg frequency of words, avg per field | Card with common words should go up
+    fields_highest_fr_unseen_word_scores:list[float] = [] # Lowest frequency of unseen words, avg per fields | Cards introducing MOSTLY a common word should go up
+    # fields_words_unfamiliarity_scores:list[float] = [] # | Card with words seen a lot should go down
+    # fields_words_problematic_occurrence_scores:list[float] = [] # Problematic_occurrence_score of words, avg per field | Cards with problematic words should go up
+    # fields_words_fresh_occurrence_scores:list[float] = [] # Freshness of words, avg per field | Cards with fresh words (recently matured?) should go up
      
     # get scores per field
     
@@ -112,20 +112,20 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
     fields_highest_fr_unseen_word:list[Tuple[str, float]] = []
     fields_seen_words:list[list[str]] = []
     fields_unseen_words:list[list[str]] = []
-    fields_ideal_unseen_words_count:list[float] = []
-    fields_ideal_words_count:list[float] = []
+    fields_ideal_unseen_words_count_scores:list[float] = []
+    fields_ideal_words_count_scores:list[float] = [] 
     
     for field_data in accepted_fields:
         
         field_fr_scores:list[float] = []
-        field_highest_fr_unseen_word:Tuple[str, float]  = ("", 0)
         field_seen_words:list[str] = []
         field_unseen_words:list[str] = []
+        field_highest_fr_unseen_word:Tuple[str, float]  = ("", 0)
         field_key = str(card_note_type['id'])+" => "+field_data['field_name']
         
         for word in field_data['field_value_tokenized']:
             word_fr = word_frequency_lists.getWordFrequency(field_data['target_language_id'], word, 0)
-            #word_fr_relative =  
+            #word_priority_rating = (word_fr - familiarity)
             field_fr_scores.append(word_fr)
             if word in cards_corpus_data.notes_reviewed_words.get(field_key, {}):
                 field_seen_words.append(word) # word seen, word exist in at least one reviewed card
@@ -140,27 +140,27 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
         
         # ideal unseen words count
         num_unseen_words = len(field_unseen_words)
-        ideal_unseen_words_count_rate = 0
+        ideal_unseen_words_count_score = 0
         if (num_unseen_words > 0):
-            ideal_unseen_words_count_rate = min(1, abs( 0-(1.5*1/min(num_unseen_words, 10)) ) )
-        fields_ideal_unseen_words_count.append(ideal_unseen_words_count_rate)
+            ideal_unseen_words_count_score = min(1, abs( 0-(1.5*1/min(num_unseen_words, 10)) ) )
+        fields_ideal_unseen_words_count_scores.append(ideal_unseen_words_count_score)
         
         # ideal word count
-        fields_ideal_words_count.append(ideal_word_count_score(len(field_data['field_value_tokenized']), 4))
+        fields_ideal_words_count_scores.append(ideal_word_count_score(len(field_data['field_value_tokenized']), 4))
         
         # highest fr unseen word
         fields_highest_fr_unseen_word.append(field_highest_fr_unseen_word)
-        card_focus_word_fr_scores.append(field_highest_fr_unseen_word[1]) 
-        card_fr_scores.append(mean(field_fr_scores))  
+        fields_highest_fr_unseen_word_scores.append(field_highest_fr_unseen_word[1]) 
+        fields_fr_scores.append(mean(field_fr_scores))  
      
     # define ranking factors for card, based on avg of fields
     
-    card_ranking_factors['words_frequency_score'] = mean(card_fr_scores) #todo: make relative to num words?  
-    card_ranking_factors['focus_word_frequency_score'] = mean(card_focus_word_fr_scores) #todo: make relative to num words?  
-    card_ranking_factors['ideal_unseen_word_count'] = mean(fields_ideal_unseen_words_count)
-    card_ranking_factors['ideal_word_count'] = mean(fields_ideal_words_count)
-    # card_ranking_factors['words_problematic_occurrence_scores'] = mean(card_words_problematic_occurrence_scores) 
-    # card_ranking_factors['words_fresh_occurrence_scores'] = mean(card_words_fresh_occurrence_scores) 
+    card_ranking_factors['words_frequency_score'] = mean(fields_fr_scores) #todo: make relative to num words?  
+    card_ranking_factors['focus_word_frequency_score'] = mean(fields_highest_fr_unseen_word_scores) #todo: make relative to num words?  
+    card_ranking_factors['ideal_unseen_word_count'] = mean(fields_ideal_unseen_words_count_scores)
+    card_ranking_factors['ideal_word_count'] = mean(fields_ideal_words_count_scores)
+    # card_ranking_factors['words_problematic_occurrence_scores'] = mean(fields_words_problematic_occurrence_scores) 
+    # card_ranking_factors['words_fresh_occurrence_scores'] = mean(fields_words_fresh_occurrence_scores) 
  
     # final ranking
     card_ranking = mean(card_ranking_factors.values())
@@ -168,10 +168,10 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
     # set data in card fields 
     if 'fm_debug_info' in card_note:
         debug_info = {
-            'fr_scores': card_fr_scores, 
-            'focus_fr_scores': card_focus_word_fr_scores, 
-            'ideal_unseen_word_count': fields_ideal_unseen_words_count,
-            'ideal_word_count': fields_ideal_words_count,
+            'fr_scores': fields_fr_scores, 
+            'focus_fr_scores': fields_highest_fr_unseen_word_scores, 
+            'ideal_unseen_word_count': fields_ideal_unseen_words_count_scores,
+            'ideal_word_count': fields_ideal_words_count_scores,
             'fields_highest_fr_unseen_word': fields_highest_fr_unseen_word,
         }
         card_note['fm_debug_info'] = pprint.pformat(debug_info, width=120, sort_dicts=False).replace('\n', '<br>')

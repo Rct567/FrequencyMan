@@ -101,7 +101,7 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
     card_ranking_factors:dict[str, float] = {}
     
     card_fr_scores:list[float] = [] # Avg frequency of words, avg per field | Card with common words should go up
-    card_focus_word_fr_scores:list[float] = [] # Lowest frequency of unknown words, avg per fields | Cards introducing MOSTLY a common word should go up
+    card_focus_word_fr_scores:list[float] = [] # Lowest frequency of unseen words, avg per fields | Cards introducing MOSTLY a common word should go up
     # card_words_unfamiliarity_scores:list[float] = [] # | Card with words seen a lot should go down
     # card_words_problematic_occurrence_scores:list[float] = [] # Problematic_occurrence_score of words, avg per field | Cards with problematic words should go up
     # card_words_fresh_occurrence_scores:list[float] = [] # Freshness of words, avg per field | Cards with fresh words (recently matured?) should go up
@@ -109,55 +109,55 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
     # get scores per field
     
     accepted_fields = cards_corpus_data.handled_cards[card.id]['accepted_fields']
-    fields_highest_fr_unknown_word:list[Tuple] = []
-    fields_known_words:list[list[str]] = []
-    fields_unknown_words:list[list[str]] = []
-    fields_ideal_unknown_words_count:list[float] = []
+    fields_highest_fr_unseen_word:list[Tuple[str, float]] = []
+    fields_seen_words:list[list[str]] = []
+    fields_unseen_words:list[list[str]] = []
+    fields_ideal_unseen_words_count:list[float] = []
     fields_ideal_words_count:list[float] = []
     
     for field_data in accepted_fields:
         
-        field_fr_score:list[float] = []
-        field_highest_fr_unknown_word:Tuple[str, float]  = ("", 0)
-        field_known_words:list[str] = []
-        field_unknown_words:list[str] = []
+        field_fr_scores:list[float] = []
+        field_highest_fr_unseen_word:Tuple[str, float]  = ("", 0)
+        field_seen_words:list[str] = []
+        field_unseen_words:list[str] = []
         field_key = str(card_note_type['id'])+" => "+field_data['field_name']
         
         for word in field_data['field_value_tokenized']:
             word_fr = word_frequency_lists.getWordFrequency(field_data['target_language_id'], word, 0)
             #word_fr_relative =  
-            field_fr_score.append(word_fr)
-            if word in cards_corpus_data.notes_known_words.get(field_key, {}):
-                field_known_words.append(word) # word is known
+            field_fr_scores.append(word_fr)
+            if word in cards_corpus_data.notes_reviewed_words.get(field_key, {}):
+                field_seen_words.append(word) # word seen, word exist in at least one reviewed card
             else:
-                field_unknown_words.append(word)
-                if word_fr > 0 and (field_highest_fr_unknown_word[1] == 0 or word_fr < field_highest_fr_unknown_word[1]):
-                    field_highest_fr_unknown_word = (word, word_fr) 
+                field_unseen_words.append(word)
+                if word_fr > 0 and (field_highest_fr_unseen_word[1] == 0 or word_fr < field_highest_fr_unseen_word[1]):
+                    field_highest_fr_unseen_word = (word, word_fr) 
 
-        # set known and unknown words
-        fields_known_words.append(field_known_words)
-        fields_unknown_words.append(field_unknown_words)
+        # set known and unseen words
+        fields_seen_words.append(field_seen_words)
+        fields_unseen_words.append(field_unseen_words)
         
-        # ideal unknown words count
-        num_unknown_words = len(field_unknown_words)
-        ideal_unknown_words_count_rate = 0
-        if (num_unknown_words > 0):
-            ideal_unknown_words_count_rate = min(1, abs( 0-(1.5*1/min(num_unknown_words, 10)) ) )
-        fields_ideal_unknown_words_count.append(ideal_unknown_words_count_rate)
+        # ideal unseen words count
+        num_unseen_words = len(field_unseen_words)
+        ideal_unseen_words_count_rate = 0
+        if (num_unseen_words > 0):
+            ideal_unseen_words_count_rate = min(1, abs( 0-(1.5*1/min(num_unseen_words, 10)) ) )
+        fields_ideal_unseen_words_count.append(ideal_unseen_words_count_rate)
         
         # ideal word count
         fields_ideal_words_count.append(ideal_word_count_score(len(field_data['field_value_tokenized']), 4))
         
-        # highest fr unknown word
-        fields_highest_fr_unknown_word.append(field_highest_fr_unknown_word)
-        card_focus_word_fr_scores.append(field_highest_fr_unknown_word[1]) 
-        card_fr_scores.append(mean(field_fr_score))  
+        # highest fr unseen word
+        fields_highest_fr_unseen_word.append(field_highest_fr_unseen_word)
+        card_focus_word_fr_scores.append(field_highest_fr_unseen_word[1]) 
+        card_fr_scores.append(mean(field_fr_scores))  
      
     # define ranking factors for card, based on avg of fields
     
     card_ranking_factors['words_frequency_score'] = mean(card_fr_scores) #todo: make relative to num words?  
     card_ranking_factors['focus_word_frequency_score'] = mean(card_focus_word_fr_scores) #todo: make relative to num words?  
-    card_ranking_factors['ideal_unknown_word_count'] = mean(fields_ideal_unknown_words_count)
+    card_ranking_factors['ideal_unseen_word_count'] = mean(fields_ideal_unseen_words_count)
     card_ranking_factors['ideal_word_count'] = mean(fields_ideal_words_count)
     # card_ranking_factors['words_problematic_occurrence_scores'] = mean(card_words_problematic_occurrence_scores) 
     # card_ranking_factors['words_fresh_occurrence_scores'] = mean(card_words_fresh_occurrence_scores) 
@@ -170,17 +170,17 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
         debug_info = {
             'fr_scores': card_fr_scores, 
             'focus_fr_scores': card_focus_word_fr_scores, 
-            'ideal_unknown_word_count': fields_ideal_unknown_words_count,
+            'ideal_unseen_word_count': fields_ideal_unseen_words_count,
             'ideal_word_count': fields_ideal_words_count,
-            'fields_highest_fr_unknown_word': fields_highest_fr_unknown_word,
+            'fields_highest_fr_unseen_word': fields_highest_fr_unseen_word,
         }
         card_note['fm_debug_info'] = pprint.pformat(debug_info, width=120, sort_dicts=False).replace('\n', '<br>')
         card_note.flush()
-    if 'fm_known_words' in card_note:
-        card_note['fm_known_words'] = pprint.pformat(fields_known_words).replace('\n', '<br>')
+    if 'fm_seen_words' in card_note:
+        card_note['fm_seen_words'] = pprint.pformat(fields_seen_words).replace('\n', '<br>')
         card_note.flush()
-    if 'fm_unknown_words' in card_note:
-        card_note['fm_unknown_words'] = pprint.pformat(fields_unknown_words).replace('\n', '<br>')
+    if 'fm_unseen_words' in card_note:
+        card_note['fm_unseen_words'] = pprint.pformat(fields_unseen_words).replace('\n', '<br>')
         card_note.flush()
     
     return card_ranking
@@ -208,7 +208,7 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
     
     #cards_corpus_data = get_target_cards_corpus_data(target_all_cards, target)  
     cards_corpus_data = TargetCorpusData()
-    cards_corpus_data.load_data(target_all_cards, target)
+    cards_corpus_data.create_data(target_all_cards, target)
     
     #var_dump({'num_cards': len(target_cards), 'num_new_cards': len(target_new_cards), 'query': target_search_query})
     

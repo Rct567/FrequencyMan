@@ -12,26 +12,26 @@ class TargetCorpusData:
     """
     
     handled_cards: dict[int, dict[str, Any]]
-    notes_known_words: dict[str, dict[str, list[anki.cards.Card]]]
     
-    notes_reviewed_words_presence_rate: dict[str, dict[str, list[float]]]
+    notes_reviewed_words: dict[str, dict[str, list[anki.cards.Card]]]
+    notes_reviewed_words_occurrences: dict[str, dict[str, list[float]]] # list because a word can occur multiple times in a field
     notes_reviewed_words_familiarity: dict[str, dict[str, float]]
     
     def __init__(self):
         
         self.handled_cards = {}
-        self.notes_known_words = {} # words from reviewed cards
         
-        self.notes_reviewed_words_presence_rate = {} # how much words are present in reviewed cards
-        self.notes_reviewed_words_familiarity = {} # how much words are present in reviewed cards
+        self.notes_reviewed_words = {} # words and the cards they they occur in, per "note+field"
+        self.notes_reviewed_words_occurrences = {} # how much a word occurs in reviewed cards, per "note+field"
+        self.notes_reviewed_words_familiarity = {} # how much words are present in reviewed cards, per "note+field"
 
     def __set_notes_words_familiarity(self) -> None:
         """
         Set the familiarity score for each word per note, based on word presence.
         """
-        for field_key in self.notes_reviewed_words_presence_rate:
+        for field_key in self.notes_reviewed_words_occurrences:
             
-            field_all_word_presence_scores = [sum(word_scores) for word_scores in self.notes_reviewed_words_presence_rate[field_key].values()]
+            field_all_word_presence_scores = [sum(word_scores) for word_scores in self.notes_reviewed_words_occurrences[field_key].values()]
             field_avg_word_presence_score = mean(field_all_word_presence_scores)
             field_median_word_presence_score = median(field_all_word_presence_scores)
             #var_dump({'avg':field_avg_word_score, 'max': max(field_all_word_scores), 'median': field_median_word_score})
@@ -39,28 +39,32 @@ class TargetCorpusData:
             if field_key not in self.notes_reviewed_words_familiarity:
                 self.notes_reviewed_words_familiarity[field_key] = {}
             
-            for word_token in self.notes_reviewed_words_presence_rate[field_key]:
-                token_values = self.notes_reviewed_words_presence_rate[field_key][word_token]
-                token_familiarity_score = sum(token_values)
-                if (token_familiarity_score > field_median_word_presence_score):
-                    token_familiarity_score = mean([token_familiarity_score, field_median_word_presence_score])
-                if (token_familiarity_score > 10*field_median_word_presence_score):
-                    token_familiarity_score = 10*field_median_word_presence_score
-                self.notes_reviewed_words_familiarity[field_key][word_token] = token_familiarity_score
+            for word_token in self.notes_reviewed_words_occurrences[field_key]:
+                
+                word_presence_scores = self.notes_reviewed_words_occurrences[field_key][word_token]
+                word_familiarity_score = sum(word_presence_scores)
+                if (word_familiarity_score > field_median_word_presence_score): # flatten the top half
+                    word_familiarity_score = mean([word_familiarity_score, field_median_word_presence_score])
+                if (word_familiarity_score > 10*field_median_word_presence_score):
+                    word_familiarity_score = 10*field_median_word_presence_score
+                
+                self.notes_reviewed_words_familiarity[field_key][word_token] = word_familiarity_score
                 
             max_familiarity = max(self.notes_reviewed_words_familiarity[field_key].values())
             #var_dump({'max': max_familiarity, 'avg': avg_familiarity, 'med':median_familiarity})
             
+            # make scores values relative
             for word_token in self.notes_reviewed_words_familiarity[field_key]:
                 rel_score = self.notes_reviewed_words_familiarity[field_key][word_token]/max_familiarity
                 self.notes_reviewed_words_familiarity[field_key][word_token] = rel_score
                 
+            # sort in descending order
             self.notes_reviewed_words_familiarity[field_key] = dict(sorted(self.notes_reviewed_words_familiarity[field_key].items(), key=lambda x: x[1], reverse=True))
    
     
-    def load_data(self, target_cards:Iterable[anki.cards.Card], target:Target) -> None:
+    def create_data(self, target_cards:Iterable[anki.cards.Card], target:Target) -> None:
         """
-        Load data into the TargetCorpusData object
+        Create corpus data for the given target and its cards.
         """
         target_fields_by_notes_name = target.get_notes()
         
@@ -95,18 +99,18 @@ class TargetCorpusData:
                     if card_has_been_reviewed:
                         for word_token in field_value_tokenized:
                             # set reviewed words (word has been in reviewed card)
-                            if field_key not in self.notes_known_words:
-                                self.notes_known_words[field_key] = {}
-                            if word_token not in self.notes_known_words[field_key]:
-                                self.notes_known_words[field_key][word_token] = [] 
-                            self.notes_known_words[field_key][word_token].append(card)
+                            if field_key not in self.notes_reviewed_words:
+                                self.notes_reviewed_words[field_key] = {}
+                            if word_token not in self.notes_reviewed_words[field_key]:
+                                self.notes_reviewed_words[field_key][word_token] = [] 
+                            self.notes_reviewed_words[field_key][word_token].append(card)
                             # set presence_score for reviewed words 
-                            if field_key not in self.notes_reviewed_words_presence_rate:
-                                self.notes_reviewed_words_presence_rate[field_key] = {}
-                            if word_token not in self.notes_reviewed_words_presence_rate[field_key]:
-                                self.notes_reviewed_words_presence_rate[field_key][word_token] = [] 
+                            if field_key not in self.notes_reviewed_words_occurrences:
+                                self.notes_reviewed_words_occurrences[field_key] = {}
+                            if word_token not in self.notes_reviewed_words_occurrences[field_key]:
+                                self.notes_reviewed_words_occurrences[field_key][word_token] = [] 
                             token_presence_score = 1/mean([field_value_num_tokens, 3]) 
-                            self.notes_reviewed_words_presence_rate[field_key][word_token].append(token_presence_score)
+                            self.notes_reviewed_words_occurrences[field_key][word_token].append(token_presence_score)
                     
             self.handled_cards[card.id] = {'card': card, "accepted_fields": card_note_items_accepted}
                 

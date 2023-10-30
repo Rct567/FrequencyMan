@@ -66,7 +66,7 @@ class TargetList:
     def __iter__(self):
         return iter(self.target_list)
     
-    def load(self, target_list:list[ConfigTargetData]) -> int:
+    def set_targets(self, target_list:list[ConfigTargetData]) -> int:
         is_valid = self.validate_list(target_list) == 1
         if (is_valid):
             self.target_list = [Target(target) for target in target_list]

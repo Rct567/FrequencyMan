@@ -62,11 +62,6 @@ class FrequencyManMainWindow(QDialog):
         # Addon config
         self.addon_config = mw.addonManager.getConfig(__name__)
         
-        # Target data (list of targets to reorder)
-        self.target_data = TargetList()
-        if "fm_reorder_target" in self.addon_config:
-            self.target_data.load(self.addon_config.get("fm_reorder_target"))
-        
         
     def create_new_tab(self, tab_id: str, tab_name: str) -> Tuple[QVBoxLayout, QWidget]:
         tab = QWidget()
@@ -233,33 +228,38 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
     
     return True
     
-def execute_reorder(fm_window:FrequencyManMainWindow):
+def execute_reorder(fm_window:FrequencyManMainWindow, target_list:TargetList):
     
     frequency_lists_dir = os.path.join(os.path.dirname(__file__), 'user_files', 'frequency_lists')
     word_frequency_list = WordFrequencyLists(frequency_lists_dir)
     
-    for target in fm_window.target_data:
+    for target in target_list:
         reorder_target_cards(target, word_frequency_list)
     
 
 def create_tab_sort_cards(fm_window:FrequencyManMainWindow):
     # Create a new tab and its layout
     (tab_layout, tab) = fm_window.create_new_tab('sort_cards', "Sort cards")
+    
+    # target data
+    target_list = TargetList()
+    if "fm_reorder_target" in fm_window.addon_config:
+        target_list.set_targets(fm_window.addon_config.get("fm_reorder_target"))
 
     # Textarea widget
     target_data_textarea = QTextEdit()
     target_data_textarea.setMinimumHeight(300);
     target_data_textarea.setAcceptRichText(False)
     target_data_textarea.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2;") 
-    target_data_textarea.setText(fm_window.target_data.dump_json())
+    target_data_textarea.setText(target_list.dump_json())
     
     # Check if the JSON and target data is valid
     def check_textarea_json_validity():
-        (validity_state, target_data) = TargetList.handle_json(target_data_textarea.toPlainText());
+        (validity_state, targets_defined) = TargetList.handle_json(target_data_textarea.toPlainText());
         palette = QPalette()
         if (validity_state == 1):
             palette.setColor(QPalette.ColorRole.Text, QColor("#23b442")) # Green
-            fm_window.target_data.load(target_data)
+            target_list.set_targets(targets_defined)
         if (validity_state == -1):
             palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c")) # Red
         target_data_textarea.setPalette(palette)   
@@ -271,7 +271,7 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow):
     # Create the "Reorder Cards" button
     exec_reorder_button = QPushButton("Reorder Cards")
     exec_reorder_button.setStyleSheet("font-size: 16px; font-weight: bold; background-color: #23b442; color: white; border:2px solid #23a03e")
-    exec_reorder_button.clicked.connect(lambda: execute_reorder(fm_window))
+    exec_reorder_button.clicked.connect(lambda: execute_reorder(fm_window, target_list))
     
     tab_layout.addWidget(target_data_textarea)
     tab_layout.addWidget(exec_reorder_button)

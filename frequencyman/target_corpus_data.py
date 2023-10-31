@@ -1,7 +1,10 @@
 from statistics import mean, median
 from typing import Any, Dict, Iterable, NewType
-import anki.cards
 
+import anki.cards
+from anki.collection import Collection
+
+from ..frequencyman.utilities import var_dump
 from ..frequencyman.target_list import Target
 from ..frequencyman.text_processing import TextProcessing
 
@@ -50,30 +53,36 @@ class TargetCorpusData:
                 self.notes_reviewed_words_familiarity[field_key][word_token] = word_familiarity_score
                 
             max_familiarity = max(self.notes_reviewed_words_familiarity[field_key].values())
-            #var_dump({'max': max_familiarity, 'avg': avg_familiarity, 'med':median_familiarity})
-            
+
             # make scores values relative
             for word_token in self.notes_reviewed_words_familiarity[field_key]:
                 rel_score = self.notes_reviewed_words_familiarity[field_key][word_token]/max_familiarity
                 self.notes_reviewed_words_familiarity[field_key][word_token] = rel_score
                 
-            # sort in descending order
-            #self.notes_reviewed_words_familiarity[field_key] = dict(sorted(self.notes_reviewed_words_familiarity[field_key].items(), key=lambda x: x[1], reverse=True))
+            # sort in descending order (todo: can be removed?)
+            self.notes_reviewed_words_familiarity[field_key] = dict(sorted(self.notes_reviewed_words_familiarity[field_key].items(), key=lambda x: x[1], reverse=True))
    
     
-    def create_data(self, target_cards:Iterable[anki.cards.Card], target:Target, mw) -> None:
+    def create_data(self, target_cards:Iterable[anki.cards.Card], target:Target, col:Collection) -> None:
         """
         Create corpus data for the given target and its cards.
         """
         target_fields_by_notes_name = target.get_notes()
         
         for card in target_cards:
-            card_note = mw.col.getNote(card.nid)
-            card_note_type = card_note.model()
-            card_has_been_reviewed = card.type == 2 and card.queue != 0 # card is of type 'review' and queue is not 'new'
             
+            assert isinstance(card.nid, int) and card.nid != 0
+            card_note = col.get_note(card.nid)
+            
+            card_note_type = col.models.get(card_note.mid)
+            
+            if (card_note_type is None):
+                raise Exception(f"Card note type not found for card.nid={card_note.mid}!")
+                continue
             if card_note_type['name'] not in target_fields_by_notes_name: # note type name is not defined as target
                 continue
+
+            card_has_been_reviewed = card.type == 2 and card.queue != 0 # card is of type 'review' and queue is not 'new'
                 
             target_note_fields = target_fields_by_notes_name[card_note_type['name']]
             

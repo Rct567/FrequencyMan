@@ -1,11 +1,13 @@
 from statistics import mean
-from aqt import QAction# type: ignore
+from typing import Sequence, Tuple
+
+from aqt import QAction
 from aqt.qt import *
+from aqt.main import AnkiQt
+
 import anki.cards
-from anki.models import NoteType
-from anki.cards import Card
+from anki.collection import Collection
 from aqt.utils import showInfo
-from typing import Tuple
 
 from .frequencyman.utilities import *
 from .frequencyman.target_corpus_data import TargetCorpusData
@@ -17,15 +19,14 @@ def get_mw():
     from aqt import mw # type: ignore
     return mw
 
-mw = get_mw()
-
+mw:AnkiQt = get_mw()
 
 # FrequencyMan Main Window class
 class FrequencyManMainWindow(QDialog):
     
     target_data:TargetList
     
-    def __init__(self):
+    def __init__(self, mw:AnkiQt):
         super().__init__(mw) 
         self.setWindowTitle("FrequencyMan")
         
@@ -47,7 +48,6 @@ class FrequencyManMainWindow(QDialog):
         # Addon config
         self.addon_config = mw.addonManager.getConfig(__name__)
         
-        
     def create_new_tab(self, tab_id: str, tab_name: str) -> Tuple[QVBoxLayout, QWidget]:
         tab = QWidget()
         self.tab_menu_options[tab_id] = tab
@@ -62,7 +62,7 @@ class FrequencyManMainWindow(QDialog):
         return (tab_layout, tab)
   
 
-def ideal_word_count_score(word_count, ideal_num) -> float:
+def card_field_ideal_word_count_score(word_count, ideal_num) -> float:
 
     if word_count < ideal_num:
         m = 7
@@ -73,10 +73,12 @@ def ideal_word_count_score(word_count, ideal_num) -> float:
     return mean([max(0, score), 1])
 
     
-def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, word_frequency_lists:WordFrequencyLists) -> float:
+def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, word_frequency_lists:WordFrequencyLists, col:Collection) -> float:
     
-    card_note = mw.col.getNote(card.nid)
-    card_note_type = card_note.model()
+    card_note = col.get_note(card.nid)
+    card_note_type_id = card_note.mid
+    assert isinstance(card_note_type_id, int)
+    assert card_note_type_id != 0
     
     card_ranking_factors:dict[str, float] = {}
     
@@ -100,7 +102,7 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
         field_seen_words:list[str] = []
         field_unseen_words:list[str] = []
         field_highest_fr_unseen_word:Tuple[str, float]  = ("", 0)
-        field_key = str(card_note_type['id'])+" => "+field_data['field_name']
+        field_key = str(card_note_type_id)+" => "+field_data['field_name']
         
         for word in field_data['field_value_tokenized']:
             word_fr = word_frequency_lists.getWordFrequency(field_data['target_language_id'], word, 0)
@@ -128,7 +130,7 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
         fields_ideal_unseen_words_count_scores.append(ideal_unseen_words_count_score)
         
         # ideal word count
-        fields_ideal_words_count_scores.append(ideal_word_count_score(len(field_data['field_value_tokenized']), 4))
+        fields_ideal_words_count_scores.append(card_field_ideal_word_count_score(len(field_data['field_value_tokenized']), 4))
         
         # highest fr unseen word
         fields_highest_fr_unseen_word.append(field_highest_fr_unseen_word)
@@ -168,7 +170,7 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
     return card_ranking
 
  
-def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists) -> bool:
+def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists, col:Collection) -> bool:
     
     target_search_query = target.construct_search_query()
     if "note:" not in target_search_query:
@@ -180,8 +182,8 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
     
     # Get results for target
     
-    target_all_cards_ids:list[int] = mw.col.findCards(target_search_query, order="c.due asc")
-    target_all_cards:list[anki.cards.Card] = [mw.col.getCard(card_id) for card_id in target_all_cards_ids]
+    target_all_cards_ids:Sequence[int] = col.find_cards(target_search_query, order="c.due asc")
+    target_all_cards:list[anki.cards.Card] = [col.get_card(card_id) for card_id in target_all_cards_ids]
     
     target_new_cards = [card for card in target_all_cards if card.queue == 0]
     target_new_cards_ids = [card.id for card in target_new_cards]
@@ -189,10 +191,10 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
     showInfo("Reordering {} new cards in a collection of {} cards!".format(len(target_new_cards_ids), len(target_all_cards))) 
     
     cards_corpus_data = TargetCorpusData()
-    cards_corpus_data.create_data(target_all_cards, target, mw)
+    cards_corpus_data.create_data(target_all_cards, target, col)
     
     # Sort cards
-    card_rankings:dict[int, float] = {card.id: get_card_ranking(card, cards_corpus_data, word_frequency_lists) for card in target_new_cards}
+    card_rankings:dict[int, float] = {card.id: get_card_ranking(card, cards_corpus_data, word_frequency_lists, col) for card in target_new_cards}
     sorted_cards = sorted(target_new_cards, key=lambda card: card_rankings[card.id], reverse=True)
     sorted_card_ids = [card.id for card in sorted_cards]
 
@@ -202,8 +204,8 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
         return False
     
     # Reposition cards and apply changes
-    mw.col.sched.forgetCards(sorted_card_ids)
-    mw.col.sched.reposition_new_cards(
+    col.sched.forgetCards(sorted_card_ids)
+    col.sched.reposition_new_cards(
         card_ids=sorted_card_ids,
         starting_from=0, step_size=1,
         randomize=False, shift_existing=True
@@ -212,14 +214,20 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
     showInfo("Done with sorting!")
     
     return True
-    
+  
+  
 def execute_reorder(fm_window:FrequencyManMainWindow, target_list:TargetList):
     
     frequency_lists_dir = os.path.join(os.path.dirname(__file__), 'user_files', 'frequency_lists')
     word_frequency_list = WordFrequencyLists(frequency_lists_dir)
+        
+    col = mw.col
+    
+    if not isinstance(col, Collection):
+        return
     
     for target in target_list:
-        reorder_target_cards(target, word_frequency_list)
+        reorder_target_cards(target, word_frequency_list, col)
     
 
 def create_tab_sort_cards(fm_window:FrequencyManMainWindow):
@@ -228,8 +236,8 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow):
     
     # target data
     target_list = TargetList()
-    if "fm_reorder_target" in fm_window.addon_config:
-        target_list.set_targets(fm_window.addon_config.get("fm_reorder_target"))
+    if fm_window.addon_config and "fm_reorder_target" in fm_window.addon_config:
+        target_list.set_targets(fm_window.addon_config.get("fm_reorder_target", []))
 
     # Textarea widget
     target_data_textarea = QTextEdit()
@@ -271,19 +279,21 @@ def create_tab_word_overview(fm_window:FrequencyManMainWindow):
 
      
 # Open the 'FrequencyMan main window'
-def open_frequencyman_main_window():
-    fm_window = FrequencyManMainWindow()
+def open_frequencyman_main_window(mw:AnkiQt):
+    fm_window = FrequencyManMainWindow(mw)
     create_tab_sort_cards(fm_window);
     create_tab_word_overview(fm_window);
     fm_window.exec()
 
 
 # Add "FrequencyMan" menu option in the "Tools" menu of the main Anki window
-def add_frequencyman_menu_option_to_anki_tools_menu():
+
+def add_frequencyman_menu_option_to_anki_tools_menu(mw:AnkiQt):
     action = QAction("FrequencyMan", mw)
-    action.triggered.connect(open_frequencyman_main_window)
+    action.triggered.connect(lambda: open_frequencyman_main_window(mw))
     mw.form.menuTools.addAction(action)
 
-add_frequencyman_menu_option_to_anki_tools_menu()
+if isinstance(mw, AnkiQt):
+    add_frequencyman_menu_option_to_anki_tools_menu(mw)
 
 

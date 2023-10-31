@@ -83,7 +83,6 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
     fields_fr_scores:list[float] = [] # Avg frequency of words, avg per field | Card with common words should go up
     fields_highest_fr_unseen_word_scores:list[float] = [] # Lowest frequency of unseen words, avg per fields | Cards introducing MOSTLY a common word should go up
     # fields_words_unfamiliarity_scores:list[float] = [] # | Card with words seen a lot should go down
-    # fields_words_problematic_occurrence_scores:list[float] = [] # Problematic_occurrence_score of words, avg per field | Cards with problematic words should go up
     # fields_words_fresh_occurrence_scores:list[float] = [] # Freshness of words, avg per field | Cards with fresh words (recently matured?) should go up
      
     # get scores per field
@@ -108,6 +107,7 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
 
             #word_lexical_discrepancy_rating = (word_fr - familiarity)
             #word_novelty_rating = (1-familiarity) notes_reviewed_words_familiarity
+            #card_perplexity_rating = avg( word_novelty_rating/card_word_count where word_novelty_rating < 0.5 ) /
             field_fr_scores.append(word_fr)
             if word in cards_corpus_data.notes_reviewed_words.get(field_key, {}):
                 field_seen_words.append(word) # word seen, word exist in at least one reviewed card
@@ -141,7 +141,7 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
     card_ranking_factors['focus_word_frequency_score'] = mean(fields_highest_fr_unseen_word_scores) #todo: make relative to num words?  
     card_ranking_factors['ideal_unseen_word_count'] = mean(fields_ideal_unseen_words_count_scores)
     card_ranking_factors['ideal_word_count'] = mean(fields_ideal_words_count_scores)
-    # card_ranking_factors['words_problematic_occurrence_scores'] = mean(fields_words_problematic_occurrence_scores) 
+
     # card_ranking_factors['words_fresh_occurrence_scores'] = mean(fields_words_fresh_occurrence_scores) 
  
     # final ranking
@@ -181,11 +181,8 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
     
     # Get results for target
     
-    target_all_cards_ids = mw.col.find_cards(target_search_query, order="c.due asc")
-    target_all_cards = [mw.col.get_card(card_id) for card_id in target_all_cards_ids]
-    
-    for card in target_all_cards:
-        card.note = mw.col.getNote(card.nid)
+    target_all_cards_ids = mw.col.findCards(target_search_query, order="c.due asc")
+    target_all_cards = [mw.col.getCard(card_id) for card_id in target_all_cards_ids]
     
     target_new_cards = [card for card in target_all_cards if card.queue == 0]
     target_new_cards_ids = [card.id for card in target_new_cards]
@@ -193,7 +190,7 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
     showInfo("Reordering {} new cards in a collection of {} cards!".format(len(target_new_cards_ids), len(target_all_cards))) 
     
     cards_corpus_data = TargetCorpusData()
-    cards_corpus_data.create_data(target_all_cards, target)
+    cards_corpus_data.create_data(target_all_cards, target, mw)
     
     # Sort cards
     sorted_cards = sorted(target_new_cards, key=lambda card: get_card_ranking(card, cards_corpus_data, word_frequency_lists), reverse=True)

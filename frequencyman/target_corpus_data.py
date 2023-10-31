@@ -61,15 +61,14 @@ class TargetCorpusData:
             #self.notes_reviewed_words_familiarity[field_key] = dict(sorted(self.notes_reviewed_words_familiarity[field_key].items(), key=lambda x: x[1], reverse=True))
    
     
-    def create_data(self, target_cards:Iterable[anki.cards.Card], target:Target) -> None:
+    def create_data(self, target_cards:Iterable[anki.cards.Card], target:Target, mw) -> None:
         """
         Create corpus data for the given target and its cards.
         """
         target_fields_by_notes_name = target.get_notes()
         
         for card in target_cards:
-            #card_note = mw.col.getNote(card.nid)
-            card_note = card.note
+            card_note = mw.col.getNote(card.nid)
             card_note_type = card_note.model()
             card_has_been_reviewed = card.type == 2 and card.queue != 0 # card is of type 'review' and queue is not 'new'
             

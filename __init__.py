@@ -175,14 +175,13 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
         showInfo("No valid note type defined. At least one note is required for reordering!")
         return False
     
-    # load frequency lists for target
-    
+    # load frequency lists for target  
     word_frequency_lists.load_frequency_lists(target.get_notes_language_keys())
     
     # Get results for target
     
-    target_all_cards_ids = mw.col.findCards(target_search_query, order="c.due asc")
-    target_all_cards = [mw.col.getCard(card_id) for card_id in target_all_cards_ids]
+    target_all_cards_ids:list[int] = mw.col.findCards(target_search_query, order="c.due asc")
+    target_all_cards:list[anki.cards.Card] = [mw.col.getCard(card_id) for card_id in target_all_cards_ids]
     
     target_new_cards = [card for card in target_all_cards if card.queue == 0]
     target_new_cards_ids = [card.id for card in target_new_cards]
@@ -193,7 +192,8 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
     cards_corpus_data.create_data(target_all_cards, target, mw)
     
     # Sort cards
-    sorted_cards = sorted(target_new_cards, key=lambda card: get_card_ranking(card, cards_corpus_data, word_frequency_lists), reverse=True)
+    card_rankings:dict[int, float] = {card.id: get_card_ranking(card, cards_corpus_data, word_frequency_lists) for card in target_new_cards}
+    sorted_cards = sorted(target_new_cards, key=lambda card: card_rankings[card.id], reverse=True)
     sorted_card_ids = [card.id for card in sorted_cards]
 
     # Avoid making unnecessary changes

@@ -1,12 +1,13 @@
 import anki
 from aqt import mw # type: ignore
-from typing import List, TypedDict
+from typing import TypedDict
+
+from ..frequencyman.utilities import chunked_list
 
 #var_dump([mw.col.card_stats_data(card.id).revlog, mw.col.db.all("SELECT id, ease, ivl,  lastIvl, factor, type FROM revlog WHERE cid = ?", card.id)])
 
 
-def chunked_list(input_list: List, chunk_size: int) -> List[List]:
-    return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
+
     
 ReviewEntry = TypedDict('ReviewEntry', {"id": int, "ease": int, "ivl": int, "lastIvl": int, "factor": int, "type": int})
 

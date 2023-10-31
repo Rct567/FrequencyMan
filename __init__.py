@@ -1,6 +1,3 @@
-from io import StringIO
-import io
-import pstats
 from statistics import mean
 from aqt import QAction# type: ignore
 from aqt.qt import *
@@ -8,15 +5,13 @@ import anki.cards
 from anki.models import NoteType
 from anki.cards import Card
 from aqt.utils import showInfo
-from typing import Any, Dict, Iterable, NewType, Tuple, TypedDict
+from typing import Tuple
 
+from .frequencyman.utilities import *
 from .frequencyman.target_corpus_data import TargetCorpusData
 from .frequencyman.word_frequency_list import WordFrequencyLists
 from .frequencyman.target_list import Target, TargetList
-import pprint
 
-import cProfile
-from contextlib import contextmanager
 
 def get_mw():
     from aqt import mw # type: ignore
@@ -24,41 +19,6 @@ def get_mw():
 
 mw = get_mw()
 
-var_dump_count = 0
-
-def var_dump(var) -> None:
-    global var_dump_count
-    if var_dump_count < 10:
-        var_str = pprint.pformat(var, sort_dicts=False)
-        if len(var_str) > 2000:
-            var_str = var_str[:2000].rsplit(' ', 1)[0]
-        showInfo(var_str)
-        var_dump_count += 1
-        
-def var_dump_log(var) -> None:
-    dump_log_file = os.path.join(os.path.dirname(__file__), 'dump.log')
-    with open(dump_log_file, 'a', encoding='utf-8') as file:
-            file.write(pprint.pformat(var, sort_dicts=False) + "\n\n=================================================================\n\n")
-    var_dump(var)
-    
-
-@contextmanager
-def profile_context(sortby=pstats.SortKey.CUMULATIVE):
-    profiler = cProfile.Profile()
-    profiler.enable()
-    try:
-        yield profiler
-    finally:
-        profiler.disable()
-        s = io.StringIO()
-        ps = pstats.Stats(profiler, stream=s).sort_stats(sortby)
-        ps.print_callers()
-        print("\n\n\n=========================================\n\n\n")
-        ps.print_stats()
-        profiling_results = s.getvalue()
-        dump_file = os.path.join(os.path.dirname(__file__), 'profiling_results.txt')
-        with open(dump_file, 'w') as f:
-            f.write(profiling_results)
 
 # FrequencyMan Main Window class
 class FrequencyManMainWindow(QDialog):

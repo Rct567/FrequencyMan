@@ -34,7 +34,6 @@ class TargetCorpusData:
             field_all_word_presence_scores = [sum(word_scores) for word_scores in self.notes_reviewed_words_occurrences[field_key].values()]
             field_avg_word_presence_score = mean(field_all_word_presence_scores)
             field_median_word_presence_score = median(field_all_word_presence_scores)
-            #var_dump({'avg':field_avg_word_score, 'max': max(field_all_word_scores), 'median': field_median_word_score})
             
             if field_key not in self.notes_reviewed_words_familiarity:
                 self.notes_reviewed_words_familiarity[field_key] = {}
@@ -42,7 +41,7 @@ class TargetCorpusData:
             for word_token in self.notes_reviewed_words_occurrences[field_key]:
                 
                 word_presence_scores = self.notes_reviewed_words_occurrences[field_key][word_token]
-                word_familiarity_score = sum(word_presence_scores)
+                word_familiarity_score = sum(word_presence_scores) # todo: also incorporate cards review time?
                 if (word_familiarity_score > field_median_word_presence_score): # flatten the top half
                     word_familiarity_score = mean([word_familiarity_score, field_median_word_presence_score])
                 if (word_familiarity_score > 10*field_median_word_presence_score):
@@ -59,7 +58,7 @@ class TargetCorpusData:
                 self.notes_reviewed_words_familiarity[field_key][word_token] = rel_score
                 
             # sort in descending order
-            self.notes_reviewed_words_familiarity[field_key] = dict(sorted(self.notes_reviewed_words_familiarity[field_key].items(), key=lambda x: x[1], reverse=True))
+            #self.notes_reviewed_words_familiarity[field_key] = dict(sorted(self.notes_reviewed_words_familiarity[field_key].items(), key=lambda x: x[1], reverse=True))
    
     
     def create_data(self, target_cards:Iterable[anki.cards.Card], target:Target) -> None:

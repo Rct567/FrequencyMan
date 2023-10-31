@@ -105,7 +105,9 @@ def get_card_ranking(card:anki.cards.Card, cards_corpus_data:TargetCorpusData, w
         
         for word in field_data['field_value_tokenized']:
             word_fr = word_frequency_lists.getWordFrequency(field_data['target_language_id'], word, 0)
-            #word_priority_rating = (word_fr - familiarity)
+
+            #word_lexical_discrepancy_rating = (word_fr - familiarity)
+            #word_novelty_rating = (1-familiarity) notes_reviewed_words_familiarity
             field_fr_scores.append(word_fr)
             if word in cards_corpus_data.notes_reviewed_words.get(field_key, {}):
                 field_seen_words.append(word) # word seen, word exist in at least one reviewed card
@@ -186,11 +188,8 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
 
     showInfo("Reordering {} new cards in a collection of {} cards!".format(len(target_new_cards_ids), len(target_all_cards))) 
     
-    #cards_corpus_data = get_target_cards_corpus_data(target_all_cards, target)  
     cards_corpus_data = TargetCorpusData()
     cards_corpus_data.create_data(target_all_cards, target)
-    
-    #var_dump({'num_cards': len(target_cards), 'num_new_cards': len(target_new_cards), 'query': target_search_query})
     
     # Sort cards
     sorted_cards = sorted(target_new_cards, key=lambda card: get_card_ranking(card, cards_corpus_data, word_frequency_lists), reverse=True)

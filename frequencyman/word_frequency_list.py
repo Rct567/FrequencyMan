@@ -20,25 +20,41 @@ class WordFrequencyLists:
         self.list_dir = list_dir
     
     def __getitem__(self, key:str):
-        self.load_frequency_list_if_needed(key)
+        self.require_loaded_lists(key)
         return self.word_frequency_lists[key]
      
     def __contains__(self, key:str):
-        self.load_frequency_list_if_needed(key)
+        self.require_loaded_lists(key)
         return key in self.word_frequency_lists
     
     def get(self, key:str, default=None):
-        self.load_frequency_list_if_needed(key)
+        self.require_loaded_lists(key)
         return self.word_frequency_lists.get(key, default)
     
     def getWordFrequency(self, key:str, word:str, default:float):
-        self.load_frequency_list_if_needed(key)
+        self.require_loaded_lists(key)
         return self.word_frequency_lists[key].get(word, default)
     
-    def alreadyLoaded(self, key:str):
+    def alreadyLoaded(self, key:str) -> bool:
         return key in self.word_frequency_lists
     
-    def load_frequency_list_if_needed(self, key:str) -> bool:
+    def require_loaded_lists(self, key=None) -> None:
+        if (len(self.word_frequency_lists) < 1):
+            raise Exception("No word frequency lists loaded.")
+        if key is not None:
+            if key not in self.word_frequency_lists:
+                raise Exception(f"Word frequency list '{key}' not loaded.")
+            if (len(self.word_frequency_lists[key]) < 1):
+                raise Exception(f"Word frequency list '{key}' not loaded.")
+            
+    
+    def load_frequency_lists(self, keys:list[str]) -> None:
+        for key in keys:
+            self.load_frequency_list(key)
+        
+    
+    def load_frequency_list(self, key:str) -> bool:
+        
         if self.alreadyLoaded(key):
             return True
         

@@ -32,6 +32,14 @@ class Target:
     def get_notes(self) -> dict[str, dict[str, str]]:
         return {note.get('name'): note.get('fields', {}) for note in self.target.get('notes', [])} 
     
+    def get_notes_language_keys(self) -> list[str]:
+        keys = []
+        for note in self.target.get('notes', []):
+            for lang_key in note['fields'].values():
+                keys.append(lang_key)
+        return keys   
+        
+    
     def construct_search_query(self) -> str:
         target_notes = self.get("notes", []) if isinstance(self.get("notes"), list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]

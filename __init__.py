@@ -175,6 +175,10 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists)
         showInfo("No valid note type defined. At least one note is required for reordering!")
         return False
     
+    # load frequency lists for target
+    
+    word_frequency_lists.load_frequency_lists(target.get_notes_language_keys())
+    
     # Get results for target
     
     target_all_cards_ids = mw.col.find_cards(target_search_query, order="c.due asc")

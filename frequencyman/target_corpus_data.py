@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, NewType
 import anki.cards
 from anki.collection import Collection
 
-from ..frequencyman.utilities import var_dump
+from .lib.utilities import var_dump
 from ..frequencyman.target_list import Target
 from ..frequencyman.text_processing import TextProcessing
 

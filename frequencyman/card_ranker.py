@@ -4,7 +4,7 @@ from typing import Tuple
 import anki.cards
 from anki.collection import Collection
 
-from ..frequencyman.utilities import *
+from .lib.utilities import *
 from ..frequencyman.target_corpus_data import TargetCorpusData
 from ..frequencyman.word_frequency_list import WordFrequencyLists
 

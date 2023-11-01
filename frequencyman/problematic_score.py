@@ -2,7 +2,7 @@ import anki
 from aqt import mw # type: ignore
 from typing import TypedDict
 
-from ..frequencyman.utilities import chunked_list
+from .lib.utilities import chunked_list
 
 #var_dump([mw.col.card_stats_data(card.id).revlog, mw.col.db.all("SELECT id, ease, ivl,  lastIvl, factor, type FROM revlog WHERE cid = ?", card.id)])
 

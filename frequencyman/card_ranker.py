@@ -2,6 +2,7 @@ from statistics import mean
 from typing import Tuple
 
 import anki.cards
+from anki.cards import CardId
 from anki.collection import Collection
 
 from .lib.utilities import *
@@ -28,6 +29,11 @@ class CardRanker:
         score = 1 / (1 + (difference / ideal_num) ** m)
         return mean([max(0, score), 1])
 
+
+    def calc_cards_ranking(self, cards:list[anki.cards.Card]) -> dict[CardId, float]:
+    
+        card_rankings = {card.id: self.calc_card_ranking(card) for card in cards}    
+        return card_rankings  
         
     def calc_card_ranking(self, card:anki.cards.Card) -> float:
         
@@ -106,6 +112,7 @@ class CardRanker:
         card_ranking = mean(card_ranking_factors.values())
 
         # set data in card fields 
+        update_note = False
         if 'fm_debug_info' in card_note:
             debug_info = {
                 'fr_scores': fields_fr_scores, 
@@ -115,12 +122,15 @@ class CardRanker:
                 'fields_highest_fr_unseen_word': fields_highest_fr_unseen_word,
             }
             card_note['fm_debug_info'] = pprint.pformat(debug_info, width=120, sort_dicts=False).replace('\n', '<br>')
-            card_note.flush()
+            update_note = True
         if 'fm_seen_words' in card_note:
             card_note['fm_seen_words'] = pprint.pformat(fields_seen_words).replace('\n', '<br>')
-            card_note.flush()
+            update_note = True
         if 'fm_unseen_words' in card_note:
             card_note['fm_unseen_words'] = pprint.pformat(fields_unseen_words).replace('\n', '<br>')
-            card_note.flush()
+            update_note = True
+        
+        if update_note:
+            self.col.update_note(card_note)
         
         return card_ranking

@@ -87,7 +87,7 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
     
     # Sort cards
     card_ranker = CardRanker(cards_corpus_data, word_frequency_lists, col)
-    card_rankings:dict[int, float] = {card.id: card_ranker.calc_card_ranking(card) for card in target_new_cards}
+    card_rankings = card_ranker.calc_cards_ranking(target_new_cards)
     sorted_cards = sorted(target_new_cards, key=lambda card: card_rankings[card.id], reverse=True)
     sorted_card_ids = [card.id for card in sorted_cards]
 

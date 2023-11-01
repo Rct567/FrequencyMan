@@ -8,7 +8,7 @@ import anki.cards
 from anki.collection import Collection
 from aqt.utils import showInfo
 
-from frequencyman.card_ranker import CardRanker
+from .frequencyman.card_ranker import CardRanker
 from .frequencyman.utilities import *
 from .frequencyman.target_corpus_data import TargetCorpusData
 from .frequencyman.word_frequency_list import WordFrequencyLists

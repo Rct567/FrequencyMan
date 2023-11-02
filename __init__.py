@@ -7,7 +7,7 @@ from aqt.main import AnkiQt
 
 import anki.cards
 from anki.collection import Collection
-from aqt.utils import showInfo
+from aqt.utils import showInfo, askUser, tooltip, showWarning
 
 from .frequencyman.card_ranker import CardRanker
 from .frequencyman.lib.utilities import *
@@ -157,28 +157,49 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow):
         example_target:ConfigTargetData = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
         example_target_list = [example_target]
         target_data_textarea.setText(json.dumps(example_target_list, indent=4))
+        
+    # Validation info
+    validation_info = QLabel()
+    validation_info.setText("Hello :)")
+    validation_info.setStyleSheet("font-weight: bolder; font-size: 13px; line-height: 1.2; margin-bottom:20px;")
+    validation_info.setVisible(False)
     
     # Check if the JSON and target data is valid
     def check_textarea_json_validity():
-        (json_validity_state, targets_defined) = TargetList.handle_json(target_data_textarea.toPlainText());
+        (json_validity_state, targets_defined, err_desc) = TargetList.handle_json(target_data_textarea.toPlainText());
         palette = QPalette()
         if (json_validity_state == 1): # valid
             palette.setColor(QPalette.ColorRole.Text, QColor("#23b442")) # Green
+            validation_info.setVisible(False)
             target_list.set_targets(targets_defined) # set new targets
+        else:
+            validation_info.setVisible(True)
         if (json_validity_state == -1): # invalid json
             palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c")) # Red
-        target_data_textarea.setPalette(palette)   
+        target_data_textarea.setPalette(palette) 
+        validation_info.setText(err_desc)  
+        return json_validity_state
 
     # Connect the check_json_validity function to textChanged signal
     target_data_textarea.textChanged.connect(check_textarea_json_validity)
     check_textarea_json_validity()
 
     # Create the "Reorder Cards" button
+    def user_clicked_reorder_button():
+        json_validity_state = check_textarea_json_validity()
+        if json_validity_state == 1:
+            execute_reorder(fm_window, target_list)
+        elif target_list.has_targets() and askUser("Defined targets are not valid. Restore previous defined targets?"):
+            target_data_textarea.setText(target_list.dump_json())
+        else:
+            showWarning("Defined targets are not valid!")     
+    
     exec_reorder_button = QPushButton("Reorder Cards")
     exec_reorder_button.setStyleSheet("font-size: 16px; font-weight: bold; background-color: #23b442; color: white; border:2px solid #23a03e")
-    exec_reorder_button.clicked.connect(lambda: execute_reorder(fm_window, target_list))
+    exec_reorder_button.clicked.connect(user_clicked_reorder_button)
     
     tab_layout.addWidget(target_data_textarea)
+    tab_layout.addWidget(validation_info)
     tab_layout.addWidget(exec_reorder_button)
     tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)) # Add an empty spacer row to compress the rows above
     

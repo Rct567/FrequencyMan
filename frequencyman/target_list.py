@@ -90,26 +90,34 @@ class TargetList:
     @staticmethod
     def validate_target(target:dict) -> Tuple[int, str]:
         if not isinstance(target, dict) or len(target.keys()) == 0:
-            return (0, "Target is missing keys or is not a valid type.")
+            return (0, "Target is missing keys or is not a valid type (object expected). ")
         for key in target.keys():
             if key not in ("deck", "notes"):
                 return (0, f"Target has invalid key '{key}'.")
         # check field value for notes 
         if 'notes' not in target.keys():
-            return (0, "Target does not specify value for 'notes'.")
+            return (0, "Target object is missing key 'notes'.")
         elif not isinstance(target.get('notes'), list):
-            return (0, "Target value for 'notes' is not an Array.")
+            return (0, "Target object value for 'notes' is not a valid type (array expected).")
         elif len(target.get('notes', [])) == 0:
-            return (0, "Target value for 'notes' is empty.")
+            return (0, "Target object value for 'notes' is empty.")
+        
+        for note in target.get('notes', []):
+            if not isinstance(note, dict):
+                return (0, "Note specified in target.notes is not a valid type (object expected).")
+            if "name" not in note:
+                return (0, "Note object specified in target.notes is missing key 'name'.")
+            if "fields" not in note:
+                return (0, "Note object specified in target.notes is is missing key 'fields'.")
     
         return (1, "")
         
     @staticmethod
     def validate_list(target_data: list) -> Tuple[int, str]: 
         if not isinstance(target_data, list):
-            return (0, "Reorder target is not a list.")
+            return (0, "Reorder target is not a valid type (array expected)")
         elif len(target_data) < 1:
-            return (0, "Reorder target list is empty.")
+            return (0, "Reorder target is an empty array.")
         for target in target_data:
             (validity_state, err_desc) = TargetList.validate_target(target)
             if validity_state == 0:
@@ -117,15 +125,15 @@ class TargetList:
         return (1, "")
     
     @staticmethod
-    def handle_json(json_data: str) -> Tuple[int, list[ConfigTargetData]]:
+    def handle_json(json_data: str) -> Tuple[int, list[ConfigTargetData], str]:
         try:
             data:TargetList = json.loads(json_data)
             if isinstance(data, list):
-                (validity_state, _) = TargetList.validate_list(data)
-                return (validity_state, data)
-            return (-1, [])
+                (validity_state, err_desc) = TargetList.validate_list(data)
+                return (validity_state, data, err_desc)
+            return (-1, [], "Not a list!")
         except json.JSONDecodeError:
-            return (-1, [])
+            return (-1, [], "Invalid JSON!")
 
 
     

@@ -1,3 +1,4 @@
+import json
 from typing import Sequence, Tuple
 
 from aqt import QAction
@@ -12,7 +13,7 @@ from .frequencyman.card_ranker import CardRanker
 from .frequencyman.lib.utilities import *
 from .frequencyman.target_corpus_data import TargetCorpusData
 from .frequencyman.word_frequency_list import WordFrequencyLists
-from .frequencyman.target_list import Target, TargetList
+from .frequencyman.target_list import ConfigTargetData, ConfigTargetDataNotes, Target, TargetList
 
 
 def get_mw():
@@ -65,11 +66,18 @@ class FrequencyManMainWindow(QDialog):
 def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists, col:Collection) -> bool:
     
     target_search_query = target.construct_search_query()
+
     if "note:" not in target_search_query:
         showInfo("No valid note type defined. At least one note is required for reordering!")
         return False
     
     # load frequency lists for target  
+    
+    for lang_key in target.get_notes_language_keys():
+        if not word_frequency_lists.key_has_list_file(lang_key):
+            showInfo("No word frequency list file found for key '{}'!".format(lang_key))
+            return False
+    
     word_frequency_lists.load_frequency_lists(target.get_notes_language_keys())
     
     # Get results for target
@@ -110,17 +118,22 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
   
   
 def execute_reorder(fm_window:FrequencyManMainWindow, target_list:TargetList):
-    
-    frequency_lists_dir = os.path.join(os.path.dirname(__file__), 'user_files', 'frequency_lists')
-    word_frequency_list = WordFrequencyLists(frequency_lists_dir)
         
     col = mw.col
     
     if not isinstance(col, Collection):
+        showInfo("Collection not found!")
         return
     
+    if not target_list.has_targets():
+        showInfo("No targets defined!")
+        return
+    
+    frequency_lists_dir = os.path.join(os.path.dirname(__file__), 'user_files', 'frequency_lists')
+    word_frequency_lists = WordFrequencyLists(frequency_lists_dir)
+    
     for target in target_list:
-        reorder_target_cards(target, word_frequency_list, col)
+        reorder_target_cards(target, word_frequency_lists, col)
     
 
 def create_tab_sort_cards(fm_window:FrequencyManMainWindow):
@@ -129,24 +142,30 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow):
     
     # target data
     target_list = TargetList()
-    if fm_window.addon_config and "fm_reorder_target" in fm_window.addon_config:
-        target_list.set_targets(fm_window.addon_config.get("fm_reorder_target", []))
+    if fm_window.addon_config and "fm_reorder_target_list" in fm_window.addon_config:
+        target_list.set_targets(fm_window.addon_config.get("fm_reorder_target_list", []))
 
     # Textarea widget
     target_data_textarea = QTextEdit()
     target_data_textarea.setMinimumHeight(300);
     target_data_textarea.setAcceptRichText(False)
     target_data_textarea.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2;") 
-    target_data_textarea.setText(target_list.dump_json())
+    if (target_list.has_targets()):
+        target_data_textarea.setText(target_list.dump_json())
+    else:
+        example_data_notes_item:ConfigTargetDataNotes = {'name': '** name of notes type **', 'fields': {"Front": "EN", "Back": "JP"}}
+        example_target:ConfigTargetData = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
+        example_target_list = [example_target]
+        target_data_textarea.setText(json.dumps(example_target_list, indent=4))
     
     # Check if the JSON and target data is valid
     def check_textarea_json_validity():
-        (validity_state, targets_defined) = TargetList.handle_json(target_data_textarea.toPlainText());
+        (json_validity_state, targets_defined) = TargetList.handle_json(target_data_textarea.toPlainText());
         palette = QPalette()
-        if (validity_state == 1):
+        if (json_validity_state == 1): # valid
             palette.setColor(QPalette.ColorRole.Text, QColor("#23b442")) # Green
-            target_list.set_targets(targets_defined)
-        if (validity_state == -1):
+            target_list.set_targets(targets_defined) # set new targets
+        if (json_validity_state == -1): # invalid json
             palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c")) # Red
         target_data_textarea.setPalette(palette)   
 

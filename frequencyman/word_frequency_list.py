@@ -51,41 +51,55 @@ class WordFrequencyLists:
     def load_frequency_lists(self, keys:list[str]) -> None:
         for key in keys:
             self.load_frequency_list(key)
-        
-    
-    def load_frequency_list(self, key:str) -> bool:
-        
-        if self.alreadyLoaded(key):
-            return True
-        
+            
+    def key_has_list_file(self, key:str) -> bool: 
+        return len(self.get_files_for_lang_key(key)) > 0
+       
+    def keys_have_list_file(self, keys:list[str]) -> bool:
+        for key in keys:
+            if not self.key_has_list_file(key):
+                return False
+        return True
+      
+    def get_files_for_lang_key(self, key:str) -> list[str]:
         key = key.lower()
         possible_file = os.path.join(self.list_dir, key+".txt")
         possible_dir = os.path.join(self.list_dir, key)
         
-        if os.path.isfile(possible_file):
-            file_or_dir = possible_file
-        elif os.path.isdir(possible_dir):
-            file_or_dir = possible_dir
-        else:
-            raise ValueError(f"Not word frequency list found for key '{key}'.")
+        files = []
         
-        word_frequency_list = self.load_word_frequency_list(file_or_dir)
+        if os.path.isfile(possible_file):
+            files.append(possible_file)
+        elif os.path.isdir(possible_dir):
+            for file_name in os.listdir(possible_dir):
+                if not file_name.endswith('.txt'):
+                    continue
+                files.append(os.path.join(possible_dir, file_name))   
+        return files
+        
+    
+    def load_frequency_list(self, key:str) -> bool:
+        if self.alreadyLoaded(key):
+            return True
+        
+        files = self.get_files_for_lang_key(key)
+        
+        if len(files) < 1:
+            raise ValueError(f"No word frequency list found for key '{key}'.")
+        
+        word_frequency_list = self.load_word_frequency_list(files)
         self.word_frequency_lists[key] = word_frequency_list;
         return True
     
 
-    def load_word_frequency_list(self, file_or_directory: str) -> Dict[str, float]:
+    def load_word_frequency_list(self, files: list[str]) -> Dict[str, float]:
         word_rankings: Dict[str, list[int]] = {}
         word_rankings_combined: Dict[str, int] = {}
 
-        if os.path.isdir(file_or_directory):
-            for file_name in os.listdir(file_or_directory):
-                if not file_name.endswith('.txt'):
-                    continue
-                with open(os.path.join(file_or_directory, file_name), encoding='utf-8') as file:
-                    self.load_word_rankings_from_file(file, word_rankings)
-        else:
-            with open(file_or_directory, encoding='utf-8') as file:
+        for file_name in files:
+            if not file_name.endswith('.txt'):
+                continue
+            with open(os.path.join(file_name, file_name), encoding='utf-8') as file:
                 self.load_word_rankings_from_file(file, word_rankings)
 
         for word, rankings in word_rankings.items():

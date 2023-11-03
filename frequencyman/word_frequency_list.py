@@ -106,7 +106,7 @@ class WordFrequencyLists:
 
         for word, rankings in word_rankings.items():
             # word_rankings_combined[word] = sum(rankings) / len(rankings)
-            word_rankings_combined[word] = max(rankings)
+            word_rankings_combined[word] = min(rankings) # highest position
 
         max_rank = max(word_rankings_combined.values())
         return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in word_rankings_combined.items()}

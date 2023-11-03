@@ -82,7 +82,7 @@ class CardRanker:
                 field_words_fr_scores[word] = word_fr
                 
                 # lowest fr word
-                if field_lowest_fr_word[1] == 0 or word_fr < field_lowest_fr_word[1]:
+                if field_lowest_fr_word[0] == "" or word_fr < field_lowest_fr_word[1]:
                     field_lowest_fr_word = (word, word_fr) 
                 
                 # set seen, unseen and highest fr unseen

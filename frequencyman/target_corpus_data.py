@@ -5,9 +5,9 @@ import anki.cards
 from anki.collection import Collection
 from anki.cards import CardId, Card
 
-from .lib.utilities import var_dump
-from ..frequencyman.target_list import Target
-from ..frequencyman.text_processing import TextProcessing
+from .lib.utilities import *
+from .target_list import Target
+from .text_processing import TextProcessing
 
 HandledCardsFields = TypedDict('HandledCardsFields', {'card': Card, 'accepted_fields': list[dict[str, str]]})
 

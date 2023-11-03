@@ -2,7 +2,7 @@ from io import TextIOWrapper
 import re
 from typing import Dict
 
-from .lib.utilities import var_dump
+from .lib.utilities import *
 from .text_processing import TextProcessing
 import os
 

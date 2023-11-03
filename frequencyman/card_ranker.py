@@ -5,8 +5,8 @@ from anki.cards import CardId, Card
 from anki.collection import Collection
 
 from .lib.utilities import *
-from ..frequencyman.target_corpus_data import TargetCorpusData
-from ..frequencyman.word_frequency_list import WordFrequencyLists
+from .target_corpus_data import TargetCorpusData
+from .word_frequency_list import WordFrequencyLists
 
 
 class CardRanker:

@@ -1,7 +1,9 @@
 from io import TextIOWrapper
 import re
 from typing import Dict
-from ..frequencyman.text_processing import TextProcessing
+
+from .lib.utilities import var_dump
+from .text_processing import TextProcessing
 import os
 
 class WordFrequencyList:
@@ -31,11 +33,11 @@ class WordFrequencyLists:
         self.require_loaded_lists(key)
         return self.word_frequency_lists.get(key, default)
     
-    def getWordFrequency(self, key:str, word:str, default:float):
+    def get_word_frequency(self, key:str, word:str, default:float):
         self.require_loaded_lists(key)
         return self.word_frequency_lists[key].get(word, default)
     
-    def alreadyLoaded(self, key:str) -> bool:
+    def already_loaded(self, key:str) -> bool:
         return key in self.word_frequency_lists
     
     def require_loaded_lists(self, key=None) -> None:
@@ -79,7 +81,7 @@ class WordFrequencyLists:
         
     
     def load_frequency_list(self, key:str) -> bool:
-        if self.alreadyLoaded(key):
+        if self.already_loaded(key):
             return True
         
         files = self.get_files_for_lang_key(key)

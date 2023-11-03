@@ -36,7 +36,7 @@ class Target:
         keys = []
         for note in self.target.get('notes', []):
             for lang_key in note['fields'].values():
-                keys.append(lang_key)
+                keys.append(lang_key.lower())
         return keys   
         
     

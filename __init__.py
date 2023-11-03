@@ -5,7 +5,7 @@ from aqt import QAction
 from aqt.qt import *
 from aqt.main import AnkiQt
 
-import anki.cards
+from anki.cards import CardId, Card
 from anki.collection import Collection
 from aqt.utils import showInfo, askUser, tooltip, showWarning
 
@@ -82,8 +82,8 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
     
     # Get results for target
     
-    target_all_cards_ids:Sequence[int] = col.find_cards(target_search_query, order="c.due asc")
-    target_all_cards:list[anki.cards.Card] = [col.get_card(card_id) for card_id in target_all_cards_ids]
+    target_all_cards_ids = col.find_cards(target_search_query, order="c.due asc")
+    target_all_cards = [col.get_card(card_id) for card_id in target_all_cards_ids]
     
     target_new_cards = [card for card in target_all_cards if card.queue == 0]
     target_new_cards_ids = [card.id for card in target_new_cards]

@@ -1,8 +1,7 @@
 from statistics import mean
 from typing import Tuple
 
-import anki.cards
-from anki.cards import CardId
+from anki.cards import CardId, Card
 from anki.collection import Collection
 
 from .lib.utilities import *
@@ -30,12 +29,12 @@ class CardRanker:
         return mean([max(0, score), 1])
 
 
-    def calc_cards_ranking(self, cards:list[anki.cards.Card]) -> dict[CardId, float]:
+    def calc_cards_ranking(self, cards:list[Card]) -> dict[CardId, float]:
     
         card_rankings = {card.id: self.calc_card_ranking(card) for card in cards}    
         return card_rankings  
         
-    def calc_card_ranking(self, card:anki.cards.Card) -> float:
+    def calc_card_ranking(self, card:Card) -> float:
         
         card_note = self.col.get_note(card.nid)
         card_note_type_id = card_note.mid

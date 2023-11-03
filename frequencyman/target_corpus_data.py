@@ -1,12 +1,15 @@
 from statistics import mean, median
-from typing import Any, Dict, Iterable, NewType
+from typing import Iterable, TypedDict
 
 import anki.cards
 from anki.collection import Collection
+from anki.cards import CardId, Card
 
 from .lib.utilities import var_dump
 from ..frequencyman.target_list import Target
 from ..frequencyman.text_processing import TextProcessing
+
+HandledCardsFields = TypedDict('HandledCardsFields', {'card': Card, 'accepted_fields': list[dict[str, str]]})
 
 
 class TargetCorpusData:
@@ -14,9 +17,9 @@ class TargetCorpusData:
     Class representing corpus data from target cards.
     """
     
-    handled_cards: dict[int, dict[str, Any]]
+    handled_cards: dict[CardId, HandledCardsFields]
     
-    notes_reviewed_words: dict[str, dict[str, list[anki.cards.Card]]]
+    notes_reviewed_words: dict[str, dict[str, list[Card]]]
     notes_reviewed_words_occurrences: dict[str, dict[str, list[float]]] # list because a word can occur multiple times in a field
     notes_reviewed_words_familiarity: dict[str, dict[str, float]]
     
@@ -63,7 +66,7 @@ class TargetCorpusData:
             self.notes_reviewed_words_familiarity[field_key] = dict(sorted(self.notes_reviewed_words_familiarity[field_key].items(), key=lambda x: x[1], reverse=True))
    
     
-    def create_data(self, target_cards:Iterable[anki.cards.Card], target:Target, col:Collection) -> None:
+    def create_data(self, target_cards:Iterable[Card], target:Target, col:Collection) -> None:
         """
         Create corpus data for the given target and its cards.
         """

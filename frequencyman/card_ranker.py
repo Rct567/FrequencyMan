@@ -135,14 +135,14 @@ class CardRanker:
         # set data in card fields 
         update_note = False
         if 'fm_debug_info' in card_note:
-            fields_words_fr_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in fields_words_fr_scores]
+            #fields_words_fr_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in fields_words_fr_scores]
             debug_info = {
                 'fr_scores': fields_fr_scores, 
                 'focus_fr_scores': fields_highest_fr_unseen_word_scores, 
                 'ideal_unseen_word_count': fields_ideal_unseen_words_count_scores,
                 'ideal_word_count': fields_ideal_words_count_scores,
                 'fields_highest_fr_unseen_word': fields_highest_fr_unseen_word,
-                'fields_words_fr_scores': fields_words_fr_scores_sorted
+                #'fields_words_fr_scores': fields_words_fr_scores_sorted
             }
             #card_note['fm_debug_info'] = pprint.pformat(debug_info, width=120, sort_dicts=False, compact=True).replace('\n', '<br>')
             card_note['fm_debug_info'] = ''
@@ -159,7 +159,7 @@ class CardRanker:
             update_note = True
         if 'fm_lowest_fr_word' in card_note:
             printed_fields_lowest_fr_word = [f"{word} ({fr:.2f})" for (word, fr) in fields_lowest_fr_word]
-            card_note['fm_lowest_fr_word'] = "| ".join(printed_fields_lowest_fr_word)
+            card_note['fm_lowest_fr_word'] = " | ".join(printed_fields_lowest_fr_word)
             update_note = True
         
         if update_note:

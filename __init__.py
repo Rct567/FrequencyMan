@@ -88,7 +88,8 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
     target_new_cards = [card for card in target_all_cards if card.queue == 0]
     target_new_cards_ids = [card.id for card in target_new_cards]
 
-    showInfo("Reordering {} new cards in a collection of {} cards!".format(len(target_new_cards_ids), len(target_all_cards))) 
+    if not askUser("Reorder {:n} new cards in a collection of {:n} cards?".format(len(target_new_cards_ids), len(target_all_cards))):
+        return False
     
     cards_corpus_data = TargetCorpusData()
     cards_corpus_data.create_data(target_all_cards, target, col)

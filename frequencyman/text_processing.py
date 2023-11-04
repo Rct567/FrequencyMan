@@ -6,6 +6,10 @@ class TextProcessing:
     
     @staticmethod
     def acceptable_word(word:str, lang_id:Optional[str]=None) -> bool:
+        
+        if (lang_id is not None and len(lang_id) != 2):
+            raise ValueError(f"Invalid lang_id '{lang_id}'!")
+        
         min_length = 1
         if lang_id in ['zh', 'ja']:
             word_pattern = re.compile(r'[\u4e00-\u9fff]{1,}', re.UNICODE)  # Chinese and Japanese characters
@@ -34,6 +38,10 @@ class TextProcessing:
     
     @staticmethod
     def get_word_tokens_from_text(text:str, lang_id:Optional[str]=None) -> list[str]:
+
+        if (lang_id is not None and len(lang_id) != 2):
+            raise ValueError(f"Invalid lang_id '{lang_id}'!")
+        
         result_tokens = re.split(r"([^\w\-\_\'\’\.]{1,})", text)
         result_tokens = [s.strip(".'’") for s in result_tokens]
         word_tokens = [token for token in result_tokens if TextProcessing.acceptable_word(token, lang_id)]

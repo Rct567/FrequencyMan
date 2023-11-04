@@ -94,15 +94,21 @@ class TargetCorpusData:
                     
                     field_key = str(card_note_type['id'])+" => "+field_name
                     
+                    lang_key = target_note_fields[field_name].lower()
+                    lang_id = lang_key
+                    if (len(lang_id) > 3 and lang_id[2] == '_'):
+                        lang_id = lang_id[:2]
+                    
                     plain_text = TextProcessing.get_plain_text(field_val).lower()
-                    field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, target_note_fields[field_name])
+                    field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
                     field_value_num_tokens = len(field_value_tokenized)
                     
                     card_note_items_accepted.append({
                         "field_name": field_name, 
                         "field_value_plain_text": plain_text, 
                         "field_value_tokenized": field_value_tokenized, 
-                        "target_language_id": target_note_fields[field_name].lower()
+                        "target_language_key": lang_key,
+                        "target_language_id": lang_id
                     })
                     
                     if card_has_been_reviewed:

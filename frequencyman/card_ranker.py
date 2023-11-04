@@ -74,7 +74,7 @@ class CardRanker:
             
             for word in field_data['field_value_tokenized']:
                 
-                word_fr = self.word_frequency_lists.get_word_frequency(field_data['target_language_id'], word, 0)
+                word_fr = self.word_frequency_lists.get_word_frequency(field_data['target_language_key'], word, 0)
                 #word_familiarity = self.cards_corpus_data.notes_reviewed_words_familiarity[field_key][word]
                 #word_lexical_discrepancy_rating = (word_fr - word_familiarity) aka unfamiliarity of high frequency words
                 #word_novelty_rating = (1-word_familiarity) notes_reviewed_words_familiarity

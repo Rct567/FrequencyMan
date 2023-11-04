@@ -48,6 +48,7 @@ class FrequencyManMainWindow(QDialog):
         
         # Addon config
         self.addon_config = mw.addonManager.getConfig(__name__)
+        self.addon_config_write: Callable[[dict[str, Any]], None] = lambda config: mw.addonManager.writeConfig(__name__, config)
         
     def create_new_tab(self, tab_id: str, tab_name: str) -> Tuple[QVBoxLayout, QWidget]:
         tab = QWidget()
@@ -72,7 +73,6 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
         return False
     
     # load frequency lists for target  
-    
     for lang_key in target.get_notes_language_keys():
         if not word_frequency_lists.key_has_list_file(lang_key):
             showInfo("No word frequency list file found for key '{}'!".format(lang_key))
@@ -102,7 +102,7 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
 
     # Avoid making unnecessary changes
     if target_new_cards_ids == sorted_card_ids:
-        showInfo("No card needed sorting!")
+        showInfo("Cards order was already up-to-date!")
         return False
     
     # Reposition cards and apply changes
@@ -119,7 +119,6 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
   
   
 def execute_reorder(col:Collection, target_list:TargetList):
-    
     
     if not isinstance(col, Collection):
         showInfo("Collection not found!")
@@ -152,7 +151,7 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):
     target_data_textarea.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2;") 
     if (target_list.has_targets()):
         target_data_textarea.setText(target_list.dump_json())
-    else:
+    else: # when does this even happen?
         example_data_notes_item:ConfigTargetDataNotes = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
         example_target:ConfigTargetData = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
         example_target_list = [example_target]
@@ -164,8 +163,18 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):
     validation_info.setStyleSheet("font-weight: bolder; font-size: 13px; line-height: 1.2; margin-bottom:20px;")
     validation_info.setVisible(False)
     
+    def save_config_new_targets(targets_defined: list[ConfigTargetData]):
+        if fm_window.addon_config is None or "fm_reorder_target_list" not in fm_window.addon_config:
+            return
+        if fm_window.addon_config['fm_reorder_target_list'] == targets_defined:
+            return
+        if askUser("Defined targets have changed. Save them to config?"):
+            new_config = fm_window.addon_config
+            new_config['fm_reorder_target_list'] = targets_defined
+            fm_window.addon_config_write(new_config)     
+    
     # Check if the JSON and target data is valid
-    def check_textarea_json_validity():
+    def check_textarea_json_validity() -> Tuple[int, list[ConfigTargetData], str]:
         (json_validity_state, targets_defined, err_desc) = TargetList.handle_json(target_data_textarea.toPlainText());
         palette = QPalette()
         if (json_validity_state == 1): # valid
@@ -178,7 +187,7 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):
             palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c")) # Red
         target_data_textarea.setPalette(palette) 
         validation_info.setText(err_desc)  
-        return json_validity_state
+        return (json_validity_state, targets_defined, err_desc)
 
     # Connect the check_json_validity function to textChanged signal
     target_data_textarea.textChanged.connect(check_textarea_json_validity)
@@ -186,13 +195,14 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):
 
     # Create the "Reorder Cards" button
     def user_clicked_reorder_button():
-        json_validity_state = check_textarea_json_validity()
+        (json_validity_state, targets_defined, err_desc) = check_textarea_json_validity()
         if json_validity_state == 1:
+            save_config_new_targets(targets_defined)
             execute_reorder(col, target_list)
-        elif target_list.has_targets() and askUser("Defined targets are not valid. Restore previous defined targets?"):
+        elif target_list.has_targets() and askUser("Defined targets are not valid.\n\n"+err_desc+"\n\nRestore previous defined targets?"):
             target_data_textarea.setText(target_list.dump_json())
         else:
-            showWarning("Defined targets are not valid!")     
+            showWarning("Defined targets are not valid!\n\n"+err_desc)     
     
     exec_reorder_button = QPushButton("Reorder Cards")
     exec_reorder_button.setStyleSheet("font-size: 16px; font-weight: bold; background-color: #23b442; color: white; border:2px solid #23a03e")

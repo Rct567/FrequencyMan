@@ -117,9 +117,8 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
     return True
   
   
-def execute_reorder(fm_window:FrequencyManMainWindow, target_list:TargetList):
-        
-    col = mw.col
+def execute_reorder(col:Collection, target_list:TargetList):
+    
     
     if not isinstance(col, Collection):
         showInfo("Collection not found!")
@@ -136,7 +135,7 @@ def execute_reorder(fm_window:FrequencyManMainWindow, target_list:TargetList):
         reorder_target_cards(target, word_frequency_lists, col)
     
 
-def create_tab_sort_cards(fm_window:FrequencyManMainWindow):
+def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):
     # Create a new tab and its layout
     (tab_layout, tab) = fm_window.create_new_tab('sort_cards', "Sort cards")
     
@@ -188,7 +187,7 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow):
     def user_clicked_reorder_button():
         json_validity_state = check_textarea_json_validity()
         if json_validity_state == 1:
-            execute_reorder(fm_window, target_list)
+            execute_reorder(col, target_list)
         elif target_list.has_targets() and askUser("Defined targets are not valid. Restore previous defined targets?"):
             target_data_textarea.setText(target_list.dump_json())
         else:
@@ -213,8 +212,12 @@ def create_tab_word_overview(fm_window:FrequencyManMainWindow):
      
 # Open the 'FrequencyMan main window'
 def open_frequencyman_main_window(mw:AnkiQt):
+    
+    if not isinstance(mw.col, Collection):
+        return
+    
     fm_window = FrequencyManMainWindow(mw)
-    create_tab_sort_cards(fm_window);
+    create_tab_sort_cards(fm_window, mw.col);
     create_tab_word_overview(fm_window);
     fm_window.exec()
 

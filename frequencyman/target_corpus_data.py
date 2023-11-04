@@ -81,7 +81,6 @@ class TargetCorpusData:
             
             if (card_note_type is None):
                 raise Exception(f"Card note type not found for card.nid={card_note.mid}!")
-                continue
             if card_note_type['name'] not in target_fields_by_notes_name: # note type name is not defined as target
                 continue
 

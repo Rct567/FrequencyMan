@@ -1,5 +1,6 @@
 from statistics import mean
 from typing import Tuple
+from uu import Error
 
 from anki.cards import CardId, Card
 from anki.collection import Collection
@@ -38,8 +39,9 @@ class CardRanker:
         
         card_note = self.col.get_note(card.nid)
         card_note_type_id = card_note.mid
-        assert isinstance(card_note_type_id, int)
-        assert card_note_type_id != 0
+        
+        if not isinstance(card_note_type_id, int) or card_note_type_id == 0:
+            raise Exception("Invalid card_note_type_id found!")
         
         card_ranking_factors:dict[str, float] = {}
         

@@ -32,7 +32,7 @@ def test_get_word_tokens_from_text():
     assert TextProcessing.get_word_tokens_from_text("") == []
     assert TextProcessing.get_word_tokens_from_text("12345") == []
 
-    assert TextProcessing.get_word_tokens_from_text("Simple sente-nce.") == ['Simple', 'sente-nce']
+    assert TextProcessing.get_word_tokens_from_text("Simple sente-nce. EE.UU.") == ['Simple', 'sente-nce', 'EE.UU']
     assert TextProcessing.get_word_tokens_from_text("This is a test.") == ['This', 'is', 'test']
     assert TextProcessing.get_word_tokens_from_text("Hello, world!") == ['Hello', 'world']
     

@@ -1,12 +1,12 @@
 {
-    "fm_reorder_target": [
+    "fm_reorder_target_list": [
         {
-            "deck": "Spanish",
+            "deck": "** name of main deck **",
             "notes": [{
-                "name": "-- My spanish --",
-                "fields": {"Sentence": "ES", "Meaning": "EN"}
+                "name": "** name of notes type **",
+                "fields": {"Front": "JP", "Back": "EN"}
             }]
         }
     ],
-    "other_settings": "nope"
+    "other_settings": "currently don't exist"
 }

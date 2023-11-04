@@ -153,7 +153,7 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):
     if (target_list.has_targets()):
         target_data_textarea.setText(target_list.dump_json())
     else:
-        example_data_notes_item:ConfigTargetDataNotes = {'name': '** name of notes type **', 'fields': {"Front": "EN", "Back": "JP"}}
+        example_data_notes_item:ConfigTargetDataNotes = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
         example_target:ConfigTargetData = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
         example_target_list = [example_target]
         target_data_textarea.setText(json.dumps(example_target_list, indent=4))

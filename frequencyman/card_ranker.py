@@ -1,8 +1,7 @@
 from statistics import mean
 from typing import Tuple
-from uu import Error
 
-from anki.cards import CardId, Card
+from anki.cards import CardId, Card, Note
 from anki.collection import Collection
 
 from .lib.utilities import *
@@ -31,13 +30,19 @@ class CardRanker:
 
 
     def calc_cards_ranking(self, cards:list[Card]) -> dict[CardId, float]:
-    
-        card_rankings = {card.id: self.calc_card_ranking(card) for card in cards}    
-        return card_rankings  
         
-    def calc_card_ranking(self, card:Card) -> float:
+        card_notes:dict[int, Note] = {}
+        card_rankings:dict[CardId, float] = {}
         
-        card_note = self.col.get_note(card.nid)
+        for card in cards:
+            if card.nid not in card_notes:
+                card_notes[card.nid] = self.col.get_note(card.nid)
+            card_rankings[card.id] = self.calc_card_ranking(card, card_notes[card.nid])
+        return card_rankings
+                
+        
+    def calc_card_ranking(self, card:Card, card_note:Note) -> float:
+        
         card_note_type_id = card_note.mid
         
         if not isinstance(card_note_type_id, int) or card_note_type_id == 0:
@@ -126,7 +131,6 @@ class CardRanker:
         card_ranking_factors['focus_word_frequency_score'] = mean(fields_highest_fr_unseen_word_scores) #todo: make relative to num words?  
         card_ranking_factors['ideal_unseen_word_count'] = mean(fields_ideal_unseen_words_count_scores)
         card_ranking_factors['ideal_word_count'] = mean(fields_ideal_words_count_scores)
-
         # card_ranking_factors['words_fresh_occurrence_scores'] = mean(fields_words_fresh_occurrence_scores) 
     
         # final ranking

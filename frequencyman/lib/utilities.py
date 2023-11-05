@@ -24,7 +24,7 @@ def var_dump(var) -> None:
      
        
 def var_dump_log(var) -> None:
-    dump_log_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'dump.log')
+    dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
     with open(dump_log_file, 'a', encoding='utf-8') as file:
             file.write(pprint.pformat(var, sort_dicts=False) + "\n\n=================================================================\n\n")
     var_dump(var)
@@ -44,7 +44,7 @@ def profile_context(sortby=pstats.SortKey.CUMULATIVE):
         print("\n\n\n=========================================\n\n\n")
         ps.print_stats()
         profiling_results = s.getvalue()
-        dump_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'profiling_results.txt')
+        dump_file = os.path.join(os.path.dirname(__file__), '..', '..', 'profiling_results.txt')
         with open(dump_file, 'w') as f:
             f.write(profiling_results)
 

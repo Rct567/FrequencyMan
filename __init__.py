@@ -9,6 +9,7 @@ from anki.cards import CardId, Card
 from anki.collection import Collection
 from aqt.utils import showInfo, askUser, tooltip, showWarning
 
+from .frequencyman.lib.event_logger import EventLogger
 from .frequencyman.card_ranker import CardRanker
 from .frequencyman.lib.utilities import *
 from .frequencyman.target_corpus_data import TargetCorpusData
@@ -64,7 +65,7 @@ class FrequencyManMainWindow(QDialog):
         return (tab_layout, tab)
 
  
-def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists, col:Collection) -> bool:
+def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists, col:Collection, event_logger:EventLogger) -> bool:
     
     target_search_query = target.construct_search_query()
 
@@ -78,27 +79,31 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
             showInfo("No word frequency list file found for key '{}'!".format(lang_key))
             return False
     
-    word_frequency_lists.load_frequency_lists(target.get_notes_language_keys())
+    with event_logger.addBenchmarkedEvent("Loading word frequency lists."):
+        word_frequency_lists.load_frequency_lists(target.get_notes_language_keys())
     
     # Get results for target
     
-    target_all_cards_ids = col.find_cards(target_search_query, order="c.due asc")
-    target_all_cards = [col.get_card(card_id) for card_id in target_all_cards_ids]
-    
-    target_new_cards = [card for card in target_all_cards if card.queue == 0]
-    target_new_cards_ids = [card.id for card in target_new_cards]
+    with event_logger.addBenchmarkedEvent("Getting target cards from collection."):
+        target_all_cards_ids = col.find_cards(target_search_query, order="c.due asc")
+        target_all_cards = [col.get_card(card_id) for card_id in target_all_cards_ids]
+        
+        target_new_cards = [card for card in target_all_cards if card.queue == 0]
+        target_new_cards_ids = [card.id for card in target_new_cards]
 
     if not askUser("Reorder {:n} new cards in a collection of {:n} cards?".format(len(target_new_cards_ids), len(target_all_cards))):
         return False
     
     cards_corpus_data = TargetCorpusData()
-    cards_corpus_data.create_data(target_all_cards, target, col)
+    with event_logger.addBenchmarkedEvent("Creating corpus data from target cards."):
+        cards_corpus_data.create_data(target_all_cards, target, col)
     
     # Sort cards
-    card_ranker = CardRanker(cards_corpus_data, word_frequency_lists, col)
-    card_rankings = card_ranker.calc_cards_ranking(target_new_cards)
-    sorted_cards = sorted(target_new_cards, key=lambda card: card_rankings[card.id], reverse=True)
-    sorted_card_ids = [card.id for card in sorted_cards]
+    with event_logger.addBenchmarkedEvent("Ranking cards and creating a new sorted list."):
+        card_ranker = CardRanker(cards_corpus_data, word_frequency_lists, col)
+        card_rankings = card_ranker.calc_cards_ranking(target_new_cards)
+        sorted_cards = sorted(target_new_cards, key=lambda card: card_rankings[card.id], reverse=True)
+        sorted_card_ids = [card.id for card in sorted_cards]
 
     # Avoid making unnecessary changes
     if target_new_cards_ids == sorted_card_ids:
@@ -106,12 +111,13 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
         return False
     
     # Reposition cards and apply changes
-    col.sched.forgetCards(sorted_card_ids)
-    col.sched.reposition_new_cards(
-        card_ids=sorted_card_ids,
-        starting_from=0, step_size=1,
-        randomize=False, shift_existing=True
-    )
+    with event_logger.addBenchmarkedEvent("Reposition cards in collection."):
+        col.sched.forgetCards(sorted_card_ids)
+        col.sched.reposition_new_cards(
+            card_ids=sorted_card_ids,
+            starting_from=0, step_size=1,
+            randomize=False, shift_existing=True
+        )
     
     showInfo("Done with sorting!")
     
@@ -128,11 +134,16 @@ def execute_reorder(col:Collection, target_list:TargetList):
         showInfo("No targets defined!")
         return
     
+    event_logger = EventLogger()
+    
     frequency_lists_dir = os.path.join(os.path.dirname(__file__), 'user_files', 'frequency_lists')
     word_frequency_lists = WordFrequencyLists(frequency_lists_dir)
     
-    for target in target_list:
-        reorder_target_cards(target, word_frequency_lists, col)
+    for target_num, target in enumerate(target_list):
+        with event_logger.addBenchmarkedEvent(f"Reordering target #{target_num}."):
+            reorder_target_cards(target, word_frequency_lists, col, event_logger)
+            
+    var_dump_log(event_logger.events)
     
 
 def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):

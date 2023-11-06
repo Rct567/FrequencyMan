@@ -41,13 +41,13 @@ class CardRanker:
             if card.nid not in card_notes:
                 card_notes[card.nid] = self.col.get_note(card.nid)
             if card.nid not in card_notes_rankings:
-                card_notes_rankings[card.nid] = self.calc_card_ranking(card, card_notes[card.nid])
+                card_notes_rankings[card.nid] = self.calc_card_note_ranking(card_notes[card.nid])
             card_rankings[card.id] = card_notes_rankings[card.nid]
             
         return card_rankings
                 
         
-    def calc_card_ranking(self, card:Card, card_note:Note) -> float:
+    def calc_card_note_ranking(self, card_note:Note) -> float:
         
         card_ranking_factors:dict[str, float] = {}
         
@@ -56,10 +56,8 @@ class CardRanker:
         # fields_words_unfamiliarity_scores:list[float] = [] # | Card with words seen a lot should go down
         # fields_words_fresh_occurrence_scores:list[float] = [] # Freshness of words, avg per field | Cards with fresh words (recently matured?) should go up
         
-
         # get scores per field
-        
-        fields_in_target = self.cards_corpus_data.handled_cards[card.id]
+        fields_in_target = self.cards_corpus_data.handled_notes[card_note.id]
         fields_words_fr_scores:list[dict[str, float]] = []
         fields_highest_fr_unseen_word:list[Tuple[str, float]] = []
         fields_lowest_fr_word:list[Tuple[str, float]] = []

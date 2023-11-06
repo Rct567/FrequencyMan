@@ -3,6 +3,7 @@ from typing import Iterable, Type, TypedDict, Union
 
 from anki.collection import Collection
 from anki.cards import CardId, Card
+from anki.notes import NoteId
 
 from .lib.utilities import *
 from .target_list import Target
@@ -13,7 +14,7 @@ class TargetCorpusData:
     Class representing corpus data from target cards.
     """
     
-    handled_cards: dict[CardId, list[dict]]
+    handled_notes: dict[NoteId, list[dict]]
     
     notes_reviewed_words: dict[str, dict[str, list[Card]]]
     notes_reviewed_words_occurrences: dict[str, dict[str, list[float]]] # list because a word can occur multiple times in a field
@@ -21,11 +22,11 @@ class TargetCorpusData:
     
     def __init__(self):
         
-        self.handled_cards = {}
+        self.handled_notes = {}
         
-        self.notes_reviewed_words = {} # words and the cards they they occur in, per "note+field"
-        self.notes_reviewed_words_occurrences = {} # how much a word occurs in reviewed cards, per "note+field"
-        self.notes_reviewed_words_familiarity = {} # how much words are present in reviewed cards, per "note+field"
+        self.notes_reviewed_words = {} # reviewed words and the cards they they occur in, per "field of note"
+        self.notes_reviewed_words_occurrences = {} # a list of 'occurrence ratings' per word in a card, per "field of note"
+        self.notes_reviewed_words_familiarity = {} # how much a word is 'present' in reviewed cards, per "field of note"
     
     def create_data(self, target_cards:Iterable[Card], target:Target, col:Collection) -> None:
         """
@@ -35,67 +36,74 @@ class TargetCorpusData:
         
         for card in target_cards:
             
-            assert isinstance(card.nid, int) and card.nid != 0
-            card_note = col.get_note(card.nid)
-            
-            card_note_type = col.models.get(card_note.mid)
-            
-            if (card_note_type is None):
-                raise Exception(f"Card note type not found for card.nid={card_note.mid}!")
-            if card_note_type['name'] not in target_fields_by_notes_name: # note type name is not defined as target
-                continue
-
-            card_has_been_reviewed = card.type == 2 and card.queue != 0 # card is of type 'review' and queue is not 'new'
+            if card.nid not in self.handled_notes:
                 
-            target_note_fields = target_fields_by_notes_name[card_note_type['name']]
-            
-            card_note_items_in_target:list[dict] = []
-            for field_name, field_val in card_note.items():
-                if field_name in target_note_fields.keys():
+                assert isinstance(card.nid, int) and card.nid != 0
+                card_note = col.get_note(card.nid)
+                
+                card_note_type = col.models.get(card_note.mid)
+                
+                if (card_note_type is None):
+                    raise Exception(f"Card note type not found for card.nid={card_note.mid}!")
+                if card_note_type['name'] not in target_fields_by_notes_name: # note type name is not defined as target
+                    continue
+                
+                target_note_fields = target_fields_by_notes_name[card_note_type['name']]
+                
+                card_note_fields_in_target:list[dict] = []
+                for field_name, field_val in card_note.items():
+                    if field_name in target_note_fields.keys():
+                        
+                        field_key = str(card_note_type['id'])+" => "+field_name
+                        
+                        lang_key = target_note_fields[field_name].lower()
+                        lang_id = lang_key
+                        if (len(lang_id) > 3 and lang_id[2] == '_'):
+                            lang_id = lang_id[:2]
+                        
+                        plain_text = TextProcessing.get_plain_text(field_val).lower()
+                        field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
+                        
+                        card_note_fields_in_target.append({
+                            "field_key": field_key, 
+                            "field_name": field_name, 
+                            "field_value_plain_text": plain_text, 
+                            "field_value_tokenized": field_value_tokenized, 
+                            "target_language_key": lang_key,
+                            "target_language_id": lang_id
+                        })     
                     
-                    field_key = str(card_note_type['id'])+" => "+field_name
-                    
-                    lang_key = target_note_fields[field_name].lower()
-                    lang_id = lang_key
-                    if (len(lang_id) > 3 and lang_id[2] == '_'):
-                        lang_id = lang_id[:2]
-                    
-                    plain_text = TextProcessing.get_plain_text(field_val).lower()
-                    field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
-                    field_value_num_tokens = len(field_value_tokenized)
-                    
-                    card_note_items_in_target.append({
-                        "field_key": field_key, 
-                        "field_name": field_name, 
-                        "field_value_plain_text": plain_text, 
-                        "field_value_tokenized": field_value_tokenized, 
-                        "target_language_key": lang_key,
-                        "target_language_id": lang_id
-                    })
-                    
-                    if card_has_been_reviewed:
-                        for word_token in field_value_tokenized:
-                            # set reviewed words (word has been in reviewed card)
-                            if field_key not in self.notes_reviewed_words:
-                                self.notes_reviewed_words[field_key] = {}
-                            if word_token not in self.notes_reviewed_words[field_key]:
-                                self.notes_reviewed_words[field_key][word_token] = [] 
-                            self.notes_reviewed_words[field_key][word_token].append(card)
-                            # set presence_score for reviewed words 
-                            if field_key not in self.notes_reviewed_words_occurrences:
-                                self.notes_reviewed_words_occurrences[field_key] = {}
-                            if word_token not in self.notes_reviewed_words_occurrences[field_key]:
-                                self.notes_reviewed_words_occurrences[field_key][word_token] = [] 
-                            token_presence_score = 1/mean([field_value_num_tokens, 3]) 
-                            self.notes_reviewed_words_occurrences[field_key][word_token].append(token_presence_score)
-                    
-            self.handled_cards[card.id] = card_note_items_in_target
+                self.handled_notes[card.nid] = card_note_fields_in_target
+                
+            card_has_been_reviewed = card.type == 2 and card.queue != 0 # card is of type 'review' and queue is not 'new'
+               
+            # set reviewed words, and reviewed words occurrences, per field of note
+            if card_has_been_reviewed:
+                for field_data in self.handled_notes[card.nid]:
+                    field_value_num_tokens = len(field_data['field_value_tokenized'])
+                    field_key = field_data['field_key']
+                    for word_token in field_data['field_value_tokenized']:
+                        # set reviewed words (word has been in a reviewed card)
+                        if field_key not in self.notes_reviewed_words:
+                            self.notes_reviewed_words[field_key] = {}
+                        if word_token not in self.notes_reviewed_words[field_key]:
+                            self.notes_reviewed_words[field_key][word_token] = [] 
+                        self.notes_reviewed_words[field_key][word_token].append(card)
+                        # set presence_score for reviewed words 
+                        if field_key not in self.notes_reviewed_words_occurrences:
+                            self.notes_reviewed_words_occurrences[field_key] = {}
+                        if word_token not in self.notes_reviewed_words_occurrences[field_key]:
+                            self.notes_reviewed_words_occurrences[field_key][word_token] = [] 
+                        token_presence_score = 1/mean([field_value_num_tokens, 3]) 
+                        self.notes_reviewed_words_occurrences[field_key][word_token].append(token_presence_score)
+                   
+                   
                 
         self.__set_notes_words_familiarity()
         
     def __set_notes_words_familiarity(self) -> None:
         """
-        Set the familiarity score for each word per note, based on word presence.
+        Set the familiarity score for each word per field of card note, based on word presence.
         """
         for field_key in self.notes_reviewed_words_occurrences:
             

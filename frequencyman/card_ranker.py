@@ -59,7 +59,7 @@ class CardRanker:
 
         # get scores per field
         
-        accepted_fields = self.cards_corpus_data.handled_cards[card.id]['accepted_fields']
+        fields_in_target = self.cards_corpus_data.handled_cards[card.id]
         fields_words_fr_scores:list[dict[str, float]] = []
         fields_highest_fr_unseen_word:list[Tuple[str, float]] = []
         fields_lowest_fr_word:list[Tuple[str, float]] = []
@@ -68,7 +68,7 @@ class CardRanker:
         fields_ideal_unseen_words_count_scores:list[float] = []
         fields_ideal_words_count_scores:list[float] = [] 
         
-        for field_data in accepted_fields:
+        for field_data in fields_in_target:
             
             field_fr_scores:list[float] = []
             field_words_fr_scores:dict[str, float] = {}

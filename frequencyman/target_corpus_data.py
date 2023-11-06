@@ -104,6 +104,7 @@ class TargetCorpusData:
                     field_value_num_tokens = len(field_value_tokenized)
                     
                     card_note_items_accepted.append({
+                        "field_key": field_key, 
                         "field_name": field_name, 
                         "field_value_plain_text": plain_text, 
                         "field_value_tokenized": field_value_tokenized, 

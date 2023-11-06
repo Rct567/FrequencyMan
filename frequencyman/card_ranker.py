@@ -1,7 +1,8 @@
 from statistics import mean
 from typing import Tuple
 
-from anki.cards import CardId, Card, Note
+from anki.cards import Card, CardId
+from anki.notes import Note, NoteId
 from anki.collection import Collection
 
 from .lib.utilities import *
@@ -31,22 +32,22 @@ class CardRanker:
 
     def calc_cards_ranking(self, cards:list[Card]) -> dict[CardId, float]:
         
-        card_notes:dict[int, Note] = {}
+        card_notes:dict[NoteId, Note] = {}
+        card_notes_rankings:dict[NoteId, float] = {}
         card_rankings:dict[CardId, float] = {}
-        
+   
+        # card ranking is calculates per note (which may have different card, but same ranking)
         for card in cards:
             if card.nid not in card_notes:
                 card_notes[card.nid] = self.col.get_note(card.nid)
-            card_rankings[card.id] = self.calc_card_ranking(card, card_notes[card.nid])
+            if card.nid not in card_notes_rankings:
+                card_notes_rankings[card.nid] = self.calc_card_ranking(card, card_notes[card.nid])
+            card_rankings[card.id] = card_notes_rankings[card.nid]
+            
         return card_rankings
                 
         
     def calc_card_ranking(self, card:Card, card_note:Note) -> float:
-        
-        card_note_type_id = card_note.mid
-        
-        if not isinstance(card_note_type_id, int) or card_note_type_id == 0:
-            raise Exception("Invalid card_note_type_id found!")
         
         card_ranking_factors:dict[str, float] = {}
         
@@ -75,7 +76,10 @@ class CardRanker:
             field_unseen_words:list[str] = []
             field_highest_fr_unseen_word:Tuple[str, float]  = ("", 0)
             field_lowest_fr_word:Tuple[str, float] = ("", 0)
-            field_key = str(card_note_type_id)+" => "+field_data['field_name']
+            field_key = field_data['field_key']
+            
+            if not field_key.startswith(str(card_note.mid)):
+                raise Exception("Card note type id is not matching!?")
             
             for word in field_data['field_value_tokenized']:
                 
@@ -123,7 +127,10 @@ class CardRanker:
             # highest fr unseen word
             fields_highest_fr_unseen_word.append(field_highest_fr_unseen_word)
             fields_highest_fr_unseen_word_scores.append(field_highest_fr_unseen_word[1]) 
-            fields_fr_scores.append(mean(field_fr_scores))  
+            if (len(field_fr_scores) > 0):
+                fields_fr_scores.append(mean(field_fr_scores))  
+            else:
+                fields_fr_scores.append(0)  
         
         # define ranking factors for card, based on avg of fields
         

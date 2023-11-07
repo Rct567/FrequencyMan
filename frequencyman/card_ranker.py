@@ -74,14 +74,14 @@ class CardRanker:
             field_unseen_words:list[str] = []
             field_highest_fr_unseen_word:Tuple[str, float]  = ("", 0)
             field_lowest_fr_word:Tuple[str, float] = ("", 0)
-            field_key = field_data['field_key']
+            field_key = field_data.field_key
             
             if not field_key.startswith(str(card_note.mid)):
                 raise Exception("Card note type id is not matching!?")
             
-            for word in field_data['field_value_tokenized']:
+            for word in field_data.field_value_tokenized:
                 
-                word_fr = self.word_frequency_lists.get_word_frequency(field_data['target_language_key'], word, 0)
+                word_fr = self.word_frequency_lists.get_word_frequency(field_data.target_language_key, word, 0)
                 #word_familiarity = self.cards_corpus_data.notes_reviewed_words_familiarity[field_key][word]
                 #word_lexical_discrepancy_rating = (word_fr - word_familiarity) aka unfamiliarity of high frequency words
                 #word_novelty_rating = (1-word_familiarity) notes_reviewed_words_familiarity
@@ -120,7 +120,7 @@ class CardRanker:
             fields_ideal_unseen_words_count_scores.append(ideal_unseen_words_count_score)
             
             # ideal word count
-            fields_ideal_words_count_scores.append(self.card_field_ideal_word_count_score(len(field_data['field_value_tokenized']), 4))
+            fields_ideal_words_count_scores.append(self.card_field_ideal_word_count_score(len(field_data.field_value_tokenized), 4))
             
             # highest fr unseen word
             fields_highest_fr_unseen_word.append(field_highest_fr_unseen_word)

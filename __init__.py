@@ -65,63 +65,63 @@ class FrequencyManMainWindow(QDialog):
         return (tab_layout, tab)
 
  
-def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists, col:Collection, event_logger:EventLogger) -> bool:
+def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists, col:Collection, event_logger:EventLogger) -> Tuple[bool, str]:
     
     target_search_query = target.construct_search_query()
 
     if "note:" not in target_search_query:
-        showInfo("No valid note type defined. At least one note is required for reordering!")
-        return False
+        warning_msg = "No valid note type defined. At least one note is required for reordering!"
+        event_logger.addEntry(warning_msg)
+        return (False, warning_msg)
     
-    # load frequency lists for target  
+    # Load frequency lists for target  
     for lang_key in target.get_notes_language_keys():
         if not word_frequency_lists.key_has_list_file(lang_key):
-            showInfo("No word frequency list file found for key '{}'!".format(lang_key))
-            return False
+            warning_msg = "No word frequency list file found for key '{}'!".format(lang_key)
+            event_logger.addEntry(warning_msg)
+            return (False, warning_msg)
     
-    with event_logger.addBenchmarkedEvent("Loading word frequency lists."):
+    with event_logger.addBenchmarkedEntry("Loading word frequency lists."):
         word_frequency_lists.load_frequency_lists(target.get_notes_language_keys())
     
-    # Get results for target
-    
-    with event_logger.addBenchmarkedEvent("Getting target cards from collection."):
+    # Get cards for target
+    with event_logger.addBenchmarkedEntry("Getting target cards from collection."):
         target_all_cards_ids = col.find_cards(target_search_query, order="c.due asc")
         target_all_cards = [col.get_card(card_id) for card_id in target_all_cards_ids]
         
         target_new_cards = [card for card in target_all_cards if card.queue == 0]
         target_new_cards_ids = [card.id for card in target_new_cards]
-
-    if not askUser("Reorder {:n} new cards in a collection of {:n} cards?".format(len(target_new_cards_ids), len(target_all_cards))):
-        return False
-    
+        
+    event_logger.addEntry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_new_cards_ids), len(target_all_cards)))
+      
+    # Get corpus data
     cards_corpus_data = TargetCorpusData()
-    with event_logger.addBenchmarkedEvent("Creating corpus data from target cards."):
+    with event_logger.addBenchmarkedEntry("Creating corpus data from target cards."):
         cards_corpus_data.create_data(target_all_cards, target, col)
     
     # Sort cards
-    with event_logger.addBenchmarkedEvent("Ranking cards and creating a new sorted list."):
+    with event_logger.addBenchmarkedEntry("Ranking cards and creating a new sorted list."):
         card_ranker = CardRanker(cards_corpus_data, word_frequency_lists, col)
         card_rankings = card_ranker.calc_cards_ranking(target_new_cards)
         sorted_cards = sorted(target_new_cards, key=lambda card: card_rankings[card.id], reverse=True)
         sorted_card_ids = [card.id for card in sorted_cards]
 
-    # Avoid making unnecessary changes
-    if target_new_cards_ids == sorted_card_ids:
-        showInfo("Cards order was already up-to-date!")
-        return False
     
-    # Reposition cards and apply changes
-    with event_logger.addBenchmarkedEvent("Reposition cards in collection."):
-        col.sched.forgetCards(sorted_card_ids)
-        col.sched.reposition_new_cards(
-            card_ids=sorted_card_ids,
-            starting_from=0, step_size=1,
-            randomize=False, shift_existing=True
-        )
+    if target_new_cards_ids == sorted_card_ids: # Avoid making unnecessary changes 
+        event_logger.addEntry("Cards order was already up-to-date!")
+    else:
+        # Reposition cards and apply changes
+        with event_logger.addBenchmarkedEntry("Reposition cards in collection."):
+            col.sched.forgetCards(sorted_card_ids)
+            col.sched.reposition_new_cards(
+                card_ids=sorted_card_ids,
+                starting_from=0, step_size=1,
+                randomize=False, shift_existing=True
+            )
     
-    showInfo("Done with sorting!")
+    event_logger.addEntry(f"Done with sorting target #{target.index_num}!")
     
-    return True
+    return (True, "")
   
   
 def execute_reorder(col:Collection, target_list:TargetList):
@@ -139,9 +139,15 @@ def execute_reorder(col:Collection, target_list:TargetList):
     frequency_lists_dir = os.path.join(os.path.dirname(__file__), 'user_files', 'frequency_lists')
     word_frequency_lists = WordFrequencyLists(frequency_lists_dir)
     
-    for target_num, target in enumerate(target_list):
-        with event_logger.addBenchmarkedEvent(f"Reordering target #{target_num}."):
-            reorder_target_cards(target, word_frequency_lists, col, event_logger)
+    for target in target_list:
+        with event_logger.addBenchmarkedEntry(f"Reordering target #{target.index_num}."):
+            (sorted, warning_msg) = reorder_target_cards(target, word_frequency_lists, col, event_logger)
+            if (warning_msg != ""): 
+                showWarning(warning_msg)
+            
+             
+    target_word = "targets" if len(target_list) > 1 else "target"
+    event_logger.addEntry("Done with sorting {} {}!".format(len(target_list), target_word), showInfo)
             
     var_dump_log(event_logger.events)
     

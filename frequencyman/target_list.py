@@ -7,9 +7,11 @@ ConfigTargetData = TypedDict('TargetData', {'deck': str, 'notes': list[ConfigTar
 class Target:
     
     target:ConfigTargetData
+    index_num:int
     
-    def __init__(self, target:ConfigTargetData) -> None:
+    def __init__(self, target:ConfigTargetData, index_num:int) -> None:
         self.target = target
+        self.index_num = index_num
     
     def __getitem__(self, key):
         return self.target[key]
@@ -74,10 +76,13 @@ class TargetList:
     def __iter__(self):
         return iter(self.target_list)
     
+    def __len__(self):
+        return len(self.target_list)
+    
     def set_targets(self, target_list:list[ConfigTargetData]) -> int:
         (validity_state, _) = self.validate_list(target_list)
         if (validity_state == 1):
-            self.target_list = [Target(target) for target in target_list]
+            self.target_list = [Target(target, target_num) for target_num, target in enumerate(target_list)]
         return validity_state
     
     def has_targets(self) -> bool:

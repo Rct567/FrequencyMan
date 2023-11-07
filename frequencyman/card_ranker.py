@@ -153,7 +153,6 @@ class CardRanker:
                 'fields_highest_fr_unseen_word': fields_highest_fr_unseen_word,
                 #'fields_words_fr_scores': fields_words_fr_scores_sorted
             }
-            #card_note['fm_debug_info'] = pprint.pformat(debug_info, width=120, sort_dicts=False, compact=True).replace('\n', '<br>')
             card_note['fm_debug_info'] = ''
             for k, var in debug_info.items():
                 card_note['fm_debug_info'] += k+": "+ pprint.pformat(var, sort_dicts=False)+"<br />\n"

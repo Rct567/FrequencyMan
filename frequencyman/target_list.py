@@ -1,19 +1,35 @@
+from dataclasses import dataclass
 import json
-from typing import Tuple, TypedDict
+from typing import Optional, Sequence, Tuple, TypedDict
+
+from anki.collection import Collection
+from anki.cards import CardId, Card
 
 from .word_frequency_list import WordFrequencyLists
 
 ConfigTargetDataNotes = TypedDict('TargetDataNotes', {'name': str, 'fields': dict[str, str]})
 ConfigTargetData = TypedDict('TargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
 
+@dataclass
+class TargetResult:
+    all_cards_ids:Sequence[CardId]
+    all_cards:list[Card]
+    new_cards:list[Card]
+    new_cards_ids:Sequence[CardId]
+    
+
 class Target:
     
     target:ConfigTargetData
     index_num:int
-    
+    query:Optional[str]
+    result:Optional[TargetResult]
+
     def __init__(self, target:ConfigTargetData, index_num:int) -> None:
         self.target = target
         self.index_num = index_num
+        self.query = None
+        self.result = None
     
     def __getitem__(self, key):
         return self.target[key]
@@ -41,8 +57,7 @@ class Target:
         for note in self.target.get('notes', []):
             for lang_key in note['fields'].values():
                 keys.append(lang_key.lower())
-        return keys   
-        
+        return keys      
     
     def construct_search_query(self) -> str:
         target_notes = self.get("notes", []) if isinstance(self.get("notes"), list) else []
@@ -67,6 +82,19 @@ class Target:
                 search_query = "("+target_decks_query+")" + search_query
         
         return search_query
+    
+    def get_search_query(self) -> str:
+        if (self.query is None):
+            self.query = self.construct_search_query()
+        return self.query
+    
+    def get_cards(self, col:Collection):
+        
+        all_cards_ids = col.find_cards(self.get_search_query(), order="c.due asc")
+        all_cards = [col.get_card(card_id) for card_id in all_cards_ids]
+        new_cards = [card for card in all_cards if card.queue == 0]
+        new_cards_ids:Sequence[CardId] = [card.id for card in new_cards] 
+        return TargetResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
 
 class TargetList:
     

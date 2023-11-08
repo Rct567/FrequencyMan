@@ -67,9 +67,7 @@ class FrequencyManMainWindow(QDialog):
  
 def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists, col:Collection, event_logger:EventLogger) -> Tuple[bool, str]:
     
-    target_search_query = target.construct_search_query()
-
-    if "note:" not in target_search_query:
+    if "note:" not in target.get_search_query():
         warning_msg = "No valid note type defined. At least one note is required for reordering!"
         event_logger.addEntry(warning_msg)
         return (False, warning_msg)
@@ -86,28 +84,24 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
     
     # Get cards for target
     with event_logger.addBenchmarkedEntry("Getting target cards from collection."):
-        target_all_cards_ids = col.find_cards(target_search_query, order="c.due asc")
-        target_all_cards = [col.get_card(card_id) for card_id in target_all_cards_ids]
+        target_result = target.get_cards(col)
         
-        target_new_cards = [card for card in target_all_cards if card.queue == 0]
-        target_new_cards_ids = [card.id for card in target_new_cards]
-        
-    event_logger.addEntry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_new_cards_ids), len(target_all_cards)))
+    event_logger.addEntry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_result.new_cards_ids), len(target_result.all_cards)))
       
     # Get corpus data
     cards_corpus_data = TargetCorpusData()
     with event_logger.addBenchmarkedEntry("Creating corpus data from target cards."):
-        cards_corpus_data.create_data(target_all_cards, target, col)
+        cards_corpus_data.create_data(target_result.all_cards, target, col)
     
     # Sort cards
     with event_logger.addBenchmarkedEntry("Ranking cards and creating a new sorted list."):
         card_ranker = CardRanker(cards_corpus_data, word_frequency_lists, col)
-        card_rankings = card_ranker.calc_cards_ranking(target_new_cards)
-        sorted_cards = sorted(target_new_cards, key=lambda card: card_rankings[card.id], reverse=True)
+        card_rankings = card_ranker.calc_cards_ranking(target_result.new_cards)
+        sorted_cards = sorted(target_result.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
         sorted_card_ids = [card.id for card in sorted_cards]
 
     
-    if target_new_cards_ids == sorted_card_ids: # Avoid making unnecessary changes 
+    if target_result.new_cards_ids == sorted_card_ids: # Avoid making unnecessary changes 
         event_logger.addEntry("Cards order was already up-to-date!")
     else:
         # Reposition cards and apply changes

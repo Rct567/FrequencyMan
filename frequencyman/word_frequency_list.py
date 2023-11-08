@@ -54,12 +54,12 @@ class WordFrequencyLists:
         for key in keys:
             self.load_frequency_list(key)
             
-    def key_has_list_file(self, key:str) -> bool: 
+    def key_has_frequency_list_file(self, key:str) -> bool: 
         return len(self.get_files_for_lang_key(key)) > 0
        
-    def keys_have_list_file(self, keys:list[str]) -> bool:
+    def keys_have_frequency_list_file(self, keys:list[str]) -> bool:
         for key in keys:
-            if not self.key_has_list_file(key):
+            if not self.key_has_frequency_list_file(key):
                 return False
         return True
       

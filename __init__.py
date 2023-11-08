@@ -74,9 +74,9 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
         event_logger.addEntry(warning_msg)
         return (False, warning_msg)
     
-    # Load frequency lists for target  
+    # Check defined target lang keys and then load frequency lists for target  
     for lang_key in target.get_notes_language_keys():
-        if not word_frequency_lists.key_has_list_file(lang_key):
+        if not word_frequency_lists.key_has_frequency_list_file(lang_key):
             warning_msg = "No word frequency list file found for key '{}'!".format(lang_key)
             event_logger.addEntry(warning_msg)
             return (False, warning_msg)
@@ -124,7 +124,7 @@ def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists,
     return (True, "")
   
   
-def execute_reorder(col:Collection, target_list:TargetList):
+def execute_reorder(col:Collection, target_list:TargetList, word_frequency_lists:WordFrequencyLists):
     
     if not isinstance(col, Collection):
         showInfo("Collection not found!")
@@ -136,9 +136,7 @@ def execute_reorder(col:Collection, target_list:TargetList):
     
     event_logger = EventLogger()
     
-    frequency_lists_dir = os.path.join(os.path.dirname(__file__), 'user_files', 'frequency_lists')
-    word_frequency_lists = WordFrequencyLists(frequency_lists_dir)
-    
+
     for target in target_list:
         with event_logger.addBenchmarkedEntry(f"Reordering target #{target.index_num}."):
             (sorted, warning_msg) = reorder_target_cards(target, word_frequency_lists, col, event_logger)
@@ -156,8 +154,12 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):
     # Create a new tab and its layout
     (tab_layout, tab) = fm_window.create_new_tab('sort_cards', "Sort cards")
     
+    #
+    frequency_lists_dir = os.path.join(os.path.dirname(__file__), 'user_files', 'frequency_lists')
+    word_frequency_lists = WordFrequencyLists(frequency_lists_dir)
+    
     # target data
-    target_list = TargetList()
+    target_list = TargetList(word_frequency_lists)
     if fm_window.addon_config and "fm_reorder_target_list" in fm_window.addon_config:
         target_list.set_targets(fm_window.addon_config.get("fm_reorder_target_list", []))
 
@@ -192,7 +194,7 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):
     
     # Check if the JSON and target data is valid
     def check_textarea_json_validity() -> Tuple[int, list[ConfigTargetData], str]:
-        (json_validity_state, targets_defined, err_desc) = TargetList.handle_json(target_data_textarea.toPlainText());
+        (json_validity_state, targets_defined, err_desc) = target_list.handle_json(target_data_textarea.toPlainText());
         palette = QPalette()
         if (json_validity_state == 1): # valid
             palette.setColor(QPalette.ColorRole.Text, QColor("#23b442")) # Green
@@ -215,7 +217,7 @@ def create_tab_sort_cards(fm_window:FrequencyManMainWindow, col:Collection):
         (json_validity_state, targets_defined, err_desc) = check_textarea_json_validity()
         if json_validity_state == 1:
             save_config_new_targets(targets_defined)
-            execute_reorder(col, target_list)
+            execute_reorder(col, target_list, word_frequency_lists)
         elif target_list.has_targets() and askUser("Defined targets are not valid.\n\n"+err_desc+"\n\nRestore previous defined targets?"):
             target_data_textarea.setText(target_list.dump_json())
         else:

@@ -12,10 +12,13 @@ from .word_frequency_list import WordFrequencyLists
 
 class CardRanker:
     
+    updated_notes:list[Note]
+    
     def __init__(self, cards_corpus_data:TargetCorpusData, word_frequency_lists:WordFrequencyLists, col:Collection) -> None:
         self.cards_corpus_data = cards_corpus_data
         self.word_frequency_lists = word_frequency_lists
         self.col = col
+        self.updated_notes = []
         
 
     @staticmethod
@@ -44,6 +47,10 @@ class CardRanker:
                 card_notes_rankings[card.nid] = self.calc_card_note_ranking(card_notes[card.nid])
             card_rankings[card.id] = card_notes_rankings[card.nid]
             
+        if (len(self.updated_notes) > 0):
+            self.col.update_notes(self.updated_notes)
+            self.updated_notes = []
+             
         return card_rankings
                 
         
@@ -171,6 +178,6 @@ class CardRanker:
             update_note = True
         
         if update_note:
-            self.col.update_note(card_note)
+            self.updated_notes.append(card_note)
         
         return card_ranking

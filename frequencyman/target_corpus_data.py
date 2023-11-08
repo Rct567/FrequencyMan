@@ -7,7 +7,7 @@ from anki.cards import CardId, Card
 from anki.notes import NoteId
 
 from .lib.utilities import *
-from .target_list import Target
+from .target import Target
 from .text_processing import TextProcessing
 
 FieldKey = str # unique id for a field of a note model

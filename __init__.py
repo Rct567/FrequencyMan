@@ -27,8 +27,8 @@ def open_frequencyman_main_window(mw:AnkiQt):
     
     fm_window.root_dir = os.path.dirname(__file__)
     
-    ReorderCardsTab.create_new_tab(fm_window, mw.col);
-    OverviewTab.create_new_tab(fm_window);
+    ReorderCardsTab().create_new_tab(fm_window, mw.col);
+    OverviewTab().create_new_tab(fm_window);
     
     fm_window.exec()
 

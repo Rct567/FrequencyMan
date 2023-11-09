@@ -20,10 +20,15 @@ from ..lib.event_logger import EventLogger
 
 
 class OverviewTab:
-    
-    @staticmethod
-    def create_new_tab(fm_window:FrequencyManMainWindow):
+
+    def __init__(self) -> None:
+        pass
+
+    def create_new_tab(self, fm_window:FrequencyManMainWindow):
+
         (tab_layout, tab) = fm_window.create_new_tab('word_overview', "Word overview")
-        # Create a label to display "Test" in the panel
-        label = QLabel("Overview of: 1. familiar words not in word frequency lists, 2 words with most lexical_discrepancy")
+
+        label = QLabel("Overview of:\n\n1. familiar words not in word frequency lists.\n2. words with most lexical_discrepancy.")
         tab_layout.addWidget(label)
+
+        tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)) # Add an empty spacer row to compress the rows above

@@ -11,8 +11,8 @@ class EventLogger:
 
     def addEventLogListener(self, listener: Callable[[str], None]) -> None:
         self.event_listeners.append(listener)
-    
-    def addEntry(self, log_msg:str, propagate_fn:Optional[Callable]=None) -> int:
+
+    def addEntry(self, log_msg: str, propagate_fn: Optional[Callable] = None) -> int:
         index = len(self.events)
         if self.timed_entries_open > 0:
             self.events.append(("|"*self.timed_entries_open)+" "+log_msg)

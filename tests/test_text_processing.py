@@ -1,18 +1,20 @@
 import re
 from frequencyman.text_processing import TextProcessing
 
+
 def test_acceptable_word():
-    
+
     assert TextProcessing.acceptable_word("app-le") == True
     assert TextProcessing.acceptable_word("won't") == True
     assert TextProcessing.acceptable_word("你", "zh") == True
-    
+
     assert TextProcessing.acceptable_word("s") == False
     assert TextProcessing.acceptable_word("s ") == False
     assert TextProcessing.acceptable_word("s!!!") == False
     assert TextProcessing.acceptable_word("_s_") == False
     assert TextProcessing.acceptable_word("1234") == False
     assert TextProcessing.acceptable_word("$$$$$$$") == False
+
 
 def test_get_plain_text():
     assert TextProcessing.get_plain_text("This a <b>sample</b></b> text with HTML<p>tags</P>and example.") == "This a sample text with HTML tags and example."
@@ -35,8 +37,6 @@ def test_get_word_tokens_from_text():
     assert TextProcessing.get_word_tokens_from_text("Simple sente-nce. EE.UU.") == ['Simple', 'sente-nce', 'EE.UU']
     assert TextProcessing.get_word_tokens_from_text("This is a test.") == ['This', 'is', 'test']
     assert TextProcessing.get_word_tokens_from_text("Hello, world!") == ['Hello', 'world']
-    
+
     assert TextProcessing.get_word_tokens_from_text("Мне … лет.") == ['Мне', 'лет']
     assert TextProcessing.get_word_tokens_from_text("你跟我") == ['你跟我']
-
-

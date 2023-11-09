@@ -11,35 +11,37 @@ from .frequencyman.ui.main_window import FrequencyManMainWindow
 
 from .frequencyman.lib.utilities import *
 
+
 def get_mw():
-    from aqt import mw # type: ignore
+    from aqt import mw  # type: ignore
+
     return mw
 
-mw:AnkiQt = get_mw()
-     
+
+mw: AnkiQt = get_mw()
+
+
 # Open 'FrequencyMan main window' and create tabs
-def open_frequencyman_main_window(mw:AnkiQt):
-    
+def open_frequencyman_main_window(mw: AnkiQt):
     if not isinstance(mw.col, Collection):
         return
-    
+
     fm_window = FrequencyManMainWindow(mw)
-    
+
     fm_window.root_dir = os.path.dirname(__file__)
-    
-    ReorderCardsTab().create_new_tab(fm_window, mw.col);
-    OverviewTab().create_new_tab(fm_window);
-    
+
+    ReorderCardsTab().create_new_tab(fm_window, mw.col)
+    OverviewTab().create_new_tab(fm_window)
+
     fm_window.exec()
 
 
-# Add "FrequencyMan" menu option in the "Tools" menu of the main Anki window 
-def add_frequencyman_menu_option_to_anki_tools_menu(mw:AnkiQt):
+# Add "FrequencyMan" menu option in the "Tools" menu of the main Anki window
+def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt):
     action = QAction("FrequencyMan", mw)
     action.triggered.connect(lambda: open_frequencyman_main_window(mw))
     mw.form.menuTools.addAction(action)
 
+
 if isinstance(mw, AnkiQt):
     add_frequencyman_menu_option_to_anki_tools_menu(mw)
-
-

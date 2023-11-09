@@ -1,8 +1,9 @@
 import sqlite3
 from typing import Any, Optional, Iterable
 
+
 class QueryResults:
-    
+
     def __init__(self, cursor: sqlite3.Cursor):
         self.cursor = cursor
 
@@ -10,20 +11,21 @@ class QueryResults:
         row = self.cursor.fetchone()
         if row:
             return {col[0]: value for col, value in zip(self.cursor.description, row)}
-            
+
     def fetch_rows(self) -> Iterable[dict[str, Any]]:
         for row in self.cursor:
             yield {col[0]: value for col, value in zip(self.cursor.description, row)}
-            
+
     def row_count(self) -> int:
         return self.cursor.rowcount
-        #return len(list(self.get_rows()))
+        # return len(list(self.get_rows()))
+
 
 class SQLiteDB:
-    
-    conn:sqlite3.Connection
-    cursor:sqlite3.Cursor
-    
+
+    conn: sqlite3.Connection
+    cursor: sqlite3.Cursor
+
     def __init__(self, **kwargs):
         if 'sqlite_file' in kwargs:
             self.conn = sqlite3.connect(kwargs['sqlite_file'])

@@ -1,0 +1,32 @@
+{
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8",
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+    },
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportWildcardImportFromLibrary": "none"
+    },
+    "cSpell.words": [
+        "defaultno",
+        "jieba",
+        "lcut",
+        "mecab",
+        "Owakati",
+        "punkt",
+        "revlog",
+        "sudachi",
+        "sudachipy",
+        "taskman"
+    ],
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.importFormat": "relative",
+    "pythonIndent.trimLinesWithOnlyWhitespace": true
+}

@@ -11,7 +11,8 @@ import threading
 from typing import Any, Callable, Coroutine
 from aqt.utils import showInfo
 
-var_dump_count = 0 
+var_dump_count = 0
+
 
 def var_dump(var) -> None:
     global var_dump_count
@@ -21,14 +22,14 @@ def var_dump(var) -> None:
             var_str = var_str[:2000].rsplit(' ', 1)[0]
         showInfo(var_str)
         var_dump_count += 1
-     
-       
+
+
 def var_dump_log(var) -> None:
     dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
     with open(dump_log_file, 'a', encoding='utf-8') as file:
-            file.write(pprint.pformat(var, sort_dicts=False) + "\n\n=================================================================\n\n")
+        file.write(pprint.pformat(var, sort_dicts=False) + "\n\n=================================================================\n\n")
     var_dump(var)
-    
+
 
 @contextmanager
 def profile_context(sortby=pstats.SortKey.CUMULATIVE):
@@ -48,7 +49,7 @@ def profile_context(sortby=pstats.SortKey.CUMULATIVE):
         with open(dump_file, 'w') as f:
             f.write(profiling_results)
 
-          
+
 def promise_all(async_functions: list[Coroutine]) -> list:
     """
     Run multiple asynchronous functions concurrently and return their results.
@@ -122,10 +123,10 @@ def make_async(func: Callable[..., Any]) -> Callable[..., Any]:
 def make_async_wrap(func: Callable[..., Any]) -> Callable[..., Any]:
     """
     A decorator to make a function asynchronous.
-    
+
     Parameters:
         func (Callable[..., Any]): The function to be made asynchronous.
-    
+
     Returns:
         Callable[..., Any]: An asynchronous version of the input function.
     """

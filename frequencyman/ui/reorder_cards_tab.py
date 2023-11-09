@@ -28,13 +28,13 @@ class ReorderCardsTab:
     def __init__(self) -> None:
 
         self.target_data_textarea = QTextEdit()
-        self.target_data_textarea.setMinimumHeight(300);
+        self.target_data_textarea.setMinimumHeight(300)
         self.target_data_textarea.setAcceptRichText(False)
         self.target_data_textarea.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2;")
 
         (self.target_data_validation_line, self.target_data_validation_line_info_txt) = ReorderCardsTab.__create_validation_line_widget()
 
-    def create_new_tab(self, fm_window:FrequencyManMainWindow, col:Collection):
+    def create_new_tab(self, fm_window: FrequencyManMainWindow, col: Collection):
         # Create a new tab and its layout
         (tab_layout, tab) = fm_window.create_new_tab('sort_cards', "Sort cards")
 
@@ -50,14 +50,14 @@ class ReorderCardsTab:
         # Textarea widget
         if (target_list.has_targets()):
             self.target_data_textarea.setText(target_list.dump_json())
-        else: # when does this even happen?
-            example_data_notes_item:ConfigTargetDataNotes = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
-            example_target:ConfigTargetData = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
+        else:  # when does this even happen?
+            example_data_notes_item: ConfigTargetDataNotes = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
+            example_target: ConfigTargetData = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
             example_target_list = [example_target]
             self.target_data_textarea.setText(json.dumps(example_target_list, indent=4))
 
-
         # User clicked reorder... ask to save to config if new targets have been defined
+
         def save_config_new_targets(targets_defined: list[ConfigTargetData]):
             if fm_window.addon_config is None or "fm_reorder_target_list" not in fm_window.addon_config:
                 return
@@ -67,7 +67,6 @@ class ReorderCardsTab:
                 new_config = fm_window.addon_config
                 new_config['fm_reorder_target_list'] = targets_defined
                 fm_window.addon_config_write(new_config)
-
 
         # Connect the check_json_validity function to textChanged signal
         self.target_data_textarea.textChanged.connect(partial(self.__check_textarea_json_validity, target_list=target_list))
@@ -92,29 +91,29 @@ class ReorderCardsTab:
         tab_layout.addWidget(self.target_data_textarea)
         tab_layout.addWidget(self.target_data_validation_line)
         tab_layout.addWidget(exec_reorder_button)
-        tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)) # Add an empty spacer row to compress the rows above
-
+        tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))  # Add an empty spacer row to compress the rows above
 
     # Check if the JSON and target data is valid
+
     def __check_textarea_json_validity(self, target_list: TargetList) -> Tuple[int, list[ConfigTargetData], str]:
-        (json_validity_state, targets_defined, err_desc) = target_list.handle_json(self.target_data_textarea.toPlainText());
+        (json_validity_state, targets_defined, err_desc) = target_list.handle_json(self.target_data_textarea.toPlainText())
         palette = QPalette()
-        if (json_validity_state == 1): # valid
-            palette.setColor(QPalette.ColorRole.Text, QColor("#23b442")) # Green
+        if (json_validity_state == 1):  # valid
+            palette.setColor(QPalette.ColorRole.Text, QColor("#23b442"))  # Green
             self.target_data_validation_line_info_txt.setVisible(False)
-            target_list.set_targets(targets_defined) # set new targets
+            target_list.set_targets(targets_defined)  # set new targets
         else:
             self.target_data_validation_line_info_txt.setVisible(True)
-        if (json_validity_state == -1): # invalid json
-            palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c")) # Red
+        if (json_validity_state == -1):  # invalid json
+            palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c"))  # Red
         self.target_data_textarea.setPalette(palette)
         self.target_data_validation_line_info_txt.setText(err_desc)
         return (json_validity_state, targets_defined, err_desc)
 
-
     # Validation line below textarea, with line of text and buttons on the right
+
     @staticmethod
-    def __create_validation_line_widget() -> Tuple[QWidget,QLabel]:
+    def __create_validation_line_widget() -> Tuple[QWidget, QLabel]:
 
         layout = QHBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -140,7 +139,7 @@ class ReorderCardsTab:
         return (line_widget, validation_txt_info)
 
     @staticmethod
-    def __execute_reorder_request(col:Collection, target_list:TargetList, word_frequency_lists:WordFrequencyLists):
+    def __execute_reorder_request(col: Collection, target_list: TargetList, word_frequency_lists: WordFrequencyLists):
 
         if not isinstance(col, Collection):
             showWarning("Collection not found!")

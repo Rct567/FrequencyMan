@@ -1,18 +1,17 @@
 import anki
-from aqt import mw # type: ignore
+from aqt import mw  # type: ignore
 from typing import TypedDict
 
 from .lib.utilities import chunked_list
 
-#var_dump([mw.col.card_stats_data(card.id).revlog, mw.col.db.all("SELECT id, ease, ivl,  lastIvl, factor, type FROM revlog WHERE cid = ?", card.id)])
+# var_dump([mw.col.card_stats_data(card.id).revlog, mw.col.db.all("SELECT id, ease, ivl,  lastIvl, factor, type FROM revlog WHERE cid = ?", card.id)])
 
 
-
-    
 ReviewEntry = TypedDict('ReviewEntry', {"id": int, "ease": int, "ivl": int, "lastIvl": int, "factor": int, "type": int})
 
+
 def get_cards_review_history(card_ids: list[int]) -> dict[int, list[ReviewEntry]]:
-    
+
     cards_review_history: dict[int, list[ReviewEntry]] = {}
 
     for chunk in chunked_list(card_ids, 400):
@@ -39,16 +38,16 @@ def get_cards_review_history(card_ids: list[int]) -> dict[int, list[ReviewEntry]
 
             # Append the review entry to the corresponding card's list
             cards_review_history[card_id].append(review_entry)
-            
 
     return cards_review_history
+
 
 """ def get_card_review_history(card_id:int) -> list[ReviewEntry]:
 
     results = mw.col.db.all("SELECT id, ease, ivl, lastIvl, factor, type FROM revlog WHERE cid = ?", card_id)
 
     review_history = []
-    for row in results:  
+    for row in results:
         review_entry: ReviewEntry = {
             "id": row[0],         # Unique identifier for the review entry, timestamp
             "ease": row[1],       # Ease level chosen by the user (1: Wrong/relapse, 2: Hard, 3: Good, 4: Easy)
@@ -71,7 +70,7 @@ def calculate_problematic_score(review_history: list[ReviewEntry]) -> int:
     review_history.sort(key=lambda x: x['id'])
 
     for index, entry in enumerate(review_history):
-        action = entry['ease'] 
+        action = entry['ease']
         recent_history.append(action)
 
         # Weighted decay factor based on recency
@@ -88,4 +87,3 @@ def calculate_problematic_score(review_history: list[ReviewEntry]) -> int:
             score -= 0.6 * weight
 
     return max(0, round(score/len(review_history)))  # Ensure the score is non-negative.
-

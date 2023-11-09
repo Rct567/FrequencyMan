@@ -1,10 +1,11 @@
 import json
-from typing import Optional, Sequence, Tuple, TypedDict
-from dataclasses import dataclass
+from typing import Optional, Sequence, Tuple
 
+from anki.collection import Collection
 
 from .target import ConfigTargetData, Target
 from .word_frequency_list import WordFrequencyLists
+from .lib.event_logger import EventLogger
 
 class TargetList:
     
@@ -84,5 +85,22 @@ class TargetList:
             return (-1, [], "Not a list!")
         except json.JSONDecodeError:
             return (-1, [], "Invalid JSON!")
+        
+        
+    def reorder_cards(self, col: Collection, event_logger:EventLogger) -> Tuple[bool, list[str]]:
+        
+        warnings:list[str] = []
+
+        for target in self.target_list:
+            with event_logger.addBenchmarkedEntry(f"Reordering target #{target.index_num}."):
+                (_, warning_msg) = target.reorder_cards(self.word_frequency_lists, col, event_logger)
+                if (warning_msg != ""): 
+                    warnings.append(warning_msg)
+                
+                
+        target_word = "targets" if len(self.target_list) > 1 else "target"
+        event_logger.addEntry("Done with sorting {} {}!".format(len(self.target_list), target_word))
+        
+        return (len(warnings) == 0, warnings)
 
     

@@ -1,48 +1,23 @@
 import json
 from typing import Tuple
-from anki.collection import Collection
-from aqt.utils import askUser, showWarning
 
+from anki.collection import Collection
+
+from aqt.utils import askUser, showWarning, showInfo
 from aqt import QAction
 from aqt.qt import *
 from aqt.main import AnkiQt
-from aqt.utils import showInfo, askUser, showWarning
 
 from .main_window import FrequencyManMainWindow
 
-from ..lib.utilities import var_dump_log
 from ..lib.event_logger import EventLogger
+from ..lib.utilities import var_dump_log
 
 from ..target import ConfigTargetDataNotes
 from ..word_frequency_list import WordFrequencyLists
 from ..target_list import ConfigTargetData, TargetList
  
     
-def execute_reorder(col:Collection, target_list:TargetList, word_frequency_lists:WordFrequencyLists):
-    
-    if not isinstance(col, Collection):
-        showInfo("Collection not found!")
-        return
-    
-    if not target_list.has_targets():
-        showInfo("No targets defined!")
-        return
-    
-    event_logger = EventLogger()
-
-    for target in target_list:
-        with event_logger.addBenchmarkedEntry(f"Reordering target #{target.index_num}."):
-            (has_sorted, warning_msg) = target.reorder_cards(word_frequency_lists, col, event_logger)
-            if (warning_msg != ""): 
-                showWarning(warning_msg)
-            
-            
-    target_word = "targets" if len(target_list) > 1 else "target"
-    event_logger.addEntry("Done with sorting {} {}!".format(len(target_list), target_word), showInfo)
-            
-    var_dump_log(event_logger.events)
-
-
 class ReorderCardsTab:
     
     @staticmethod
@@ -110,7 +85,7 @@ class ReorderCardsTab:
             (json_validity_state, targets_defined, err_desc) = check_textarea_json_validity()
             if json_validity_state == 1:
                 save_config_new_targets(targets_defined)
-                execute_reorder(col, target_list, word_frequency_lists)
+                ReorderCardsTab.__execute_reorder_request(col, target_list, word_frequency_lists)
             elif target_list.has_targets() and askUser("Defined targets are not valid.\n\n"+err_desc+"\n\nRestore previously defined targets?"):
                 target_data_textarea.setText(target_list.dump_json())
             else:
@@ -125,6 +100,7 @@ class ReorderCardsTab:
         tab_layout.addWidget(target_data_validation_line)
         tab_layout.addWidget(exec_reorder_button)
         tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)) # Add an empty spacer row to compress the rows above
+        
         
     # Validation line below textarea, with line of text and buttons on the right
     @staticmethod
@@ -152,4 +128,24 @@ class ReorderCardsTab:
         line_widget.setLayout(layout)
 
         return (line_widget, validation_txt_info)
+    
+    @staticmethod
+    def __execute_reorder_request(col:Collection, target_list:TargetList, word_frequency_lists:WordFrequencyLists):
+    
+        if not isinstance(col, Collection):
+            showWarning("Collection not found!")
+            return
+        
+        if not target_list.has_targets():
+            showWarning("No targets defined!")
+            return
+        
+        event_logger = EventLogger()
+        
+        (_, warnings) = target_list.reorder_cards(col, event_logger)
+        
+        for warning in warnings:
+            showWarning(warning)
+                
+        var_dump_log(event_logger.events)
  

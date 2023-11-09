@@ -8,6 +8,10 @@ from aqt.main import AnkiQt
 class FrequencyManMainWindow(QDialog):
     
     root_dir:str
+    tab_menu_options:dict[str, QWidget]
+    
+    addon_config:dict[str, Any]
+    addon_config_write: Callable[[dict[str, Any]], None]
 
     def __init__(self, mw:AnkiQt):
         
@@ -30,8 +34,12 @@ class FrequencyManMainWindow(QDialog):
         self.setLayout(window_layout)
         
         # Addon config
-        self.addon_config = mw.addonManager.getConfig(__name__)
-        self.addon_config_write: Callable[[dict[str, Any]], None] = lambda config: mw.addonManager.writeConfig(__name__, config)
+        self.addon_config = {}
+        addon_config = mw.addonManager.getConfig(__name__)
+        if isinstance(addon_config, dict):
+           self.addon_config = addon_config
+           
+        self.addon_config_write = lambda config: mw.addonManager.writeConfig(__name__, config)
         
     def create_new_tab(self, tab_id: str, tab_name: str) -> Tuple[QVBoxLayout, QWidget]:
         

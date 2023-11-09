@@ -79,39 +79,38 @@ class WordFrequencyLists:
         return files
         
     
-    def load_frequency_list(self, key:str) -> bool:
+    def load_frequency_list(self, key:str) -> None:
         if self.already_loaded(key):
-            return True
+            return
         
         files = self.get_files_for_lang_key(key)
         
         if len(files) < 1:
             raise ValueError(f"No word frequency list found for key '{key}'.")
         
-        word_frequency_list = self.load_word_frequency_list(files)
-        self.word_frequency_lists[key] = word_frequency_list;
-        return True
+        self.word_frequency_lists[key] = self.__produce_word_frequency_list(files)
     
 
-    def load_word_frequency_list(self, files: list[str]) -> Dict[str, float]:
-        word_rankings: Dict[str, list[int]] = {}
-        word_rankings_combined: Dict[str, int] = {}
+    def __produce_word_frequency_list(self, files: list[str]) -> Dict[str, float]:
+        
+        all_files_word_rankings: Dict[str, list[int]] = {}
+        all_files_word_rankings_combined: Dict[str, int] = {}
 
         for file_name in files:
             if not file_name.endswith('.txt'):
                 continue
             with open(os.path.join(file_name, file_name), encoding='utf-8') as file:
-                self.load_word_rankings_from_file(file, word_rankings)
+                self.__set_word_rankings_from_file(file, all_files_word_rankings)
 
-        for word, rankings in word_rankings.items():
+        for word, rankings in all_files_word_rankings.items():
             # word_rankings_combined[word] = sum(rankings) / len(rankings)
-            word_rankings_combined[word] = min(rankings) # highest position
+            all_files_word_rankings_combined[word] = min(rankings) # highest position
 
-        max_rank = max(word_rankings_combined.values())
-        return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in word_rankings_combined.items()}
+        max_rank = max(all_files_word_rankings_combined.values())
+        return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in all_files_word_rankings_combined.items()}
 
 
-    def load_word_rankings_from_file(self, file: TextIOWrapper, all_files_word_rankings: Dict[str, list[int]]) -> None:
+    def __set_word_rankings_from_file(self, file: TextIOWrapper, all_files_word_rankings: Dict[str, list[int]]) -> None:
         
         file_word_rankings: list[str] = []
 

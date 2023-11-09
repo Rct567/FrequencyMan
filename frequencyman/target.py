@@ -12,25 +12,23 @@ ConfigTargetDataNotes = TypedDict('TargetDataNotes', {'name': str, 'fields': dic
 ConfigTargetData = TypedDict('TargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
 
 @dataclass
-class TargetResult:
+class TargetCardsResult:
     all_cards_ids:Sequence[CardId]
     all_cards:list[Card]
     new_cards:list[Card]
     new_cards_ids:Sequence[CardId]
-    
+
 
 class Target:
     
     target:ConfigTargetData
     index_num:int
     query:Optional[str]
-    result:Optional[TargetResult]
 
     def __init__(self, target:ConfigTargetData, index_num:int) -> None:
         self.target = target
         self.index_num = index_num
         self.query = None
-        self.result = None
     
     def __getitem__(self, key):
         return self.target[key]
@@ -53,14 +51,14 @@ class Target:
     def get_notes(self) -> dict[str, dict[str, str]]:
         return {note.get('name'): note.get('fields', {}) for note in self.target.get('notes', [])} 
     
-    def get_notes_language_keys(self) -> list[str]:
+    def __get_all_language_keys(self) -> list[str]:
         keys = []
         for note in self.target.get('notes', []):
             for lang_key in note['fields'].values():
                 keys.append(lang_key.lower())
         return keys      
     
-    def construct_search_query(self) -> str:
+    def __construct_search_query(self) -> str:
         target_notes = self.get("notes", []) if isinstance(self.get("notes"), list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
         
@@ -84,59 +82,59 @@ class Target:
         
         return search_query
     
-    def get_search_query(self) -> str:
+    def __get_search_query(self) -> str:
         if (self.query is None):
-            self.query = self.construct_search_query()
+            self.query = self.__construct_search_query()
         return self.query
     
-    def get_cards(self, col:Collection):
+    def __get_cards(self, col:Collection) -> TargetCardsResult:
         
-        all_cards_ids = col.find_cards(self.get_search_query(), order="c.due asc")
+        all_cards_ids = col.find_cards(self.__get_search_query(), order="c.due asc")
         all_cards = [col.get_card(card_id) for card_id in all_cards_ids]
         new_cards = [card for card in all_cards if card.queue == 0]
         new_cards_ids:Sequence[CardId] = [card.id for card in new_cards] 
-        return TargetResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
+        return TargetCardsResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
     
     def reorder_cards(self, word_frequency_lists:WordFrequencyLists, col:Collection, event_logger:EventLogger) -> Tuple[bool, str]:
         
         from .card_ranker import CardRanker
         from .target_corpus_data import TargetCorpusData
     
-        if "note:" not in self.get_search_query():
+        if "note:" not in self.__get_search_query():
             warning_msg = "No valid note type defined. At least one note is required for reordering!"
             event_logger.addEntry(warning_msg)
             return (False, warning_msg)
         
         # Check defined target lang keys and then load frequency lists for target  
-        for lang_key in self.get_notes_language_keys():
+        for lang_key in self.__get_all_language_keys():
             if not word_frequency_lists.key_has_frequency_list_file(lang_key):
                 warning_msg = "No word frequency list file found for key '{}'!".format(lang_key)
                 event_logger.addEntry(warning_msg)
                 return (False, warning_msg)
         
         with event_logger.addBenchmarkedEntry("Loading word frequency lists."):
-            word_frequency_lists.load_frequency_lists(self.get_notes_language_keys())
+            word_frequency_lists.load_frequency_lists(self.__get_all_language_keys())
         
         # Get cards for target
         with event_logger.addBenchmarkedEntry("Getting target cards from collection."):
-            target_result = self.get_cards(col)
+            target_cards = self.__get_cards(col)
             
-        event_logger.addEntry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_result.new_cards_ids), len(target_result.all_cards)))
+        event_logger.addEntry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_cards.new_cards_ids), len(target_cards.all_cards)))
         
         # Get corpus data
-        cards_corpus_data = TargetCorpusData()
+        target_corpus_data = TargetCorpusData()
         with event_logger.addBenchmarkedEntry("Creating corpus data from target cards."):
-            cards_corpus_data.create_data(target_result.all_cards, self, col)
+            target_corpus_data.create_data(target_cards.all_cards, self, col)
         
         # Sort cards
         with event_logger.addBenchmarkedEntry("Ranking cards and creating a new sorted list."):
-            card_ranker = CardRanker(cards_corpus_data, word_frequency_lists, col)
-            card_rankings = card_ranker.calc_cards_ranking(target_result.new_cards)
-            sorted_cards = sorted(target_result.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
+            card_ranker = CardRanker(target_corpus_data, word_frequency_lists, col)
+            card_rankings = card_ranker.calc_cards_ranking(target_cards.new_cards)
+            sorted_cards = sorted(target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
             sorted_card_ids = [card.id for card in sorted_cards]
 
         
-        if target_result.new_cards_ids == sorted_card_ids: # Avoid making unnecessary changes 
+        if target_cards.new_cards_ids == sorted_card_ids: # Avoid making unnecessary changes 
             event_logger.addEntry("Cards order was already up-to-date!")
         else:
             # Reposition cards and apply changes

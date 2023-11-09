@@ -43,7 +43,7 @@ def execute_reorder(col:Collection, target_list:TargetList, word_frequency_lists
     var_dump_log(event_logger.events)
 
 
-class SortCardsTab:
+class ReorderCardsTab:
     
     @staticmethod
     def create_new_tab(fm_window:FrequencyManMainWindow, col:Collection):
@@ -72,7 +72,7 @@ class SortCardsTab:
             example_target_list = [example_target]
             target_data_textarea.setText(json.dumps(example_target_list, indent=4))
             
-        (target_data_validation_line, target_data_validation_info_txt) = SortCardsTab.create_validation_line_widget()      
+        (target_data_validation_line, target_data_validation_info_txt) = ReorderCardsTab.create_validation_line_widget()      
         
         # Ask to save to config if new targets have been defined
         def save_config_new_targets(targets_defined: list[ConfigTargetData]):

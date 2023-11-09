@@ -6,7 +6,7 @@ from anki.collection import Collection
 from aqt.utils import showInfo, askUser, showWarning
 
 from .frequencyman.ui.overview_tab import OverviewTab
-from .frequencyman.ui.sort_cards_tab import SortCardsTab
+from .frequencyman.ui.reorder_cards_tab import ReorderCardsTab
 from .frequencyman.ui.main_window import FrequencyManMainWindow
 
 from .frequencyman.lib.utilities import *
@@ -27,7 +27,7 @@ def open_frequencyman_main_window(mw:AnkiQt):
     
     fm_window.root_dir = os.path.dirname(__file__)
     
-    SortCardsTab.create_new_tab(fm_window, mw.col);
+    ReorderCardsTab.create_new_tab(fm_window, mw.col);
     OverviewTab.create_new_tab(fm_window);
     
     fm_window.exec()

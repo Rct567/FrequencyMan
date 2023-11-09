@@ -2,15 +2,8 @@ import json
 from typing import Optional, Sequence, Tuple, TypedDict
 from dataclasses import dataclass
 
-from aqt import QAction
-from aqt.qt import *
-from aqt.main import AnkiQt
-
-from anki.collection import Collection
-from anki.cards import CardId, Card
 
 from .target import ConfigTargetData, Target
-from .lib.event_logger import EventLogger
 from .word_frequency_list import WordFrequencyLists
 
 class TargetList:

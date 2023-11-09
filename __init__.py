@@ -1,5 +1,3 @@
-from typing import Sequence, Tuple
-
 from aqt import QAction
 from aqt.qt import *
 from aqt.main import AnkiQt

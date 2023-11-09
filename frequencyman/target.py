@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence, Tuple, TypedDict
 
-from aqt import QAction
-from aqt.qt import *
-from aqt.main import AnkiQt
-
 from anki.collection import Collection
 from anki.cards import CardId, Card
+
+from .lib.event_logger import EventLogger
+from .word_frequency_list import WordFrequencyLists
+
 
 ConfigTargetDataNotes = TypedDict('TargetDataNotes', {'name': str, 'fields': dict[str, str]})
 ConfigTargetData = TypedDict('TargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
@@ -96,5 +96,60 @@ class Target:
         new_cards = [card for card in all_cards if card.queue == 0]
         new_cards_ids:Sequence[CardId] = [card.id for card in new_cards] 
         return TargetResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
+    
+    def reorder_cards(self, word_frequency_lists:WordFrequencyLists, col:Collection, event_logger:EventLogger) -> Tuple[bool, str]:
+        
+        from .card_ranker import CardRanker
+        from .target_corpus_data import TargetCorpusData
+    
+        if "note:" not in self.get_search_query():
+            warning_msg = "No valid note type defined. At least one note is required for reordering!"
+            event_logger.addEntry(warning_msg)
+            return (False, warning_msg)
+        
+        # Check defined target lang keys and then load frequency lists for target  
+        for lang_key in self.get_notes_language_keys():
+            if not word_frequency_lists.key_has_frequency_list_file(lang_key):
+                warning_msg = "No word frequency list file found for key '{}'!".format(lang_key)
+                event_logger.addEntry(warning_msg)
+                return (False, warning_msg)
+        
+        with event_logger.addBenchmarkedEntry("Loading word frequency lists."):
+            word_frequency_lists.load_frequency_lists(self.get_notes_language_keys())
+        
+        # Get cards for target
+        with event_logger.addBenchmarkedEntry("Getting target cards from collection."):
+            target_result = self.get_cards(col)
+            
+        event_logger.addEntry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_result.new_cards_ids), len(target_result.all_cards)))
+        
+        # Get corpus data
+        cards_corpus_data = TargetCorpusData()
+        with event_logger.addBenchmarkedEntry("Creating corpus data from target cards."):
+            cards_corpus_data.create_data(target_result.all_cards, self, col)
+        
+        # Sort cards
+        with event_logger.addBenchmarkedEntry("Ranking cards and creating a new sorted list."):
+            card_ranker = CardRanker(cards_corpus_data, word_frequency_lists, col)
+            card_rankings = card_ranker.calc_cards_ranking(target_result.new_cards)
+            sorted_cards = sorted(target_result.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
+            sorted_card_ids = [card.id for card in sorted_cards]
+
+        
+        if target_result.new_cards_ids == sorted_card_ids: # Avoid making unnecessary changes 
+            event_logger.addEntry("Cards order was already up-to-date!")
+        else:
+            # Reposition cards and apply changes
+            with event_logger.addBenchmarkedEntry("Reposition cards in collection."):
+                col.sched.forgetCards(sorted_card_ids)
+                col.sched.reposition_new_cards(
+                    card_ids=sorted_card_ids,
+                    starting_from=0, step_size=1,
+                    randomize=False, shift_existing=True
+                )
+        
+        event_logger.addEntry(f"Done with sorting target #{self.index_num}!")
+        
+        return (True, "")
     
     

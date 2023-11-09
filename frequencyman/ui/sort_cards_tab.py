@@ -14,63 +14,9 @@ from ..lib.utilities import var_dump_log
 from ..lib.event_logger import EventLogger
 
 from ..target import ConfigTargetDataNotes
-from ..card_ranker import CardRanker
-from ..target_corpus_data import TargetCorpusData
 from ..word_frequency_list import WordFrequencyLists
-from ..target_list import ConfigTargetData, Target, TargetList
-
-def reorder_target_cards(target:Target, word_frequency_lists:WordFrequencyLists, col:Collection, event_logger:EventLogger) -> Tuple[bool, str]:
-    
-    if "note:" not in target.get_search_query():
-        warning_msg = "No valid note type defined. At least one note is required for reordering!"
-        event_logger.addEntry(warning_msg)
-        return (False, warning_msg)
-    
-    # Check defined target lang keys and then load frequency lists for target  
-    for lang_key in target.get_notes_language_keys():
-        if not word_frequency_lists.key_has_frequency_list_file(lang_key):
-            warning_msg = "No word frequency list file found for key '{}'!".format(lang_key)
-            event_logger.addEntry(warning_msg)
-            return (False, warning_msg)
-    
-    with event_logger.addBenchmarkedEntry("Loading word frequency lists."):
-        word_frequency_lists.load_frequency_lists(target.get_notes_language_keys())
-    
-    # Get cards for target
-    with event_logger.addBenchmarkedEntry("Getting target cards from collection."):
-        target_result = target.get_cards(col)
-        
-    event_logger.addEntry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_result.new_cards_ids), len(target_result.all_cards)))
-    
-    # Get corpus data
-    cards_corpus_data = TargetCorpusData()
-    with event_logger.addBenchmarkedEntry("Creating corpus data from target cards."):
-        cards_corpus_data.create_data(target_result.all_cards, target, col)
-    
-    # Sort cards
-    with event_logger.addBenchmarkedEntry("Ranking cards and creating a new sorted list."):
-        card_ranker = CardRanker(cards_corpus_data, word_frequency_lists, col)
-        card_rankings = card_ranker.calc_cards_ranking(target_result.new_cards)
-        sorted_cards = sorted(target_result.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
-        sorted_card_ids = [card.id for card in sorted_cards]
-
-    
-    if target_result.new_cards_ids == sorted_card_ids: # Avoid making unnecessary changes 
-        event_logger.addEntry("Cards order was already up-to-date!")
-    else:
-        # Reposition cards and apply changes
-        with event_logger.addBenchmarkedEntry("Reposition cards in collection."):
-            col.sched.forgetCards(sorted_card_ids)
-            col.sched.reposition_new_cards(
-                card_ids=sorted_card_ids,
-                starting_from=0, step_size=1,
-                randomize=False, shift_existing=True
-            )
-    
-    event_logger.addEntry(f"Done with sorting target #{target.index_num}!")
-    
-    return (True, "")
-    
+from ..target_list import ConfigTargetData, TargetList
+ 
     
 def execute_reorder(col:Collection, target_list:TargetList, word_frequency_lists:WordFrequencyLists):
     
@@ -86,7 +32,7 @@ def execute_reorder(col:Collection, target_list:TargetList, word_frequency_lists
 
     for target in target_list:
         with event_logger.addBenchmarkedEntry(f"Reordering target #{target.index_num}."):
-            (sorted, warning_msg) = reorder_target_cards(target, word_frequency_lists, col, event_logger)
+            (has_sorted, warning_msg) = target.reorder_cards(word_frequency_lists, col, event_logger)
             if (warning_msg != ""): 
                 showWarning(warning_msg)
             
@@ -105,7 +51,7 @@ class SortCardsTab:
         (tab_layout, tab) = fm_window.create_new_tab('sort_cards', "Sort cards")
         
         #
-        frequency_lists_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'user_files', 'frequency_lists')
+        frequency_lists_dir = os.path.join(fm_window.root_dir, 'user_files', 'frequency_lists')
         word_frequency_lists = WordFrequencyLists(frequency_lists_dir)
         
         # target data
@@ -126,33 +72,7 @@ class SortCardsTab:
             example_target_list = [example_target]
             target_data_textarea.setText(json.dumps(example_target_list, indent=4))
             
-        # Validation line below textarea, with line of text and buttons on the right
-        def create_validation_line_widget() -> Tuple[QWidget,QLabel]:
-
-            layout = QHBoxLayout()
-            layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-
-            # Create a QLabel for the left side
-            validation_txt_info = QLabel("Hello :)")
-            validation_txt_info.setStyleSheet("font-weight: bolder; font-size: 13px;")
-            validation_txt_info.setVisible(False)
-            layout.addWidget(validation_txt_info)
-
-            # Create two QPushButton widgets for the right side
-            button1 = QPushButton("Reset")
-            button2 = QPushButton("Save")
-            layout.addStretch(1)
-            layout.addWidget(button1)
-            layout.addWidget(button2)
-
-            # Set the layout for the QWidget
-            line_widget = QWidget()
-            line_widget.setStyleSheet("margin-top:0px;")
-            line_widget.setLayout(layout)
-
-            return (line_widget, validation_txt_info)
-        
-        (target_data_validation_line, target_data_validation_info_txt) = create_validation_line_widget()      
+        (target_data_validation_line, target_data_validation_info_txt) = SortCardsTab.create_validation_line_widget()      
         
         # Ask to save to config if new targets have been defined
         def save_config_new_targets(targets_defined: list[ConfigTargetData]):
@@ -205,4 +125,31 @@ class SortCardsTab:
         tab_layout.addWidget(target_data_validation_line)
         tab_layout.addWidget(exec_reorder_button)
         tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)) # Add an empty spacer row to compress the rows above
+        
+    # Validation line below textarea, with line of text and buttons on the right
+    @staticmethod
+    def create_validation_line_widget() -> Tuple[QWidget,QLabel]:
+
+        layout = QHBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # Create a QLabel for the left side
+        validation_txt_info = QLabel("Hello :)")
+        validation_txt_info.setStyleSheet("font-weight: bolder; font-size: 13px;")
+        validation_txt_info.setVisible(False)
+        layout.addWidget(validation_txt_info)
+
+        # Create two QPushButton widgets for the right side
+        button1 = QPushButton("Reset")
+        button2 = QPushButton("Save")
+        layout.addStretch(1)
+        layout.addWidget(button1)
+        layout.addWidget(button2)
+
+        # Set the layout for the QWidget
+        line_widget = QWidget()
+        line_widget.setStyleSheet("margin-top:0px;")
+        line_widget.setLayout(layout)
+
+        return (line_widget, validation_txt_info)
  

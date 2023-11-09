@@ -6,7 +6,8 @@ from aqt.main import AnkiQt
 
 # FrequencyMan Main Window class
 class FrequencyManMainWindow(QDialog):
-
+    
+    root_dir:str
 
     def __init__(self, mw:AnkiQt):
         

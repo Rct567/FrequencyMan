@@ -8,7 +8,7 @@ from anki.collection import Collection
 from aqt.utils import showInfo, askUser, showWarning
 
 from .frequencyman.ui.overview_tab import OverviewTab
-from .frequencyman.ui.sort_card_tab import SortCardsTab
+from .frequencyman.ui.sort_cards_tab import SortCardsTab
 from .frequencyman.ui.main_window import FrequencyManMainWindow
 
 from .frequencyman.lib.utilities import *
@@ -27,13 +27,15 @@ def open_frequencyman_main_window(mw:AnkiQt):
     
     fm_window = FrequencyManMainWindow(mw)
     
+    fm_window.root_dir = os.path.dirname(__file__)
+    
     SortCardsTab.create_new_tab(fm_window, mw.col);
     OverviewTab.create_new_tab(fm_window);
     
     fm_window.exec()
 
 
-# Add "FrequencyMan" menu option in the "Tools" menu of the main Anki window
+# Add "FrequencyMan" menu option in the "Tools" menu of the main Anki window 
 def add_frequencyman_menu_option_to_anki_tools_menu(mw:AnkiQt):
     action = QAction("FrequencyMan", mw)
     action.triggered.connect(lambda: open_frequencyman_main_window(mw))

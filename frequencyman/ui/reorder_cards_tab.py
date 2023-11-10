@@ -13,11 +13,64 @@ from aqt.main import AnkiQt
 from .main_window import FrequencyManMainWindow
 
 from ..lib.event_logger import EventLogger
-from ..lib.utilities import var_dump_log
+from ..lib.utilities import var_dump, var_dump_log
 
 from ..target import ConfigTargetDataNotes
 from ..word_frequency_list import WordFrequencyLists
 from ..target_list import ConfigTargetData, TargetList
+
+
+class TargetsDefiningTextArea(QTextEdit):
+
+    json_validity_state: int
+    json_validator: Callable[[str], Tuple[int, list[ConfigTargetData], str]]
+    err_desc: str
+    validity_change_callbacks: list[Callable[[int, 'TargetsDefiningTextArea'], None]]
+    change_callbacks: list[Callable[[int, 'TargetsDefiningTextArea'], None]]
+    targets_defined: list[ConfigTargetData]
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumHeight(300)
+        self.setAcceptRichText(False)
+        self.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2;")
+        self.textChanged.connect(self.__handle_content_change)
+        self.validity_change_callbacks = []
+        self.change_callbacks = []
+        self.json_validity_state = 0
+
+    @pyqtSlot()
+    def __handle_content_change(self):
+        input_json_txt: str = self.toPlainText()
+        (new_json_validity_state, new_targets_defined, new_err_desc) = self.json_validator(input_json_txt)
+        json_validity_state_has_changed = new_json_validity_state != self.json_validity_state
+        self.json_validity_state = new_json_validity_state
+        self.err_desc = new_err_desc
+        if (new_json_validity_state == 1):
+            self.targets_defined = new_targets_defined
+        self.__call_change_listeners(new_json_validity_state)
+        if json_validity_state_has_changed:
+            self.__call_validity_change_listeners(new_json_validity_state)
+
+    def __call_validity_change_listeners(self, json_validity_state: int):
+        for callback in self.validity_change_callbacks:
+            callback(json_validity_state, self)
+
+    def __call_change_listeners(self, json_validity_state: int):
+        for callback in self.change_callbacks:
+            callback(json_validity_state, self)
+
+    def set_validator(self, callback: Callable):
+        self.json_validator = callback
+
+    def on_validity_change(self, callback: Callable[[int, 'TargetsDefiningTextArea'], None]):
+        self.validity_change_callbacks.append(callback)
+
+    def on_change(self, callback: Callable[[int, 'TargetsDefiningTextArea'], None]):
+        self.change_callbacks.append(callback)
+
+    def set_target_list(self, target_list: TargetList):
+        self.setText(target_list.dump_json())
 
 
 class ReorderCardsTab:
@@ -26,9 +79,10 @@ class ReorderCardsTab:
     col: Collection
     target_list: TargetList
 
-    targets_input_textarea: QTextEdit
+    targets_input_textarea: TargetsDefiningTextArea
     targets_input_options_line: QWidget
     targets_input_validation_info_txt_line: QLabel
+    targets_input_restore_button: QPushButton
     targets_input_reset_button: QPushButton
     targets_input_save_button: QPushButton
 
@@ -41,16 +95,26 @@ class ReorderCardsTab:
         frequency_lists_dir = os.path.join(self.fm_window.root_dir, 'user_files', 'frequency_lists')
         word_frequency_lists = WordFrequencyLists(frequency_lists_dir)
 
-        # target data
+        # target data (list of targets for reordering)
         self.target_list = TargetList(word_frequency_lists)
         if self.fm_window.addon_config and "fm_reorder_target_list" in self.fm_window.addon_config:
             self.target_list.set_targets(self.fm_window.addon_config.get("fm_reorder_target_list", []))
 
-        self.targets_input_textarea = QTextEdit()
-        self.targets_input_textarea.setMinimumHeight(300)
-        self.targets_input_textarea.setAcceptRichText(False)
-        self.targets_input_textarea.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2;")
+        # textarea (user can input json to define targets)
+        self.targets_input_textarea = TargetsDefiningTextArea()
+        self.targets_input_textarea.set_validator(self.target_list.handle_json)
 
+        def update_textarea_text_color_by_validity(json_validity_state, targets_input_textarea):
+            palette = QPalette()
+            if (json_validity_state == 1):  # valid
+                palette.setColor(QPalette.ColorRole.Text, QColor("#23b442"))  # Green
+            if (json_validity_state == -1):  # invalid json
+                palette.setColor(QPalette.ColorRole.Text, QColor("#bb4n62c"))  # Red
+            targets_input_textarea.setPalette(palette)
+
+        self.targets_input_textarea.on_validity_change(update_textarea_text_color_by_validity)
+
+        # row below textarea
         self.__create_targets_input_options_row_widget()
 
     def create_new_tab(self):
@@ -60,7 +124,7 @@ class ReorderCardsTab:
 
         # Textarea widget
         if (self.target_list.has_targets()):
-            self.targets_input_textarea.setText(self.target_list.dump_json())
+            self.targets_input_textarea.set_target_list(self.target_list)
         else:  # when does this even happen?
             example_data_notes_item: ConfigTargetDataNotes = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
             example_target: ConfigTargetData = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
@@ -78,21 +142,16 @@ class ReorderCardsTab:
                 self.fm_window.addon_config['fm_reorder_target_list'] = targets_defined
                 self.fm_window.addon_config_write(self.fm_window.addon_config)
 
-        # Connect the check_json_validity function to textChanged signal
-        self.targets_input_textarea.textChanged.connect(partial(self.__handle_textarea_json_validity, update_target_list_if_json_defined_is_valid=True))
-        self.__handle_textarea_json_validity(update_target_list_if_json_defined_is_valid=True)
-
         # Create the "Reorder Cards" button
+
         def user_clicked_reorder_button():
-            (json_validity_state, targets_defined, err_desc) = self.__handle_textarea_json_validity(update_target_list_if_json_defined_is_valid=True)
-            if json_validity_state == 1:
-                ask_to_save_new_targets_to_config(targets_defined)
-                self.__handle_textarea_json_validity(update_target_list_if_json_defined_is_valid=True)
+            if self.targets_input_textarea.json_validity_state == 1:
+                ask_to_save_new_targets_to_config(self.targets_input_textarea.targets_defined)
                 ReorderCardsTab.__execute_reorder_request(self.col, self.target_list)
-            elif self.target_list.has_targets() and askUser("Defined targets are not valid.\n\n"+err_desc+"\n\nRestore previously defined targets?"):
+            elif self.target_list.has_targets() and askUser("Defined targets are not valid.\n\n"+self.targets_input_textarea.err_desc+"\n\nRestore previously defined targets?"):
                 self.targets_input_textarea.setText(self.target_list.dump_json())
             else:
-                showWarning("Defined targets are not valid!\n\n"+err_desc)
+                showWarning("Defined targets are not valid!\n\n"+self.targets_input_textarea.err_desc)
 
         exec_reorder_button = QPushButton("Reorder Cards")
         exec_reorder_button.setStyleSheet("font-size: 16px; font-weight: bold; background-color: #23b442; color: white; border:2px solid #23a03e; margin-top:20px;")
@@ -104,56 +163,45 @@ class ReorderCardsTab:
         tab_layout.addWidget(exec_reorder_button)
         tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))  # Add an empty spacer row to compress the rows above
 
-    # Check if the JSON and target data in the textarea is valid
-
-    def __handle_textarea_json_validity(self, update_target_list_if_json_defined_is_valid: Boolean) -> Tuple[int, list[ConfigTargetData], str]:
-
-        (json_validity_state, targets_defined, err_desc) = self.target_list.handle_json(self.targets_input_textarea.toPlainText())
-
-        if self.fm_window.addon_config['fm_reorder_target_list'] == targets_defined:
-            self.targets_input_reset_button.setDisabled(True)
-        else:
-            self.targets_input_reset_button.setDisabled(False)
-
-        palette = QPalette()
-        if (json_validity_state == 1):  # valid
-            palette.setColor(QPalette.ColorRole.Text, QColor("#23b442"))  # Green
-            self.targets_input_validation_info_txt_line.setVisible(False)
-            if update_target_list_if_json_defined_is_valid:
-                self.target_list.set_targets(targets_defined)  # set new targets
-            if self.fm_window.addon_config['fm_reorder_target_list'] == targets_defined:
-                self.targets_input_save_button.setDisabled(True)
-            else:
-                self.targets_input_save_button.setDisabled(False)
-        else:
-            self.targets_input_validation_info_txt_line.setVisible(True)
-            self.targets_input_save_button.setDisabled(True)
-            self.targets_input_reset_button.setDisabled(False)
-
-        if (json_validity_state == -1):  # invalid json
-            palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c"))  # Red
-
-        self.targets_input_textarea.setPalette(palette)
-        self.targets_input_validation_info_txt_line.setText(err_desc)
-
-        return (json_validity_state, targets_defined, err_desc)
-
     # Validation line below textarea, with line of text and buttons on the right
 
     def __create_targets_input_options_row_widget(self) -> None:
-
-        layout = QHBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # informational text on the left
 
         self.targets_input_validation_info_txt_line = QLabel("Hello :)")
         self.targets_input_validation_info_txt_line.setStyleSheet("font-weight: bolder; font-size: 13px;")
         self.targets_input_validation_info_txt_line.setVisible(False)
-        layout.addWidget(self.targets_input_validation_info_txt_line)
+
+        def update_validation_info_txt_line(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
+            if (targets_input_textarea.err_desc != ""):
+                self.targets_input_validation_info_txt_line.setVisible(True)
+                self.targets_input_validation_info_txt_line.setText(targets_input_textarea.err_desc)
+            else:
+                self.targets_input_validation_info_txt_line.setVisible(False)
+
+        self.targets_input_textarea.on_validity_change(update_validation_info_txt_line)
+
+        # restore button
+
+        @pyqtSlot()
+        def user_clicked_restore_button():
+            if askUser("Restore previously defined targets?"):
+                self.targets_input_textarea.setText(self.target_list.dump_json())
+
+        def update_restore_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
+            if self.target_list.has_targets() and (json_validity_state != 1 and targets_input_textarea.toPlainText() != self.target_list.dump_json()):
+                self.targets_input_restore_button.setVisible(True)
+                return
+            self.targets_input_restore_button.setVisible(False)
+
+        self.targets_input_restore_button = QPushButton("Restore")
+        self.targets_input_restore_button.clicked.connect(user_clicked_restore_button)
+        self.targets_input_textarea.on_change(update_restore_button_state)
 
         # reset button
 
+        @pyqtSlot()
         def user_clicked_reset_button():
             (_, targets_defined, _) = self.target_list.handle_json(self.targets_input_textarea.toPlainText())
 
@@ -166,12 +214,20 @@ class ReorderCardsTab:
                 json_str = json.dumps(self.fm_window.addon_config['fm_reorder_target_list'], indent=4)
                 self.targets_input_textarea.setText(json_str)
 
+        def update_reset_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
+            if json_validity_state == 1 and self.fm_window.addon_config['fm_reorder_target_list'] == targets_input_textarea.targets_defined:
+                self.targets_input_reset_button.setDisabled(True)
+            else:
+                self.targets_input_reset_button.setDisabled(False)
+
         self.targets_input_reset_button = QPushButton("Reset")
         self.targets_input_reset_button.setDisabled(True)
         self.targets_input_reset_button.clicked.connect(user_clicked_reset_button)
+        self.targets_input_textarea.on_change(update_reset_button_state)
 
         # save button
 
+        @pyqtSlot()
         def user_clicked_save_button():
             (json_validity_state, targets_defined, _) = self.target_list.handle_json(self.targets_input_textarea.toPlainText())
 
@@ -182,15 +238,29 @@ class ReorderCardsTab:
 
             self.targets_input_save_button.setDisabled(True)
 
+        def update_save_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
+
+            if (json_validity_state == 1):
+                if self.fm_window.addon_config['fm_reorder_target_list'] != targets_input_textarea.targets_defined:
+                    self.targets_input_save_button.setDisabled(False)
+                    return
+            self.targets_input_save_button.setDisabled(True)
+
         self.targets_input_save_button = QPushButton("Save")
         self.targets_input_save_button.setDisabled(True)
         self.targets_input_save_button.clicked.connect(user_clicked_save_button)
+        self.targets_input_textarea.on_change(update_save_button_state)
 
+        # set layout
+
+        layout = QHBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(self.targets_input_validation_info_txt_line)
         layout.addStretch(1)
+        layout.addWidget(self.targets_input_restore_button)
         layout.addWidget(self.targets_input_reset_button)
         layout.addWidget(self.targets_input_save_button)
 
-        # Set the layout for the QWidget
         self.targets_input_options_line = QWidget()
         self.targets_input_options_line.setLayout(layout)
 

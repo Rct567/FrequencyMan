@@ -21,12 +21,14 @@ from ..lib.event_logger import EventLogger
 
 class OverviewTab:
 
-    def __init__(self) -> None:
-        pass
+    fm_window: FrequencyManMainWindow
 
-    def create_new_tab(self, fm_window: FrequencyManMainWindow):
+    def __init__(self, fm_window: FrequencyManMainWindow) -> None:
+        self.fm_window = fm_window
 
-        (tab_layout, tab) = fm_window.create_new_tab('word_overview', "Word overview")
+    def create_new_tab(self, ):
+
+        (tab_layout, tab) = self.fm_window.create_new_tab('word_overview', "Word overview")
 
         label = QLabel("Overview of:\n\n1. familiar words not in word frequency lists.\n2. words with most lexical_discrepancy.")
         tab_layout.addWidget(label)

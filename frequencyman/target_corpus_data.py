@@ -1,16 +1,17 @@
 from dataclasses import dataclass
 from statistics import mean, median
-from typing import Iterable, Type, TypedDict, Union
+from typing import Iterable, NewType, Type, TypedDict, Union
 
 from anki.collection import Collection
 from anki.cards import CardId, Card
 from anki.notes import NoteId
 
+from .word_frequency_list import LangId, LangKey
 from .lib.utilities import *
 from .target import Target
-from .text_processing import TextProcessing
+from .text_processing import TextProcessing, WordToken
 
-FieldKey = str  # unique id for a field of a note model
+FieldKey = NewType('FieldKey', str)  # unique id for a field of a note model
 
 
 @dataclass
@@ -18,9 +19,9 @@ class TargetFieldData:
     field_key: FieldKey
     field_name: str
     field_value_plain_text: str
-    field_value_tokenized: list[str]
-    target_language_key: str
-    target_language_id: str
+    field_value_tokenized: list[WordToken]
+    target_language_key: LangKey
+    target_language_id: LangId
 
 
 class TargetCorpusData:
@@ -30,9 +31,9 @@ class TargetCorpusData:
 
     handled_notes: dict[NoteId, list[TargetFieldData]]
 
-    notes_reviewed_words: dict[FieldKey, dict[str, list[Card]]]
-    notes_reviewed_words_occurrences: dict[FieldKey, dict[str, list[float]]]  # list because a word can occur multiple times in a field
-    notes_reviewed_words_familiarity: dict[FieldKey, dict[str, float]]
+    notes_reviewed_words: dict[FieldKey, dict[WordToken, list[Card]]]
+    notes_reviewed_words_occurrences: dict[FieldKey, dict[WordToken, list[float]]]  # list because a word can occur multiple times in a field
+    notes_reviewed_words_familiarity: dict[FieldKey, dict[WordToken, float]]
 
     def __init__(self):
 
@@ -77,12 +78,12 @@ class TargetCorpusData:
                         field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
 
                         card_note_fields_in_target.append(TargetFieldData(
-                            field_key=field_key,
+                            field_key=FieldKey(field_key),
                             field_name=field_name,
                             field_value_plain_text=plain_text,
                             field_value_tokenized=field_value_tokenized,
-                            target_language_key=lang_key,
-                            target_language_id=lang_id
+                            target_language_key=LangKey(lang_key),
+                            target_language_id=LangId(lang_id)
                         ))
 
                 self.handled_notes[card.nid] = card_note_fields_in_target

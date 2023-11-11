@@ -1,6 +1,8 @@
 import re
 import html
-from typing import Optional
+from typing import NewType, Optional
+
+WordToken = NewType('WordToken', str)
 
 
 class TextProcessing:
@@ -38,12 +40,12 @@ class TextProcessing:
         return val.strip()
 
     @staticmethod
-    def get_word_tokens_from_text(text: str, lang_id: Optional[str] = None) -> list[str]:
+    def get_word_tokens_from_text(text: str, lang_id: Optional[str] = None) -> list[WordToken]:
 
         if (lang_id is not None and len(lang_id) != 2):
             raise ValueError(f"Invalid lang_id '{lang_id}'!")
 
         result_tokens = re.split(r"([^\w\-\_\'\’\.]{1,})", text)
         result_tokens = [s.strip(".'’") for s in result_tokens]
-        word_tokens = [token for token in result_tokens if TextProcessing.acceptable_word(token, lang_id)]
+        word_tokens = [WordToken(token) for token in result_tokens if TextProcessing.acceptable_word(token, lang_id)]
         return word_tokens

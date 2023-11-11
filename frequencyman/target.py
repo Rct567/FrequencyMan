@@ -6,6 +6,7 @@ from anki.cards import CardId, Card
 
 from .lib.event_logger import EventLogger
 from .word_frequency_list import WordFrequencyLists
+from .target_corpus_data import LangKey
 
 
 ConfigTargetDataNotes = TypedDict('TargetDataNotes', {'name': str, 'fields': dict[str, str]})
@@ -52,11 +53,11 @@ class Target:
     def get_notes(self) -> dict[str, dict[str, str]]:
         return {note.get('name'): note.get('fields', {}) for note in self.target.get('notes', [])}
 
-    def __get_all_language_keys(self) -> list[str]:
+    def __get_all_language_keys(self) -> list[LangKey]:
         keys = []
         for note in self.target.get('notes', []):
             for lang_key in note['fields'].values():
-                keys.append(lang_key.lower())
+                keys.append(LangKey(lang_key.lower()))
         return keys
 
     def __construct_search_query(self) -> str:

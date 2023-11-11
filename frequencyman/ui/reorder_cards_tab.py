@@ -107,7 +107,7 @@ class ReorderCardsTab:
         self.targets_input_textarea = TargetsDefiningTextArea()
         self.targets_input_textarea.set_validator(self.target_list.handle_json)
 
-        def update_textarea_text_color_by_validity(json_validity_state, targets_input_textarea):
+        def update_textarea_text_color_by_validity(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
             palette = QPalette()
             if (json_validity_state == 1):  # valid
                 palette.setColor(QPalette.ColorRole.Text, QColor("#23b442"))  # Green
@@ -115,7 +115,12 @@ class ReorderCardsTab:
                 palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c"))  # Red
             targets_input_textarea.setPalette(palette)
 
+        def update_target_list_if_input_is_valid(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
+            if (json_validity_state == 1):
+                self.target_list.set_targets(targets_input_textarea.targets_defined)
+
         self.targets_input_textarea.on_validity_change(update_textarea_text_color_by_validity)
+        self.targets_input_textarea.on_change(update_target_list_if_input_is_valid)
 
         # row below textarea
         self.__create_targets_input_options_row_widget()

@@ -6,7 +6,7 @@ from xmlrpc.client import Boolean
 from anki.collection import Collection
 
 from aqt.utils import askUser, showWarning, showInfo
-from aqt import QAction
+from aqt import QAction, QSpacerItem, QSizePolicy
 from aqt.qt import *
 from aqt.main import AnkiQt
 
@@ -171,7 +171,7 @@ class ReorderCardsTab:
 
         self.targets_input_validation_info_txt_line = QLabel("Hello :)")
         self.targets_input_validation_info_txt_line.setStyleSheet("font-weight: bolder; font-size: 13px;")
-        self.targets_input_validation_info_txt_line.setVisible(False)
+        self.targets_input_validation_info_txt_line.setWordWrap(True)
 
         def update_validation_info_txt_line(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
             if (targets_input_textarea.err_desc != ""):
@@ -253,16 +253,19 @@ class ReorderCardsTab:
 
         # set layout
 
-        layout = QHBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.addWidget(self.targets_input_validation_info_txt_line)
-        layout.addStretch(1)
-        layout.addWidget(self.targets_input_restore_button)
-        layout.addWidget(self.targets_input_reset_button)
-        layout.addWidget(self.targets_input_save_button)
+        grid_layout = QGridLayout()
+        grid_layout.addWidget(self.targets_input_validation_info_txt_line, 0, 0, 1, 1)
+        grid_layout.setColumnStretch(0, 1)
+        spacer_item = QSpacerItem(12, 12, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        grid_layout.addItem(spacer_item, 0, 1, 1, 1)
 
+        grid_layout.addWidget(self.targets_input_restore_button, 0, 2, 1, 1, alignment=Qt.AlignmentFlag.AlignTop)
+        grid_layout.addWidget(self.targets_input_reset_button, 0, 3, 1, 1, alignment=Qt.AlignmentFlag.AlignTop)
+        grid_layout.addWidget(self.targets_input_save_button, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignTop)
+
+        # return widget with grid
         self.targets_input_options_line = QWidget()
-        self.targets_input_options_line.setLayout(layout)
+        self.targets_input_options_line.setLayout(grid_layout)
 
     @staticmethod
     def __execute_reorder_request(col: Collection, target_list: TargetList):

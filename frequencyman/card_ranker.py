@@ -12,13 +12,13 @@ from .word_frequency_list import WordFrequencyLists
 
 class CardRanker:
 
-    updated_notes: list[Note]
+    modified_dirty_notes: list[Note]
 
     def __init__(self, cards_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists, col: Collection) -> None:
         self.cards_corpus_data = cards_corpus_data
         self.word_frequency_lists = word_frequency_lists
         self.col = col
-        self.updated_notes = []
+        self.modified_dirty_notes = []
 
     @staticmethod
     def card_field_ideal_word_count_score(word_count: int, ideal_num: int) -> float:
@@ -33,25 +33,35 @@ class CardRanker:
 
     def calc_cards_ranking(self, cards: list[Card]) -> dict[CardId, float]:
 
-        card_notes: dict[NoteId, Note] = {}
-        card_notes_rankings: dict[NoteId, float] = {}
+        notes_from_cards: dict[NoteId, Note] = {}
+        cards_per_note: dict[NoteId, list[Card]] = {} # future use?
+
+        notes_rankings: dict[NoteId, float] = {}
         card_rankings: dict[CardId, float] = {}
 
         # card ranking is calculates per note (which may have different card, but same ranking)
-        for card in cards:
-            if card.nid not in card_notes:
-                card_notes[card.nid] = self.col.get_note(card.nid)
-            if card.nid not in card_notes_rankings:
-                card_notes_rankings[card.nid] = self.calc_card_note_ranking(card_notes[card.nid])
-            card_rankings[card.id] = card_notes_rankings[card.nid]
 
-        if (len(self.updated_notes) > 0):
-            self.col.update_notes(self.updated_notes)
-            self.updated_notes = []
+        for card in cards:
+            if card.nid not in notes_from_cards:
+                notes_from_cards[card.nid] = self.col.get_note(card.nid)
+                if card.nid not in cards_per_note:
+                    cards_per_note[card.nid] = []
+                cards_per_note[card.nid].append(card)
+
+        for note_id, note in notes_from_cards.items():
+            notes_rankings[note_id] = self.calc_card_note_ranking(note, cards_per_note[note_id])
+
+        for card in cards:
+            card_rankings[card.id] = notes_rankings[card.nid]
+
+        # note field values have been updated
+        if (len(self.modified_dirty_notes) > 0):
+            self.col.update_notes(self.modified_dirty_notes)
+            self.modified_dirty_notes = []
 
         return card_rankings
 
-    def calc_card_note_ranking(self, card_note: Note) -> float:
+    def calc_card_note_ranking(self, note: Note, note_cards: list[Card]) -> float:
 
         card_ranking_factors: dict[str, float] = {}
 
@@ -61,7 +71,7 @@ class CardRanker:
         # fields_words_fresh_occurrence_scores:list[float] = [] # Freshness of words, avg per field | Cards with fresh words (recently matured?) should go up
 
         # get scores per field
-        fields_in_target = self.cards_corpus_data.handled_notes[card_note.id]
+        fields_in_target = self.cards_corpus_data.handled_notes[note.id]
         fields_words_fr_scores: list[dict[str, float]] = []
         fields_highest_fr_unseen_word: list[Tuple[str, float]] = []
         fields_lowest_fr_word: list[Tuple[str, float]] = []
@@ -80,7 +90,7 @@ class CardRanker:
             field_lowest_fr_word: Tuple[str, float] = ("", 0)
             field_key = field_data.field_key
 
-            if not field_key.startswith(str(card_note.mid)):
+            if not field_key.startswith(str(note.mid)):
                 raise Exception("Card note type id is not matching!?")
 
             for word in field_data.field_value_tokenized:
@@ -146,7 +156,7 @@ class CardRanker:
 
         # set data in card fields
         update_note = False
-        if 'fm_debug_info' in card_note:
+        if 'fm_debug_info' in note:
             # fields_words_fr_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in fields_words_fr_scores]
             debug_info = {
                 'fr_scores': fields_fr_scores,
@@ -156,24 +166,24 @@ class CardRanker:
                 'fields_highest_fr_unseen_word': fields_highest_fr_unseen_word,
                 # 'fields_words_fr_scores': fields_words_fr_scores_sorted
             }
-            card_note['fm_debug_info'] = ''
+            note['fm_debug_info'] = ''
             for k, var in debug_info.items():
-                card_note['fm_debug_info'] += k+": " + pprint.pformat(var, sort_dicts=False)+"<br />\n"
+                note['fm_debug_info'] += k+": " + pprint.pformat(var, sort_dicts=False)+"<br />\n"
             update_note = True
-        if 'fm_seen_words' in card_note:
+        if 'fm_seen_words' in note:
             printed_fields_seen_words = [", ".join(words) for words in fields_seen_words]
-            card_note['fm_seen_words'] = " | ".join(printed_fields_seen_words)
+            note['fm_seen_words'] = " | ".join(printed_fields_seen_words)
             update_note = True
-        if 'fm_unseen_words' in card_note:
+        if 'fm_unseen_words' in note:
             printed_fields_unseen_words = [", ".join(words) for words in fields_unseen_words]
-            card_note['fm_unseen_words'] = " | ".join(printed_fields_unseen_words)
+            note['fm_unseen_words'] = " | ".join(printed_fields_unseen_words)
             update_note = True
-        if 'fm_lowest_fr_word' in card_note:
+        if 'fm_lowest_fr_word' in note:
             printed_fields_lowest_fr_word = [f"{word} ({fr:.2f})" for (word, fr) in fields_lowest_fr_word]
-            card_note['fm_lowest_fr_word'] = " | ".join(printed_fields_lowest_fr_word)
+            note['fm_lowest_fr_word'] = " | ".join(printed_fields_lowest_fr_word)
             update_note = True
 
         if update_note:
-            self.updated_notes.append(card_note)
+            self.modified_dirty_notes.append(note)
 
         return card_ranking

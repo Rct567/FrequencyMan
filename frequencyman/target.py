@@ -60,6 +60,40 @@ class Target:
                 keys.append(LangKey(lang_key.lower()))
         return keys
 
+    def __get_scope_search_query(self) -> Optional[str]:
+
+        scope_queries = []
+
+        # defined deck
+
+        target_decks = []
+
+        if "deck" in self:
+            if isinstance(self.get("deck"), str) and len(self.get("deck")) > 0:
+                target_decks.append(self.get("deck"))
+            elif isinstance(self.get("deck"), list):
+                target_decks.extend([deck_name for deck_name in self.get("deck", []) if isinstance(deck_name, str) and len(deck_name) > 0])
+        if "decks" in self:
+            if isinstance(self.get("decks"), str) and len(self.get("decks")) > 1:
+                target_decks.extend([deck_name.strip(" ,") for deck_name in self.get("decks").split(",") if len(deck_name.strip(" ,")) > 0])
+            elif isinstance(self.get("decks"), list):
+                target_decks.extend([deck_name for deck_name in self.get("decks", []) if isinstance(deck_name, str) and len(deck_name) > 0])
+
+        if len(target_decks) > 0:
+            for deck_name in target_decks:
+                if len(deck_name) > 0:
+                    scope_queries.append('"deck:' + deck_name + '"')
+
+        # scope query
+
+        if "scope_query" in self and isinstance(self.get("scope_query"), str) and len(self.get("scope_query")) > 0:
+            scope_queries.append(self.get('scope_query'))
+
+        # result
+        if len(scope_queries) > 0:
+            scope_query = " OR ".join(scope_queries)
+            return "("+scope_query+")"
+
     def __construct_search_query(self) -> str:
         target_notes = self.get("notes", []) if isinstance(self.get("notes"), list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
@@ -69,18 +103,10 @@ class Target:
 
         search_query = "(" + " OR ".join(note_queries) + ")"
 
-        if "deck" in self:
-            if isinstance(self.get("deck"), str) and len(self.get("deck", '')) > 0:
-                target_decks = [self.get("deck", '')]
-            elif isinstance(self.get("deck"), list):
-                target_decks = [deck_name for deck_name in self.get("deck", []) if isinstance(deck_name, str) and len(deck_name) > 0]
-            else:
-                target_decks = []
+        scope_query = self.__get_scope_search_query()
 
-            if len(target_decks) > 0:
-                deck_queries = ['"deck:' + deck_name + '"' for deck_name in target_decks if len(deck_name) > 0]
-                target_decks_query = " OR ".join(deck_queries)
-                search_query = "("+target_decks_query+")" + search_query
+        if (scope_query is not None):
+            search_query = scope_query+" AND "+search_query
 
         return search_query
 

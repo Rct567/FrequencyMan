@@ -1,7 +1,6 @@
 import json
 from typing import Tuple
 from anki.collection import Collection
-from aqt.utils import askUser, showWarning
 
 from aqt import QAction
 from aqt.qt import *

@@ -1,7 +1,5 @@
-from functools import partial
 import json
 from typing import Tuple
-from xmlrpc.client import Boolean
 
 from anki.collection import Collection
 

@@ -41,6 +41,9 @@ class TargetsDefiningTextArea(QTextEdit):
 
     @pyqtSlot()
     def __handle_content_change(self):
+        self.handle_current_content()
+
+    def handle_current_content(self):
         input_json_txt: str = self.toPlainText()
         (new_json_validity_state, new_targets_defined, new_err_desc) = self.json_validator(input_json_txt)
         json_validity_state_has_changed = new_json_validity_state != self.json_validity_state
@@ -131,7 +134,7 @@ class ReorderCardsTab:
             example_target_list = [example_target]
             self.targets_input_textarea.setText(json.dumps(example_target_list, indent=4))
 
-        # User clicked reorder... ask to save to config if new targets have been defined
+        # user clicked reorder... ask to save to config if new targets have been defined
 
         def ask_to_save_new_targets_to_config(targets_defined: list[ConfigTargetData]):
             if self.fm_window.addon_config is None or "fm_reorder_target_list" not in self.fm_window.addon_config:
@@ -141,21 +144,31 @@ class ReorderCardsTab:
             if askUser("Defined targets have changed. Save them to config?"):
                 self.fm_window.addon_config['fm_reorder_target_list'] = targets_defined
                 self.fm_window.addon_config_write(self.fm_window.addon_config)
+                self.targets_input_textarea.handle_current_content()
 
-        # Create the "Reorder Cards" button
+        # reorder button
+
+        exec_reorder_button = QPushButton("Reorder Cards")
 
         def user_clicked_reorder_button():
             if self.targets_input_textarea.json_validity_state == 1:
                 ask_to_save_new_targets_to_config(self.targets_input_textarea.targets_defined)
                 ReorderCardsTab.__execute_reorder_request(self.col, self.target_list)
-            elif self.target_list.has_targets() and askUser("Defined targets are not valid.\n\n"+self.targets_input_textarea.err_desc+"\n\nRestore previously defined targets?"):
-                self.targets_input_textarea.setText(self.target_list.dump_json())
             else:
                 showWarning("Defined targets are not valid!\n\n"+self.targets_input_textarea.err_desc)
 
-        exec_reorder_button = QPushButton("Reorder Cards")
-        exec_reorder_button.setStyleSheet("font-size: 16px; font-weight: bold; background-color: #23b442; color: white; border:2px solid #23a03e; margin-top:20px;")
+        normal_style = "QPushButton { font-size: 16px; font-weight: bold; color: white; margin-top:20px; background-color: #23b442; color: white; border:2px solid #23a03e; }"
+        disabled_style = 'QPushButton:disabled { background-color:#7e5348 ; border-color:#6c4338; color:#bcaca7 }'
+        exec_reorder_button.setStyleSheet(normal_style+" "+disabled_style)
+
+        def update_reorder_button_state(json_validity_state, _):
+            if self.target_list.has_targets() and json_validity_state == 1:
+                exec_reorder_button.setDisabled(False)
+                return
+            exec_reorder_button.setDisabled(True)
+
         exec_reorder_button.clicked.connect(user_clicked_reorder_button)
+        self.targets_input_textarea.on_validity_change(update_reorder_button_state)
 
         tab_layout.setSpacing(0)
         tab_layout.addWidget(self.targets_input_textarea)

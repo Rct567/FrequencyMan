@@ -112,7 +112,7 @@ class ReorderCardsTab:
             if (json_validity_state == 1):  # valid
                 palette.setColor(QPalette.ColorRole.Text, QColor("#23b442"))  # Green
             if (json_validity_state == -1):  # invalid json
-                palette.setColor(QPalette.ColorRole.Text, QColor("#bb4n62c"))  # Red
+                palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c"))  # Red
             targets_input_textarea.setPalette(palette)
 
         self.targets_input_textarea.on_validity_change(update_textarea_text_color_by_validity)

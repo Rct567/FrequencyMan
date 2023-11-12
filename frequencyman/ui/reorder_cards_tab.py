@@ -1,7 +1,9 @@
 import json
-from typing import Tuple
+from time import sleep
+from typing import Optional, Tuple
 
-from anki.collection import Collection
+from anki.collection import Collection, OpChanges, OpChangesWithCount
+from aqt.operations import QueryOp, CollectionOp
 
 from aqt.utils import askUser, showWarning, showInfo
 from aqt import QAction, QSpacerItem, QSizePolicy
@@ -13,7 +15,7 @@ from .main_window import FrequencyManMainWindow
 from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log
 
-from ..target import ConfigTargetDataNotes
+from ..target import ConfigTargetDataNotes, ReorderResult
 from ..word_frequency_list import WordFrequencyLists
 from ..target_list import ConfigTargetData, TargetList
 
@@ -86,6 +88,7 @@ class ReorderCardsTab:
     targets_input_restore_button: QPushButton
     targets_input_reset_button: QPushButton
     targets_input_save_button: QPushButton
+    exec_reorder_button: QPushButton
 
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
 
@@ -151,7 +154,7 @@ class ReorderCardsTab:
 
         # reorder button
 
-        exec_reorder_button = QPushButton("Reorder Cards")
+        self.exec_reorder_button = QPushButton("Reorder Cards")
 
         def user_clicked_reorder_button():
             if self.targets_input_textarea.json_validity_state == 1:
@@ -162,21 +165,21 @@ class ReorderCardsTab:
 
         normal_style = "QPushButton { font-size: 16px; font-weight: bold; color: white; margin-top:20px; background-color: #23b442; color: white; border:2px solid #23a03e; }"
         disabled_style = 'QPushButton:disabled { background-color:#7e5348 ; border-color:#6c4338; color:#bcaca7 }'
-        exec_reorder_button.setStyleSheet(normal_style+" "+disabled_style)
+        self.exec_reorder_button.setStyleSheet(normal_style+" "+disabled_style)
 
         def update_reorder_button_state(json_validity_state, _):
             if self.target_list.has_targets() and json_validity_state == 1:
-                exec_reorder_button.setDisabled(False)
+                self.exec_reorder_button.setDisabled(False)
                 return
-            exec_reorder_button.setDisabled(True)
+            self.exec_reorder_button.setDisabled(True)
 
-        exec_reorder_button.clicked.connect(user_clicked_reorder_button)
+        self.exec_reorder_button.clicked.connect(user_clicked_reorder_button)
         self.targets_input_textarea.on_validity_change(update_reorder_button_state)
 
         tab_layout.setSpacing(0)
         tab_layout.addWidget(self.targets_input_textarea)
         tab_layout.addWidget(self.targets_input_options_line)
-        tab_layout.addWidget(exec_reorder_button)
+        tab_layout.addWidget(self.exec_reorder_button)
         tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))  # Add an empty spacer row to compress the rows above
 
     # Validation line below textarea, with line of text and buttons on the right
@@ -295,10 +298,38 @@ class ReorderCardsTab:
 
         event_logger = EventLogger()
 
-        (_, warnings) = self.target_list.reorder_cards(self.col, event_logger)
+        self.exec_reorder_button.setDisabled(True)
 
-        for warning in warnings:
-            showWarning(warning)
+        self.reorder_cards_results: list[ReorderResult] = []
 
-        if (self.fm_window.addon_config.get('log_reorder_events', 'false') == 'true'):
-            event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))
+        def anki_collection_operation(collection):
+            self.reorder_cards_results = self.target_list.reorder_cards(collection, event_logger)
+            r = OpChangesWithCount(count=999999)
+            return r
+
+        def anki_collection_operation_success(op_result: OpChangesWithCount):
+
+            self.exec_reorder_button.setDisabled(False)
+
+            result_info_str = "Reordering done!"
+
+            num_errors = 0
+            for result in self.reorder_cards_results:
+                if (result.error is not None):
+                    result_info_str += "\n\nError: "+result.error
+                    num_errors += 1
+
+            result_info_str += "\n\n"+str(event_logger)
+
+            if num_errors > 0:
+                showWarning(result_info_str)
+            else:
+                showInfo(result_info_str)
+
+            if (self.fm_window.addon_config.get('log_reorder_events', 'false') == 'true'):
+                event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))
+
+        CollectionOp(
+            parent=self.fm_window,
+            op=anki_collection_operation
+        ).success(anki_collection_operation_success).run_in_background()

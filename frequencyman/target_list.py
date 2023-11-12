@@ -1,9 +1,9 @@
 import json
 from typing import Optional, Sequence, Tuple
 
-from anki.collection import Collection
+from anki.collection import Collection, OpChanges, OpChangesWithCount
 
-from .target import ConfigTargetData, Target
+from .target import ConfigTargetData, ReorderResult, Target
 from .word_frequency_list import WordFrequencyLists
 from .lib.event_logger import EventLogger
 
@@ -85,17 +85,16 @@ class TargetList:
         except json.JSONDecodeError:
             return (-1, [], "Invalid JSON!")
 
-    def reorder_cards(self, col: Collection, event_logger: EventLogger) -> Tuple[bool, list[str]]:
+    def reorder_cards(self, col: Collection, event_logger: EventLogger) -> list[ReorderResult]:
 
-        warnings: list[str] = []
+        reorder_result_list = []
 
         for target in self.target_list:
             with event_logger.addBenchmarkedEntry(f"Reordering target #{target.index_num}."):
-                (_, warning_msg) = target.reorder_cards(self.word_frequency_lists, col, event_logger)
-                if (warning_msg != ""):
-                    warnings.append(warning_msg)
+                reorder_result = target.reorder_cards(self.word_frequency_lists, col, event_logger)
+                reorder_result_list.append(reorder_result)
 
         target_word = "targets" if len(self.target_list) > 1 else "target"
         event_logger.addEntry("Done with sorting {} {}!".format(len(self.target_list), target_word))
 
-        return (len(warnings) == 0, warnings)
+        return reorder_result_list

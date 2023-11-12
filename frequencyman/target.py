@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence, Tuple, TypedDict
 
-from anki.collection import Collection
+from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
+
+from .lib.utilities import var_dump, var_dump_log
 
 from .lib.event_logger import EventLogger
 from .word_frequency_list import WordFrequencyLists
@@ -19,6 +21,20 @@ class TargetCardsResult:
     all_cards: list[Card]
     new_cards: list[Card]
     new_cards_ids: Sequence[CardId]
+
+
+class ReorderResult():
+
+    success: bool
+    num_repositioned_cards: int
+    error: Optional[str]
+
+    def __init__(self, success: bool, num_repositioned_cards: int, error: Optional[str] = None) -> None:
+        if (not success and error is None):
+            raise ValueError("No error given for unsuccessful result!")
+        self.success = success
+        self.num_repositioned_cards = num_repositioned_cards
+        self.error = error
 
 
 class Target:
@@ -123,22 +139,22 @@ class Target:
         new_cards_ids: Sequence[CardId] = [card.id for card in new_cards]
         return TargetCardsResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
 
-    def reorder_cards(self, word_frequency_lists: WordFrequencyLists, col: Collection, event_logger: EventLogger) -> Tuple[bool, str]:
+    def reorder_cards(self, word_frequency_lists: WordFrequencyLists, col: Collection, event_logger: EventLogger) -> ReorderResult:
 
         from .card_ranker import CardRanker
         from .target_corpus_data import TargetCorpusData
 
         if "note:" not in self.__get_search_query():
-            warning_msg = "No valid note type defined. At least one note is required for reordering!"
-            event_logger.addEntry(warning_msg)
-            return (False, warning_msg)
+            error_msg = "No valid note type defined. At least one note is required for reordering!"
+            event_logger.addEntry(error_msg)
+            return ReorderResult(success=False, num_repositioned_cards=0, error=error_msg)
 
         # Check defined target lang keys and then load frequency lists for target
         for lang_key in self.__get_all_language_keys():
             if not word_frequency_lists.key_has_frequency_list_file(lang_key):
-                warning_msg = "No word frequency list file found for key '{}'!".format(lang_key)
-                event_logger.addEntry(warning_msg)
-                return (False, warning_msg)
+                error_msg = "No word frequency list file found for key '{}'!".format(lang_key)
+                event_logger.addEntry(error_msg)
+                return ReorderResult(success=False, num_repositioned_cards=0, error=error_msg)
 
         with event_logger.addBenchmarkedEntry("Loading word frequency lists."):
             word_frequency_lists.load_frequency_lists(self.__get_all_language_keys())
@@ -163,6 +179,7 @@ class Target:
 
         if target_cards.new_cards_ids == sorted_card_ids:  # Avoid making unnecessary changes
             event_logger.addEntry("Cards order was already up-to-date!")
+            num_repositioned_cards = 0
         else:
             # Reposition cards and apply changes
             with event_logger.addBenchmarkedEntry("Reposition cards in collection."):
@@ -172,7 +189,8 @@ class Target:
                     starting_from=0, step_size=1,
                     randomize=False, shift_existing=True
                 )
+            num_repositioned_cards = len(sorted_card_ids)
 
         event_logger.addEntry(f"Done with sorting target #{self.index_num}!")
 
-        return (True, "")
+        return ReorderResult(success=True, num_repositioned_cards=num_repositioned_cards)

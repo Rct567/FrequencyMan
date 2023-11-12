@@ -182,7 +182,7 @@ class ReorderCardsTab:
         tab_layout.addWidget(self.exec_reorder_button)
         tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))  # Add an empty spacer row to compress the rows above
 
-    # Validation line below textarea, with line of text and buttons on the right
+    # Validation line below textarea, with line of text on the left and buttons on the right
 
     def __create_targets_input_options_row_widget(self) -> None:
 

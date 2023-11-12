@@ -144,7 +144,7 @@ class Target:
             word_frequency_lists.load_frequency_lists(self.__get_all_language_keys())
 
         # Get cards for target
-        with event_logger.addBenchmarkedEntry("Getting target cards from collection."):
+        with event_logger.addBenchmarkedEntry("Gathering cards from target collection."):
             target_cards = self.__get_cards(col)
 
         event_logger.addEntry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_cards.new_cards_ids), len(target_cards.all_cards)))

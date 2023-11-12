@@ -8,5 +8,5 @@
             }]
         }
     ],
-    "other_settings": "currently don't exist"
+    "log_reorder_events": "true"
 }

@@ -156,7 +156,7 @@ class ReorderCardsTab:
         def user_clicked_reorder_button():
             if self.targets_input_textarea.json_validity_state == 1:
                 ask_to_save_new_targets_to_config(self.targets_input_textarea.targets_defined)
-                ReorderCardsTab.__execute_reorder_request(self.col, self.target_list)
+                self.__execute_reorder_request()
             else:
                 showWarning("Defined targets are not valid!\n\n"+self.targets_input_textarea.err_desc)
 
@@ -279,26 +279,26 @@ class ReorderCardsTab:
         grid_layout.addWidget(self.targets_input_reset_button, 0, 3, 1, 1, alignment=Qt.AlignmentFlag.AlignTop)
         grid_layout.addWidget(self.targets_input_save_button, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignTop)
 
-        # return widget with grid
+        # set widget with grid
         self.targets_input_options_line = QWidget()
         self.targets_input_options_line.setLayout(grid_layout)
 
-    @staticmethod
-    def __execute_reorder_request(col: Collection, target_list: TargetList):
+    def __execute_reorder_request(self):
 
-        if not isinstance(col, Collection):
+        if not isinstance(self.col, Collection):
             showWarning("Collection not found!")
             return
 
-        if not target_list.has_targets():
+        if not self.target_list.has_targets():
             showWarning("No targets defined!")
             return
 
         event_logger = EventLogger()
 
-        (_, warnings) = target_list.reorder_cards(col, event_logger)
+        (_, warnings) = self.target_list.reorder_cards(self.col, event_logger)
 
         for warning in warnings:
             showWarning(warning)
 
-        var_dump_log(event_logger.events)
+        if (self.fm_window.addon_config.get('log_reorder_events', 'false') == 'true'):
+            event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))

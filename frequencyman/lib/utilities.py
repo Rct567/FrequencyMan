@@ -24,11 +24,12 @@ def var_dump(var) -> None:
         var_dump_count += 1
 
 
-def var_dump_log(var) -> None:
+def var_dump_log(var, show_as_info=False) -> None:
     dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
     with open(dump_log_file, 'a', encoding='utf-8') as file:
         file.write(pprint.pformat(var, sort_dicts=False) + "\n\n=================================================================\n\n")
-    var_dump(var)
+    if (show_as_info):
+        var_dump(var)
 
 
 @contextmanager

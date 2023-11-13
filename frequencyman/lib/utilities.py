@@ -24,12 +24,18 @@ def var_dump(var) -> None:
         var_dump_count += 1
 
 
+var_dump_log_count = 0
+
+
 def var_dump_log(var, show_as_info=False) -> None:
-    dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
-    with open(dump_log_file, 'a', encoding='utf-8') as file:
-        file.write(pprint.pformat(var, sort_dicts=False) + "\n\n=================================================================\n\n")
-    if (show_as_info):
-        var_dump(var)
+    global var_dump_log_count
+    if var_dump_log_count < 10:
+        dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
+        with open(dump_log_file, 'a', encoding='utf-8') as file:
+            file.write(pprint.pformat(var, sort_dicts=False) + "\n\n=================================================================\n\n")
+        if (show_as_info):
+            var_dump(var)
+        var_dump_log_count += 1
 
 
 @contextmanager

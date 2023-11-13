@@ -129,7 +129,7 @@ class ReorderCardsTab:
     def create_new_tab(self):
 
         # Create a new tab and its layout
-        (tab_layout, tab) = self.fm_window.create_new_tab('sort_cards', "Sort cards")
+        (tab_layout, tab) = self.fm_window.create_new_tab('reorder_cards', "Reorder cards")
 
         # Textarea widget
         if (self.target_list.has_targets()):

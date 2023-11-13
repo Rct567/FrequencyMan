@@ -209,7 +209,7 @@ class ReorderCardsTab:
                 self.targets_input_textarea.setText(self.target_list.dump_json())
 
         def update_restore_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
-            if self.target_list.has_targets() and (json_validity_state != 1 and targets_input_textarea.toPlainText() != self.target_list.dump_json()):
+            if json_validity_state != 1 and self.target_list.has_targets() and self.target_list.dump_json() != targets_input_textarea.toPlainText():
                 self.targets_input_restore_button.setVisible(True)
                 return
             self.targets_input_restore_button.setVisible(False)

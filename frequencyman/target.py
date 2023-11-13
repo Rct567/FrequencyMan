@@ -16,7 +16,7 @@ ConfigTargetDataNotes = TypedDict('TargetDataNotes', {'name': str, 'fields': dic
 ConfigTargetData = TypedDict('TargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
 
 
-@dataclass
+@dataclass(frozen=True)
 class TargetCardsResult:
     all_cards_ids: Sequence[CardId]
     all_cards: list[Card]

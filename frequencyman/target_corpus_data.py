@@ -14,7 +14,7 @@ from .text_processing import TextProcessing, WordToken
 FieldKey = NewType('FieldKey', str)  # unique id for a field of a note model
 
 
-@dataclass
+@dataclass(frozen=True)
 class TargetFieldData:
     field_key: FieldKey
     field_name: str

@@ -304,7 +304,7 @@ class ReorderCardsTab:
 
         def anki_collection_operation(collection):
             self.reorder_cards_results = self.target_list.reorder_cards(collection, event_logger)
-            r = OpChangesWithCount(count=999999)
+            r = OpChangesWithCount(count=999999) # todo: give real one, but from which op (repositioning or update_notes)?
             return r
 
         def anki_collection_operation_success(op_result: OpChangesWithCount):

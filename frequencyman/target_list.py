@@ -2,6 +2,7 @@ import json
 from typing import Optional, Sequence, Tuple
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
+from anki.cards import CardId, Card
 
 from .target import ConfigTargetData, ReorderResult, Target
 from .word_frequency_list import WordFrequencyLists
@@ -87,14 +88,30 @@ class TargetList:
 
     def reorder_cards(self, col: Collection, event_logger: EventLogger) -> list[ReorderResult]:
 
-        reorder_result_list = []
+        reorder_result_list: list[ReorderResult] = []
+        sorted_cards_ids: list[CardId] = []
+        repositioning_required = False
 
         for target in self.target_list:
             with event_logger.add_benchmarked_entry(f"Reordering target #{target.index_num}."):
                 reorder_result = target.reorder_cards(self.word_frequency_lists, col, event_logger)
                 reorder_result_list.append(reorder_result)
+                sorted_cards_ids.extend(reorder_result.sorted_cards_ids)
+                if not repositioning_required and reorder_result.repositioning_required == True:
+                    repositioning_required = True
 
-        target_word = "targets" if len(self.target_list) > 1 else "target"
-        event_logger.add_entry("Done with sorting {} {}!".format(len(self.target_list), target_word))
+        # Reposition cards and apply changes
+        if repositioning_required:
+            with event_logger.add_benchmarked_entry("Reposition cards from targets."):
+                col.sched.forgetCards(sorted_cards_ids)
+                col.sched.reposition_new_cards(
+                    card_ids=sorted_cards_ids,
+                    starting_from=0, step_size=1,
+                    randomize=False, shift_existing=True
+                )
+        else:
+            event_logger.add_entry("Order of cards from targets was already up-to-date!")
+
+        event_logger.add_entry("Done with reordering of all targets!")
 
         return reorder_result_list

@@ -26,14 +26,21 @@ class TargetCardsResult:
 class ReorderResult():
 
     success: bool
-    num_repositioned_cards: int
+    sorted_cards_ids: list[CardId]
+    repositioning_required: bool
     error: Optional[str]
 
-    def __init__(self, success: bool, num_repositioned_cards: int, error: Optional[str] = None) -> None:
+    def __init__(self, success: bool, sorted_cards_ids: Optional[list[CardId]] = None, repositioning_required: Optional[bool] = None, error: Optional[str] = None) -> None:
         if (not success and error is None):
             raise ValueError("No error given for unsuccessful result!")
         self.success = success
-        self.num_repositioned_cards = num_repositioned_cards
+        if sorted_cards_ids is not None:
+            self.sorted_cards_ids = sorted_cards_ids
+            if (repositioning_required is None):
+                raise ValueError("No repositioning_required given for sorted cards!")
+            else:
+                self.repositioning_required = repositioning_required
+
         self.error = error
 
 
@@ -147,14 +154,14 @@ class Target:
         if "note:" not in self.__get_search_query():
             error_msg = "No valid note type defined. At least one note is required for reordering!"
             event_logger.add_entry(error_msg)
-            return ReorderResult(success=False, num_repositioned_cards=0, error=error_msg)
+            return ReorderResult(success=False, error=error_msg)
 
         # Check defined target lang keys and then load frequency lists for target
         for lang_key in self.__get_all_language_keys():
             if not word_frequency_lists.key_has_frequency_list_file(lang_key):
                 error_msg = "No word frequency list file found for key '{}'!".format(lang_key)
                 event_logger.add_entry(error_msg)
-                return ReorderResult(success=False, num_repositioned_cards=0, error=error_msg)
+                return ReorderResult(success=False, error=error_msg)
 
         with event_logger.add_benchmarked_entry("Loading word frequency lists."):
             word_frequency_lists.load_frequency_lists(self.__get_all_language_keys())
@@ -175,22 +182,8 @@ class Target:
             card_ranker = CardRanker(target_corpus_data, word_frequency_lists, col)
             card_rankings = card_ranker.calc_cards_ranking(target_cards.new_cards)
             sorted_cards = sorted(target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
-            sorted_card_ids = [card.id for card in sorted_cards]
+            sorted_cards_ids = [card.id for card in sorted_cards]
 
-        if target_cards.new_cards_ids == sorted_card_ids:  # Avoid making unnecessary changes
-            event_logger.add_entry("Cards order was already up-to-date!")
-            num_repositioned_cards = 0
-        else:
-            # Reposition cards and apply changes
-            with event_logger.add_benchmarked_entry("Reposition cards in collection."):
-                col.sched.forgetCards(sorted_card_ids)
-                col.sched.reposition_new_cards(
-                    card_ids=sorted_card_ids,
-                    starting_from=0, step_size=1,
-                    randomize=False, shift_existing=True
-                )
-            num_repositioned_cards = len(sorted_card_ids)
+        repositioning_required = target_cards.new_cards_ids != sorted_cards_ids
 
-        event_logger.add_entry(f"Done with sorting target #{self.index_num}!")
-
-        return ReorderResult(success=True, num_repositioned_cards=num_repositioned_cards)
+        return ReorderResult(success=True, sorted_cards_ids=sorted_cards_ids, repositioning_required=repositioning_required)

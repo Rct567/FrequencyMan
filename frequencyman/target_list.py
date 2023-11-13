@@ -1,12 +1,21 @@
+from dataclasses import dataclass
 import json
 from typing import Optional, Sequence, Tuple
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
+from anki.notes import Note, NoteId
 
-from .target import ConfigTargetData, ReorderResult, Target
+from .target import ConfigTargetData, TargetReorderResult, Target
 from .word_frequency_list import WordFrequencyLists
 from .lib.event_logger import EventLogger
+
+
+@dataclass(frozen=True)
+class TargetListReorderResult():
+    reorder_result_list: list[TargetReorderResult]
+    repositioning_anki_op_changes: Optional[OpChangesWithCount]
+    update_notes_anki_op_changes: Optional[OpChanges]
 
 
 class TargetList:
@@ -86,16 +95,20 @@ class TargetList:
         except json.JSONDecodeError:
             return (-1, [], "Invalid JSON!")
 
-    def reorder_cards(self, col: Collection, event_logger: EventLogger) -> list[ReorderResult]:
+    def reorder_cards(self, col: Collection, event_logger: EventLogger) -> TargetListReorderResult:
 
-        reorder_result_list: list[ReorderResult] = []
+        reorder_result_list: list[TargetReorderResult] = []
         sorted_cards_ids: list[CardId] = []
+        modified_dirty_notes: list[Note] = []
         repositioning_required = False
+        repositioning_anki_op_changes: Optional[OpChangesWithCount] = None
+        update_notes_anki_op_changes: Optional[OpChanges] = None
 
         for target in self.target_list:
             with event_logger.add_benchmarked_entry(f"Reordering target #{target.index_num}."):
                 reorder_result = target.reorder_cards(self.word_frequency_lists, col, event_logger)
                 reorder_result_list.append(reorder_result)
+                modified_dirty_notes.extend(reorder_result.modified_dirty_notes)
                 sorted_cards_ids.extend(reorder_result.sorted_cards_ids)
                 if not repositioning_required and reorder_result.repositioning_required == True:
                     repositioning_required = True
@@ -104,7 +117,7 @@ class TargetList:
         if repositioning_required:
             with event_logger.add_benchmarked_entry("Reposition cards from targets."):
                 col.sched.forgetCards(sorted_cards_ids)
-                col.sched.reposition_new_cards(
+                repositioning_anki_op_changes = col.sched.reposition_new_cards(
                     card_ids=sorted_cards_ids,
                     starting_from=0, step_size=1,
                     randomize=False, shift_existing=True
@@ -112,6 +125,11 @@ class TargetList:
         else:
             event_logger.add_entry("Order of cards from targets was already up-to-date!")
 
-        event_logger.add_entry("Done with reordering of all targets!")
+        # Update notes that have been modifies (field values for example)
+        if (len(modified_dirty_notes) > 0):
+            with event_logger.add_benchmarked_entry("Updating modified notes from targets."):
+                update_notes_anki_op_changes = col.update_notes(modified_dirty_notes)
 
-        return reorder_result_list
+        # Done
+        event_logger.add_entry("Done with reordering of all targets!")
+        return TargetListReorderResult(reorder_result_list=reorder_result_list, repositioning_anki_op_changes=repositioning_anki_op_changes, update_notes_anki_op_changes=update_notes_anki_op_changes)

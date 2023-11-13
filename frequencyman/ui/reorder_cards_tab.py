@@ -1,3 +1,4 @@
+from enum import Enum
 import json
 from time import sleep
 from typing import Optional, Tuple
@@ -15,9 +16,9 @@ from .main_window import FrequencyManMainWindow
 from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log
 
-from ..target import ConfigTargetDataNotes, ReorderResult
+from ..target import ConfigTargetDataNotes, TargetReorderResult
 from ..word_frequency_list import WordFrequencyLists
-from ..target_list import ConfigTargetData, TargetList
+from ..target_list import ConfigTargetData, TargetList, TargetListReorderResult
 
 
 class TargetsDefiningTextArea(QTextEdit):
@@ -300,21 +301,25 @@ class ReorderCardsTab:
 
         self.exec_reorder_button.setDisabled(True)
 
-        self.reorder_cards_results: list[ReorderResult] = []
+        self.reorder_cards_results: TargetListReorderResult
 
         def anki_collection_operation(collection):
             self.reorder_cards_results = self.target_list.reorder_cards(collection, event_logger)
-            r = OpChangesWithCount(count=999999) # todo: give real one, but from which op (repositioning or update_notes)?
-            return r
+            if (self.reorder_cards_results.update_notes_anki_op_changes is not None):
+                return self.reorder_cards_results.update_notes_anki_op_changes
+            elif (self.reorder_cards_results.repositioning_anki_op_changes):
+                return self.reorder_cards_results.repositioning_anki_op_changes
+            else:
+                return OpChangesWithCount(count=0)
 
-        def anki_collection_operation_success(op_result: OpChangesWithCount):
+        def anki_collection_operation_success(op_result: Union[OpChanges, OpChangesWithCount]):
 
             self.exec_reorder_button.setDisabled(False)
 
             result_info_str = "Reordering done!"
 
             num_errors = 0
-            for result in self.reorder_cards_results:
+            for result in self.reorder_cards_results.reorder_result_list:
                 if (result.error is not None):
                     result_info_str += "\n\nError: "+result.error
                     num_errors += 1

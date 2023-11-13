@@ -54,11 +54,6 @@ class CardRanker:
         for card in cards:
             card_rankings[card.id] = notes_rankings[card.nid]
 
-        # note field values have been updated
-        if (len(self.modified_dirty_notes) > 0):
-            self.col.update_notes(self.modified_dirty_notes)
-            self.modified_dirty_notes = []
-
         return card_rankings
 
     def calc_card_note_ranking(self, note: Note, note_cards: list[Card]) -> float:

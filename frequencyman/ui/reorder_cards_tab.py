@@ -303,8 +303,10 @@ class ReorderCardsTab:
 
         self.reorder_cards_results: TargetListReorderResult
 
-        def anki_collection_operation(collection):
+        def anki_collection_operation(collection) -> Union[OpChanges, OpChangesWithCount]:
+            # reorder cards in target list
             self.reorder_cards_results = self.target_list.reorder_cards(collection, event_logger)
+
             if (self.reorder_cards_results.update_notes_anki_op_changes is not None):
                 return self.reorder_cards_results.update_notes_anki_op_changes
             elif (self.reorder_cards_results.repositioning_anki_op_changes):

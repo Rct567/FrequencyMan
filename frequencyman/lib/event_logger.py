@@ -16,7 +16,7 @@ class EventLogger:
     def addEventLogListener(self, listener: Callable[[str], None]) -> None:
         self.event_log_listeners.append(listener)
 
-    def addEntry(self, log_msg: str, propagate_fn: Optional[Callable] = None) -> int:
+    def add_entry(self, log_msg: str, propagate_fn: Optional[Callable] = None) -> int:
         index = len(self.event_log)
         if self.timed_entries_open > 0:
             self.event_log.append(("  "*self.timed_entries_open)+" "+log_msg)
@@ -29,8 +29,8 @@ class EventLogger:
         return index
 
     @contextmanager
-    def addBenchmarkedEntry(self, log_msg: str) -> Generator[None, None, None]:
-        index = self.addEntry(log_msg)
+    def add_benchmarked_entry(self, log_msg: str) -> Generator[None, None, None]:
+        index = self.add_entry(log_msg)
         start_time = time.time()
         self.timed_entries_open += 1
         yield

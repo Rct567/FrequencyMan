@@ -146,43 +146,43 @@ class Target:
 
         if "note:" not in self.__get_search_query():
             error_msg = "No valid note type defined. At least one note is required for reordering!"
-            event_logger.addEntry(error_msg)
+            event_logger.add_entry(error_msg)
             return ReorderResult(success=False, num_repositioned_cards=0, error=error_msg)
 
         # Check defined target lang keys and then load frequency lists for target
         for lang_key in self.__get_all_language_keys():
             if not word_frequency_lists.key_has_frequency_list_file(lang_key):
                 error_msg = "No word frequency list file found for key '{}'!".format(lang_key)
-                event_logger.addEntry(error_msg)
+                event_logger.add_entry(error_msg)
                 return ReorderResult(success=False, num_repositioned_cards=0, error=error_msg)
 
-        with event_logger.addBenchmarkedEntry("Loading word frequency lists."):
+        with event_logger.add_benchmarked_entry("Loading word frequency lists."):
             word_frequency_lists.load_frequency_lists(self.__get_all_language_keys())
 
         # Get cards for target
-        with event_logger.addBenchmarkedEntry("Gathering cards from target collection."):
+        with event_logger.add_benchmarked_entry("Gathering cards from target collection."):
             target_cards = self.__get_cards(col)
 
-        event_logger.addEntry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_cards.new_cards_ids), len(target_cards.all_cards)))
+        event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_cards.new_cards_ids), len(target_cards.all_cards)))
 
         # Get corpus data
         target_corpus_data = TargetCorpusData()
-        with event_logger.addBenchmarkedEntry("Creating corpus data from target cards."):
+        with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
             target_corpus_data.create_data(target_cards.all_cards, self, col)
 
         # Sort cards
-        with event_logger.addBenchmarkedEntry("Ranking cards and creating a new sorted list."):
+        with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
             card_ranker = CardRanker(target_corpus_data, word_frequency_lists, col)
             card_rankings = card_ranker.calc_cards_ranking(target_cards.new_cards)
             sorted_cards = sorted(target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
             sorted_card_ids = [card.id for card in sorted_cards]
 
         if target_cards.new_cards_ids == sorted_card_ids:  # Avoid making unnecessary changes
-            event_logger.addEntry("Cards order was already up-to-date!")
+            event_logger.add_entry("Cards order was already up-to-date!")
             num_repositioned_cards = 0
         else:
             # Reposition cards and apply changes
-            with event_logger.addBenchmarkedEntry("Reposition cards in collection."):
+            with event_logger.add_benchmarked_entry("Reposition cards in collection."):
                 col.sched.forgetCards(sorted_card_ids)
                 col.sched.reposition_new_cards(
                     card_ids=sorted_card_ids,
@@ -191,6 +191,6 @@ class Target:
                 )
             num_repositioned_cards = len(sorted_card_ids)
 
-        event_logger.addEntry(f"Done with sorting target #{self.index_num}!")
+        event_logger.add_entry(f"Done with sorting target #{self.index_num}!")
 
         return ReorderResult(success=True, num_repositioned_cards=num_repositioned_cards)

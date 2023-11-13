@@ -90,11 +90,11 @@ class TargetList:
         reorder_result_list = []
 
         for target in self.target_list:
-            with event_logger.addBenchmarkedEntry(f"Reordering target #{target.index_num}."):
+            with event_logger.add_benchmarked_entry(f"Reordering target #{target.index_num}."):
                 reorder_result = target.reorder_cards(self.word_frequency_lists, col, event_logger)
                 reorder_result_list.append(reorder_result)
 
         target_word = "targets" if len(self.target_list) > 1 else "target"
-        event_logger.addEntry("Done with sorting {} {}!".format(len(self.target_list), target_word))
+        event_logger.add_entry("Done with sorting {} {}!".format(len(self.target_list), target_word))
 
         return reorder_result_list

@@ -101,13 +101,11 @@ class WordFrequencyLists:
             if not file_name.endswith('.txt'):
                 continue
             with open(os.path.join(file_name, file_name), encoding='utf-8') as file:
-                self.__set_word_rankings_from_file(
-                    file, all_files_word_rankings)
+                self.__set_word_rankings_from_file(file, all_files_word_rankings) # adds to all_files_word_rankings
 
         for word, rankings in all_files_word_rankings.items():
             # word_rankings_combined[word] = sum(rankings) / len(rankings)
-            all_files_word_rankings_combined[word] = min(
-                rankings)  # highest position
+            all_files_word_rankings_combined[word] = min(rankings)  # highest position
 
         max_rank = max(all_files_word_rankings_combined.values())
         return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in all_files_word_rankings_combined.items()}

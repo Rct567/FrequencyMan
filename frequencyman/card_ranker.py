@@ -62,9 +62,9 @@ class CardRanker:
 
     @staticmethod
     def __calc_ideal_unseen_words_count_score(num_unseen_words: int) -> float:
-        score = 0
-        if (num_unseen_words > 0):
-            score = min(1, abs(0-(1.5*1/min(num_unseen_words, 10))))
+        if (num_unseen_words < 1):
+            return 0.8
+        score = min(1, abs(0-(1.6*1/min(num_unseen_words, 10))))
         return score
 
     def calc_cards_ranking(self, cards: list[Card]) -> dict[CardId, float]:
@@ -139,6 +139,7 @@ class CardRanker:
         note_ranking_factors: dict[str, float] = {}
         note_ranking_factors['words_frequency_score'] = mean(note_metrics.fr_scores)  # todo: replace with lexical_discrepancy?
         note_ranking_factors['lowest_fr_unseen_word_scores'] = mean(note_metrics.lowest_fr_unseen_word_scores)  # todo: make relative to num words?
+        # note_ranking_factors['lowest_fr_least_familiar_word_scores'] <- todo?
         note_ranking_factors['ideal_unseen_word_count'] = mean(note_metrics.ideal_unseen_words_count_scores)
         note_ranking_factors['ideal_word_count'] = mean(note_metrics.ideal_words_count_scores)
         # card_ranking_factors['words_fresh_occurrence_scores'] = mean(fields_words_fresh_occurrence_scores)

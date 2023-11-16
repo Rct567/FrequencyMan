@@ -6,7 +6,7 @@ from anki.collection import Collection
 from anki.cards import CardId, Card
 from anki.notes import NoteId
 
-from .word_frequency_list import LangId, LangKey
+from .word_frequency_list import LangId, LangKey, WordFrequencyLists
 from .lib.utilities import *
 from .target import Target
 from .text_processing import TextProcessing, WordToken
@@ -35,8 +35,11 @@ class TargetCorpusData:
     notes_reviewed_words_occurrences: dict[FieldKey, dict[WordToken, list[float]]]  # list because a word can occur multiple times in a field
     notes_reviewed_words_familiarity: dict[FieldKey, dict[WordToken, float]]
     notes_reviewed_words_familiarity_positional: dict[FieldKey, dict[WordToken, float]]
+    notes_words_lexical_discrepancy: dict[FieldKey, dict[WordToken, float]]
 
-    def __init__(self):
+    word_frequency_lists: WordFrequencyLists
+
+    def __init__(self, word_frequency_lists):
 
         self.handled_notes = {}
 
@@ -44,6 +47,9 @@ class TargetCorpusData:
         self.notes_reviewed_words_occurrences = {}  # a list of 'occurrence ratings' per word in a card, per "field of note"
         self.notes_reviewed_words_familiarity = {}  # how much a word is 'present' in reviewed cards, per "field of note"
         self.notes_reviewed_words_familiarity_positional = {}
+        self.notes_words_lexical_discrepancy = {}
+
+        self.word_frequency_lists = word_frequency_lists
 
     def create_data(self, target_cards: Iterable[Card], target: Target, col: Collection) -> None:
         """
@@ -113,6 +119,7 @@ class TargetCorpusData:
                         self.notes_reviewed_words_occurrences[field_key][word_token].append(token_presence_score)
 
         self.__set_notes_words_familiarity()
+        self.__set_notes_lexical_discrepancy()
 
     def __set_notes_words_familiarity(self) -> None:
         """
@@ -131,8 +138,8 @@ class TargetCorpusData:
 
                 word_presence_scores = self.notes_reviewed_words_occurrences[field_key][word_token]
                 word_familiarity_score = sum(word_presence_scores)  # todo: also incorporate cards review time?
-                if (word_familiarity_score > field_median_word_presence_score):  # flatten the top half a bit
-                    word_familiarity_score = mean([word_familiarity_score, field_median_word_presence_score])
+                if (word_familiarity_score > field_avg_word_presence_score):  # flatten the top half a bit
+                    word_familiarity_score = mean([word_familiarity_score, field_avg_word_presence_score])
 
                 self.notes_reviewed_words_familiarity[field_key][word_token] = word_familiarity_score
 
@@ -154,3 +161,45 @@ class TargetCorpusData:
             for index, (word_token, familiarity) in enumerate(self.notes_reviewed_words_familiarity[field_key].items()):
                 familiarity_positional = (max_rank-(index))/max_rank
                 self.notes_reviewed_words_familiarity_positional[field_key][word_token] = familiarity_positional
+
+    def get_words_lexical_discrepancy(self, field_key: FieldKey, word_token: WordToken) -> float:
+
+        if not self.notes_words_lexical_discrepancy:
+            raise Exception("Target corpus data not loaded!")
+
+        return self.notes_words_lexical_discrepancy[field_key][word_token]  # unfamiliarity of high frequency words
+
+    def __set_notes_lexical_discrepancy(self) -> None:
+
+        highest_ld_ratings = {}
+
+        for note_fields in self.handled_notes.values():
+
+            for field in note_fields:
+
+                field_key = field.field_key
+                language_key = field.target_language_key
+
+                if (field_key not in self.notes_words_lexical_discrepancy):
+                    self.notes_words_lexical_discrepancy[field_key] = {}
+
+                for word_token in field.field_value_tokenized:
+
+                    word_fr = self.word_frequency_lists.get_word_frequency(language_key, word_token, 0)
+                    if (word_token in self.notes_reviewed_words_familiarity_positional[field_key]):
+                        word_familiarity = self.notes_reviewed_words_familiarity_positional[field_key][word_token]
+                    else:
+                        word_familiarity = 0
+                    word_lexical_discrepancy_rating = 1 + (word_fr - word_familiarity)
+
+                    self.notes_words_lexical_discrepancy[field_key][word_token] = word_lexical_discrepancy_rating
+
+                    if (field_key not in highest_ld_ratings or word_lexical_discrepancy_rating > highest_ld_ratings[field_key]):
+                        highest_ld_ratings[field_key] = word_lexical_discrepancy_rating
+
+        for field_key, words_lexical_discrepancy in self.notes_words_lexical_discrepancy.items():
+
+            for word_token in words_lexical_discrepancy:
+                self.notes_words_lexical_discrepancy[field_key][word_token] = self.notes_words_lexical_discrepancy[field_key][word_token]/highest_ld_ratings[field_key]
+
+            self.notes_words_lexical_discrepancy[field_key] = dict(sorted(self.notes_words_lexical_discrepancy[field_key].items(), key=lambda x: x[1], reverse=True))

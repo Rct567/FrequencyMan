@@ -16,17 +16,29 @@ from .word_frequency_list import WordFrequencyLists
 class FieldMetrics:
     fr_scores: list[float] = field(default_factory=list)
     words_fr_scores: dict[WordToken, float] = field(default_factory=dict)
+
+    ld_scores: list[float] = field(default_factory=list)
+    words_ld_scores: dict[WordToken, float] = field(default_factory=dict)
+
     seen_words: list[WordToken] = field(default_factory=list)
     unseen_words: list[WordToken] = field(default_factory=list)
+
     lowest_fr_unseen_word: Tuple[WordToken, float] = (WordToken(""), 0)
     lowest_fr_word: Tuple[WordToken, float] = (WordToken(""), 0)
+
+    lowest_ld_word: Tuple[WordToken, float] = (WordToken(""), 0)
 
 
 @dataclass
 class FieldsMetrics:
     words_fr_scores: list[dict[WordToken, float]] = field(default_factory=list)
+    words_ld_scores: list[dict[WordToken, float]] = field(default_factory=list)
+
     lowest_fr_unseen_word: list[Tuple[WordToken, float]] = field(default_factory=list)
     lowest_fr_word: list[Tuple[WordToken, float]] = field(default_factory=list)
+
+    lowest_ld_word: list[Tuple[WordToken, float]] = field(default_factory=list)
+
     seen_words: list[list[WordToken]] = field(default_factory=list)
     unseen_words: list[list[WordToken]] = field(default_factory=list)
 
@@ -34,7 +46,10 @@ class FieldsMetrics:
     ideal_words_count_scores: list[float] = field(default_factory=list)
 
     fr_scores: list[float] = field(default_factory=list)  # Avg frequency of words, avg per field | Card with common words should go up
+    ld_scores: list[float] = field(default_factory=list)
+
     lowest_fr_unseen_word_scores: list[float] = field(default_factory=list)  # Lowest frequency of unseen words, avg per fields | Cards introducing MOSTLY a common word should go up
+    lowest_ld_word_scores: list[float] = field(default_factory=list)  # Lowest frequency of unseen words, avg per fields | Cards introducing MOSTLY a common word should go up
     # fields_words_unfamiliarity_scores:list[float] = [] # | Card with words seen a lot should go down
     # fields_words_fresh_occurrence_scores:list[float] = [] # Freshness of words, avg per field | Cards with fresh words (recently matured?) should go up
 
@@ -115,8 +130,19 @@ class CardRanker:
             #  set lowest frequency word
             note_metrics.lowest_fr_word.append(field_metrics.lowest_fr_word)
 
+            # lowest fr unseen word
+            note_metrics.lowest_fr_unseen_word.append(field_metrics.lowest_fr_unseen_word)
+            note_metrics.lowest_fr_unseen_word_scores.append(field_metrics.lowest_fr_unseen_word[1])
+
+            #  set lowest ld word
+            note_metrics.lowest_ld_word.append(field_metrics.lowest_ld_word)
+            note_metrics.lowest_ld_word_scores.append(field_metrics.lowest_ld_word[1])
+
             # fr for every word
             note_metrics.words_fr_scores.append(field_metrics.words_fr_scores)
+
+            # ld for every word
+            note_metrics.words_ld_scores.append(field_metrics.words_ld_scores)
 
             # ideal unseen words count
             num_unseen_words = len(field_metrics.unseen_words)
@@ -125,21 +151,24 @@ class CardRanker:
             # ideal word count
             note_metrics.ideal_words_count_scores.append(self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), 4))
 
-            # lowest fr unseen word
-            note_metrics.lowest_fr_unseen_word.append(field_metrics.lowest_fr_unseen_word)
-            note_metrics.lowest_fr_unseen_word_scores.append(field_metrics.lowest_fr_unseen_word[1])
-
             # fr score
             if (len(field_metrics.fr_scores) > 0):
                 note_metrics.fr_scores.append(mean(field_metrics.fr_scores))
             else:
                 note_metrics.fr_scores.append(0)
 
-        # define ranking factors for card, based on avg of fields
+            # ld score
+            if (len(field_metrics.ld_scores) > 0):
+                note_metrics.ld_scores.append(mean(field_metrics.ld_scores))
+            else:
+                note_metrics.ld_scores.append(0)
+
+        # define ranking factors for note, based on avg of fields
         note_ranking_factors: dict[str, float] = {}
-        note_ranking_factors['words_frequency_score'] = mean(note_metrics.fr_scores)  # todo: replace with lexical_discrepancy?
+        note_ranking_factors['words_ld_score'] = mean(note_metrics.ld_scores)
+    #    note_ranking_factors['lowest_ld_word_scores'] = mean(note_metrics.lowest_ld_word_scores)
+    #    note_ranking_factors['words_fr_score'] = mean(note_metrics.fr_scores)
         note_ranking_factors['lowest_fr_unseen_word_scores'] = mean(note_metrics.lowest_fr_unseen_word_scores)  # todo: make relative to num words?
-        # note_ranking_factors['lowest_fr_least_familiar_word_scores'] <- todo?
         note_ranking_factors['ideal_unseen_word_count'] = mean(note_metrics.ideal_unseen_words_count_scores)
         note_ranking_factors['ideal_word_count'] = mean(note_metrics.ideal_words_count_scores)
         # card_ranking_factors['words_fresh_occurrence_scores'] = mean(fields_words_fresh_occurrence_scores)
@@ -160,8 +189,7 @@ class CardRanker:
         for word in field_data.field_value_tokenized:
 
             word_fr = self.word_frequency_lists.get_word_frequency(field_data.target_language_key, word, 0)
-            # word_familiarity = self.cards_corpus_data.notes_reviewed_words_familiarity[field_key][word]
-            # word_lexical_discrepancy_rating = (word_fr - word_familiarity) aka unfamiliarity of high frequency words
+            word_ld = self.cards_corpus_data.get_words_lexical_discrepancy(field_key, word)  # unfamiliarity of high frequency words
             # word_novelty_rating = (1-word_familiarity) notes_reviewed_words_familiarity
             # card_perplexity_rating = avg( word_novelty_rating/card_word_count where word_novelty_rating < 0.5 ) /
 
@@ -170,9 +198,16 @@ class CardRanker:
             field_metrics.fr_scores.append(word_fr)
             field_metrics.words_fr_scores[word] = word_fr
 
+            field_metrics.ld_scores.append(word_ld)
+            field_metrics.words_ld_scores[word] = word_ld
+
             # lowest fr word
             if field_metrics.lowest_fr_word[0] == "" or word_fr < field_metrics.lowest_fr_word[1]:
                 field_metrics.lowest_fr_word = (word, word_fr)
+
+            # lowest ld word
+            if field_metrics.lowest_ld_word[0] == "" or word_ld < field_metrics.lowest_ld_word[1]:
+                field_metrics.lowest_ld_word = (word, word_ld)
 
             # set seen, unseen and lowest fr unseen
             if word in self.cards_corpus_data.notes_reviewed_words.get(field_key, {}):
@@ -190,13 +225,17 @@ class CardRanker:
         update_note = False
         if 'fm_debug_info' in note:
             fields_words_fr_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_fr_scores]
+            fields_words_ld_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_ld_scores]
             debug_info = {
+                #'ld_score': mean(note_metrics.ld_scores),
+                'ld_scores': note_metrics.ld_scores,
                 'fr_scores': note_metrics.fr_scores,
                 'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,
-                'lowest_fr_unseen_word_scores': note_metrics.lowest_fr_unseen_word_scores,
+                #'lowest_ld_word': note_metrics.lowest_ld_word,
                 'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                 'ideal_word_count': note_metrics.ideal_words_count_scores,
-                'words_fr_scores': fields_words_fr_scores_sorted
+                'words_fr_scores': fields_words_fr_scores_sorted,
+                'words_ld_scores': fields_words_ld_scores_sorted
             }
             note['fm_debug_info'] = ''
             for k, var in debug_info.items():

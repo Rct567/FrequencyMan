@@ -177,7 +177,7 @@ class Target:
         event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_cards.new_cards_ids), len(target_cards.all_cards)))
 
         # Get corpus data
-        target_corpus_data = TargetCorpusData()
+        target_corpus_data = TargetCorpusData(word_frequency_lists)
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
             target_corpus_data.create_data(target_cards.all_cards, self, col)
 

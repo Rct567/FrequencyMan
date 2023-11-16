@@ -153,7 +153,7 @@ class TargetCorpusData:
 
             self.notes_reviewed_words_familiarity[field_key] = dict(sorted(self.notes_reviewed_words_familiarity[field_key].items(), key=lambda x: x[1], reverse=True))
 
-            # also relative, but based on (sorted) position, same as value received from WordFrequencyList.get_word_frequency
+            # also relative, but based on (sorted) position, just like value received from WordFrequencyList.get_word_frequency
 
             self.notes_reviewed_words_familiarity_positional[field_key] = {}
             max_rank = len(self.notes_reviewed_words_familiarity[field_key])
@@ -186,11 +186,10 @@ class TargetCorpusData:
                 for word_token in field.field_value_tokenized:
 
                     word_fr = self.word_frequency_lists.get_word_frequency(language_key, word_token, 0)
-                    if (word_token in self.notes_reviewed_words_familiarity_positional[field_key]):
-                        word_familiarity = self.notes_reviewed_words_familiarity_positional[field_key][word_token]
-                    else:
-                        word_familiarity = 0
-                    word_lexical_discrepancy_rating = 1 + (word_fr - word_familiarity)
+                    word_familiarity = self.notes_reviewed_words_familiarity_positional[field_key].get(word_token, 0)
+                    word_lexical_discrepancy_rating = (word_fr - word_familiarity)
+                    if (word_lexical_discrepancy_rating < 0):
+                        word_lexical_discrepancy_rating = 0
 
                     self.notes_words_lexical_discrepancy[field_key][word_token] = word_lexical_discrepancy_rating
 

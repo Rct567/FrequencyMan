@@ -7,7 +7,7 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from aqt.operations import QueryOp, CollectionOp
 
 from aqt.utils import askUser, showWarning, showInfo
-from aqt import QAction, QSpacerItem, QSizePolicy
+from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
 from aqt.qt import *
 from aqt.main import AnkiQt
 
@@ -336,7 +336,14 @@ class ReorderCardsTab:
             if (self.fm_window.addon_config.get('log_reorder_events', 'false') == 'true'):
                 event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))
 
-        CollectionOp(
-            parent=self.fm_window,
-            op=anki_collection_operation
-        ).success(anki_collection_operation_success).run_in_background()
+        shift_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
+        ctrl_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier
+
+        if shift_pressed and ctrl_pressed: # for debugging purposes
+            anki_collection_operation_success(anki_collection_operation(self.col))
+        else:
+            CollectionOp(
+                parent=self.fm_window,
+                op=anki_collection_operation
+            ).success(anki_collection_operation_success).run_in_background()
+

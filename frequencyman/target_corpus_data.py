@@ -29,6 +29,7 @@ class TargetCorpusData:
     Class representing corpus data from target cards.
     """
 
+    target_cards: Iterable[Card]
     fields_per_card_note: dict[NoteId, list[TargetFieldData]]
 
     notes_reviewed_words: dict[FieldKey, dict[WordToken, list[Card]]]
@@ -55,6 +56,8 @@ class TargetCorpusData:
         """
         Create corpus data for the given target and its cards.
         """
+
+        self.target_cards = target_cards
         target_fields_by_notes_name = target.get_notes()
 
         for card in target_cards:
@@ -96,34 +99,43 @@ class TargetCorpusData:
 
                 self.fields_per_card_note[card.nid] = card_note_fields_in_target
 
-            card_has_been_reviewed = card.type == 2 and card.queue != 0  # card is of type 'review' and queue is not 'new'
-
-            # set reviewed words, and reviewed words occurrences, per field of note
-            if card_has_been_reviewed:
-                for field_data in self.fields_per_card_note[card.nid]:
-                    field_value_num_tokens = len(field_data.field_value_tokenized)
-                    field_key = field_data.field_key
-                    for word_token in field_data.field_value_tokenized:
-                        # set reviewed words (word has been in a reviewed card)
-                        if field_key not in self.notes_reviewed_words:
-                            self.notes_reviewed_words[field_key] = {}
-                        if word_token not in self.notes_reviewed_words[field_key]:
-                            self.notes_reviewed_words[field_key][word_token] = []
-                        self.notes_reviewed_words[field_key][word_token].append(card)
-                        # set presence_score for reviewed words
-                        if field_key not in self.notes_reviewed_words_occurrences:
-                            self.notes_reviewed_words_occurrences[field_key] = {}
-                        if word_token not in self.notes_reviewed_words_occurrences[field_key]:
-                            self.notes_reviewed_words_occurrences[field_key][word_token] = []
-                        token_presence_score = 1/mean([field_value_num_tokens, 3])
-                        self.notes_reviewed_words_occurrences[field_key][word_token].append(token_presence_score)
-
+        self.__set_notes_reviewed_words()
         self.__set_notes_words_familiarity()
         self.__set_notes_lexical_discrepancy()
 
+    def __set_notes_reviewed_words(self) -> None:
+
+        for card in self.target_cards:
+
+            # set reviewed words, and reviewed words occurrences, per field of note
+
+            card_has_been_reviewed = card.type == 2 and card.queue != 0  # card is of type 'review' and queue is not 'new'
+            if not card_has_been_reviewed:
+                continue
+
+            for field_data in self.fields_per_card_note[card.nid]:
+
+                field_value_num_tokens = len(field_data.field_value_tokenized)
+                field_key = field_data.field_key
+
+                for word_token in field_data.field_value_tokenized:
+                    # set reviewed words (word has been in a reviewed card)
+                    if field_key not in self.notes_reviewed_words:
+                        self.notes_reviewed_words[field_key] = {}
+                    if word_token not in self.notes_reviewed_words[field_key]:
+                        self.notes_reviewed_words[field_key][word_token] = []
+                    self.notes_reviewed_words[field_key][word_token].append(card)
+                    # set presence_score for reviewed words
+                    if field_key not in self.notes_reviewed_words_occurrences:
+                        self.notes_reviewed_words_occurrences[field_key] = {}
+                    if word_token not in self.notes_reviewed_words_occurrences[field_key]:
+                        self.notes_reviewed_words_occurrences[field_key][word_token] = []
+                    token_presence_score = 1/mean([field_value_num_tokens, 3])
+                    self.notes_reviewed_words_occurrences[field_key][word_token].append(token_presence_score)
+
     def __set_notes_words_familiarity(self) -> None:
         """
-        Set the familiarity score for each word per field of card note, based on word presence.
+        Set the familiarity score for each word per field of card note, based on word presence in reviewed cards.
         """
         for field_key in self.notes_reviewed_words_occurrences:
 

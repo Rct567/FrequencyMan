@@ -164,8 +164,8 @@ class ReorderCardsTab:
             else:
                 showWarning("Defined targets are not valid!\n\n"+self.targets_input_textarea.err_desc)
 
-        normal_style = "QPushButton { font-size: 16px; font-weight: bold; color: white; margin-top:20px; background-color: #23b442; color: white; border:2px solid #23a03e; }"
-        disabled_style = 'QPushButton:disabled { background-color:#7e5348 ; border-color:#6c4338; color:#bcaca7 }'
+        normal_style = "QPushButton { font-size: 16px; font-weight: bold; margin-top:15px; }"
+        disabled_style = 'QPushButton:enabled { background-color:#23b442; border:2px solid #23a03e; color:white; }'
         self.exec_reorder_button.setStyleSheet(normal_style+" "+disabled_style)
 
         def update_reorder_button_state(json_validity_state, _):

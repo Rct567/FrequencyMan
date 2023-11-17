@@ -29,7 +29,7 @@ class TargetCorpusData:
     Class representing corpus data from target cards.
     """
 
-    handled_notes: dict[NoteId, list[TargetFieldData]]
+    fields_per_card_note: dict[NoteId, list[TargetFieldData]]
 
     notes_reviewed_words: dict[FieldKey, dict[WordToken, list[Card]]]
     notes_reviewed_words_occurrences: dict[FieldKey, dict[WordToken, list[float]]]  # list because a word can occur multiple times in a field
@@ -41,7 +41,7 @@ class TargetCorpusData:
 
     def __init__(self, word_frequency_lists):
 
-        self.handled_notes = {}
+        self.fields_per_card_note = {}
 
         self.notes_reviewed_words = {}  # reviewed words and the cards they they occur in, per "field of note"
         self.notes_reviewed_words_occurrences = {}  # a list of 'occurrence ratings' per word in a card, per "field of note"
@@ -59,7 +59,7 @@ class TargetCorpusData:
 
         for card in target_cards:
 
-            if card.nid not in self.handled_notes:
+            if card.nid not in self.fields_per_card_note:
 
                 card_note = col.get_note(card.nid)
                 card_note_type = col.models.get(card_note.mid)
@@ -94,13 +94,13 @@ class TargetCorpusData:
                             target_language_id=LangId(lang_id)
                         ))
 
-                self.handled_notes[card.nid] = card_note_fields_in_target
+                self.fields_per_card_note[card.nid] = card_note_fields_in_target
 
             card_has_been_reviewed = card.type == 2 and card.queue != 0  # card is of type 'review' and queue is not 'new'
 
             # set reviewed words, and reviewed words occurrences, per field of note
             if card_has_been_reviewed:
-                for field_data in self.handled_notes[card.nid]:
+                for field_data in self.fields_per_card_note[card.nid]:
                     field_value_num_tokens = len(field_data.field_value_tokenized)
                     field_key = field_data.field_key
                     for word_token in field_data.field_value_tokenized:
@@ -173,7 +173,7 @@ class TargetCorpusData:
 
         highest_ld_ratings = {}
 
-        for note_fields in self.handled_notes.values():
+        for note_fields in self.fields_per_card_note.values():
 
             for field in note_fields:
 

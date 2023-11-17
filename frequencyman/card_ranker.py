@@ -111,7 +111,7 @@ class CardRanker:
     def __calc_card_note_ranking(self, note: Note, note_cards: list[Card]) -> float:
 
         # get scores per field
-        note_fields_defined_in_target = self.cards_corpus_data.handled_notes[note.id]
+        note_fields_defined_in_target = self.cards_corpus_data.fields_per_card_note[note.id]
         note_metrics = FieldsMetrics()
 
         for field_data in note_fields_defined_in_target:

@@ -215,7 +215,7 @@ class CardRanker:
                 field_metrics.highest_ld_word = (word, word_ld)
 
             # set seen, unseen and lowest fr unseen
-            if word in self.cards_corpus_data.notes_reviewed_words.get(field_key, {}):
+            if word in self.cards_corpus_data.notes_fields_data.reviewed_words.get(field_key, {}):
                 field_metrics.seen_words.append(word)  # word seen, word exist in at least one reviewed card
             else:
                 field_metrics.unseen_words.append(word)

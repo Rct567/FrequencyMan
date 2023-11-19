@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from statistics import mean, median
+from math import fsum
+from statistics import fmean, median
 from typing import Iterable, NewType, Type, TypedDict, Union
 
 from anki.collection import Collection
@@ -131,7 +132,7 @@ class TargetCorpusData:
                         self.notes_fields_data.reviewed_words_occurrences[field_key] = {}
                     if word_token not in self.notes_fields_data.reviewed_words_occurrences[field_key]:
                         self.notes_fields_data.reviewed_words_occurrences[field_key][word_token] = []
-                    token_presence_score = 1/mean([field_value_num_tokens, 3])
+                    token_presence_score = 1/fmean([field_value_num_tokens, 3])
                     self.notes_fields_data.reviewed_words_occurrences[field_key][word_token].append(token_presence_score)
 
     def __set_notes_words_familiarity(self) -> None:
@@ -140,8 +141,8 @@ class TargetCorpusData:
         """
         for field_key in self.notes_fields_data.reviewed_words_occurrences:
 
-            field_all_word_presence_scores = [sum(word_scores) for word_scores in self.notes_fields_data.reviewed_words_occurrences[field_key].values()]
-            field_avg_word_presence_score = mean(field_all_word_presence_scores)
+            field_all_word_presence_scores = [fsum(word_scores) for word_scores in self.notes_fields_data.reviewed_words_occurrences[field_key].values()]
+            field_avg_word_presence_score = fmean(field_all_word_presence_scores)
             field_median_word_presence_score = median(field_all_word_presence_scores)
 
             if field_key not in self.notes_fields_data.reviewed_words_familiarity:
@@ -150,9 +151,9 @@ class TargetCorpusData:
             for word_token in self.notes_fields_data.reviewed_words_occurrences[field_key]:
 
                 word_presence_scores = self.notes_fields_data.reviewed_words_occurrences[field_key][word_token]
-                word_familiarity_score = sum(word_presence_scores)  # todo: also incorporate cards review time?
+                word_familiarity_score = fsum(word_presence_scores)  # todo: also incorporate cards review time?
                 if (word_familiarity_score > field_avg_word_presence_score):  # flatten the top half a bit
-                    word_familiarity_score = mean([word_familiarity_score, field_avg_word_presence_score])
+                    word_familiarity_score = fmean([word_familiarity_score, field_avg_word_presence_score])
 
                 self.notes_fields_data.reviewed_words_familiarity[field_key][word_token] = word_familiarity_score
 
@@ -202,7 +203,7 @@ class TargetCorpusData:
                     word_familiarity = self.notes_fields_data.reviewed_words_familiarity_positional[field_key].get(word_token, 0)
                     word_lexical_discrepancy_rating = (word_fr - word_familiarity)
                     if (word_lexical_discrepancy_rating < 0):
-                        word_lexical_discrepancy_rating = 0
+                        word_lexical_discrepancy_rating = 0.0
 
                     self.notes_fields_data.words_lexical_discrepancy[field_key][word_token] = word_lexical_discrepancy_rating
 

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from statistics import mean
+from statistics import fmean
 from typing import Tuple
 
 from anki.cards import Card, CardId
@@ -49,7 +49,7 @@ class FieldsMetrics:
     ld_scores: list[float] = field(default_factory=list)
 
     lowest_fr_unseen_word_scores: list[float] = field(default_factory=list)  # Lowest frequency of unseen words (per fields) | Cards introducing MOSTLY a common word should go up
-    highest_ld_word_scores: list[float] = field(default_factory=list)  # Highest ld score, (per field)  
+    highest_ld_word_scores: list[float] = field(default_factory=list)  # Highest ld score, (per field)
 
     # fields_words_low_familiarity_scores:list[float] = [] # | Card with words seen rarely should go up
     # fields_words_fresh_occurrence_scores:list[float] = [] # Freshness of words, avg per field | Cards with fresh words (recently matured?) should go up
@@ -74,7 +74,7 @@ class CardRanker:
             m = 5
         difference = abs(word_count - ideal_num)
         score = 1 / (1 + (difference / ideal_num) ** m)
-        return mean([max(0, score), 1])
+        return fmean([max(0, score), 1])
 
     @staticmethod
     def __calc_ideal_unseen_words_count_score(num_unseen_words: int) -> float:
@@ -154,32 +154,32 @@ class CardRanker:
 
             # fr score
             if (len(field_metrics.fr_scores) > 0):
-                note_metrics.fr_scores.append(mean(field_metrics.fr_scores))
+                note_metrics.fr_scores.append(fmean(field_metrics.fr_scores))
             else:
                 note_metrics.fr_scores.append(0)
 
             # ld score
             if (len(field_metrics.ld_scores) > 0):
-                note_metrics.ld_scores.append(mean(field_metrics.ld_scores))
+                note_metrics.ld_scores.append(fmean(field_metrics.ld_scores))
             else:
                 note_metrics.ld_scores.append(0)
 
         # define ranking factors for note, based on avg of fields
 
         note_ranking_factors: dict[str, float] = {}
-        note_ranking_factors['words_ld_score'] = mean(note_metrics.ld_scores)
-        note_ranking_factors['highest_ld_word_scores'] = mean(note_metrics.highest_ld_word_scores)
+        note_ranking_factors['words_ld_score'] = fmean(note_metrics.ld_scores)
+        note_ranking_factors['highest_ld_word_scores'] = fmean(note_metrics.highest_ld_word_scores)
 
-        note_ranking_factors['lowest_fr_unseen_word_scores'] = mean(note_metrics.lowest_fr_unseen_word_scores)
+        note_ranking_factors['lowest_fr_unseen_word_scores'] = fmean(note_metrics.lowest_fr_unseen_word_scores)
 
-        note_ranking_factors['ideal_unseen_word_count'] = mean(note_metrics.ideal_unseen_words_count_scores)
-        note_ranking_factors['ideal_word_count'] = mean(note_metrics.ideal_words_count_scores)
+        note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)
+        note_ranking_factors['ideal_word_count'] = fmean(note_metrics.ideal_words_count_scores)
 
-        # not needed anymore: note_ranking_factors['words_fr_score'] = mean(note_metrics.fr_scores)
-        # card_ranking_factors['words_fresh_occurrence_scores'] = mean(fields_words_fresh_occurrence_scores)
+        # not needed anymore: note_ranking_factors['words_fr_score'] = fmean(note_metrics.fr_scores)
+        # card_ranking_factors['words_fresh_occurrence_scores'] = fmean(fields_words_fresh_occurrence_scores)
 
         # final ranking
-        note_ranking = mean(note_ranking_factors.values())
+        note_ranking = fmean(note_ranking_factors.values())
 
         # Set meta data that will be saved in note fields
         self.__set_fields_meta_data_for_note(note, note_metrics)
@@ -232,7 +232,7 @@ class CardRanker:
             fields_words_fr_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_fr_scores]
             fields_words_ld_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_ld_scores]
             debug_info = {
-                #'ld_score': mean(note_metrics.ld_scores),
+                #'ld_score': fmean(note_metrics.ld_scores),
                 'ld_scores': note_metrics.ld_scores,
                 'fr_scores': note_metrics.fr_scores,
                 'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,

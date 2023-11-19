@@ -1,5 +1,5 @@
 from io import TextIOWrapper
-from typing import Dict, NewType, Optional
+from typing import NewType, Optional
 
 from .lib.utilities import *
 from .text_processing import TextProcessing
@@ -92,10 +92,10 @@ class WordFrequencyLists:
 
         self.word_frequency_lists[key] = self.__produce_word_frequency_list(files)
 
-    def __produce_word_frequency_list(self, files: list[str]) -> Dict[str, float]:
+    def __produce_word_frequency_list(self, files: list[str]) -> dict[str, float]:
 
-        all_files_word_rankings: Dict[str, list[int]] = {}
-        all_files_word_rankings_combined: Dict[str, int] = {}
+        all_files_word_rankings: dict[str, list[int]] = {}
+        all_files_word_rankings_combined: dict[str, int] = {}
 
         for file_name in files:
             if not file_name.endswith('.txt'):
@@ -104,13 +104,12 @@ class WordFrequencyLists:
                 self.__set_word_rankings_from_file(file, all_files_word_rankings) # adds to all_files_word_rankings
 
         for word, rankings in all_files_word_rankings.items():
-            # word_rankings_combined[word] = sum(rankings) / len(rankings)
-            all_files_word_rankings_combined[word] = min(rankings)  # highest position
+            all_files_word_rankings_combined[word] = min(rankings)  # highest ranking among lists (lowest int / line number)
 
         max_rank = max(all_files_word_rankings_combined.values())
         return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in all_files_word_rankings_combined.items()}
 
-    def __set_word_rankings_from_file(self, file: TextIOWrapper, all_files_word_rankings: Dict[str, list[int]]) -> None:
+    def __set_word_rankings_from_file(self, file: TextIOWrapper, all_files_word_rankings: dict[str, list[int]]) -> None:
 
         file_word_rankings: list[str] = []
 

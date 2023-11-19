@@ -39,7 +39,7 @@ def var_dump_log(var, show_as_info=False) -> None:
 
 
 @contextmanager
-def profile_context(sortby=pstats.SortKey.CUMULATIVE):
+def profile_context(sortby=pstats.SortKey.TIME, amount=40):
     profiler = cProfile.Profile()
     profiler.enable()
     try:
@@ -48,9 +48,9 @@ def profile_context(sortby=pstats.SortKey.CUMULATIVE):
         profiler.disable()
         s = io.StringIO()
         ps = pstats.Stats(profiler, stream=s).sort_stats(sortby)
-        ps.print_callers()
+        ps.print_callers(amount)
         print("\n\n\n=========================================\n\n\n")
-        ps.print_stats()
+        ps.print_stats(amount)
         profiling_results = s.getvalue()
         dump_file = os.path.join(os.path.dirname(__file__), '..', '..', 'profiling_results.txt')
         with open(dump_file, 'w') as f:

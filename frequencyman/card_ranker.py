@@ -244,7 +244,7 @@ class CardRanker:
             }
             note['fm_debug_info'] = ''
             for k, var in debug_info.items():
-                note['fm_debug_info'] += k+": " + pprint.pformat(var, sort_dicts=False)+"<br />\n"
+                note['fm_debug_info'] += k+": " + str(var)+"<br />\n"
             update_note = True
         if 'fm_seen_words' in note:
             printed_fields_seen_words = [", ".join(words) for words in note_metrics.seen_words]

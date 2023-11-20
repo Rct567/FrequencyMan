@@ -23,6 +23,8 @@ class FieldMetrics:
     seen_words: list[WordToken] = field(default_factory=list)
     unseen_words: list[WordToken] = field(default_factory=list)
 
+    words_low_familiarity_score: dict[WordToken, float] = field(default_factory=dict)
+
     lowest_fr_unseen_word: Tuple[WordToken, float] = (WordToken(""), 0)
     lowest_fr_word: Tuple[WordToken, float] = (WordToken(""), 0)
 
@@ -51,7 +53,7 @@ class FieldsMetrics:
     lowest_fr_unseen_word_scores: list[float] = field(default_factory=list)  # Lowest frequency of unseen words (per fields) | Cards introducing MOSTLY a common word should go up
     highest_ld_word_scores: list[float] = field(default_factory=list)  # Highest ld score, (per field)
 
-    # fields_words_low_familiarity_scores:list[float] = [] # | Card with words seen rarely should go up
+    words_low_familiarity_rating: list[float] = field(default_factory=list) # | Card with words seen rarely should go up
     # fields_words_fresh_occurrence_scores:list[float] = [] # Freshness of words, avg per field | Cards with fresh words (recently matured?) should go up
 
 
@@ -152,6 +154,13 @@ class CardRanker:
             # ideal word count
             note_metrics.ideal_words_count_scores.append(self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), 4))
 
+            # low familiarity score
+            words_low_familiarity_scores = field_metrics.words_low_familiarity_score.values();
+            if (len(words_low_familiarity_scores) > 0):
+                note_metrics.words_low_familiarity_rating.append(fmean(field_metrics.words_low_familiarity_score.values()))
+            else:
+                note_metrics.words_low_familiarity_rating.append(0)
+
             # fr score
             if (len(field_metrics.fr_scores) > 0):
                 note_metrics.fr_scores.append(fmean(field_metrics.fr_scores))
@@ -175,6 +184,8 @@ class CardRanker:
         note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)
         note_ranking_factors['ideal_word_count'] = fmean(note_metrics.ideal_words_count_scores)
 
+        note_ranking_factors['words_low_familiarity_rating'] = fmean(note_metrics.words_low_familiarity_rating)
+
         # not needed anymore: note_ranking_factors['words_fr_score'] = fmean(note_metrics.fr_scores)
         # card_ranking_factors['words_fresh_occurrence_scores'] = fmean(fields_words_fresh_occurrence_scores)
 
@@ -195,10 +206,6 @@ class CardRanker:
 
             word_fr = self.word_frequency_lists.get_word_frequency(field_data.target_language_key, word, 0)
             word_ld = self.cards_corpus_data.get_words_lexical_discrepancy(field_key, word)  # unfamiliarity of high frequency words
-            # word_novelty_rating = (1-word_familiarity) notes_reviewed_words_familiarity
-            # card_perplexity_rating = avg( word_novelty_rating/card_word_count where word_novelty_rating < 0.5 ) /
-
-            # todo: lexical_discrepancy_rating and card_perplexity_sweetspot_rating
 
             field_metrics.fr_scores.append(word_fr)
             field_metrics.words_fr_scores[word] = word_fr
@@ -213,6 +220,10 @@ class CardRanker:
             # highest ld word
             if field_metrics.highest_ld_word[0] == "" or word_ld > field_metrics.highest_ld_word[1]:
                 field_metrics.highest_ld_word = (word, word_ld)
+
+            #  low familiarity score
+            words_low_familiarity_score = self.cards_corpus_data.notes_fields_data.reviewed_words_low_familiarity[field_key].get(word, 0)
+            field_metrics.words_low_familiarity_score[word] = words_low_familiarity_score
 
             # set seen, unseen and lowest fr unseen
             if word in self.cards_corpus_data.notes_fields_data.reviewed_words.get(field_key, {}):
@@ -232,7 +243,7 @@ class CardRanker:
             fields_words_fr_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_fr_scores]
             fields_words_ld_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_ld_scores]
             debug_info = {
-                #'ld_score': fmean(note_metrics.ld_scores),
+                # 'ld_score': fmean(note_metrics.ld_scores),
                 'ld_scores': note_metrics.ld_scores,
                 'fr_scores': note_metrics.fr_scores,
                 'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,
@@ -240,7 +251,8 @@ class CardRanker:
                 'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                 'ideal_word_count': note_metrics.ideal_words_count_scores,
                 'words_fr_scores': fields_words_fr_scores_sorted,
-                'words_ld_scores': fields_words_ld_scores_sorted
+                'words_ld_scores': fields_words_ld_scores_sorted,
+                'words_low_familiarity_rating': note_metrics.words_low_familiarity_rating
             }
             note['fm_debug_info'] = ''
             for k, var in debug_info.items():

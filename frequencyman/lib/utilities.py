@@ -1,7 +1,3 @@
-import asyncio
-import concurrent.futures
-from functools import partial, wraps
-from io import StringIO
 import io
 import cProfile
 from contextlib import contextmanager
@@ -9,8 +5,10 @@ import os
 import pprint
 import pstats
 import threading
-from typing import Any, Callable, Coroutine, TypeVar
+from typing import TypeVar
 from aqt.utils import showInfo
+
+from ..text_processing import WordToken
 
 var_dump_count = 0
 
@@ -55,7 +53,7 @@ def profile_context(sortby=pstats.SortKey.TIME, amount=40):
         profiling_results = s.getvalue()
         dump_file = os.path.join(os.path.dirname(__file__), '..', '..', 'profiling_results.txt')
         with open(dump_file, 'w') as f:
-            f.write(profiling_results) 
+            f.write(profiling_results)
 
 
 def chunked_list(input_list: list, chunk_size: int) -> list[list]:
@@ -70,3 +68,30 @@ def chunked_list(input_list: list, chunk_size: int) -> list[list]:
         list[list]: A list of smaller lists, each containing chunk_size elements.
     """
     return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
+
+
+K = TypeVar('K')
+
+def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
+
+    new_dict = input_dict.copy()
+    min_value = min(new_dict.values())
+
+    if (min_value > 0):
+        for key in new_dict:
+            new_dict[key] = (new_dict[key]-min_value)+0.00001
+    elif (min_value < 0):
+        for key in new_dict:
+            new_dict[key] = (new_dict[key]+min_value)+0.00001
+
+    max_val = max(new_dict.values())
+
+    if (max_val != 0):
+        for key in new_dict:
+            new_dict[key] = new_dict[key]/max_val
+
+    return new_dict
+
+def sort_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
+    
+    return dict(sorted(input_dict.items(), key=lambda x: x[1], reverse=True))

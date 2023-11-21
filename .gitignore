@@ -1,4 +1,5 @@
 __pycache__/
+user_files/
 .pytest_cache/
 meta.json
 dump.log

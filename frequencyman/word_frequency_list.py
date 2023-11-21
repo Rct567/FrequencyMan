@@ -114,7 +114,13 @@ class WordFrequencyLists:
         file_word_rankings: list[str] = []
 
         for line in file:
-            word = line.strip().lower()
+            line = line.rstrip()
+            last_space_index = line.rfind(' ')
+            if last_space_index != -1 and last_space_index < len(line) - 1 and line[last_space_index + 1:].isdigit():
+                word = line[:last_space_index]
+            else:
+                word = line
+            word = word.strip().lower()
             if word not in file_word_rankings and TextProcessing.acceptable_word(word):
                 file_word_rankings.append(word)
 

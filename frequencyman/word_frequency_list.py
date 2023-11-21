@@ -1,3 +1,4 @@
+from collections import defaultdict
 from io import TextIOWrapper
 from typing import NewType, Optional
 
@@ -52,10 +53,6 @@ class WordFrequencyLists:
             if (len(self.word_frequency_lists[key]) < 1):
                 raise Exception(f"Word frequency list '{key}' not loaded.")
 
-    def load_frequency_lists(self, keys: list[LangKey]) -> None:
-        for key in keys:
-            self.load_frequency_list(key)
-
     def key_has_frequency_list_file(self, key: LangKey) -> bool:
         return len(self.get_files_for_lang_key(key)) > 0
 
@@ -81,6 +78,10 @@ class WordFrequencyLists:
                 files.append(os.path.join(possible_dir, file_name))
         return files
 
+    def load_frequency_lists(self, keys: list[LangKey]) -> None:
+        for key in keys:
+            self.load_frequency_list(key)
+
     def load_frequency_list(self, key: LangKey) -> None:
         if self.already_loaded(key):
             return
@@ -94,13 +95,13 @@ class WordFrequencyLists:
 
     def __produce_word_frequency_list(self, files: list[str]) -> dict[str, float]:
 
-        all_files_word_rankings: dict[str, list[int]] = {}
+        all_files_word_rankings: dict[str, list[int]] = defaultdict(list)
         all_files_word_rankings_combined: dict[str, int] = {}
 
         for file_name in files:
             if not file_name.endswith('.txt'):
                 continue
-            with open(os.path.join(file_name, file_name), encoding='utf-8') as file:
+            with open(file_name, encoding='utf-8') as file:
                 self.__set_word_rankings_from_file(file, all_files_word_rankings) # adds to all_files_word_rankings
 
         for word, rankings in all_files_word_rankings.items():
@@ -109,7 +110,7 @@ class WordFrequencyLists:
         max_rank = max(all_files_word_rankings_combined.values())
         return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in all_files_word_rankings_combined.items()}
 
-    def __set_word_rankings_from_file(self, file: TextIOWrapper, all_files_word_rankings: dict[str, list[int]]) -> None:
+    def __set_word_rankings_from_file(self, file: TextIOWrapper, all_files_word_rankings: defaultdict[str, list[int]]) -> None:
 
         file_word_rankings: list[str] = []
 
@@ -126,7 +127,4 @@ class WordFrequencyLists:
 
         for index, word in enumerate(file_word_rankings):
             ranking = index+1
-            if word in all_files_word_rankings:
-                all_files_word_rankings[word].append(ranking)
-            else:
-                all_files_word_rankings[word] = [ranking]
+            all_files_word_rankings[word].append(ranking)

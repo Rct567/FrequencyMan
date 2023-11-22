@@ -18,12 +18,13 @@ class WordFrequencyList:
 class WordFrequencyLists:
 
     list_dir: str
-    word_frequency_lists: dict[LangKey, dict[str, float]] = {}
+    word_frequency_lists: dict[LangKey, dict[str, float]]
 
     def __init__(self, list_dir) -> None:
         if not os.path.isdir(list_dir):
             raise ValueError("Invalid 'word frequency list' directory. Directory not found: "+list_dir)
         self.list_dir = list_dir
+        self.word_frequency_lists = {}
 
     def __getitem__(self, key: LangKey):
         self.require_loaded_lists(key)

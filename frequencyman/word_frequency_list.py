@@ -41,9 +41,6 @@ class WordFrequencyLists:
         self.require_loaded_lists(key)
         return self.word_frequency_lists[key].get(word, default)
 
-    def already_loaded(self, key: LangKey) -> bool:
-        return key in self.word_frequency_lists
-
     def require_loaded_lists(self, key: Optional[LangKey] = None) -> None:
         if (len(self.word_frequency_lists) < 1):
             raise Exception("No word frequency lists loaded.")
@@ -54,7 +51,7 @@ class WordFrequencyLists:
                 raise Exception(f"Word frequency list '{key}' not loaded.")
 
     def key_has_frequency_list_file(self, key: LangKey) -> bool:
-        return len(self.get_files_for_lang_key(key)) > 0
+        return len(self.__get_files_for_lang_key(key)) > 0
 
     def keys_have_frequency_list_file(self, keys: list[LangKey]) -> bool:
         for key in keys:
@@ -62,7 +59,7 @@ class WordFrequencyLists:
                 return False
         return True
 
-    def get_files_for_lang_key(self, key: LangKey) -> list[str]:
+    def __get_files_for_lang_key(self, key: LangKey) -> list[str]:
         key_str = key.lower()
         possible_file = os.path.join(self.list_dir, key_str+".txt")
         possible_dir = os.path.join(self.list_dir, key_str)
@@ -78,15 +75,18 @@ class WordFrequencyLists:
                 files.append(os.path.join(possible_dir, file_name))
         return files
 
+    def __list_already_loaded(self, key: LangKey) -> bool:
+        return key in self.word_frequency_lists
+
     def load_frequency_lists(self, keys: list[LangKey]) -> None:
         for key in keys:
-            self.load_frequency_list(key)
+            self.__load_frequency_list(key)
 
-    def load_frequency_list(self, key: LangKey) -> None:
-        if self.already_loaded(key):
+    def __load_frequency_list(self, key: LangKey) -> None:
+        if self.__list_already_loaded(key):
             return
 
-        files = self.get_files_for_lang_key(key)
+        files = self.__get_files_for_lang_key(key)
 
         if len(files) < 1:
             raise ValueError(f"No word frequency list found for key '{key}'.")
@@ -98,11 +98,15 @@ class WordFrequencyLists:
         all_files_word_rankings: dict[str, list[int]] = defaultdict(list)
         all_files_word_rankings_combined: dict[str, int] = {}
 
-        for file_name in files:
-            if not file_name.endswith('.txt'):
+        for file_path in files:
+            if not file_path.endswith('.txt'):
                 continue
-            with open(file_name, encoding='utf-8') as file:
-                self.__set_word_rankings_from_file(file, all_files_word_rankings) # adds to all_files_word_rankings
+
+            file_word_rankings = self.__get_word_rankings_from_file(file_path)
+
+            for index, word in enumerate(file_word_rankings):
+                ranking = index+1
+                all_files_word_rankings[word].append(ranking)
 
         for word, rankings in all_files_word_rankings.items():
             all_files_word_rankings_combined[word] = min(rankings)  # highest ranking among lists (lowest int / line number)
@@ -110,21 +114,21 @@ class WordFrequencyLists:
         max_rank = max(all_files_word_rankings_combined.values())
         return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in all_files_word_rankings_combined.items()}
 
-    def __set_word_rankings_from_file(self, file: TextIOWrapper, all_files_word_rankings: defaultdict[str, list[int]]) -> None:
+    def __get_word_rankings_from_file(self, file_path: str) -> list[str]:
 
         file_word_rankings: list[str] = []
 
-        for line in file:
-            line = line.rstrip()
-            last_space_index = line.rfind(' ')
-            if last_space_index != -1 and last_space_index < len(line) - 1 and line[last_space_index + 1:].isdigit():
-                word = line[:last_space_index]
-            else:
-                word = line
-            word = word.strip().lower()
-            if word not in file_word_rankings and TextProcessing.acceptable_word(word):
-                file_word_rankings.append(word)
+        with open(file_path, encoding='utf-8') as text_file:
 
-        for index, word in enumerate(file_word_rankings):
-            ranking = index+1
-            all_files_word_rankings[word].append(ranking)
+            for line in text_file:
+                line = line.rstrip()
+                last_space_index = line.rfind(' ')
+                if last_space_index != -1 and last_space_index < len(line) - 1 and line[last_space_index + 1:].isdigit():
+                    word = line[:last_space_index]
+                else:
+                    word = line
+                word = word.strip().lower()
+                if word not in file_word_rankings and TextProcessing.acceptable_word(word):
+                    file_word_rankings.append(word)
+
+        return file_word_rankings

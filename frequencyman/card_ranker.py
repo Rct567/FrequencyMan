@@ -300,10 +300,8 @@ class CardRanker:
             # set data in card fields
             update_note = False
             if 'fm_debug_info' in note:
-                fields_words_fr_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_fr_scores]
-                fields_words_ld_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_ld_scores]
+
                 debug_info = {
-                    # 'ld_score': fmean(note_metrics.ld_scores),
                     'ld_scores': note_metrics.ld_scores,
                     'fr_scores': note_metrics.fr_scores,
                     'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,
@@ -312,12 +310,17 @@ class CardRanker:
                     'words_low_familiarity_rating': note_metrics.words_low_familiarity_rating,
                     'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                     'ideal_word_count': note_metrics.ideal_words_count_scores,
-                    'words_fr_scores': fields_words_fr_scores_sorted,
-                    'words_ld_scores': fields_words_ld_scores_sorted,
                 }
                 note['fm_debug_info'] = ''
-                for k, var in debug_info.items():
-                    note['fm_debug_info'] += k+": " + str(var)+"<br />\n"
+                for info_name, info_val in debug_info.items():
+                    fields_info = " | ".join([str(field_info) for field_info in info_val])
+                    note['fm_debug_info'] += info_name+": " + fields_info+"<br />\n"
+                update_note = True
+            if 'fm_debug_words_fr_info' in note:
+                fields_words_fr_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_fr_scores]
+                note['fm_debug_info'] = 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"\n"
+                fields_words_ld_scores_sorted = [dict(sorted(d.items(), key=lambda item: item[1], reverse=True)) for d in note_metrics.words_ld_scores]
+                note['fm_debug_info'] = 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"\n"
                 update_note = True
             if 'fm_seen_words' in note:
                 printed_fields_seen_words = [", ".join(words) for words in note_metrics.seen_words]

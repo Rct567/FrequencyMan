@@ -33,8 +33,15 @@ def test_get_word_frequency(word_frequency_lists: WordFrequencyLists):
     frequency = word_frequency_lists.get_word_frequency(LangKey('en'), 'ccc', default=-1.0)
     assert frequency == 1/3
 
-    frequency = word_frequency_lists.get_word_frequency(LangKey('es'), 'ggg', default=-1.0)
-    assert frequency == 1/4
+def test_get_word_frequency_from_combined_files(word_frequency_lists: WordFrequencyLists):
+
+    word_frequency_lists.load_frequency_lists([LangKey('jp')])
+
+    frequency = word_frequency_lists.get_word_frequency(LangKey('jp'), 'aaaa', default=-1.0)
+    assert frequency == 1
+
+    frequency = word_frequency_lists.get_word_frequency(LangKey('jp'), 'bbbb', default=-1.0)
+    assert frequency == 7/8
 
 
 def test_key_has_frequency_list_file(word_frequency_lists: WordFrequencyLists):

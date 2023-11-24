@@ -17,6 +17,7 @@ class FieldMetrics:
     words_fr_scores: dict[WordToken, float] = field(default_factory=dict)
     words_ld_scores: dict[WordToken, float] = field(default_factory=dict)
     words_low_familiarity_scores: dict[WordToken, float] = field(default_factory=dict)
+    focus_words: dict[WordToken, float] = field(default_factory=dict)
 
     seen_words: list[WordToken] = field(default_factory=list)
     unseen_words: list[WordToken] = field(default_factory=list)
@@ -36,6 +37,7 @@ class AggregatedFieldsMetrics:
     words_fr_scores: list[dict[WordToken, float]] = field(default_factory=list)
     words_ld_scores: list[dict[WordToken, float]] = field(default_factory=list)
     words_low_familiarity_scores: list[dict[WordToken, float]] = field(default_factory=list)
+    focus_words: list[dict[WordToken, float]] = field(default_factory=list)
 
     seen_words: list[list[WordToken]] = field(default_factory=list)
     unseen_words: list[list[WordToken]] = field(default_factory=list)
@@ -62,6 +64,7 @@ class AggregatedFieldsMetrics:
         self.words_fr_scores.append(field_metrics.words_fr_scores)
         self.words_ld_scores.append(field_metrics.words_ld_scores)
         self.words_low_familiarity_scores.append(field_metrics.words_low_familiarity_scores)
+        self.focus_words.append(field_metrics.focus_words)
 
 
 class CardRanker:
@@ -260,6 +263,10 @@ class CardRanker:
             if field_metrics.most_obscure_word[0] == "" or word_ubiquity_score < field_metrics.most_obscure_word[1]:
                 field_metrics.most_obscure_word = (word, word_ubiquity_score)
 
+            # focus words
+            if word_familiarity_score < self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_median[field_key]:
+                field_metrics.focus_words[word] = word_familiarity_score
+
             # set seen, unseen and lowest fr unseen
             if word in self.cards_corpus_data.notes_fields_data.reviewed_words[field_key]:
                 field_metrics.seen_words.append(word)  # word seen, word exist in at least one reviewed card
@@ -295,10 +302,10 @@ class CardRanker:
                     note['fm_debug_info'] += info_name+": " + fields_info+"<br />\n"
                 update_note = True
             if 'fm_debug_words_fr_info' in note:
-                fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]
-                note['fm_debug_info'] = 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"\n"
                 fields_words_ld_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ld_scores]
                 note['fm_debug_info'] = 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"\n"
+                fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]
+                note['fm_debug_words_fr_info'] = 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"\n"
                 update_note = True
             if 'fm_seen_words' in note:
                 printed_fields_seen_words = [", ".join(words) for words in note_metrics.seen_words]
@@ -311,6 +318,13 @@ class CardRanker:
             if 'fm_lowest_fr_word' in note:
                 printed_fields_lowest_fr_word = [f"{word} ({fr:.2f})" for (word, fr) in note_metrics.lowest_fr_word]
                 note['fm_lowest_fr_word'] = " | ".join(printed_fields_lowest_fr_word)
+                update_note = True
+            if 'fm_focus_words' in note:
+                focus_words_per_field:list[str] = []
+                for focus_words in note_metrics.focus_words:
+                    focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
+                    focus_words_per_field.append(", ".join([word for (word, familiarity_score) in focus_words.items()]))
+                note['fm_focus_words'] = " | ".join(focus_words_per_field)
                 update_note = True
 
             if update_note:

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from math import fsum
-from statistics import fmean, median
+from statistics import fmean, mean, median
 from typing import Iterable, NewType, Type, TypedDict, Union
 
 from anki.collection import Collection
@@ -17,6 +17,8 @@ from .text_processing import TextProcessing, WordToken
 FieldKey = NewType('FieldKey', str)
 
 # Meta data for each field (in target)
+
+
 @dataclass(frozen=True)
 class TargetFieldData:
     field_key: FieldKey
@@ -36,6 +38,8 @@ class NoteFieldContentData:
     reviewed_words_occurrences: dict[FieldKey, dict[WordToken, list[float]]] = field(default_factory=dict)  # list because a word can occur multiple times in a field
     # how much a word is 'present' in reviewed cards, per "field of note"
     reviewed_words_familiarity: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
+    reviewed_words_familiarity_mean: dict[FieldKey, float] = field(default_factory=dict)
+    reviewed_words_familiarity_median: dict[FieldKey, float] = field(default_factory=dict)
     reviewed_words_familiarity_positional: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
     #
     reviewed_words_low_familiarity: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
@@ -156,7 +160,12 @@ class TargetCorpusData:
 
                 word_presence_scores = self.notes_fields_data.reviewed_words_occurrences[field_key][word_token]
                 word_familiarity_score = fsum(word_presence_scores)  # todo: also incorporate cards review time?
-                if (word_familiarity_score > field_avg_word_presence_score):  # flatten the top half a bit
+
+                if (word_familiarity_score > field_avg_word_presence_score*16):
+                    word_familiarity_score = fmean([word_familiarity_score] + [field_avg_word_presence_score]*4)
+                if (word_familiarity_score > field_avg_word_presence_score*8):
+                    word_familiarity_score = fmean([word_familiarity_score] + [field_avg_word_presence_score]*2)
+                if (word_familiarity_score > field_avg_word_presence_score):
                     word_familiarity_score = fmean([word_familiarity_score, field_avg_word_presence_score])
 
                 self.notes_fields_data.reviewed_words_familiarity[field_key][word_token] = word_familiarity_score
@@ -165,6 +174,8 @@ class TargetCorpusData:
 
             self.notes_fields_data.reviewed_words_familiarity[field_key] = normalize_dict_floats_values(self.notes_fields_data.reviewed_words_familiarity[field_key])
             self.notes_fields_data.reviewed_words_familiarity[field_key] = sort_dict_floats_values(self.notes_fields_data.reviewed_words_familiarity[field_key])
+            self.notes_fields_data.reviewed_words_familiarity_mean[field_key] = mean(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
+            self.notes_fields_data.reviewed_words_familiarity_median[field_key] = median(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
 
             # also relative, but based on (sorted) position, just like value received from WordFrequencyList.get_word_frequency
 
@@ -198,7 +209,6 @@ class TargetCorpusData:
             self.notes_fields_data.reviewed_words_low_familiarity[field_key] = normalize_dict_floats_values(self.notes_fields_data.reviewed_words_low_familiarity[field_key])
             self.notes_fields_data.reviewed_words_low_familiarity[field_key] = sort_dict_floats_values(self.notes_fields_data.reviewed_words_low_familiarity[field_key])
 
-
     def get_words_lexical_discrepancy(self, field_key: FieldKey, word_token: WordToken) -> float:
 
         if not self.notes_fields_data.words_lexical_discrepancy:
@@ -231,5 +241,3 @@ class TargetCorpusData:
         for field_key in self.notes_fields_data.words_lexical_discrepancy.keys():
             self.notes_fields_data.words_lexical_discrepancy[field_key] = normalize_dict_floats_values(self.notes_fields_data.words_lexical_discrepancy[field_key])
             self.notes_fields_data.words_lexical_discrepancy[field_key] = sort_dict_floats_values(self.notes_fields_data.words_lexical_discrepancy[field_key])
-
-

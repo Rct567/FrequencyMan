@@ -298,33 +298,33 @@ class CardRanker:
                 }
                 note['fm_debug_info'] = ''
                 for info_name, info_val in debug_info.items():
-                    fields_info = " | ".join([str(field_info) for field_info in info_val])
+                    fields_info = " | ".join([str(field_info) for field_info in info_val]).strip("| ")
                     note['fm_debug_info'] += info_name+": " + fields_info+"<br />\n"
                 update_note = True
             if 'fm_debug_words_fr_info' in note:
                 fields_words_ld_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ld_scores]
-                note['fm_debug_info'] = 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"\n"
+                note['fm_debug_words_fr_info'] = 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"\n"
                 fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]
-                note['fm_debug_words_fr_info'] = 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"\n"
+                note['fm_debug_words_fr_info'] += 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"\n"
                 update_note = True
             if 'fm_seen_words' in note:
-                printed_fields_seen_words = [", ".join(words) for words in note_metrics.seen_words]
-                note['fm_seen_words'] = " | ".join(printed_fields_seen_words)
+                printed_fields_seen_words = [", ".join(words).strip(", ") for words in note_metrics.seen_words]
+                note['fm_seen_words'] = " | ".join(printed_fields_seen_words).strip("| ")
                 update_note = True
             if 'fm_unseen_words' in note:
                 printed_fields_unseen_words = [", ".join(words) for words in note_metrics.unseen_words]
-                note['fm_unseen_words'] = " | ".join(printed_fields_unseen_words)
+                note['fm_unseen_words'] = " | ".join(printed_fields_unseen_words).strip("| ")
                 update_note = True
             if 'fm_lowest_fr_word' in note:
                 printed_fields_lowest_fr_word = [f"{word} ({fr:.2f})" for (word, fr) in note_metrics.lowest_fr_word]
-                note['fm_lowest_fr_word'] = " | ".join(printed_fields_lowest_fr_word)
+                note['fm_lowest_fr_word'] = " | ".join(printed_fields_lowest_fr_word).strip("| ")
                 update_note = True
             if 'fm_focus_words' in note:
                 focus_words_per_field:list[str] = []
                 for focus_words in note_metrics.focus_words:
                     focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
                     focus_words_per_field.append(", ".join([word for (word, familiarity_score) in focus_words.items()]))
-                note['fm_focus_words'] = " | ".join(focus_words_per_field)
+                note['fm_focus_words'] = " | ".join(focus_words_per_field).strip("| ")
                 update_note = True
 
             if update_note:

@@ -205,6 +205,8 @@ class CardRanker:
             # define ranking factors for note, based on avg of fields
 
             note_ranking_factors: dict[str, float] = {}
+
+            note_ranking_factors['words_fr_score'] = fmean(note_metrics.fr_scores)
             note_ranking_factors['words_ld_score'] = fmean(note_metrics.ld_scores)
 
             note_ranking_factors['highest_ld_word_scores'] = fmean([highest_ld_word[1] for highest_ld_word in note_metrics.highest_ld_word])
@@ -219,7 +221,6 @@ class CardRanker:
 
             note_ranking_factors['words_low_familiarity_scores'] = fmean([fmean(words_low_familiarity_score.values()) for words_low_familiarity_score in note_metrics.words_low_familiarity_scores])
 
-            # not needed anymore: note_ranking_factors['words_fr_score'] = fmean(note_metrics.fr_scores)
 
             # todo:
             # card_ranking_factors['words_fresh_occurrence_scores'] = fmean(fields_words_fresh_occurrence_scores)

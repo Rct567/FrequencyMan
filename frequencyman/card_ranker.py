@@ -309,7 +309,7 @@ class CardRanker:
                 update_note = True
             if 'fm_debug_words_fr_info' in note:
                 fields_words_ld_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ld_scores]
-                note['fm_debug_words_fr_info'] = 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"\n"
+                note['fm_debug_words_fr_info'] = 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"<br />\n"
                 fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]
                 note['fm_debug_words_fr_info'] += 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"\n"
                 update_note = True

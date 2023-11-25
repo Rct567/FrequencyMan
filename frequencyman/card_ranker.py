@@ -53,6 +53,7 @@ class AggregatedFieldsMetrics:
 
     ideal_unseen_words_count_scores: list[float] = field(default_factory=list)
     ideal_words_count_scores: list[float] = field(default_factory=list)
+    ideal_focus_words_count_scores: list[float] = field(default_factory=list)
 
     def add_field_metrics(self, field_metrics: FieldMetrics):
         self.seen_words.append(field_metrics.seen_words)
@@ -187,6 +188,10 @@ class CardRanker:
                 num_unseen_words = len(field_metrics.unseen_words)
                 note_metrics.ideal_unseen_words_count_scores.append(self.__calc_ideal_unseen_words_count_score(num_unseen_words))
 
+                # ideal focus words count
+                num_focus_words = len(field_metrics.focus_words)
+                note_metrics.ideal_focus_words_count_scores.append(self.__calc_ideal_unseen_words_count_score(num_focus_words))
+
                 # ideal word count
                 note_metrics.ideal_words_count_scores.append(self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), 4))
 
@@ -217,6 +222,7 @@ class CardRanker:
 
             note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)
             note_ranking_factors['ideal_word_count'] = fmean(note_metrics.ideal_words_count_scores)
+            note_ranking_factors['ideal_focus_word_count'] = fmean(note_metrics.ideal_focus_words_count_scores)
 
             note_ranking_factors['words_familiarity_sweetspot_scores'] = fmean([fmean(words_familiarity_sweetspot_scores.values()) for words_familiarity_sweetspot_scores in note_metrics.words_familiarity_sweetspot_scores])
 
@@ -292,6 +298,7 @@ class CardRanker:
                     'most_obscure_word': note_metrics.most_obscure_word,
                     'highest_ld_word': note_metrics.highest_ld_word,
                     'words_familiarity_sweetspot_scores': note_metrics.words_familiarity_sweetspot_scores,
+                    'ideal_focus_word_count': note_metrics.ideal_focus_words_count_scores,
                     'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                     'ideal_word_count': note_metrics.ideal_words_count_scores,
                 }

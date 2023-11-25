@@ -42,7 +42,7 @@ class NoteFieldContentData:
     reviewed_words_familiarity_median: dict[FieldKey, float] = field(default_factory=dict)
     reviewed_words_familiarity_positional: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
     #
-    reviewed_words_low_familiarity: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
+    reviewed_words_familiarity_sweetspot: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
     #
     words_lexical_discrepancy: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
 
@@ -110,7 +110,7 @@ class TargetCorpusData:
 
         self.__set_notes_reviewed_words()
         self.__set_notes_reviewed_words_familiarity()
-        self.__set_notes_reviewed_words_low_familiarity()
+        self.__set_notes_reviewed_words_familiarity_sweetspot()
         self.__set_notes_lexical_discrepancy(word_frequency_lists)
 
     def __set_notes_reviewed_words(self) -> None:
@@ -170,12 +170,13 @@ class TargetCorpusData:
 
                 self.notes_fields_data.reviewed_words_familiarity[field_key][word_token] = word_familiarity_score
 
+            self.notes_fields_data.reviewed_words_familiarity_mean[field_key] = mean(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
+            self.notes_fields_data.reviewed_words_familiarity_median[field_key] = median(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
+
             # make scores values relative
 
             self.notes_fields_data.reviewed_words_familiarity[field_key] = normalize_dict_floats_values(self.notes_fields_data.reviewed_words_familiarity[field_key])
             self.notes_fields_data.reviewed_words_familiarity[field_key] = sort_dict_floats_values(self.notes_fields_data.reviewed_words_familiarity[field_key])
-            self.notes_fields_data.reviewed_words_familiarity_mean[field_key] = mean(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
-            self.notes_fields_data.reviewed_words_familiarity_median[field_key] = median(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
 
             # also relative, but based on (sorted) position, just like value received from WordFrequencyList.get_word_frequency
 
@@ -186,12 +187,12 @@ class TargetCorpusData:
                 familiarity_positional = (max_rank-(index))/max_rank
                 self.notes_fields_data.reviewed_words_familiarity_positional[field_key][word_token] = familiarity_positional
 
-    def __set_notes_reviewed_words_low_familiarity(self) -> None:
+    def __set_notes_reviewed_words_familiarity_sweetspot(self) -> None:
 
         for field_key in self.notes_fields_data.reviewed_words_familiarity:
 
-            if field_key not in self.notes_fields_data.reviewed_words_low_familiarity:
-                self.notes_fields_data.reviewed_words_low_familiarity[field_key] = {}
+            if field_key not in self.notes_fields_data.reviewed_words_familiarity_sweetspot:
+                self.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key] = {}
 
             median_familiarity = median(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
 
@@ -202,12 +203,12 @@ class TargetCorpusData:
                 if (familiarity > median_familiarity*2):
                     continue
 
-                low_familiarity_rating = 1-familiarity
+                familiarity_sweetspot_rating = 1-abs(familiarity-(median_familiarity*0.75))
 
-                self.notes_fields_data.reviewed_words_low_familiarity[field_key][word_token] = low_familiarity_rating
+                self.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key][word_token] = familiarity_sweetspot_rating
 
-            self.notes_fields_data.reviewed_words_low_familiarity[field_key] = normalize_dict_floats_values(self.notes_fields_data.reviewed_words_low_familiarity[field_key])
-            self.notes_fields_data.reviewed_words_low_familiarity[field_key] = sort_dict_floats_values(self.notes_fields_data.reviewed_words_low_familiarity[field_key])
+            self.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key] = normalize_dict_floats_values(self.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key])
+            self.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key] = sort_dict_floats_values(self.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key])
 
     def get_words_lexical_discrepancy(self, field_key: FieldKey, word_token: WordToken) -> float:
 

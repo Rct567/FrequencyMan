@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass, field
 from math import fsum
 from statistics import fmean, mean, median
@@ -17,8 +18,6 @@ from .text_processing import TextProcessing, WordToken
 FieldKey = NewType('FieldKey', str)
 
 # Meta data for each field (in target)
-
-
 @dataclass(frozen=True)
 class TargetFieldData:
     field_key: FieldKey
@@ -33,18 +32,18 @@ class TargetFieldData:
 @dataclass
 class NoteFieldContentData:
     # reviewed words and the cards they they occur in, per "field of note"
-    reviewed_words: dict[FieldKey, dict[WordToken, list[Card]]] = field(default_factory=dict)
+    reviewed_words: dict[FieldKey, dict[WordToken, list[Card]]] = field(default_factory=lambda: defaultdict(dict))
     # a list of 'occurrence ratings' per word in a card, per "field of note"
-    reviewed_words_occurrences: dict[FieldKey, dict[WordToken, list[float]]] = field(default_factory=dict)  # list because a word can occur multiple times in a field
+    reviewed_words_occurrences: dict[FieldKey, dict[WordToken, list[float]]] = field(default_factory=lambda: defaultdict(dict))  # list because a word can occur multiple times in a field
     # how much a word is 'present' in reviewed cards, per "field of note"
-    reviewed_words_familiarity: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
+    reviewed_words_familiarity: dict[FieldKey, dict[WordToken, float]] = field(default_factory=lambda: defaultdict(dict))
     reviewed_words_familiarity_mean: dict[FieldKey, float] = field(default_factory=dict)
     reviewed_words_familiarity_median: dict[FieldKey, float] = field(default_factory=dict)
-    reviewed_words_familiarity_positional: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
+    reviewed_words_familiarity_positional: dict[FieldKey, dict[WordToken, float]] = field(default_factory=lambda: defaultdict(dict))
     #
-    reviewed_words_familiarity_sweetspot: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
+    reviewed_words_familiarity_sweetspot: dict[FieldKey, dict[WordToken, float]] = field(default_factory=lambda: defaultdict(dict))
     #
-    words_lexical_discrepancy: dict[FieldKey, dict[WordToken, float]] = field(default_factory=dict)
+    words_lexical_discrepancy: dict[FieldKey, dict[WordToken, float]] = field(default_factory=lambda: defaultdict(dict))
 
 
 class TargetCorpusData:
@@ -130,14 +129,10 @@ class TargetCorpusData:
 
                 for word_token in field_data.field_value_tokenized:
                     # set reviewed words (word has been in a reviewed card)
-                    if field_key not in self.notes_fields_data.reviewed_words:
-                        self.notes_fields_data.reviewed_words[field_key] = {}
                     if word_token not in self.notes_fields_data.reviewed_words[field_key]:
                         self.notes_fields_data.reviewed_words[field_key][word_token] = []
                     self.notes_fields_data.reviewed_words[field_key][word_token].append(card)
                     # set presence_score for reviewed words
-                    if field_key not in self.notes_fields_data.reviewed_words_occurrences:
-                        self.notes_fields_data.reviewed_words_occurrences[field_key] = {}
                     if word_token not in self.notes_fields_data.reviewed_words_occurrences[field_key]:
                         self.notes_fields_data.reviewed_words_occurrences[field_key][word_token] = []
                     token_presence_score = 1/fmean([field_value_num_tokens, 3])
@@ -152,9 +147,6 @@ class TargetCorpusData:
             field_all_word_presence_scores = [fsum(word_scores) for word_scores in self.notes_fields_data.reviewed_words_occurrences[field_key].values()]
             field_avg_word_presence_score = fmean(field_all_word_presence_scores)
             field_median_word_presence_score = median(field_all_word_presence_scores)
-
-            if field_key not in self.notes_fields_data.reviewed_words_familiarity:
-                self.notes_fields_data.reviewed_words_familiarity[field_key] = {}
 
             for word_token in self.notes_fields_data.reviewed_words_occurrences[field_key]:
 
@@ -180,7 +172,6 @@ class TargetCorpusData:
 
             # also relative, but based on (sorted) position, just like value received from WordFrequencyList.get_word_frequency
 
-            self.notes_fields_data.reviewed_words_familiarity_positional[field_key] = {}
             max_rank = len(self.notes_fields_data.reviewed_words_familiarity[field_key])
 
             for index, (word_token, familiarity) in enumerate(self.notes_fields_data.reviewed_words_familiarity[field_key].items()):
@@ -190,9 +181,6 @@ class TargetCorpusData:
     def __set_notes_reviewed_words_familiarity_sweetspot(self) -> None:
 
         for field_key in self.notes_fields_data.reviewed_words_familiarity:
-
-            if field_key not in self.notes_fields_data.reviewed_words_familiarity_sweetspot:
-                self.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key] = {}
 
             median_familiarity = median(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
 
@@ -225,9 +213,6 @@ class TargetCorpusData:
 
                 field_key = field.field_key
                 language_key = field.target_language_key
-
-                if (field_key not in self.notes_fields_data.words_lexical_discrepancy):
-                    self.notes_fields_data.words_lexical_discrepancy[field_key] = {}
 
                 for word_token in field.field_value_tokenized:
 

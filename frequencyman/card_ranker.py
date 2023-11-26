@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from math import fsum
 from statistics import fmean
 from typing import Tuple
 
@@ -52,12 +53,13 @@ class AggregatedFieldsMetrics:
 
     fr_scores: list[float] = field(default_factory=list)
     ld_scores: list[float] = field(default_factory=list)
+    familiarity_sweetspot_scores: list[float] = field(default_factory=list)
 
     ideal_unseen_words_count_scores: list[float] = field(default_factory=list)
     ideal_words_count_scores: list[float] = field(default_factory=list)
     ideal_focus_words_count_scores: list[float] = field(default_factory=list)
 
-    def add_field_metrics(self, field_metrics: FieldMetrics):
+    def append_field_metrics(self, field_metrics: FieldMetrics):
         self.seen_words.append(field_metrics.seen_words)
         self.unseen_words.append(field_metrics.unseen_words)
         self.lowest_fr_word.append(field_metrics.lowest_fr_word)
@@ -185,7 +187,8 @@ class CardRanker:
                 # get metrics for field
                 field_metrics = self.__get_field_metrics_from_data(field_data, field_key)
 
-                note_metrics.add_field_metrics(field_metrics)
+                # append existing field metrics (additional metrics created and added below)
+                note_metrics.append_field_metrics(field_metrics)
 
                 # ideal unseen words count
                 num_unseen_words = len(field_metrics.unseen_words)
@@ -198,13 +201,19 @@ class CardRanker:
                 # ideal word count
                 note_metrics.ideal_words_count_scores.append(self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), 4))
 
-                # fr score
+                # familiarity sweetspot scores
+                if len(field_metrics.words_familiarity_sweetspot_scores) > 0:
+                    note_metrics.familiarity_sweetspot_scores.append(fsum(field_metrics.words_familiarity_sweetspot_scores.values()))
+                else:
+                    note_metrics.familiarity_sweetspot_scores.append(0)
+
+                # fr scores
                 if (len(field_metrics.fr_scores) > 0):
                     note_metrics.fr_scores.append(fmean(field_metrics.fr_scores))
                 else:
                     note_metrics.fr_scores.append(0)
 
-                # ld score
+                # ld scores
                 if (len(field_metrics.ld_scores) > 0):
                     note_metrics.ld_scores.append(fmean(field_metrics.ld_scores))
                 else:
@@ -227,7 +236,7 @@ class CardRanker:
             note_ranking_factors['ideal_word_count'] = fmean(note_metrics.ideal_words_count_scores)
             note_ranking_factors['ideal_focus_word_count'] = fmean(note_metrics.ideal_focus_words_count_scores)
 
-            note_ranking_factors['words_familiarity_sweetspot_scores'] = fmean([fmean(words_familiarity_sweetspot_scores.values()) for words_familiarity_sweetspot_scores in note_metrics.words_familiarity_sweetspot_scores])
+            note_ranking_factors['words_familiarity_sweetspot_scores'] = fmean(note_metrics.familiarity_sweetspot_scores)
 
             # todo:
             # card_ranking_factors['words_fresh_occurrence_scores'] = fmean(fields_words_fresh_occurrence_scores)
@@ -260,13 +269,16 @@ class CardRanker:
             if field_metrics.highest_ld_word[0] == "" or word_ld > field_metrics.highest_ld_word[1]:
                 field_metrics.highest_ld_word = (word, word_ld)
 
-            #  familiarity sweetspot score of words
+            #  familiarity score of words
 
             word_familiarity_score = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity[field_key].get(word, 0)
             field_metrics.words_familiarity_scores[word] = word_familiarity_score
 
-            word_familiarity_sweetspot_score = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key].get(word, 0)
-            field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
+            # familiarity sweetspot score of words in sweetspot range
+
+            word_familiarity_sweetspot_score = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key].get(word, None)
+            if word_familiarity_sweetspot_score is not None:
+                field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
 
             # most obscure word (lowest ubiquity)
             word_familiarity_score = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity[field_key].get(word, 0)
@@ -304,7 +316,7 @@ class CardRanker:
                     'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,
                     'most_obscure_word': note_metrics.most_obscure_word,
                     'highest_ld_word': note_metrics.highest_ld_word,
-                    'words_familiarity_sweetspot_scores': [fmean(words_familiarity_sweetspot_scores.values()) for words_familiarity_sweetspot_scores in note_metrics.words_familiarity_sweetspot_scores],
+                    'familiarity_sweetspot_scores': note_metrics.familiarity_sweetspot_scores,
                     'ideal_focus_word_count': note_metrics.ideal_focus_words_count_scores,
                     'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                     'ideal_word_count': note_metrics.ideal_words_count_scores,

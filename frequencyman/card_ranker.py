@@ -311,24 +311,30 @@ class CardRanker:
             update_note = False
             if 'fm_debug_info' in note:
                 debug_info = {
-                    'ld_scores': note_metrics.ld_scores,
                     'fr_scores': note_metrics.fr_scores,
+                    'ld_scores': note_metrics.ld_scores,
                     'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,
                     'most_obscure_word': note_metrics.most_obscure_word,
                     'highest_ld_word': note_metrics.highest_ld_word,
-                    'familiarity_sweetspot_scores': note_metrics.familiarity_sweetspot_scores,
                     'ideal_focus_word_count': note_metrics.ideal_focus_words_count_scores,
                     'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                     'ideal_word_count': note_metrics.ideal_words_count_scores,
+                    'familiarity_sweetspot_scores': note_metrics.familiarity_sweetspot_scores,
                 }
                 note['fm_debug_info'] = ''
                 for info_name, info_val in debug_info.items():
                     fields_info = " | ".join([str(field_info) for field_info in info_val]).strip("| ")
                     note['fm_debug_info'] += info_name+": " + fields_info+"<br />\n"
                 update_note = True
+            if 'fm_debug_ranking_info' in note:
+                note['fm_debug_ranking_info'] = ''
+                for info_name, info_val in notes_ranking_factors[note_id].items():
+                    note['fm_debug_ranking_info'] += f"{info_name}: {info_val:.2f}<br />\n"
+                update_note = True
             if 'fm_debug_words_info' in note:
+                note['fm_debug_words_info'] = ''
                 fields_words_ld_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ld_scores]
-                note['fm_debug_words_info'] = 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"<br />\n"
+                note['fm_debug_words_info'] += 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"<br />\n"
                 fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]
                 note['fm_debug_words_info'] += 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"<br />\n"
                 fields_words_familiarity_sweetspot_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_familiarity_sweetspot_scores]

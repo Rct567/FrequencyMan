@@ -137,18 +137,31 @@ class CardRanker:
 
         notes_rankings: dict[NoteId, float] = {}
 
-        # get max values
+        # get min values and normalize
 
-        max_value_per_attribute: dict[str, float] = {}
+        min_value_per_attribute: dict[str, float] = {}
 
         for note_id, factors in notes_ranking_factors.items():
             for attribute, value in factors.items():
                 if value < 0:
                     raise ValueError("Low value found in ranking factor {}.".format(attribute))
+                if attribute not in min_value_per_attribute or value < min_value_per_attribute[attribute]:
+                    min_value_per_attribute[attribute] = value
+
+        for note_id, factors in notes_ranking_factors.items():
+            for attribute, value in factors.items():
+                if min_value_per_attribute[attribute] <= 0:
+                    continue
+                notes_ranking_factors[note_id][attribute] = notes_ranking_factors[note_id][attribute]-min_value_per_attribute[attribute]
+
+        # get max values and normalize
+
+        max_value_per_attribute: dict[str, float] = {}
+
+        for note_id, factors in notes_ranking_factors.items():
+            for attribute, value in factors.items():
                 if attribute not in max_value_per_attribute or value > max_value_per_attribute[attribute]:
                     max_value_per_attribute[attribute] = value
-
-        # normalize
 
         for note_id, factors in notes_ranking_factors.items():
             for attribute, value in factors.items():
@@ -159,9 +172,7 @@ class CardRanker:
         # final ranking value for notes
 
         for note_id in notes_ranking_factors.keys():
-
-            note_ranking = fmean(notes_ranking_factors[note_id].values())
-            notes_rankings[note_id] = note_ranking
+            notes_rankings[note_id] = fmean(notes_ranking_factors[note_id].values())
 
         return notes_rankings
 

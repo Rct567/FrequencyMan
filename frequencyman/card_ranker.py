@@ -175,11 +175,11 @@ class CardRanker:
             'words_ld_score': 1,
             'highest_ld_word_scores': 1,
             'most_obscure_word': 1.25,
-            'lowest_fr_unseen_word_scores': 0.20,
-            'ideal_unseen_word_count': 0.25,
             'ideal_word_count': 1,
             'ideal_focus_word_count': 1.5,
             'words_familiarity_sweetspot_scores': 1,
+            'lowest_fr_unseen_word_scores': 0.1,
+            'ideal_unseen_word_count': 0.1,
         }
 
         notes_spanned_ranking_factors: dict[NoteId, dict[str, float]] = defaultdict(dict)
@@ -268,13 +268,13 @@ class CardRanker:
 
             note_ranking_factors['most_obscure_word'] = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
 
-            note_ranking_factors['lowest_fr_unseen_word_scores'] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_unseen_word])
-            note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)
-
             note_ranking_factors['ideal_word_count'] = fmean(note_metrics.ideal_words_count_scores)
             note_ranking_factors['ideal_focus_word_count'] = fmean(note_metrics.ideal_focus_words_count_scores)
 
             note_ranking_factors['words_familiarity_sweetspot_scores'] = fmean(note_metrics.familiarity_sweetspot_scores)
+
+            note_ranking_factors['lowest_fr_unseen_word_scores'] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_unseen_word])
+            note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)
 
             # todo:
             # card_ranking_factors['words_fresh_occurrence_scores'] = fmean(fields_words_fresh_occurrence_scores)
@@ -351,13 +351,13 @@ class CardRanker:
                 debug_info = {
                     'fr_scores': note_metrics.fr_scores,
                     'ld_scores': note_metrics.ld_scores,
-                    'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,
                     'most_obscure_word': note_metrics.most_obscure_word,
                     'highest_ld_word': note_metrics.highest_ld_word,
                     'ideal_focus_word_count': note_metrics.ideal_focus_words_count_scores,
-                    'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                     'ideal_word_count': note_metrics.ideal_words_count_scores,
                     'familiarity_sweetspot_scores': note_metrics.familiarity_sweetspot_scores,
+                    'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,
+                    'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                 }
                 note['fm_debug_info'] = ''
                 for info_name, info_val in debug_info.items():

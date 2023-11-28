@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass, field
 from math import fsum
 from statistics import fmean
@@ -135,8 +136,6 @@ class CardRanker:
 
     def __calc_notes_ranking(self, notes_ranking_factors: dict[NoteId, dict[str, float]]) -> dict[NoteId, float]:
 
-        notes_rankings: dict[NoteId, float] = {}
-
         # get min values and normalize
 
         min_value_per_attribute: dict[str, float] = {}
@@ -169,10 +168,38 @@ class CardRanker:
                     continue
                 notes_ranking_factors[note_id][attribute] = notes_ranking_factors[note_id][attribute]/max_value_per_attribute[attribute]
 
+        # ranking factors span
+
+        ranking_factors_span: dict[str, float] = {
+            'words_fr_score': 0.5,
+            'words_ld_score': 1,
+            'highest_ld_word_scores': 1,
+            'most_obscure_word': 1.25,
+            'lowest_fr_unseen_word_scores': 0.20,
+            'ideal_unseen_word_count': 0.25,
+            'ideal_word_count': 1,
+            'ideal_focus_word_count': 1.5,
+            'words_familiarity_sweetspot_scores': 1,
+        }
+
+        notes_spanned_ranking_factors: dict[NoteId, dict[str, float]] = defaultdict(dict)
+
+        for note_id, factors in notes_ranking_factors.items():
+            for attribute, value in factors.items():
+                if attribute not in ranking_factors_span:
+                    raise Exception("Unknown span for ranking factor {}".format(attribute))
+                if ranking_factors_span[attribute] == 0:
+                    continue
+                notes_spanned_ranking_factors[note_id][attribute] = value * float(ranking_factors_span[attribute])
+
         # final ranking value for notes
 
+        notes_rankings: dict[NoteId, float] = {}
+
         for note_id in notes_ranking_factors.keys():
-            notes_rankings[note_id] = fmean(notes_ranking_factors[note_id].values())
+            total_value = fsum(notes_spanned_ranking_factors[note_id].values())
+            span = fsum(ranking_factors_span.values())
+            notes_rankings[note_id] = total_value/span
 
         return notes_rankings
 
@@ -242,8 +269,8 @@ class CardRanker:
             note_ranking_factors['most_obscure_word'] = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
 
             note_ranking_factors['lowest_fr_unseen_word_scores'] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_unseen_word])
-
             note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)
+
             note_ranking_factors['ideal_word_count'] = fmean(note_metrics.ideal_words_count_scores)
             note_ranking_factors['ideal_focus_word_count'] = fmean(note_metrics.ideal_focus_words_count_scores)
 

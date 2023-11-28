@@ -85,21 +85,21 @@ class CardRanker:
         self.modified_dirty_notes = []
 
     @staticmethod
-    def __card_field_ideal_word_count_score(word_count: int, ideal_num: int) -> float:
-
-        if word_count < ideal_num:
-            m = 7
-        else:
-            m = 5
-        difference = abs(word_count - ideal_num)
-        score = 1 / (1 + (difference / ideal_num) ** m)
-        return fmean([max(0, score), 1])
+    def __card_field_ideal_word_count_score(word_count: int, ideal_num_min: int, ideal_num_max: int) -> float:
+        if word_count >= ideal_num_min and word_count <= ideal_num_max:
+            return 1
+        middle = (ideal_num_min+ideal_num_max)/2
+        difference = abs(middle-word_count)
+        score = 1 / (1 + (difference / middle) ** 7)
+        if (word_count > 0 and word_count < ideal_num_min):
+            return fmean([score, 1])
+        return score
 
     @staticmethod
     def __calc_ideal_unseen_words_count_score(num_unseen_words: int) -> float:
         if (num_unseen_words < 1):
-            return 0.8
-        score = min(1, abs(0-(1.6*1/min(num_unseen_words, 10))))
+            return 0.9
+        score = min(1, abs(0-(1.5*1/min(num_unseen_words, 10))))
         return score
 
     def calc_cards_ranking(self, cards: list[Card]) -> dict[CardId, float]:
@@ -175,7 +175,7 @@ class CardRanker:
             'words_ld_score': 1,
             'highest_ld_word_scores': 1,
             'most_obscure_word': 1.25,
-            'ideal_word_count': 1,
+            'ideal_word_count': 0.5,
             'ideal_focus_word_count': 1.5,
             'words_familiarity_sweetspot_scores': 1,
             'lowest_fr_unseen_word_scores': 0.1,
@@ -237,7 +237,7 @@ class CardRanker:
                 note_metrics.ideal_focus_words_count_scores.append(self.__calc_ideal_unseen_words_count_score(num_focus_words))
 
                 # ideal word count
-                note_metrics.ideal_words_count_scores.append(self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), 4))
+                note_metrics.ideal_words_count_scores.append(self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), 2, 5))
 
                 # familiarity sweetspot scores
                 if len(field_metrics.words_familiarity_sweetspot_scores) > 0:

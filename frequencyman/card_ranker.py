@@ -172,8 +172,9 @@ class CardRanker:
 
         ranking_factors_span: dict[str, float] = {
             'words_fr_score': 0.5,
+            'lowest_fr_word_score': 0.1,
             'words_ld_score': 1,
-            'highest_ld_word_scores': 1,
+            'highest_ld_word_score': 1,
             'most_obscure_word': 1.25,
             'ideal_word_count': 0.5,
             'ideal_focus_word_count': 1.5,
@@ -264,7 +265,8 @@ class CardRanker:
             note_ranking_factors['words_fr_score'] = fmean(note_metrics.fr_scores)
             note_ranking_factors['words_ld_score'] = fmean(note_metrics.ld_scores)
 
-            note_ranking_factors['highest_ld_word_scores'] = fmean([highest_ld_word[1] for highest_ld_word in note_metrics.highest_ld_word])
+            note_ranking_factors['lowest_fr_word_score'] = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
+            note_ranking_factors['highest_ld_word_score'] = fmean([highest_ld_word[1] for highest_ld_word in note_metrics.highest_ld_word])
 
             note_ranking_factors['most_obscure_word'] = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
 
@@ -357,6 +359,7 @@ class CardRanker:
                     'ideal_word_count': note_metrics.ideal_words_count_scores,
                     'familiarity_sweetspot_scores': note_metrics.familiarity_sweetspot_scores,
                     'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,
+                    'lowest_fr_word': note_metrics.lowest_fr_word,
                     'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                 }
                 note['fm_debug_info'] = ''
@@ -387,10 +390,6 @@ class CardRanker:
             if 'fm_unseen_words' in note:
                 printed_fields_unseen_words = [", ".join(words) for words in note_metrics.unseen_words]
                 note['fm_unseen_words'] = " | ".join(printed_fields_unseen_words).strip("| ")
-                update_note = True
-            if 'fm_lowest_fr_word' in note:
-                printed_fields_lowest_fr_word = [f"{word} ({fr:.2f})" for (word, fr) in note_metrics.lowest_fr_word]
-                note['fm_lowest_fr_word'] = " | ".join(printed_fields_lowest_fr_word).strip("| ")
                 update_note = True
             if 'fm_focus_words' in note:
                 focus_words_per_field: list[str] = []

@@ -25,7 +25,7 @@ class FieldMetrics:
     seen_words: list[WordToken] = field(default_factory=list)
     unseen_words: list[WordToken] = field(default_factory=list)
 
-    lowest_fr_unseen_word: Tuple[WordToken, float] = (WordToken(""), 0)
+    lowest_fr_least_familiar_word: Tuple[WordToken, float, float] = (WordToken(""), 0, 0)
     lowest_fr_word: Tuple[WordToken, float] = (WordToken(""), 0)
 
     highest_ld_word: Tuple[WordToken, float] = (WordToken(""), 0)
@@ -46,7 +46,7 @@ class AggregatedFieldsMetrics:
     seen_words: list[list[WordToken]] = field(default_factory=list)
     unseen_words: list[list[WordToken]] = field(default_factory=list)
 
-    lowest_fr_unseen_word: list[Tuple[WordToken, float]] = field(default_factory=list)
+    lowest_fr_least_familiar_word: list[Tuple[WordToken, float, float]] = field(default_factory=list)
     lowest_fr_word: list[Tuple[WordToken, float]] = field(default_factory=list)
 
     highest_ld_word: list[Tuple[WordToken, float]] = field(default_factory=list)
@@ -64,7 +64,7 @@ class AggregatedFieldsMetrics:
         self.seen_words.append(field_metrics.seen_words)
         self.unseen_words.append(field_metrics.unseen_words)
         self.lowest_fr_word.append(field_metrics.lowest_fr_word)
-        self.lowest_fr_unseen_word.append(field_metrics.lowest_fr_unseen_word)
+        self.lowest_fr_least_familiar_word.append(field_metrics.lowest_fr_least_familiar_word)
         self.most_obscure_word.append(field_metrics.most_obscure_word)
         self.highest_ld_word.append(field_metrics.highest_ld_word)
         self.words_fr_scores.append(field_metrics.words_fr_scores)
@@ -171,15 +171,15 @@ class CardRanker:
         # ranking factors span
 
         ranking_factors_span: dict[str, float] = {
-            'words_fr_score': 0.5,
-            'lowest_fr_word_score': 0.1,
+            'words_fr_score': 0.2,
+            'lowest_fr_word_score': 0.2,
             'words_ld_score': 1,
             'highest_ld_word_score': 1,
             'most_obscure_word': 1.25,
             'ideal_word_count': 0.5,
             'ideal_focus_word_count': 1.5,
             'words_familiarity_sweetspot_scores': 1,
-            'lowest_fr_unseen_word_scores': 0.1,
+            'lowest_fr_least_familiar_word_scores': 0.2,
             'ideal_unseen_word_count': 0.1,
         }
 
@@ -275,7 +275,7 @@ class CardRanker:
 
             note_ranking_factors['words_familiarity_sweetspot_scores'] = fmean(note_metrics.familiarity_sweetspot_scores)
 
-            note_ranking_factors['lowest_fr_unseen_word_scores'] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_unseen_word])
+            note_ranking_factors['lowest_fr_least_familiar_word_scores'] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
             note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)
 
             # todo:
@@ -310,12 +310,10 @@ class CardRanker:
                 field_metrics.highest_ld_word = (word, word_ld)
 
             #  familiarity score of words
-
             word_familiarity_score = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity[field_key].get(word, 0)
             field_metrics.words_familiarity_scores[word] = word_familiarity_score
 
             # familiarity sweetspot score of words in sweetspot range
-
             word_familiarity_sweetspot_score = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key].get(word, None)
             if word_familiarity_sweetspot_score is not None:
                 field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
@@ -331,13 +329,18 @@ class CardRanker:
             if word_familiarity_score < (0.6*self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_median[field_key]):
                 field_metrics.focus_words[word] = word_familiarity_score
 
-            # set seen, unseen and lowest fr unseen
+            # set seen and unseen
             if word in self.cards_corpus_data.notes_fields_data.reviewed_words[field_key]:
                 field_metrics.seen_words.append(word)  # word seen, word exist in at least one reviewed card
             else:
                 field_metrics.unseen_words.append(word)
-                if field_metrics.lowest_fr_unseen_word[0] == "" or word_fr < field_metrics.lowest_fr_unseen_word[1]:
-                    field_metrics.lowest_fr_unseen_word = (word, word_fr)
+
+            # set lowest fr of least familiar word
+            if field_metrics.lowest_fr_least_familiar_word[0] == "" or word_familiarity_score < field_metrics.lowest_fr_least_familiar_word[2]:
+                field_metrics.lowest_fr_least_familiar_word = (word, word_fr, word_familiarity_score)
+            elif word_familiarity_score == field_metrics.lowest_fr_least_familiar_word[2]:
+                if word_fr < field_metrics.lowest_fr_least_familiar_word[1]:
+                    field_metrics.lowest_fr_least_familiar_word = (word, word_fr, word_familiarity_score)
 
         return field_metrics
 
@@ -358,7 +361,7 @@ class CardRanker:
                     'ideal_focus_word_count': note_metrics.ideal_focus_words_count_scores,
                     'ideal_word_count': note_metrics.ideal_words_count_scores,
                     'familiarity_sweetspot_scores': note_metrics.familiarity_sweetspot_scores,
-                    'lowest_fr_unseen_word': note_metrics.lowest_fr_unseen_word,
+                    'lowest_fr_least_familiar_word': note_metrics.lowest_fr_least_familiar_word,
                     'lowest_fr_word': note_metrics.lowest_fr_word,
                     'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                 }

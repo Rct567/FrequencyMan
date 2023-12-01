@@ -171,8 +171,8 @@ class CardRanker:
         # ranking factors span
 
         ranking_factors_span: dict[str, float] = {
-            'words_fr_score': 0.2,
-            'lowest_fr_word_score': 0.2,
+            'words_fr_score': 0.25,
+            'lowest_fr_word_score': 0.25,
             'words_ld_score': 1,
             'highest_ld_word_score': 1,
             'most_obscure_word': 1.25,

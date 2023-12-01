@@ -1,5 +1,5 @@
 {
-    "fm_reorder_target_list": [
+    "reorder_target_list": [
         {
             "deck": "** name of main deck **",
             "notes": [{

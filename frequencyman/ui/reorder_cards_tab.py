@@ -102,8 +102,8 @@ class ReorderCardsTab:
 
         # target data (list of targets for reordering)
         self.target_list = TargetList(word_frequency_lists)
-        if self.fm_window.addon_config and "fm_reorder_target_list" in self.fm_window.addon_config:
-            self.target_list.set_targets(self.fm_window.addon_config.get("fm_reorder_target_list", []))
+        if self.fm_window.addon_config and "reorder_target_list" in self.fm_window.addon_config:
+            self.target_list.set_targets(self.fm_window.addon_config.get("reorder_target_list", []))
 
         # textarea (user can input json to define targets)
         self.targets_input_textarea = TargetsDefiningTextArea()
@@ -144,12 +144,12 @@ class ReorderCardsTab:
         # user clicked reorder... ask to save to config if new targets have been defined
 
         def ask_to_save_new_targets_to_config(targets_defined: list[ConfigTargetData]):
-            if self.fm_window.addon_config is None or "fm_reorder_target_list" not in self.fm_window.addon_config:
+            if self.fm_window.addon_config is None or "reorder_target_list" not in self.fm_window.addon_config:
                 return
-            if self.fm_window.addon_config['fm_reorder_target_list'] == targets_defined:
+            if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
                 return
             if askUser("Defined targets have changed. Save them to config?"):
-                self.fm_window.addon_config['fm_reorder_target_list'] = targets_defined
+                self.fm_window.addon_config['reorder_target_list'] = targets_defined
                 self.fm_window.addon_config_write(self.fm_window.addon_config)
                 self.targets_input_textarea.handle_current_content()
 
@@ -225,17 +225,17 @@ class ReorderCardsTab:
         def user_clicked_reset_button():
             (_, targets_defined, _) = self.target_list.handle_json(self.targets_input_textarea.toPlainText())
 
-            if self.fm_window.addon_config['fm_reorder_target_list'] == targets_defined:
+            if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
                 showInfo("Defined targets are the same as those stored in the configuration!")
                 return
 
             if askUser("Restore targets as they are stored in the configuration?"):
-                self.target_list.set_targets(self.fm_window.addon_config['fm_reorder_target_list'])
-                json_str = json.dumps(self.fm_window.addon_config['fm_reorder_target_list'], indent=4)
+                self.target_list.set_targets(self.fm_window.addon_config['reorder_target_list'])
+                json_str = json.dumps(self.fm_window.addon_config['reorder_target_list'], indent=4)
                 self.targets_input_textarea.setText(json_str)
 
         def update_reset_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
-            if json_validity_state == 1 and self.fm_window.addon_config['fm_reorder_target_list'] == targets_input_textarea.targets_defined:
+            if json_validity_state == 1 and self.fm_window.addon_config['reorder_target_list'] == targets_input_textarea.targets_defined:
                 self.targets_input_reset_button.setDisabled(True)
             else:
                 self.targets_input_reset_button.setDisabled(False)
@@ -251,8 +251,8 @@ class ReorderCardsTab:
         def user_clicked_save_button():
             (json_validity_state, targets_defined, _) = self.target_list.handle_json(self.targets_input_textarea.toPlainText())
 
-            if (json_validity_state == 1 and self.fm_window.addon_config['fm_reorder_target_list'] != targets_defined):
-                self.fm_window.addon_config['fm_reorder_target_list'] = targets_defined
+            if (json_validity_state == 1 and self.fm_window.addon_config['reorder_target_list'] != targets_defined):
+                self.fm_window.addon_config['reorder_target_list'] = targets_defined
                 self.fm_window.addon_config_write(self.fm_window.addon_config)
                 self.targets_input_reset_button.setDisabled(True)
 
@@ -261,7 +261,7 @@ class ReorderCardsTab:
         def update_save_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
 
             if (json_validity_state == 1):
-                if self.fm_window.addon_config['fm_reorder_target_list'] != targets_input_textarea.targets_defined:
+                if self.fm_window.addon_config['reorder_target_list'] != targets_input_textarea.targets_defined:
                     self.targets_input_save_button.setDisabled(False)
                     return
             self.targets_input_save_button.setDisabled(True)

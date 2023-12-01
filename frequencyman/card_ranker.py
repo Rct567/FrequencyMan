@@ -77,12 +77,27 @@ class AggregatedFieldsMetrics:
 class CardRanker:
 
     modified_dirty_notes: list[Note]
+    ranking_factors_span: dict[str, float]
 
     def __init__(self, cards_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists, col: Collection) -> None:
+
         self.cards_corpus_data = cards_corpus_data
         self.word_frequency_lists = word_frequency_lists
         self.col = col
         self.modified_dirty_notes = []
+
+        self.ranking_factors_span = {
+            'words_fr_score': 0.25,
+            'lowest_fr_word_score': 0.25,
+            'words_ld_score': 1,
+            'highest_ld_word_score': 1,
+            'most_obscure_word': 1.25,
+            'ideal_word_count': 0.5,
+            'ideal_focus_word_count': 1.5,
+            'words_familiarity_sweetspot_scores': 1,
+            'lowest_fr_least_familiar_word_scores': 0.2,
+            'ideal_unseen_word_count': 0.1,
+        }
 
     @staticmethod
     def __card_field_ideal_word_count_score(word_count: int, ideal_num_min: int, ideal_num_max: int) -> float:
@@ -170,28 +185,15 @@ class CardRanker:
 
         # ranking factors span
 
-        ranking_factors_span: dict[str, float] = {
-            'words_fr_score': 0.25,
-            'lowest_fr_word_score': 0.25,
-            'words_ld_score': 1,
-            'highest_ld_word_score': 1,
-            'most_obscure_word': 1.25,
-            'ideal_word_count': 0.5,
-            'ideal_focus_word_count': 1.5,
-            'words_familiarity_sweetspot_scores': 1,
-            'lowest_fr_least_familiar_word_scores': 0.2,
-            'ideal_unseen_word_count': 0.1,
-        }
-
         notes_spanned_ranking_factors: dict[NoteId, dict[str, float]] = defaultdict(dict)
 
         for note_id, factors in notes_ranking_factors.items():
             for attribute, value in factors.items():
-                if attribute not in ranking_factors_span:
+                if attribute not in self.ranking_factors_span:
                     raise Exception("Unknown span for ranking factor {}".format(attribute))
-                if ranking_factors_span[attribute] == 0:
+                if self.ranking_factors_span[attribute] == 0:
                     continue
-                notes_spanned_ranking_factors[note_id][attribute] = value * float(ranking_factors_span[attribute])
+                notes_spanned_ranking_factors[note_id][attribute] = value * float(self.ranking_factors_span[attribute])
 
         # final ranking value for notes
 
@@ -199,7 +201,7 @@ class CardRanker:
 
         for note_id in notes_ranking_factors.keys():
             total_value = fsum(notes_spanned_ranking_factors[note_id].values())
-            span = fsum(ranking_factors_span.values())
+            span = fsum(self.ranking_factors_span.values())
             notes_rankings[note_id] = total_value/span
 
         return notes_rankings

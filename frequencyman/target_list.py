@@ -50,7 +50,7 @@ class TargetList:
         if not isinstance(target, dict) or len(target.keys()) == 0:
             return (0, "Target is missing keys or is not a valid type (object expected). ")
         for key in target.keys():
-            if key not in ("deck", "decks", "notes", "scope_query"):
+            if key not in ("deck", "decks", "notes", "scope_query") and not key.startswith("ranking_"):
                 return (0, f"Target has unknown key '{key}'.")
         # check field value for notes
         if 'notes' not in target.keys():

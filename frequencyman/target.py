@@ -183,7 +183,16 @@ class Target:
 
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
+
             card_ranker = CardRanker(target_corpus_data, word_frequency_lists, col)
+
+            # Use any ranking values defined in target definition
+            for attribute in card_ranker.ranking_factors_span.keys():
+                target_setting_val = self.get('ranking_'+attribute)
+                if target_setting_val is not None and str(target_setting_val).replace(".", "").isnumeric():
+                    card_ranker.ranking_factors_span[attribute] = float(target_setting_val)
+
+            # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards.new_cards)
             sorted_cards = sorted(target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
             sorted_cards_ids = [card.id for card in sorted_cards]

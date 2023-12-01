@@ -18,6 +18,8 @@ from .text_processing import TextProcessing, WordToken
 FieldKey = NewType('FieldKey', str)
 
 # Meta data for each field (in target)
+
+
 @dataclass(frozen=True)
 class TargetFieldData:
     field_key: FieldKey
@@ -123,10 +125,18 @@ class TargetCorpusData:
         cards_ease: list[int] = []
 
         for card in self.target_cards_reviewed:
-
             cards_interval.append(card.ivl)
             cards_reps.append(card.reps)
             cards_ease.append(card.factor)
+
+        # smooth out top values
+
+        for metric_list, turnover_val in [(cards_interval, 30*7), (cards_reps, 14)]:
+            for index in range(len(metric_list)):
+                if metric_list[index] > turnover_val:
+                    metric_list[index] = mean([turnover_val, metric_list[index]])
+
+        # get scores
 
         card_memorized_scores: dict[CardId, float] = {}
 

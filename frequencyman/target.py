@@ -47,6 +47,9 @@ class TargetReorderResult():
 
         self.error = error
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
+
 
 class Target:
 
@@ -142,12 +145,12 @@ class Target:
             self.query = self.__construct_search_query()
         return self.query
 
-    def __get_cards(self, col: Collection) -> TargetCardsResult:
+    def get_cards(self, col: Collection) -> TargetCardsResult:
 
         all_cards_ids = col.find_cards(self.__get_search_query(), order="c.due asc")
         all_cards = [col.get_card(card_id) for card_id in all_cards_ids]
         new_cards = [card for card in all_cards if card.queue == 0]
-        new_cards_ids: Sequence[CardId] = [card.id for card in new_cards]
+        new_cards_ids = [card.id for card in new_cards]
         return TargetCardsResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
 
     def reorder_cards(self, word_frequency_lists: WordFrequencyLists, col: Collection, event_logger: EventLogger) -> TargetReorderResult:
@@ -172,14 +175,14 @@ class Target:
 
         # Get cards for target
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):
-            target_cards = self.__get_cards(col)
+            target_cards = self.get_cards(col)
 
         event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_cards.new_cards_ids), len(target_cards.all_cards)))
 
         # Get corpus data
         target_corpus_data = TargetCorpusData()
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
-            target_corpus_data.create_data(target_cards.all_cards, self, col, word_frequency_lists)
+            target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), col, word_frequency_lists)
 
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):

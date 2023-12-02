@@ -6,3 +6,5 @@ dump.log
 reorder_events.log
 profiling_results.txt
 events.log
+*_temp.anki2
+*.anki2-wal

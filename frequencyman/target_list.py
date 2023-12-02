@@ -33,6 +33,9 @@ class TargetList:
     def __len__(self):
         return len(self.target_list)
 
+    def __getitem__(self, index) -> Target:
+        return self.target_list[index]
+
     def set_targets(self, target_list: list[ConfigTargetData]) -> int:
         (validity_state, _) = self.validate_list(target_list)
         if (validity_state == 1):

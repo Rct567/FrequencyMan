@@ -10,7 +10,6 @@ from anki.notes import NoteId
 
 from .word_frequency_list import LangId, LangKey, WordFrequencyLists
 from .lib.utilities import *
-from .target import Target
 from .text_processing import TextProcessing, WordToken
 
 # unique id for a field of a note model (basically, just note type id + field name)
@@ -63,13 +62,15 @@ class TargetCorpusData:
         self.fields_per_card_note = {}
         self.notes_fields_data = NoteFieldContentData()
 
-    def create_data(self, target_cards: Iterable[Card], target: Target, col: Collection, word_frequency_lists: WordFrequencyLists) -> None:
+    def create_data(self, target_cards: Iterable[Card], target_fields_by_notes_name: dict[str, dict[str, str]], col: Collection, word_frequency_lists: WordFrequencyLists) -> None:
         """
         Create corpus data for the given target and its cards.
         """
 
         self.target_cards_reviewed = []
-        target_fields_by_notes_name = target.get_notes()
+
+        if not target_cards:
+            return
 
         for card in target_cards:
 

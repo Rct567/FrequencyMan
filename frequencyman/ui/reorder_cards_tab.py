@@ -16,9 +16,8 @@ from .main_window import FrequencyManMainWindow
 from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log
 
-from ..target import ConfigTargetDataNotes, TargetReorderResult
 from ..word_frequency_list import WordFrequencyLists
-from ..target_list import ConfigTargetData, TargetList, TargetListReorderResult
+from ..target_list import ConfigTargetData, TargetList, TargetListReorderResult, ConfigTargetDataNotes
 
 
 class TargetsDefiningTextArea(QTextEdit):

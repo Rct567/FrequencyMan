@@ -6,7 +6,7 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
-from .target import ConfigTargetData, TargetReorderResult, Target
+from .target import ConfigTargetData, TargetReorderResult, Target, ConfigTargetDataNotes
 from .word_frequency_list import WordFrequencyLists
 from .lib.event_logger import EventLogger
 

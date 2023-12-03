@@ -33,7 +33,7 @@ class TargetList:
     def __len__(self):
         return len(self.target_list)
 
-    def __getitem__(self, index) -> Target:
+    def __getitem__(self, index: int) -> Target:
         return self.target_list[index]
 
     def set_targets(self, target_list: list[ConfigTargetData]) -> int:
@@ -49,7 +49,7 @@ class TargetList:
         target_list = [target.target for target in self.target_list]
         return json.dumps(target_list, indent=4)
 
-    def validate_target(self, target: dict) -> Tuple[int, str]:
+    def validate_target(self, target: ConfigTargetData) -> Tuple[int, str]:
         if not isinstance(target, dict) or len(target.keys()) == 0:
             return (0, "Target is missing keys or is not a valid type (object expected). ")
         for key in target.keys():
@@ -71,13 +71,13 @@ class TargetList:
             if "fields" not in note:
                 return (0, "Note object specified in target.notes is is missing key 'fields'.")
 
-            for lang_key in note.get('fields', {}).values():
-                if not self.word_frequency_lists.key_has_frequency_list_file(lang_key):
-                    return (0, "No word frequency list file found for key '{}'!".format(lang_key))
+            for defined_lang_key in note.get('fields', {}).values():
+                if not self.word_frequency_lists.str_key_has_frequency_list_file(defined_lang_key):
+                    return (0, "No word frequency list file found for key '{}'!".format(defined_lang_key))
 
         return (1, "")
 
-    def validate_list(self, target_data: list) -> Tuple[int, str]:
+    def validate_list(self, target_data: list[ConfigTargetData]) -> Tuple[int, str]:
         if not isinstance(target_data, list):
             return (0, "Reorder target is not a valid type (array expected)")
         elif len(target_data) < 1:

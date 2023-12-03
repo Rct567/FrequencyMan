@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any, Tuple, Callable
 
 from aqt import QAction
 from aqt.qt import *

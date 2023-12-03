@@ -419,7 +419,7 @@ class CardRanker:
 
         return note_metrics
 
-    def update_meta_data_for_notes_with_non_new_cards(self, all_cards: list[Card]):
+    def update_meta_data_for_notes_with_non_new_cards(self, all_cards: list[Card]) -> None:
 
         notes_from_cards: dict[NoteId, Note] = {}
         cards_per_note: dict[NoteId, list[Card]] = {}  # future use?

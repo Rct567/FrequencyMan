@@ -1,7 +1,7 @@
 from enum import Enum
 import json
 from time import sleep
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Callable
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from aqt.operations import QueryOp, CollectionOp

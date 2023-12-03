@@ -10,11 +10,6 @@ LangKey = NewType('LangKey', str)  # full lowercased string of specified languag
 LangId = NewType('LangId', str)  # first part of lang_key (en/jp/sp)
 
 
-class WordFrequencyList:
-    def __init__(self):
-        pass
-
-
 class WordFrequencyLists:
 
     list_dir: str
@@ -50,6 +45,9 @@ class WordFrequencyLists:
                 raise Exception(f"Word frequency list '{key}' not loaded.")
             if (len(self.word_frequency_lists[key]) < 1):
                 raise Exception(f"Word frequency list '{key}' not loaded.")
+
+    def str_key_has_frequency_list_file(self, key: str) -> bool:
+        return self.key_has_frequency_list_file(LangKey(key))
 
     def key_has_frequency_list_file(self, key: LangKey) -> bool:
         return len(self.__get_files_for_lang_key(key)) > 0

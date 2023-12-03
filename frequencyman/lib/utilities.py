@@ -5,7 +5,7 @@ import os
 import pprint
 import pstats
 import threading
-from typing import TypeVar
+from typing import Any, TypeVar
 from aqt.utils import showInfo
 
 from ..text_processing import WordToken
@@ -13,7 +13,7 @@ from ..text_processing import WordToken
 var_dump_count = 0
 
 
-def var_dump(var) -> None:
+def var_dump(var: Any) -> None:
     global var_dump_count
     if var_dump_count < 10:
         var_str = pprint.pformat(var, sort_dicts=False)
@@ -26,7 +26,7 @@ def var_dump(var) -> None:
 var_dump_log_count = 0
 
 
-def var_dump_log(var, show_as_info=False) -> None:
+def var_dump_log(var: Any, show_as_info=False) -> None:
     global var_dump_log_count
     if var_dump_log_count < 10:
         dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
@@ -72,6 +72,7 @@ def chunked_list(input_list: list, chunk_size: int) -> list[list]:
 
 K = TypeVar('K')
 
+
 def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
     new_dict = input_dict.copy()
@@ -92,6 +93,6 @@ def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
     return new_dict
 
+
 def sort_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
-    
     return dict(sorted(input_dict.items(), key=lambda x: x[1], reverse=True))

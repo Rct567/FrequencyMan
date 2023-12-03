@@ -8,7 +8,7 @@ from .utilities import var_dump
 
 class EventLogger:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.event_log: list[str] = []
         self.event_log_listeners: list[Callable[[str], None]] = []
         self.timed_entries_open: int = 0
@@ -38,7 +38,7 @@ class EventLogger:
         elapsed_time = time.time() - start_time
         self.event_log[index] += f" (took {elapsed_time:.2f} seconds)"
 
-    def append_to_file(self, target_file):
+    def append_to_file(self, target_file) -> None:
         if os.path.exists(target_file) and os.path.getsize(target_file) > 0.5 * 1024 * 1024:
             six_hours_ago = time.time() - 6 * 60 * 60
             if os.path.getmtime(target_file) < six_hours_ago:

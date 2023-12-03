@@ -12,8 +12,8 @@ from .word_frequency_list import WordFrequencyLists
 from .target_corpus_data import LangKey
 
 
-ConfigTargetDataNotes = TypedDict('TargetDataNotes', {'name': str, 'fields': dict[str, str]})
-ConfigTargetData = TypedDict('TargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
+ConfigTargetDataNotes = TypedDict('ConfigTargetDataNotes', {'name': str, 'fields': dict[str, str]})
+ConfigTargetData = TypedDict('ConfigTargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
 
 
 @dataclass(frozen=True)
@@ -99,15 +99,15 @@ class Target:
         target_decks = []
 
         if "deck" in self:
-            if isinstance(self.get("deck"), str) and len(self.get("deck")) > 0:
+            if isinstance(self.target.get("deck"), str) and len(self.target.get("deck")) > 0:
                 target_decks.append(self.get("deck"))
-            elif isinstance(self.get("deck"), list):
-                target_decks.extend([deck_name for deck_name in self.get("deck", []) if isinstance(deck_name, str) and len(deck_name) > 0])
+            elif isinstance(self.target.get("deck"), list):
+                target_decks.extend([deck_name for deck_name in self.target.get("deck", []) if isinstance(deck_name, str) and len(deck_name) > 0])
         if "decks" in self:
-            if isinstance(self.get("decks"), str) and len(self.get("decks")) > 1:
-                target_decks.extend([deck_name.strip(" ,") for deck_name in self.get("decks").split(",") if len(deck_name.strip(" ,")) > 0])
-            elif isinstance(self.get("decks"), list):
-                target_decks.extend([deck_name for deck_name in self.get("decks", []) if isinstance(deck_name, str) and len(deck_name) > 0])
+            if isinstance(self.target.get("decks"), str) and len(self.target.get("decks", "")) > 1:
+                target_decks.extend([deck_name.strip(" ,") for deck_name in self.target.get("decks", "").split(",") if len(deck_name.strip(" ,")) > 0])
+            elif isinstance(self.target.get("decks"), list):
+                target_decks.extend([deck_name for deck_name in self.target.get("decks", []) if isinstance(deck_name, str) and len(deck_name) > 0])
 
         if len(target_decks) > 0:
             for deck_name in target_decks:
@@ -123,6 +123,8 @@ class Target:
         if len(scope_queries) > 0:
             scope_query = " OR ".join(scope_queries)
             return "("+scope_query+")"
+
+        return ""
 
     def __construct_search_query(self) -> str:
         target_notes = self.get("notes", []) if isinstance(self.get("notes"), list) else []

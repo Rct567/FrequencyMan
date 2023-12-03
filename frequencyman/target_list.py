@@ -102,7 +102,7 @@ class TargetList:
 
         reorder_result_list: list[TargetReorderResult] = []
         sorted_cards_ids: list[CardId] = []
-        modified_dirty_notes: list[Note] = []
+        modified_dirty_notes: dict[NoteId, Note] = {}
         repositioning_required = False
         repositioning_anki_op_changes: Optional[OpChangesWithCount] = None
         update_notes_anki_op_changes: Optional[OpChanges] = None
@@ -111,7 +111,7 @@ class TargetList:
             with event_logger.add_benchmarked_entry(f"Reordering target #{target.index_num}."):
                 reorder_result = target.reorder_cards(self.word_frequency_lists, col, event_logger)
                 reorder_result_list.append(reorder_result)
-                modified_dirty_notes.extend(reorder_result.modified_dirty_notes)
+                modified_dirty_notes.update(reorder_result.modified_dirty_notes)
                 sorted_cards_ids.extend(reorder_result.sorted_cards_ids)
                 if not repositioning_required and reorder_result.repositioning_required == True:
                     repositioning_required = True
@@ -131,7 +131,7 @@ class TargetList:
         # Update notes that have been modifies (field values for example)
         if (len(modified_dirty_notes) > 0):
             with event_logger.add_benchmarked_entry("Updating modified notes from targets."):
-                update_notes_anki_op_changes = col.update_notes(modified_dirty_notes)
+                update_notes_anki_op_changes = col.update_notes([note for note in modified_dirty_notes.values()])
 
         # Done
         event_logger.add_entry("Done with reordering of all targets!")

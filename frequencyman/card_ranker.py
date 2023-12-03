@@ -76,7 +76,7 @@ class AggregatedFieldsMetrics:
 
 class CardRanker:
 
-    modified_dirty_notes: list[Note]
+    modified_dirty_notes: dict[NoteId, Note]
     ranking_factors_span: dict[str, float]
 
     def __init__(self, cards_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists, col: Collection) -> None:
@@ -84,7 +84,7 @@ class CardRanker:
         self.cards_corpus_data = cards_corpus_data
         self.word_frequency_lists = word_frequency_lists
         self.col = col
-        self.modified_dirty_notes = []
+        self.modified_dirty_notes = {}
 
         self.ranking_factors_span = {
             'words_fr_score': 0.25,
@@ -117,14 +117,14 @@ class CardRanker:
         score = min(1, abs(0-(1.5*1/min(num_unseen_words, 10))))
         return score
 
-    def calc_cards_ranking(self, cards: list[Card]) -> dict[CardId, float]:
+    def calc_cards_ranking(self, new_cards: list[Card]) -> dict[CardId, float]:
 
         notes_from_cards: dict[NoteId, Note] = {}
         cards_per_note: dict[NoteId, list[Card]] = {}  # future use?
 
         # card ranking is calculates per note (which may have different card, but same ranking)
 
-        for card in cards:
+        for card in new_cards:
             if card.nid not in notes_from_cards:
                 notes_from_cards[card.nid] = self.col.get_note(card.nid)
                 if card.nid not in cards_per_note:
@@ -144,7 +144,7 @@ class CardRanker:
 
         #
         card_rankings: dict[CardId, float] = {}
-        for card in cards:
+        for card in new_cards:
             card_rankings[card.id] = notes_rankings[card.nid]
 
         return card_rankings
@@ -383,7 +383,8 @@ class CardRanker:
                 note['fm_debug_words_info'] += 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"<br />\n"
                 fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]
                 note['fm_debug_words_info'] += 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"<br />\n"
-                fields_words_familiarity_sweetspot_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_familiarity_sweetspot_scores]
+                fields_words_familiarity_sweetspot_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
+                                                                    for word_dict in note_metrics.words_familiarity_sweetspot_scores]
                 note['fm_debug_words_info'] += 'familiarity_sweetspot_scores: '+str(fields_words_familiarity_sweetspot_scores_sorted)+"<br />\n"
                 fields_words_familiarity_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_familiarity_scores]
                 note['fm_debug_words_info'] += 'familiarity_scores: '+str(fields_words_familiarity_scores_sorted)+"<br />\n"
@@ -405,4 +406,53 @@ class CardRanker:
                 update_note = True
 
             if update_note:
-                self.modified_dirty_notes.append(note)
+                self.modified_dirty_notes[note_id] = note
+
+    def __get_note_focus_word(self, note_id: NoteId) -> AggregatedFieldsMetrics:
+
+        note_fields_defined_in_target = self.cards_corpus_data.fields_per_card_note[note_id]
+        note_metrics = AggregatedFieldsMetrics()
+
+        for field_data in note_fields_defined_in_target:
+            field_metrics = self.__get_field_metrics_from_data(field_data, field_data.field_key)
+            note_metrics.append_field_metrics(field_metrics)
+
+        return note_metrics
+
+    def update_meta_data_for_notes_with_non_new_cards(self, all_cards: list[Card]):
+
+        notes_from_cards: dict[NoteId, Note] = {}
+        cards_per_note: dict[NoteId, list[Card]] = {}  # future use?
+        notes_with_new_card: set[NoteId] = set()
+        notes_with_reviewed_card: set[NoteId] = set()
+
+        for card in all_cards:
+            if card.nid not in notes_from_cards:
+                notes_from_cards[card.nid] = self.col.get_note(card.nid)
+            if card.nid not in cards_per_note:
+                cards_per_note[card.nid] = []
+            if card.queue == 0:
+                notes_with_new_card.add(card.nid)
+            elif card.type == 2:
+                notes_with_reviewed_card.add(card.nid)
+            cards_per_note[card.nid].append(card)
+
+        for note_id, note in notes_from_cards.items():
+            if not note_id in self.modified_dirty_notes and not note_id in notes_with_new_card and note_id in notes_with_reviewed_card:
+                update_note = False
+                field_to_clear = ['fm_debug_info', 'fm_debug_ranking_info', 'fm_debug_words_info', 'fm_seen_words', 'fm_unseen_words']
+                for field_name in field_to_clear:
+                    if field_name in note and note[field_name] != '':
+                        note[field_name] = ''
+                        update_note = True
+
+                if 'fm_focus_words' in note:
+                    focus_words_per_field: list[str] = []
+                    for focus_words in self.__get_note_focus_word(note_id).focus_words:
+                        focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
+                        focus_words_per_field.append(", ".join([word for (word, familiarity_score) in focus_words.items()]))
+                    note['fm_focus_words'] = " | ".join(focus_words_per_field).strip("| ")
+                    update_note = True
+
+                if update_note:
+                    self.modified_dirty_notes[note_id] = note

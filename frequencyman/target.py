@@ -30,10 +30,10 @@ class TargetReorderResult():
     sorted_cards_ids: list[CardId]
     repositioning_required: bool
     error: Optional[str]
-    modified_dirty_notes: list[Note]
+    modified_dirty_notes: dict[NoteId, Note]
 
     def __init__(self, success: bool, sorted_cards_ids: Optional[list[CardId]] = None, repositioning_required: Optional[bool] = None,
-                 error: Optional[str] = None, modified_dirty_notes: list[Note] = []) -> None:
+                 error: Optional[str] = None, modified_dirty_notes: dict[NoteId, Note] = {}) -> None:
         if (not success and error is None):
             raise ValueError("No error given for unsuccessful result!")
         self.success = success
@@ -198,6 +198,7 @@ class Target:
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards.new_cards)
             sorted_cards = sorted(target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
+            card_ranker.update_meta_data_for_notes_with_non_new_cards([card for card in target_cards.all_cards if card.queue != 0])  # reviewed card also need updating
             sorted_cards_ids = [card.id for card in sorted_cards]
 
         repositioning_required = target_cards.new_cards_ids != sorted_cards_ids

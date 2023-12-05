@@ -114,7 +114,7 @@ class CardRanker:
     def __calc_ideal_unseen_words_count_score(num_unseen_words: int) -> float:
         if (num_unseen_words < 1):
             return 0.9
-        score = min(1, abs(0-(1.5*1/min(num_unseen_words, 10))))
+        score = min(1, abs(0-(1.4*1/min(num_unseen_words, 10))))
         return score
 
     def calc_cards_ranking(self, new_cards: list[Card]) -> dict[CardId, float]:

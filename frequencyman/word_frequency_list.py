@@ -1,6 +1,4 @@
-from collections import defaultdict
-from io import TextIOWrapper
-from typing import NewType, Optional
+from typing import Iterator, NewType, Optional
 
 from .lib.utilities import *
 from .text_processing import TextProcessing
@@ -94,28 +92,22 @@ class WordFrequencyLists:
 
     def __produce_word_frequency_list(self, files: list[str]) -> dict[str, float]:
 
-        all_files_word_rankings: dict[str, list[int]] = defaultdict(list)
         all_files_word_rankings_combined: dict[str, int] = {}
 
         for file_path in files:
             if not file_path.endswith('.txt'):
                 continue
 
-            file_word_rankings = self.__get_word_rankings_from_file(file_path)
-
-            for index, word in enumerate(file_word_rankings):
-                ranking = index+1
-                all_files_word_rankings[word].append(ranking)
-
-        for word, rankings in all_files_word_rankings.items():
-            all_files_word_rankings_combined[word] = min(rankings)  # highest ranking among lists (lowest int / line number)
+            for word, line_number in self.__get_word_rankings_from_file(file_path):
+                if word not in all_files_word_rankings_combined or line_number < all_files_word_rankings_combined[word]: # highest ranking among lists (lowest line number)
+                    all_files_word_rankings_combined[word] = line_number
 
         max_rank = max(all_files_word_rankings_combined.values())
         return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in all_files_word_rankings_combined.items()}
 
-    def __get_word_rankings_from_file(self, file_path: str) -> list[str]:
+    def __get_word_rankings_from_file(self, file_path: str) -> Iterator[tuple[str, int]]:
 
-        file_word_rankings: list[str] = []
+        line_number = 1
 
         with open(file_path, encoding='utf-8') as text_file:
 
@@ -127,7 +119,6 @@ class WordFrequencyLists:
                 else:
                     word = line
                 word = word.strip().lower()
-                if word not in file_word_rankings and TextProcessing.acceptable_word(word):
-                    file_word_rankings.append(word)
-
-        return file_word_rankings
+                if TextProcessing.acceptable_word(word):
+                    yield word, line_number
+                    line_number += 1

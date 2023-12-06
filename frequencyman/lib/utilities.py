@@ -31,7 +31,7 @@ def var_dump_log(var: Any, show_as_info=False) -> None:
     if var_dump_log_count < 10:
         dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
         with open(dump_log_file, 'a', encoding='utf-8') as file:
-            file.write(pprint.pformat(var, sort_dicts=False) + "\n\n=================================================================\n\n")
+            file.write(pprint.pformat(var, sort_dicts=False, width=160) + "\n\n=================================================================\n\n")
         if (show_as_info):
             var_dump(var)
         var_dump_log_count += 1

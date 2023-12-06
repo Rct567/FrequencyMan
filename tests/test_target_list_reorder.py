@@ -11,9 +11,11 @@ from aqt.operations import QueryOp, CollectionOp
 
 from anki.cards import CardId
 
+
 def store_card_id_list(filename: str, int_list: list[CardId]) -> None:
     with open(filename, 'w') as file:
         file.write('\n'.join(map(str, int_list)))
+
 
 def read_card_id_list(filename: str) -> list[CardId]:
     with open(filename, 'r') as file:
@@ -26,7 +28,7 @@ class TestTargetListReorder:
     TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
     TEST_COLLECTIONS_DIR = os.path.join(TEST_DATA_DIR, 'collections')
 
-    def get_test_collection(self, test_collection_name: str, collection_test_seq_num:int):
+    def get_test_collection(self, test_collection_name: str, collection_test_seq_num: int):
 
         collection_dir = os.path.join(self.TEST_COLLECTIONS_DIR, test_collection_name)
 
@@ -63,27 +65,26 @@ class TestTargetListReorder:
             {
                 'deck': 'Spanish',
                 'notes': [{
+                    "name": "-- My spanish --",
                     "fields": {
                         "Meaning": "EN",
                         "Sentence": "ES"
                     },
-                    "name": "-- My spanish --"
                 }]
             }
         ])
 
         assert len(target_list) == 1
         pre_sort_cards = target_list[0].get_cards(col)
-        event_logger = EventLogger()
 
         # reorder cards
+        event_logger = EventLogger()
         result = target_list.reorder_cards(col, event_logger)
 
         assert isinstance(result, TargetListReorderResult)
         assert len(result.reorder_result_list) == len(target_list)
 
         # check result
-
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success
         assert reorder_result.repositioning_required
@@ -98,4 +99,55 @@ class TestTargetListReorder:
         # check order
         assert_locked_order(reorder_result.sorted_cards_ids)
 
+    def test_two_deck_collection(self):
 
+        col, word_frequency_lists, assert_locked_order = self.get_test_collection('two_deck_collection', collection_test_seq_num=0)
+
+        target_list = TargetList(word_frequency_lists)
+
+        validity_state = target_list.set_targets([
+            {
+                'deck': 'decka',
+                'notes': [{
+                    "name": "Basic",
+                    "fields": {
+                        "Front": "EN",
+                        "Back": "EN"
+                    },
+                }]
+            },
+            {
+                'deck': 'deckb',
+                'notes': [{
+                    "name": "Basic",
+                    "fields": {
+                        "Front": "EN",
+                        "Back": "EN"
+                    },
+                }]
+            }
+        ])
+
+        assert validity_state == 1
+        assert len(target_list) == 2
+
+        # reorder cards
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+        assert isinstance(result, TargetListReorderResult)
+        assert len(result.reorder_result_list) == len(target_list)
+
+        # check result
+        reorder_result = result.reorder_result_list[0]
+        assert reorder_result.success
+        assert reorder_result.repositioning_required
+        assert reorder_result.error is None
+        assert len(result.reorder_result_list[0].modified_dirty_notes) == 0
+        assert len(result.reorder_result_list[1].modified_dirty_notes) == 0
+        assert "Reordering target #0" in str(event_logger)
+        assert "Found 7 new cards in a target collection of 10 cards" in str(event_logger)
+        assert "Reordering target #1" in str(event_logger)
+        assert "Found 4 new cards in a target collection of 6 cards" in str(event_logger)
+
+        # check order
+        assert_locked_order(result.reorder_result_list[0].sorted_cards_ids+result.reorder_result_list[1].sorted_cards_ids)

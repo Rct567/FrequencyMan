@@ -199,7 +199,7 @@ class ReorderCardsTab:
             else:
                 self.targets_input_validation_info_txt_line.setVisible(False)
 
-        self.targets_input_textarea.on_validity_change(update_validation_info_txt_line)
+        self.targets_input_textarea.on_change(update_validation_info_txt_line)
 
         # restore button
 

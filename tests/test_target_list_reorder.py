@@ -128,7 +128,7 @@ class TestTargetListReorder:
             }
         ])
 
-        assert validity_state == 1
+        assert validity_state == (1, "")
         assert len(target_list) == 2
 
         # reorder cards

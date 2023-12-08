@@ -22,10 +22,12 @@ class TargetList:
 
     target_list: list[Target]
     word_frequency_lists: WordFrequencyLists
+    col: Collection
 
-    def __init__(self, word_frequency_lists: WordFrequencyLists) -> None:
+    def __init__(self, word_frequency_lists: WordFrequencyLists, col: Collection) -> None:
         self.target_list = []
         self.word_frequency_lists = word_frequency_lists
+        self.col = col
 
     def __iter__(self):
         return iter(self.target_list)
@@ -77,7 +79,14 @@ class TargetList:
             if "fields" not in note:
                 return (0, "Note object specified in target[{}].notes is is missing key 'fields'.".format(index))
 
-            for defined_lang_key in note.get('fields', {}).values():
+            note_model = self.col.models.by_name(note.get('name'))
+
+            if not note_model:
+                return (0, "Name '{}' for note object specified in target[{}].notes does not exist.".format(note.get('name'), index))
+
+            for field_name, defined_lang_key in note.get('fields', {}).items():
+                if not any(field['name'] == field_name for field in note_model['flds']):
+                    return (0, "Field name '{}' for note object specified in target[{}].notes does not exist.".format(field_name, index))
                 if not self.word_frequency_lists.str_key_has_frequency_list_file(defined_lang_key):
                     return (0, "No word frequency list file found for key '{}'!".format(defined_lang_key))
 

@@ -100,7 +100,7 @@ class ReorderCardsTab:
         word_frequency_lists = WordFrequencyLists(frequency_lists_dir)
 
         # target data (list of targets for reordering)
-        self.target_list = TargetList(word_frequency_lists)
+        self.target_list = TargetList(word_frequency_lists, col)
         if self.fm_window.addon_config and "reorder_target_list" in self.fm_window.addon_config:
             self.target_list.set_targets(self.fm_window.addon_config.get("reorder_target_list", []))
 

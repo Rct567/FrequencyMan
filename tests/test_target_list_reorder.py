@@ -59,7 +59,7 @@ class TestTargetListReorder:
 
         col, word_frequency_lists, assert_locked_order = self.get_test_collection('big_collection_es', collection_test_seq_num=0)
 
-        target_list = TargetList(word_frequency_lists)
+        target_list = TargetList(word_frequency_lists, col)
 
         target_list.set_targets([
             {
@@ -103,7 +103,7 @@ class TestTargetListReorder:
 
         col, word_frequency_lists, assert_locked_order = self.get_test_collection('two_deck_collection', collection_test_seq_num=0)
 
-        target_list = TargetList(word_frequency_lists)
+        target_list = TargetList(word_frequency_lists, col)
 
         validity_state = target_list.set_targets([
             {

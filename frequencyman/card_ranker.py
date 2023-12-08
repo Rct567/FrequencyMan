@@ -1,7 +1,8 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 from math import fsum
-from statistics import fmean
+import math
+from statistics import fmean, median
 from typing import Tuple
 
 from anki.cards import Card, CardId
@@ -12,6 +13,9 @@ from .text_processing import WordToken
 from .lib.utilities import *
 from .target_corpus_data import FieldKey, TargetCorpusData, TargetFieldData
 from .word_frequency_list import WordFrequencyLists
+
+def sigmoid(x):
+    return 1 / (1 + math.exp(-x))
 
 
 @dataclass
@@ -181,7 +185,7 @@ class CardRanker:
             for attribute, value in factors.items():
                 if max_value_per_attribute[attribute] == 0 or max_value_per_attribute[attribute] == 1:
                     continue
-                notes_ranking_factors[note_id][attribute] = notes_ranking_factors[note_id][attribute]/max_value_per_attribute[attribute]
+                notes_ranking_factors[note_id][attribute] = sigmoid(notes_ranking_factors[note_id][attribute]/max_value_per_attribute[attribute])
 
         # ranking factors span
 
@@ -256,7 +260,7 @@ class CardRanker:
 
                 # ld scores
                 if (len(field_metrics.ld_scores) > 0):
-                    note_metrics.ld_scores.append(fmean(field_metrics.ld_scores))
+                    note_metrics.ld_scores.append(fsum(field_metrics.ld_scores))
                 else:
                     note_metrics.ld_scores.append(0)
 

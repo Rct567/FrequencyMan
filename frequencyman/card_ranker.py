@@ -1,9 +1,9 @@
 from collections import defaultdict
+from copy import deepcopy
 from dataclasses import dataclass, field
-from math import fsum
-import math
+from math import fsum, exp
 from statistics import fmean, median
-from typing import Tuple
+from typing import Optional, Tuple
 
 from anki.cards import Card, CardId
 from anki.notes import Note, NoteId
@@ -15,7 +15,7 @@ from .target_corpus_data import FieldKey, TargetCorpusData, TargetFieldData
 from .word_frequency_list import WordFrequencyLists
 
 def sigmoid(x):
-    return 1 / (1 + math.exp(-x))
+    return 1 / (1 + exp(-x))
 
 
 @dataclass
@@ -82,6 +82,7 @@ class CardRanker:
 
     modified_dirty_notes: dict[NoteId, Note]
     ranking_factors_span: dict[str, float]
+    ranking_factors_values_stats: Optional[dict[str, dict[str, float]]]
 
     def __init__(self, cards_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists, col: Collection) -> None:
 
@@ -89,6 +90,7 @@ class CardRanker:
         self.word_frequency_lists = word_frequency_lists
         self.col = col
         self.modified_dirty_notes = {}
+        self.ranking_factors_values_stats = None
 
         self.ranking_factors_span = {
             'words_fr_score': 0.25,
@@ -141,10 +143,10 @@ class CardRanker:
 
         # final ranking of cards from notes
 
-        notes_rankings = self.__calc_notes_ranking(notes_ranking_factors)
+        notes_ranking_factors_normalized, notes_rankings = self.__calc_notes_ranking(notes_ranking_factors)
 
         # Set meta data that will be saved in note fields
-        self.__set_fields_meta_data_for_note(notes_from_cards, notes_ranking_factors, notes_metrics)
+        self.__set_fields_meta_data_for_note(notes_from_cards, notes_ranking_factors_normalized, notes_metrics)
 
         #
         card_rankings: dict[CardId, float] = {}
@@ -153,45 +155,47 @@ class CardRanker:
 
         return card_rankings
 
-    def __calc_notes_ranking(self, notes_ranking_factors: dict[NoteId, dict[str, float]]) -> dict[NoteId, float]:
+    def __calc_notes_ranking(self, notes_ranking_factors: dict[NoteId, dict[str, float]]) -> tuple[dict[NoteId, dict[str, float]], dict[NoteId, float]]:
+
+        notes_ranking_factors_normalized = deepcopy(notes_ranking_factors)
 
         # get min values and normalize
 
         min_value_per_attribute: dict[str, float] = {}
 
-        for note_id, factors in notes_ranking_factors.items():
+        for note_id, factors in notes_ranking_factors_normalized.items():
             for attribute, value in factors.items():
                 if value < 0:
                     raise ValueError("Low value found in ranking factor {}.".format(attribute))
                 if attribute not in min_value_per_attribute or value < min_value_per_attribute[attribute]:
                     min_value_per_attribute[attribute] = value
 
-        for note_id, factors in notes_ranking_factors.items():
+        for note_id, factors in notes_ranking_factors_normalized.items():
             for attribute, value in factors.items():
                 if min_value_per_attribute[attribute] <= 0:
                     continue
-                notes_ranking_factors[note_id][attribute] = notes_ranking_factors[note_id][attribute]-min_value_per_attribute[attribute]
+                notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]-min_value_per_attribute[attribute]
 
         # get max values and normalize
 
         max_value_per_attribute: dict[str, float] = {}
 
-        for note_id, factors in notes_ranking_factors.items():
+        for note_id, factors in notes_ranking_factors_normalized.items():
             for attribute, value in factors.items():
                 if attribute not in max_value_per_attribute or value > max_value_per_attribute[attribute]:
                     max_value_per_attribute[attribute] = value
 
-        for note_id, factors in notes_ranking_factors.items():
+        for note_id, factors in notes_ranking_factors_normalized.items():
             for attribute, value in factors.items():
                 if max_value_per_attribute[attribute] == 0 or max_value_per_attribute[attribute] == 1:
                     continue
-                notes_ranking_factors[note_id][attribute] = sigmoid(notes_ranking_factors[note_id][attribute]/max_value_per_attribute[attribute])
+                notes_ranking_factors_normalized[note_id][attribute] = sigmoid(notes_ranking_factors_normalized[note_id][attribute]/max_value_per_attribute[attribute])
 
         # ranking factors span
 
         notes_spanned_ranking_factors: dict[NoteId, dict[str, float]] = defaultdict(dict)
 
-        for note_id, factors in notes_ranking_factors.items():
+        for note_id, factors in notes_ranking_factors_normalized.items():
             for attribute, value in factors.items():
                 if attribute not in self.ranking_factors_span:
                     raise Exception("Unknown span for ranking factor {}".format(attribute))
@@ -203,12 +207,12 @@ class CardRanker:
 
         notes_rankings: dict[NoteId, float] = {}
 
-        for note_id in notes_ranking_factors.keys():
+        for note_id in notes_ranking_factors_normalized.keys():
             total_value = fsum(notes_spanned_ranking_factors[note_id].values())
             span = fsum(self.ranking_factors_span.values())
             notes_rankings[note_id] = total_value/span
 
-        return notes_rankings
+        return notes_ranking_factors_normalized, notes_rankings
 
     def __calc_card_notes_field_metrics(self, notes_from_cards: dict[NoteId, Note], cards_per_note: dict[NoteId, list[Card]]) -> Tuple[dict[NoteId, dict[str, float]], dict[NoteId, AggregatedFieldsMetrics]]:
 

@@ -82,7 +82,7 @@ class CardRanker:
 
     modified_dirty_notes: dict[NoteId, Note]
     ranking_factors_span: dict[str, float]
-    ranking_factors_values_stats: Optional[dict[str, dict[str, float]]]
+    ranking_factors_stats: Optional[dict[str, dict[str, float]]]
 
     def __init__(self, cards_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists, col: Collection) -> None:
 
@@ -90,7 +90,7 @@ class CardRanker:
         self.word_frequency_lists = word_frequency_lists
         self.col = col
         self.modified_dirty_notes = {}
-        self.ranking_factors_values_stats = None
+        self.ranking_factors_stats = None
 
         self.ranking_factors_span = {
             'words_fr_score': 0.25,
@@ -190,6 +190,14 @@ class CardRanker:
                 if max_value_per_attribute[attribute] == 0 or max_value_per_attribute[attribute] == 1:
                     continue
                 notes_ranking_factors_normalized[note_id][attribute] = sigmoid(notes_ranking_factors_normalized[note_id][attribute]/max_value_per_attribute[attribute])
+
+        # set stats
+
+        self.ranking_factors_stats = defaultdict(dict)
+        for attribute in self.ranking_factors_span.keys():
+            vals = [note[attribute] for note in notes_ranking_factors_normalized.values()]
+            self.ranking_factors_stats[attribute]['avg'] = fmean(vals)
+            self.ranking_factors_stats[attribute]['median'] = median(vals)
 
         # ranking factors span
 

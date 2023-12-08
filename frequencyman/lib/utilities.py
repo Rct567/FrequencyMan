@@ -83,7 +83,7 @@ def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
             new_dict[key] = (new_dict[key]-min_value)+0.00001
     elif (min_value < 0):
         for key in new_dict:
-            new_dict[key] = (new_dict[key]+min_value)+0.00001
+            new_dict[key] = (new_dict[key]+abs(min_value))+0.00001
 
     max_val = max(new_dict.values())
 

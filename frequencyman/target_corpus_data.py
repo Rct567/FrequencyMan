@@ -243,7 +243,10 @@ class TargetCorpusData:
         if not self.notes_fields_data.words_lexical_discrepancy:
             raise Exception("Target corpus data not loaded!")
 
-        return self.notes_fields_data.words_lexical_discrepancy[field_key][word_token]  # unfamiliarity of high frequency words
+        try:
+            return self.notes_fields_data.words_lexical_discrepancy[field_key][word_token]  # unfamiliarity of high frequency words
+        except KeyError:
+            return 0.0
 
     def __set_notes_lexical_discrepancy(self, word_frequency_lists: WordFrequencyLists) -> None:
 
@@ -259,10 +262,8 @@ class TargetCorpusData:
                     word_fr = word_frequency_lists.get_word_frequency(language_key, word_token, 0)
                     word_familiarity = self.notes_fields_data.reviewed_words_familiarity_positional[field_key].get(word_token, 0)
                     word_lexical_discrepancy_rating = (word_fr - word_familiarity)
-                    if (word_lexical_discrepancy_rating < 0):
-                        word_lexical_discrepancy_rating = 0.0
-
-                    self.notes_fields_data.words_lexical_discrepancy[field_key][word_token] = word_lexical_discrepancy_rating
+                    if (word_lexical_discrepancy_rating >= 0):
+                        self.notes_fields_data.words_lexical_discrepancy[field_key][word_token] = word_lexical_discrepancy_rating
 
         for field_key in self.notes_fields_data.words_lexical_discrepancy.keys():
             self.notes_fields_data.words_lexical_discrepancy[field_key] = normalize_dict_floats_values(self.notes_fields_data.words_lexical_discrepancy[field_key])

@@ -14,7 +14,7 @@ from .lib.utilities import *
 from .target_corpus_data import FieldKey, TargetCorpusData, TargetFieldData
 from .word_frequency_list import WordFrequencyLists
 
-def sigmoid(x):
+def sigmoid(x: float):
     return 1 / (1 + exp(-x))
 
 
@@ -95,13 +95,13 @@ class CardRanker:
         self.ranking_factors_span = {
             'words_fr_score': 0.25,
             'lowest_fr_word_score': 0.25,
-            'words_ld_score': 1,
-            'highest_ld_word_score': 1,
-            'most_obscure_word': 1.25,
-            'ideal_word_count': 0.5,
+            'words_ld_score': 0.5,
+            'highest_ld_word_score': 0.5,
+            'most_obscure_word': 1,
+            'ideal_word_count': 1,
             'ideal_focus_word_count': 1.5,
             'words_familiarity_sweetspot_scores': 1,
-            'lowest_fr_least_familiar_word_scores': 0.2,
+            'lowest_fr_least_familiar_word_scores': 1,
             'ideal_unseen_word_count': 0.1,
         }
 
@@ -159,7 +159,7 @@ class CardRanker:
 
         notes_ranking_factors_normalized = deepcopy(notes_ranking_factors)
 
-        # get min values and normalize
+        # normalize min value and apply sigmoid
 
         min_value_per_attribute: dict[str, float] = {}
 
@@ -172,9 +172,11 @@ class CardRanker:
 
         for note_id, factors in notes_ranking_factors_normalized.items():
             for attribute, value in factors.items():
-                if min_value_per_attribute[attribute] <= 0:
-                    continue
-                notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]-min_value_per_attribute[attribute]
+                # normalize lowest value
+                if min_value_per_attribute[attribute] > 0:
+                    notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]-min_value_per_attribute[attribute]
+                # apply sigmoid
+                notes_ranking_factors_normalized[note_id][attribute] = sigmoid(notes_ranking_factors_normalized[note_id][attribute])
 
         # get max values and normalize
 
@@ -189,7 +191,7 @@ class CardRanker:
             for attribute, value in factors.items():
                 if max_value_per_attribute[attribute] == 0 or max_value_per_attribute[attribute] == 1:
                     continue
-                notes_ranking_factors_normalized[note_id][attribute] = sigmoid(notes_ranking_factors_normalized[note_id][attribute]/max_value_per_attribute[attribute])
+                notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]/max_value_per_attribute[attribute]
 
         # set stats
 
@@ -344,7 +346,7 @@ class CardRanker:
                 field_metrics.most_obscure_word = (word, word_ubiquity_score)
 
             # focus words
-            if word_familiarity_score < (0.6*self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_median[field_key]):
+            if word_familiarity_score < (0.9*self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_median[field_key]):
                 field_metrics.focus_words[word] = word_familiarity_score
 
             # set seen and unseen

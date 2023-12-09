@@ -172,7 +172,7 @@ class TargetCorpusData:
                     # set presence score for reviewed words
                     if word_token not in self.notes_fields_data.reviewed_words_presence[field_key]:
                         self.notes_fields_data.reviewed_words_presence[field_key][word_token] = []
-                    token_presence_score = (1+(1/fmean([field_value_num_tokens, 3]))) * (1+card_memorized_scores[card.id])
+                    token_presence_score = ( (1+(1/field_value_num_tokens)) ** 1.5 ) * (1+card_memorized_scores[card.id])
                     self.notes_fields_data.reviewed_words_presence[field_key][word_token].append(token_presence_score)
 
     def __set_notes_reviewed_words_familiarity(self) -> None:

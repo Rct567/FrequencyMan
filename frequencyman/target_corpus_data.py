@@ -36,6 +36,7 @@ class NoteFieldContentData:
     reviewed_words: dict[FieldKey, dict[WordToken, list[Card]]] = field(default_factory=lambda: defaultdict(dict))
     #
     reviewed_words_presence: dict[FieldKey, dict[WordToken, list[float]]] = field(default_factory=lambda: defaultdict(dict))  # list because a word can occur multiple times in a field
+    reviewed_words_presence_card_score: dict[FieldKey, dict[WordToken, list[float]]] = field(default_factory=lambda: defaultdict(dict))
     #
     reviewed_words_familiarity: dict[FieldKey, dict[WordToken, float]] = field(default_factory=lambda: defaultdict(dict))
     reviewed_words_familiarity_mean: dict[FieldKey, float] = field(default_factory=dict)
@@ -184,47 +185,50 @@ class TargetCorpusData:
 
                     if word_token not in self.notes_fields_data.reviewed_words_presence[field_key]:
                         self.notes_fields_data.reviewed_words_presence[field_key][word_token] = []
+                        self.notes_fields_data.reviewed_words_presence_card_score[field_key][word_token] = []
 
                     presence_num_chars = len(word_token)/field_num_chars_tokens
                     presence_num_words = 1/field_num_tokens
                     position_value = 1/(index+1)
                     presence_impact_score = (presence_num_chars+presence_num_words+position_value)/3
-                    review_presence_score = presence_impact_score+card_memorized_scores[card.id]
 
-                    self.notes_fields_data.reviewed_words_presence[field_key][word_token].append(review_presence_score)
+                    self.notes_fields_data.reviewed_words_presence[field_key][word_token].append(presence_impact_score)
+                    self.notes_fields_data.reviewed_words_presence_card_score[field_key][word_token].append(card_memorized_scores[card.id])
 
 
     def __set_notes_reviewed_words_familiarity(self) -> None:
         """
-        Set the familiarity score for each word per field of card note, based on word presence in reviewed cards.
+        Set the familiarity score for each word per field of card note, based on word presence in reviewed cards and score of card.
         """
         for field_key in self.notes_fields_data.reviewed_words_presence:
 
-            field_all_word_presence_scores = [fsum(word_scores) for word_scores in self.notes_fields_data.reviewed_words_presence[field_key].values()]
-            field_avg_word_presence_score = fmean(field_all_word_presence_scores)
+            field_familiarity_scores_per_word: list[float] = []
 
-            for word_token in self.notes_fields_data.reviewed_words_presence[field_key]:
+            for word_token, word_presence_scores in self.notes_fields_data.reviewed_words_presence[field_key].items():
+                word_presence_card_scores = self.notes_fields_data.reviewed_words_presence_card_score[field_key][word_token]
+                field_familiarity_scores_per_word.append(fsum(word_presence_scores)+fsum(word_presence_card_scores))
 
-                word_presence_scores = self.notes_fields_data.reviewed_words_presence[field_key][word_token]
-                word_presence_score = fsum(word_presence_scores)
+            field_avg_word_familiarity_score = fmean(field_familiarity_scores_per_word)
 
-                if (word_presence_score > field_avg_word_presence_score*16):
-                    word_presence_score = fmean([word_presence_score] + [field_avg_word_presence_score]*4)
-                if (word_presence_score > field_avg_word_presence_score*8):
-                    word_presence_score = fmean([word_presence_score] + [field_avg_word_presence_score]*2)
-                if (word_presence_score > field_avg_word_presence_score):
-                    word_presence_score = fmean([word_presence_score, field_avg_word_presence_score])
+            for index, word_token in enumerate(self.notes_fields_data.reviewed_words_presence[field_key].keys()):
 
-                word_familiarity_score = word_presence_score
+                word_familiarity_smooth_score = field_familiarity_scores_per_word[index]
 
-                self.notes_fields_data.reviewed_words_familiarity[field_key][word_token] = word_familiarity_score
+                if (word_familiarity_smooth_score > field_avg_word_familiarity_score*16):
+                    word_familiarity_smooth_score = fmean([word_familiarity_smooth_score] + [field_avg_word_familiarity_score]*4)
+                if (word_familiarity_smooth_score > field_avg_word_familiarity_score*8):
+                    word_familiarity_smooth_score = fmean([word_familiarity_smooth_score] + [field_avg_word_familiarity_score]*2)
+                if (word_familiarity_smooth_score > field_avg_word_familiarity_score):
+                    word_familiarity_smooth_score = fmean([word_familiarity_smooth_score, field_avg_word_familiarity_score])
+
+                self.notes_fields_data.reviewed_words_familiarity[field_key][word_token] = word_familiarity_smooth_score
 
             # make scores values relative
 
             self.notes_fields_data.reviewed_words_familiarity[field_key] = normalize_dict_floats_values(self.notes_fields_data.reviewed_words_familiarity[field_key])
             self.notes_fields_data.reviewed_words_familiarity[field_key] = sort_dict_floats_values(self.notes_fields_data.reviewed_words_familiarity[field_key])
 
-            # set avg
+            # set avg and median
 
             self.notes_fields_data.reviewed_words_familiarity_mean[field_key] = mean(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
             self.notes_fields_data.reviewed_words_familiarity_median[field_key] = median(self.notes_fields_data.reviewed_words_familiarity[field_key].values())
@@ -233,7 +237,7 @@ class TargetCorpusData:
 
             max_rank = len(self.notes_fields_data.reviewed_words_familiarity[field_key])
 
-            for index, (word_token, familiarity) in enumerate(self.notes_fields_data.reviewed_words_familiarity[field_key].items()):
+            for index, word_token in enumerate(self.notes_fields_data.reviewed_words_familiarity[field_key].keys()):
                 familiarity_positional = (max_rank-(index))/max_rank
                 self.notes_fields_data.reviewed_words_familiarity_positional[field_key][word_token] = familiarity_positional
 

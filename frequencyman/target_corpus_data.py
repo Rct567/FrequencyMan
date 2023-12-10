@@ -115,6 +115,7 @@ class TargetCorpusData:
                 self.target_cards_reviewed.append(card)
 
         self.__set_notes_reviewed_words()
+        self.__set_notes_reviewed_words_presence()
         self.__set_notes_reviewed_words_familiarity()
         self.__set_notes_reviewed_words_familiarity_sweetspot()
         self.__set_notes_lexical_discrepancy(word_frequency_lists)
@@ -155,25 +156,43 @@ class TargetCorpusData:
 
     def __set_notes_reviewed_words(self) -> None:
 
+        for card in self.target_cards_reviewed:
+
+            for field_data in self.fields_per_card_note[card.nid]:
+
+                field_key = field_data.field_key
+
+                for word_token in field_data.field_value_tokenized:
+                    if word_token not in self.notes_fields_data.reviewed_words[field_key]:
+                        self.notes_fields_data.reviewed_words[field_key][word_token] = []
+                    self.notes_fields_data.reviewed_words[field_key][word_token].append(card)
+
+
+    def __set_notes_reviewed_words_presence(self) -> None:
+
         card_memorized_scores = self.__get_reviewed_words_card_memorized_scores()
 
         for card in self.target_cards_reviewed:
 
             for field_data in self.fields_per_card_note[card.nid]:
 
-                field_value_num_tokens = len(field_data.field_value_tokenized)
                 field_key = field_data.field_key
+                field_num_tokens = len(field_data.field_value_tokenized)
+                field_num_chars_tokens = len(''.join(field_data.field_value_tokenized))
 
-                for word_token in field_data.field_value_tokenized:
-                    # set reviewed words (word has been in a reviewed card)
-                    if word_token not in self.notes_fields_data.reviewed_words[field_key]:
-                        self.notes_fields_data.reviewed_words[field_key][word_token] = []
-                    self.notes_fields_data.reviewed_words[field_key][word_token].append(card)
-                    # set presence score for reviewed words
+                for index, word_token in enumerate(field_data.field_value_tokenized):
+
                     if word_token not in self.notes_fields_data.reviewed_words_presence[field_key]:
                         self.notes_fields_data.reviewed_words_presence[field_key][word_token] = []
-                    token_presence_score = ( (1+(1/field_value_num_tokens)) ** 1.5 ) * (1+card_memorized_scores[card.id])
-                    self.notes_fields_data.reviewed_words_presence[field_key][word_token].append(token_presence_score)
+
+                    presence_num_chars = len(word_token)/field_num_chars_tokens
+                    presence_num_words = 1/field_num_tokens
+                    position_value = 1/(index+1)
+                    presence_impact_score = (presence_num_chars+presence_num_words+position_value)/3
+                    review_presence_score = presence_impact_score+card_memorized_scores[card.id]
+
+                    self.notes_fields_data.reviewed_words_presence[field_key][word_token].append(review_presence_score)
+
 
     def __set_notes_reviewed_words_familiarity(self) -> None:
         """

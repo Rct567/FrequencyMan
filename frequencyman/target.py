@@ -37,12 +37,13 @@ class TargetReorderResult():
         if (not success and error is None):
             raise ValueError("No error given for unsuccessful result!")
         self.success = success
+        self.repositioning_required = repositioning_required if repositioning_required is not None else False
         if sorted_cards_ids is not None:
             self.sorted_cards_ids = sorted_cards_ids
             if (repositioning_required is None):
                 raise ValueError("No repositioning_required given for sorted cards!")
-            else:
-                self.repositioning_required = repositioning_required
+        else:
+            self.sorted_cards_ids = []
         self.modified_dirty_notes = modified_dirty_notes
 
         self.error = error
@@ -55,12 +56,14 @@ class Target:
 
     target: ConfigTargetData
     index_num: int
-    query: Optional[str]
+    scope_query: Optional[str]
+    reorder_scope_query: Optional[str]
 
     def __init__(self, target: ConfigTargetData, index_num: int) -> None:
         self.target = target
         self.index_num = index_num
-        self.query = None
+        self.scope_query = None
+        self.reorder_scope_query = None
 
     def __getitem__(self, key):
         return self.target[key]
@@ -90,7 +93,7 @@ class Target:
                 keys.append(LangKey(lang_key.lower()))
         return keys
 
-    def __get_scope_search_query(self) -> Optional[str]:
+    def __get_query_defined_scope(self) -> Optional[str]:
 
         scope_queries = []
 
@@ -126,7 +129,7 @@ class Target:
 
         return ""
 
-    def __construct_search_query(self) -> str:
+    def __construct_scope_query(self) -> str:
         target_notes = self.get("notes", []) if isinstance(self.get("notes"), list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
 
@@ -135,21 +138,30 @@ class Target:
 
         search_query = "(" + " OR ".join(note_queries) + ")"
 
-        scope_query = self.__get_scope_search_query()
+        scope_query = self.__get_query_defined_scope()
 
         if (scope_query is not None):
             search_query = scope_query+" AND "+search_query
 
         return search_query
 
-    def __get_search_query(self) -> str:
-        if (self.query is None):
-            self.query = self.__construct_search_query()
-        return self.query
+    def __get_scope_query(self) -> str:
+        if self.scope_query is None:
+            self.scope_query = self.__construct_scope_query()
+        return self.scope_query
 
-    def get_cards(self, col: Collection) -> TargetCardsResult:
+    def __get_reorder_scope_query(self) -> Optional[str]:
+        if self.reorder_scope_query is None:
+            if isinstance(self.get("reorder_scope_query"), str) and len(self.get("reorder_scope_query")) > 0:
+                self.reorder_scope_query = self.__construct_scope_query()+" AND ("+self.get("reorder_scope_query")+")"
+        return self.reorder_scope_query
 
-        all_cards_ids = col.find_cards(self.__get_search_query(), order="c.due asc")
+    def get_cards(self, col: Collection, search_query: Optional[str] = None) -> TargetCardsResult:
+
+        if not search_query:
+            search_query = self.__get_scope_query()
+
+        all_cards_ids = col.find_cards(search_query, order="c.due asc")
         all_cards = [col.get_card(card_id) for card_id in all_cards_ids]
         new_cards = [card for card in all_cards if card.queue == 0]
         new_cards_ids = [card.id for card in new_cards]
@@ -160,7 +172,7 @@ class Target:
         from .card_ranker import CardRanker
         from .target_corpus_data import TargetCorpusData
 
-        if "note:" not in self.__get_search_query():
+        if "note:" not in self.__get_scope_query():
             error_msg = "No valid note type defined. At least one note is required for reordering!"
             event_logger.add_entry(error_msg)
             return TargetReorderResult(success=False, error=error_msg)
@@ -179,19 +191,44 @@ class Target:
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):
             target_cards = self.get_cards(col)
 
-        event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(len(target_cards.new_cards_ids), len(target_cards.all_cards)))
+        num_new_cards = len(target_cards.new_cards_ids)
+
+        if num_new_cards < 1:
+            event_logger.add_entry("Found no new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.all_cards)))
+            return TargetReorderResult(success=False, error="No new cards to reorder.")
+        else:
+            event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.all_cards)))
 
         # Get corpus data
         target_corpus_data = TargetCorpusData()
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
             target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), col, word_frequency_lists)
 
+        # If reorder scope is defined, use it for reordering
+        reorder_scope_query = self.__get_reorder_scope_query()
+        if reorder_scope_query:
+            new_target_cards = self.get_cards(col, reorder_scope_query)
+            if not new_target_cards.all_cards:
+                event_logger.add_entry("Reorder scope query yielded no results!")
+                return TargetReorderResult(success=False, error="Reorder scope query yielded no results!")
+            elif not new_target_cards.new_cards:
+                event_logger.add_entry("Reorder scope query yielded no new cards to reorder!")
+                return TargetReorderResult(success=True)
+            elif new_target_cards.all_cards_ids == target_cards.all_cards_ids:
+                event_logger.add_entry("Reorder scope had no effect (same result as main scope of target)!")
+            else:
+                num_cards_main_scope = len(target_cards.all_cards)
+                num_card_reorder_scope = len(new_target_cards.all_cards)
+                if num_card_reorder_scope < num_cards_main_scope:
+                    event_logger.add_entry("Reorder scope query reduced cards in target from {:n} to {:n}.".format(num_cards_main_scope, num_card_reorder_scope))
+                    target_cards = new_target_cards
+
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
 
             card_ranker = CardRanker(target_corpus_data, word_frequency_lists, col)
 
-            # Use any ranking values defined in target definition
+            # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():
                 target_setting_val = self.get('ranking_'+attribute)
                 if target_setting_val is not None and str(target_setting_val).replace(".", "").isnumeric():
@@ -205,5 +242,10 @@ class Target:
 
         repositioning_required = target_cards.new_cards_ids != sorted_cards_ids
 
-        return TargetReorderResult(success=True, sorted_cards_ids=sorted_cards_ids,
-                                   repositioning_required=repositioning_required, modified_dirty_notes=card_ranker.modified_dirty_notes)
+        # Result
+        return TargetReorderResult(
+            success=True,
+            sorted_cards_ids=sorted_cards_ids,
+            repositioning_required=repositioning_required,
+            modified_dirty_notes=card_ranker.modified_dirty_notes
+        )

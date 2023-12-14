@@ -87,14 +87,14 @@ class TestTargetListReorder:
         # check result
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success
-        assert reorder_result.repositioning_required
+        assert reorder_result.cards_repositioned
         assert reorder_result.error is None
         assert len(reorder_result.sorted_cards_ids) == len(pre_sort_cards.new_cards_ids)
         assert reorder_result.sorted_cards_ids != pre_sort_cards.new_cards_ids
         assert reorder_result.sorted_cards_ids == target_list[0].get_cards(col).new_cards_ids
         assert len(reorder_result.modified_dirty_notes) == 7883
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
-        assert "Reposition cards from targets" in str(event_logger)
+        assert "Repositioning 6566 cards" in str(event_logger)
 
         # check order
         assert_locked_order(reorder_result.sorted_cards_ids)
@@ -140,7 +140,7 @@ class TestTargetListReorder:
         # check result
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success
-        assert reorder_result.repositioning_required
+        assert reorder_result.cards_repositioned
         assert reorder_result.error is None
         assert len(result.reorder_result_list[0].modified_dirty_notes) == 0
         assert len(result.reorder_result_list[1].modified_dirty_notes) == 0

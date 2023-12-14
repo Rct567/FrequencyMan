@@ -27,25 +27,29 @@ class TargetCardsResult:
 class TargetReorderResult():
 
     success: bool
-    sorted_cards_ids: list[CardId]
-    repositioning_required: bool
     error: Optional[str]
+    cards_repositioned: bool
+    sorted_cards_ids: list[CardId]
     modified_dirty_notes: dict[NoteId, Note]
+    repositioning_anki_op_changes: Optional[OpChangesWithCount] = None
 
-    def __init__(self, success: bool, sorted_cards_ids: Optional[list[CardId]] = None, repositioning_required: Optional[bool] = None,
-                 error: Optional[str] = None, modified_dirty_notes: dict[NoteId, Note] = {}) -> None:
-        if (not success and error is None):
+    def __init__(self, success: bool, sorted_cards_ids: Optional[list[CardId]] = None, cards_repositioned: Optional[bool] = None,
+                 error: Optional[str] = None, modified_dirty_notes: dict[NoteId, Note] = {}, repositioning_anki_op_changes: Optional[OpChangesWithCount] = None ) -> None:
+
+        if not success and error is None:
             raise ValueError("No error given for unsuccessful result!")
-        self.success = success
-        self.repositioning_required = repositioning_required if repositioning_required is not None else False
+
         if sorted_cards_ids is not None:
             self.sorted_cards_ids = sorted_cards_ids
-            if (repositioning_required is None):
-                raise ValueError("No repositioning_required given for sorted cards!")
+            if cards_repositioned is None:
+                raise ValueError("No cards_repositioned given for sorted cards!")
         else:
             self.sorted_cards_ids = []
         self.modified_dirty_notes = modified_dirty_notes
 
+        self.cards_repositioned = cards_repositioned if cards_repositioned is not None else False
+        self.repositioning_anki_op_changes = repositioning_anki_op_changes
+        self.success = success
         self.error = error
 
     def __repr__(self) -> str:
@@ -240,12 +244,30 @@ class Target:
             card_ranker.update_meta_data_for_notes_with_non_new_cards([card for card in target_cards.all_cards if card.queue != 0])  # reviewed card also need updating
             sorted_cards_ids = [card.id for card in sorted_cards]
 
+        # Reposition
         repositioning_required = target_cards.new_cards_ids != sorted_cards_ids
+        repositioning_anki_op_changes = None
+        cards_repositioned = False
+
+        if not repositioning_required:
+            event_logger.add_entry("Repositioning {:n} cards not needed for this target.".format(len(sorted_cards_ids)))
+        else:
+            event_logger.add_entry("Repositioning {:n} cards for this target.".format(len(sorted_cards_ids)))
+            col.sched.schedule_cards_as_new(sorted_cards_ids)
+            repositioning_anki_op_changes = col.sched.reposition_new_cards(
+                card_ids=sorted_cards_ids,
+                starting_from=0,
+                step_size=1,
+                randomize=False,
+                shift_existing=True
+            )
+            cards_repositioned = True
 
         # Result
         return TargetReorderResult(
             success=True,
             sorted_cards_ids=sorted_cards_ids,
-            repositioning_required=repositioning_required,
+            cards_repositioned=cards_repositioned,
+            repositioning_anki_op_changes=repositioning_anki_op_changes,
             modified_dirty_notes=card_ranker.modified_dirty_notes
         )

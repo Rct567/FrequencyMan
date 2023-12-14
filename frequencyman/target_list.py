@@ -15,6 +15,7 @@ from .lib.event_logger import EventLogger
 class TargetListReorderResult():
     reorder_result_list: list[TargetReorderResult]
     update_notes_anki_op_changes: Optional[OpChanges]
+    num_cards_repositioned: int
 
 
 class TargetList:
@@ -118,16 +119,15 @@ class TargetList:
 
         reorder_result_list: list[TargetReorderResult] = []
         modified_dirty_notes: dict[NoteId, Note] = {}
-
         num_cards_repositioned = 0
 
         for target in self.target_list:
             with event_logger.add_benchmarked_entry(f"Reordering target #{target.index_num}."):
-                reorder_result = target.reorder_cards(self.word_frequency_lists, col, event_logger)
+                reorder_result = target.reorder_cards(num_cards_repositioned+1, self.word_frequency_lists, col, event_logger)
                 reorder_result_list.append(reorder_result)
                 modified_dirty_notes.update({key: value for key, value in reorder_result.modified_dirty_notes.items() if key not in modified_dirty_notes})
                 if reorder_result.cards_repositioned:
-                    num_cards_repositioned += 1
+                    num_cards_repositioned += reorder_result.num_cards_repositioned
 
         if num_cards_repositioned == 0:
             event_logger.add_entry("Order of cards from targets was already up-to-date!")
@@ -140,8 +140,9 @@ class TargetList:
                 update_notes_anki_op_changes = col.update_notes([note for note in modified_dirty_notes.values()])
 
         # Done
-        event_logger.add_entry("Done with reordering of all targets!")
+        event_logger.add_entry("Done with reordering of all targets! {:n} cards repositioned.".format(num_cards_repositioned))
         return TargetListReorderResult(
+            num_cards_repositioned=num_cards_repositioned,
             reorder_result_list=reorder_result_list,
             update_notes_anki_op_changes=update_notes_anki_op_changes
         )

@@ -29,11 +29,12 @@ class TargetReorderResult():
     success: bool
     error: Optional[str]
     cards_repositioned: bool
+    num_cards_repositioned: int
     sorted_cards_ids: list[CardId]
     modified_dirty_notes: dict[NoteId, Note]
     repositioning_anki_op_changes: Optional[OpChangesWithCount] = None
 
-    def __init__(self, success: bool, sorted_cards_ids: Optional[list[CardId]] = None, cards_repositioned: Optional[bool] = None,
+    def __init__(self, success: bool, sorted_cards_ids: Optional[list[CardId]] = None, num_cards_repositioned: Optional[int] = 0,
                  error: Optional[str] = None, modified_dirty_notes: dict[NoteId, Note] = {}, repositioning_anki_op_changes: Optional[OpChangesWithCount] = None ) -> None:
 
         if not success and error is None:
@@ -41,13 +42,14 @@ class TargetReorderResult():
 
         if sorted_cards_ids is not None:
             self.sorted_cards_ids = sorted_cards_ids
-            if cards_repositioned is None:
-                raise ValueError("No cards_repositioned given for sorted cards!")
+            if num_cards_repositioned is None:
+                raise ValueError("No num_cards_repositioned given for sorted cards!")
         else:
             self.sorted_cards_ids = []
         self.modified_dirty_notes = modified_dirty_notes
 
-        self.cards_repositioned = cards_repositioned if cards_repositioned is not None else False
+        self.num_cards_repositioned = num_cards_repositioned if num_cards_repositioned is not None else 0
+        self.cards_repositioned = num_cards_repositioned > 0 if num_cards_repositioned is not None else False
         self.repositioning_anki_op_changes = repositioning_anki_op_changes
         self.success = success
         self.error = error
@@ -171,7 +173,7 @@ class Target:
         new_cards_ids = [card.id for card in new_cards]
         return TargetCardsResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
 
-    def reorder_cards(self, word_frequency_lists: WordFrequencyLists, col: Collection, event_logger: EventLogger) -> TargetReorderResult:
+    def reorder_cards(self, reorder_starting_from: int, word_frequency_lists: WordFrequencyLists, col: Collection, event_logger: EventLogger) -> TargetReorderResult:
 
         from .card_ranker import CardRanker
         from .target_corpus_data import TargetCorpusData
@@ -247,7 +249,7 @@ class Target:
         # Reposition
         repositioning_required = target_cards.new_cards_ids != sorted_cards_ids
         repositioning_anki_op_changes = None
-        cards_repositioned = False
+        num_cards_repositioned = 0
 
         if not repositioning_required:
             event_logger.add_entry("Repositioning {:n} cards not needed for this target.".format(len(sorted_cards_ids)))
@@ -256,18 +258,18 @@ class Target:
             col.sched.schedule_cards_as_new(sorted_cards_ids)
             repositioning_anki_op_changes = col.sched.reposition_new_cards(
                 card_ids=sorted_cards_ids,
-                starting_from=0,
+                starting_from=reorder_starting_from,
                 step_size=1,
                 randomize=False,
                 shift_existing=True
             )
-            cards_repositioned = True
+            num_cards_repositioned = len(sorted_cards_ids)
 
         # Result
         return TargetReorderResult(
             success=True,
             sorted_cards_ids=sorted_cards_ids,
-            cards_repositioned=cards_repositioned,
+            num_cards_repositioned=num_cards_repositioned,
             repositioning_anki_op_changes=repositioning_anki_op_changes,
             modified_dirty_notes=card_ranker.modified_dirty_notes
         )

@@ -393,7 +393,7 @@ class CardRanker:
             if 'fm_debug_ranking_info' in note:
                 note['fm_debug_ranking_info'] = ''
                 for info_name, info_val in notes_ranking_factors[note_id].items():
-                    note['fm_debug_ranking_info'] += f"{info_name}: {info_val:.2f}<br />\n"
+                    note['fm_debug_ranking_info'] += f"{info_name}: {info_val:.3f}<br />\n"
                 update_note = True
             if 'fm_debug_words_info' in note:
                 note['fm_debug_words_info'] = ''
@@ -419,7 +419,7 @@ class CardRanker:
                 focus_words_per_field: list[str] = []
                 for focus_words in note_metrics.focus_words:
                     focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
-                    focus_words_per_field.append(", ".join([word for (word, familiarity_score) in focus_words.items()]))
+                    focus_words_per_field.append(", ".join([word for word in focus_words.keys()]))
                 note['fm_focus_words'] = " | ".join(focus_words_per_field).strip("| ")
                 update_note = True
 
@@ -468,7 +468,7 @@ class CardRanker:
                     focus_words_per_field: list[str] = []
                     for focus_words in self.__get_note_focus_word(note_id).focus_words:
                         focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
-                        focus_words_per_field.append(", ".join([word for (word, familiarity_score) in focus_words.items()]))
+                        focus_words_per_field.append(", ".join([word for word in focus_words.keys()]))
                     note['fm_focus_words'] = " | ".join(focus_words_per_field).strip("| ")
                     update_note = True
 

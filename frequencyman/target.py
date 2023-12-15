@@ -9,7 +9,7 @@ from .lib.utilities import var_dump, var_dump_log
 
 from .lib.event_logger import EventLogger
 from .word_frequency_list import WordFrequencyLists
-from .target_corpus_data import LangKey
+from .target_corpus_data import LangKey, TargetCorpusData
 
 
 ConfigTargetDataNotes = TypedDict('ConfigTargetDataNotes', {'name': str, 'fields': dict[str, str]})
@@ -64,6 +64,9 @@ class Target:
     index_num: int
     scope_query: Optional[str]
     reorder_scope_query: Optional[str]
+
+    corpus_cache: dict[tuple, TargetCorpusData] = {}
+    target_cards_cache: dict[tuple, TargetCardsResult] = {}
 
     def __init__(self, target: ConfigTargetData, index_num: int) -> None:
         self.target = target
@@ -162,21 +165,40 @@ class Target:
                 self.reorder_scope_query = self.__construct_scope_query()+" AND ("+self.get("reorder_scope_query")+")"
         return self.reorder_scope_query
 
-    def get_cards(self, col: Collection, search_query: Optional[str] = None) -> TargetCardsResult:
+    def get_cards(self, col: Collection, search_query: Optional[str] = None, use_cache: bool = False) -> TargetCardsResult:
 
         if not search_query:
             search_query = self.__get_scope_query()
+
+        cache_key = (search_query, str(self.get_notes()), col)
+
+        if use_cache and cache_key in self.target_cards_cache:
+            return self.target_cards_cache[cache_key]
 
         all_cards_ids = col.find_cards(search_query, order="c.due asc")
         all_cards = [col.get_card(card_id) for card_id in all_cards_ids]
         new_cards = [card for card in all_cards if card.queue == 0]
         new_cards_ids = [card.id for card in new_cards]
-        return TargetCardsResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
+        target_cards = TargetCardsResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
+        self.target_cards_cache[cache_key] = target_cards
+        return target_cards
+
+
+    def __get_cached_corpus_data(self, target_cards: TargetCardsResult, col: Collection, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
+
+        cache_key = (str(target_cards.all_cards_ids), str(self.get_notes()), col, word_frequency_lists)
+        if cache_key in self.corpus_cache:
+            return self.corpus_cache[cache_key]
+
+        target_corpus_data = TargetCorpusData()
+        target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), col, word_frequency_lists)
+        self.corpus_cache[cache_key] = target_corpus_data
+        return target_corpus_data
+
 
     def reorder_cards(self, reorder_starting_from: int, word_frequency_lists: WordFrequencyLists, col: Collection, event_logger: EventLogger) -> TargetReorderResult:
 
         from .card_ranker import CardRanker
-        from .target_corpus_data import TargetCorpusData
 
         if "note:" not in self.__get_scope_query():
             error_msg = "No valid note type defined. At least one note is required for reordering!"
@@ -195,7 +217,7 @@ class Target:
 
         # Get cards for target
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):
-            target_cards = self.get_cards(col)
+            target_cards = self.get_cards(col, use_cache=True)
 
         num_new_cards = len(target_cards.new_cards_ids)
 
@@ -206,9 +228,9 @@ class Target:
             event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.all_cards)))
 
         # Get corpus data
-        target_corpus_data = TargetCorpusData()
+
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
-            target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), col, word_frequency_lists)
+            target_corpus_data = self.__get_cached_corpus_data(target_cards, col, word_frequency_lists)
 
         # If reorder scope is defined, use it for reordering
         reorder_scope_query = self.__get_reorder_scope_query()

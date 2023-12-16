@@ -92,7 +92,7 @@ class TestTargetListReorder:
         assert len(reorder_result.sorted_cards_ids) == len(pre_sort_cards.new_cards_ids)
         assert reorder_result.sorted_cards_ids != pre_sort_cards.new_cards_ids
         assert reorder_result.sorted_cards_ids == target_list[0].get_cards(col).new_cards_ids
-        assert len(reorder_result.modified_dirty_notes) == 7883
+        assert len(reorder_result.modified_dirty_notes) == 7895
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Repositioning 6566 cards" in str(event_logger)
 

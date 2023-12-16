@@ -16,12 +16,29 @@ ConfigTargetDataNotes = TypedDict('ConfigTargetDataNotes', {'name': str, 'fields
 ConfigTargetData = TypedDict('ConfigTargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
 
 
-@dataclass(frozen=True)
 class TargetCardsResult:
+
+    col: Collection
     all_cards_ids: Sequence[CardId]
     all_cards: list[Card]
     new_cards: list[Card]
-    new_cards_ids: Sequence[CardId]
+    new_cards_ids: list[CardId]
+
+    def __init__(self, all_cards_ids: Sequence[CardId], col: Collection) -> None:
+        self.all_cards_ids = all_cards_ids
+        self.all_cards = [col.get_card(card_id) for card_id in self.all_cards_ids]
+        self.new_cards = [card for card in self.all_cards if card.queue == 0]
+        self.new_cards_ids = [card.id for card in self.new_cards]
+        self.col = col
+
+    def get_notes(self) -> dict[NoteId, Note]:
+        notes_from_cards: dict[NoteId, Note] = {}
+
+        for card in self.all_cards:
+            if card.nid not in notes_from_cards:
+                notes_from_cards[card.nid] = self.col.get_note(card.nid)
+
+        return notes_from_cards
 
 
 class TargetReorderResult():
@@ -37,7 +54,7 @@ class TargetReorderResult():
 
     def __init__(self, success: bool, sorted_cards_ids: Optional[list[CardId]] = None, num_cards_repositioned: Optional[int] = 0,
                  error: Optional[str] = None, modified_dirty_notes: dict[NoteId, Note] = {}, repositioning_anki_op_changes: Optional[OpChangesWithCount] = None,
-                 target_cards:Optional[TargetCardsResult] = None) -> None:
+                 target_cards: Optional[TargetCardsResult] = None) -> None:
 
         if not success and error is None:
             raise ValueError("No error given for unsuccessful result!")
@@ -181,14 +198,11 @@ class Target:
         if use_cache and cache_key in self.target_cards_cache:
             return self.target_cards_cache[cache_key]
 
-        all_cards_ids = col.find_cards(search_query, order="c.due asc")
-        all_cards = [col.get_card(card_id) for card_id in all_cards_ids]
-        new_cards = [card for card in all_cards if card.queue == 0]
-        new_cards_ids = [card.id for card in new_cards]
-        target_cards = TargetCardsResult(all_cards_ids, all_cards, new_cards, new_cards_ids)
-        self.target_cards_cache[cache_key] = target_cards
+        target_cards_ids = col.find_cards(search_query, order="c.due asc")
+        target_cards = TargetCardsResult(target_cards_ids, col)
+        if use_cache:
+            self.target_cards_cache[cache_key] = target_cards
         return target_cards
-
 
     def __get_cached_corpus_data(self, target_cards: TargetCardsResult, col: Collection, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
 
@@ -200,7 +214,6 @@ class Target:
         target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), col, word_frequency_lists)
         self.corpus_cache[cache_key] = target_corpus_data
         return target_corpus_data
-
 
     def reorder_cards(self, reorder_starting_from: int, word_frequency_lists: WordFrequencyLists, col: Collection, event_logger: EventLogger) -> TargetReorderResult:
 
@@ -240,6 +253,7 @@ class Target:
 
         # If reorder scope is defined, use it for reordering
         reorder_scope_query = self.__get_reorder_scope_query()
+        reorder_scope_target_cards = target_cards
         if reorder_scope_query:
             new_target_cards = self.get_cards(col, reorder_scope_query)
             if not new_target_cards.all_cards:
@@ -255,7 +269,7 @@ class Target:
                 num_card_reorder_scope = len(new_target_cards.all_cards)
                 if num_card_reorder_scope < num_cards_main_scope:
                     event_logger.add_entry("Reorder scope query reduced cards in target from {:n} to {:n}.".format(num_cards_main_scope, num_card_reorder_scope))
-                    target_cards = new_target_cards
+                    reorder_scope_target_cards = new_target_cards
 
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
@@ -269,13 +283,13 @@ class Target:
                     card_ranker.ranking_factors_span[attribute] = float(target_setting_val)
 
             # Calculate ranking and sort cards
-            card_rankings = card_ranker.calc_cards_ranking(target_cards.new_cards)
-            sorted_cards = sorted(target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
-            card_ranker.update_meta_data_for_notes_with_non_new_cards([card for card in target_cards.all_cards if card.queue != 0])  # reviewed card also need updating
+            card_rankings = card_ranker.calc_cards_ranking(target_cards)
+            sorted_cards = sorted(reorder_scope_target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
+
             sorted_cards_ids = [card.id for card in sorted_cards]
 
         # Reposition
-        repositioning_required = target_cards.new_cards_ids != sorted_cards_ids
+        repositioning_required = reorder_scope_target_cards.new_cards_ids != sorted_cards_ids
         repositioning_anki_op_changes = None
         num_cards_repositioned = 0
 
@@ -297,7 +311,7 @@ class Target:
         return TargetReorderResult(
             success=True,
             sorted_cards_ids=sorted_cards_ids,
-            target_cards= target_cards,
+            target_cards=target_cards,
             num_cards_repositioned=num_cards_repositioned,
             repositioning_anki_op_changes=repositioning_anki_op_changes,
             modified_dirty_notes=card_ranker.modified_dirty_notes

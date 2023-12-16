@@ -9,10 +9,13 @@ from anki.cards import Card, CardId
 from anki.notes import Note, NoteId
 from anki.collection import Collection
 
+from .target import TargetCardsResult
+
 from .text_processing import WordToken
 from .lib.utilities import *
 from .target_corpus_data import FieldKey, TargetCorpusData, TargetFieldData
 from .word_frequency_list import WordFrequencyLists
+
 
 def sigmoid(x: float):
     return 1 / (1 + exp(-x))
@@ -123,14 +126,14 @@ class CardRanker:
         score = min(1, abs(0-(1.4*1/min(num_unseen_words, 10))))
         return score
 
-    def calc_cards_ranking(self, new_cards: list[Card]) -> dict[CardId, float]:
+    def calc_cards_ranking(self, target_cards: TargetCardsResult) -> dict[CardId, float]:
 
         notes_from_cards: dict[NoteId, Note] = {}
         cards_per_note: dict[NoteId, list[Card]] = {}  # future use?
 
         # card ranking is calculates per note (which may have different card, but same ranking)
 
-        for card in new_cards:
+        for card in target_cards.new_cards:
             if card.nid not in notes_from_cards:
                 notes_from_cards[card.nid] = self.col.get_note(card.nid)
                 if card.nid not in cards_per_note:
@@ -147,10 +150,11 @@ class CardRanker:
 
         # Set meta data that will be saved in note fields
         self.__set_fields_meta_data_for_note(notes_from_cards, notes_ranking_factors_normalized, notes_metrics)
+        self.__update_meta_data_for_notes_with_non_new_cards(target_cards)  # reviewed card also need updating
 
         #
         card_rankings: dict[CardId, float] = {}
-        for card in new_cards:
+        for card in target_cards.new_cards:
             card_rankings[card.id] = notes_rankings[card.nid]
 
         return card_rankings
@@ -437,26 +441,10 @@ class CardRanker:
 
         return note_metrics
 
-    def update_meta_data_for_notes_with_non_new_cards(self, all_cards: list[Card]) -> None:
+    def __update_meta_data_for_notes_with_non_new_cards(self, target_cards: TargetCardsResult) -> None:
 
-        notes_from_cards: dict[NoteId, Note] = {}
-        cards_per_note: dict[NoteId, list[Card]] = {}  # future use?
-        notes_with_new_card: set[NoteId] = set()
-        notes_with_reviewed_card: set[NoteId] = set()
-
-        for card in all_cards:
-            if card.nid not in notes_from_cards:
-                notes_from_cards[card.nid] = self.col.get_note(card.nid)
-            if card.nid not in cards_per_note:
-                cards_per_note[card.nid] = []
-            if card.queue == 0:
-                notes_with_new_card.add(card.nid)
-            elif card.type == 2:
-                notes_with_reviewed_card.add(card.nid)
-            cards_per_note[card.nid].append(card)
-
-        for note_id, note in notes_from_cards.items():
-            if not note_id in self.modified_dirty_notes and not note_id in notes_with_new_card and note_id in notes_with_reviewed_card:
+        for note_id, note in target_cards.get_notes().items():
+            if not note_id in self.modified_dirty_notes:
                 update_note = False
                 field_to_clear = ['fm_debug_info', 'fm_debug_ranking_info', 'fm_debug_words_info', 'fm_seen_words', 'fm_unseen_words']
                 for field_name in field_to_clear:

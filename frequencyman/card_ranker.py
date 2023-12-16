@@ -128,28 +128,24 @@ class CardRanker:
 
     def calc_cards_ranking(self, target_cards: TargetCardsResult) -> dict[CardId, float]:
 
-        notes_from_cards: dict[NoteId, Note] = {}
-        cards_per_note: dict[NoteId, list[Card]] = {}  # future use?
+        notes_from_new_cards: dict[NoteId, Note] = {}
 
         # card ranking is calculates per note (which may have different card, but same ranking)
 
         for card in target_cards.new_cards:
-            if card.nid not in notes_from_cards:
-                notes_from_cards[card.nid] = self.col.get_note(card.nid)
-                if card.nid not in cards_per_note:
-                    cards_per_note[card.nid] = []
-                cards_per_note[card.nid].append(card)
+            if card.nid not in notes_from_new_cards:
+                notes_from_new_cards[card.nid] = self.col.get_note(card.nid)
 
         # get ranking factors for notes
 
-        notes_ranking_factors, notes_metrics = self.__calc_card_notes_field_metrics(notes_from_cards, cards_per_note)
+        notes_ranking_factors, notes_metrics = self.__calc_card_notes_field_metrics(notes_from_new_cards)
 
         # final ranking of cards from notes
 
         notes_ranking_factors_normalized, notes_rankings = self.__calc_notes_ranking(notes_ranking_factors)
 
         # Set meta data that will be saved in note fields
-        self.__set_fields_meta_data_for_note(notes_from_cards, notes_ranking_factors_normalized, notes_metrics)
+        self.__set_fields_meta_data_for_note(notes_from_new_cards, notes_ranking_factors_normalized, notes_metrics)
         self.__update_meta_data_for_notes_with_non_new_cards(target_cards)  # reviewed card also need updating
 
         #
@@ -228,12 +224,12 @@ class CardRanker:
 
         return notes_ranking_factors_normalized, notes_rankings
 
-    def __calc_card_notes_field_metrics(self, notes_from_cards: dict[NoteId, Note], cards_per_note: dict[NoteId, list[Card]]) -> Tuple[dict[NoteId, dict[str, float]], dict[NoteId, AggregatedFieldsMetrics]]:
+    def __calc_card_notes_field_metrics(self, notes_from_new_cards: dict[NoteId, Note]) -> Tuple[dict[NoteId, dict[str, float]], dict[NoteId, AggregatedFieldsMetrics]]:
 
         notes_ranking_factors: dict[NoteId, dict[str, float]] = {}
         notes_metrics: dict[NoteId, AggregatedFieldsMetrics] = {}
 
-        for note_id, note in notes_from_cards.items():
+        for note_id, note in notes_from_new_cards.items():
 
             # get scores per field and assign to note metrics
 
@@ -368,9 +364,9 @@ class CardRanker:
 
         return field_metrics
 
-    def __set_fields_meta_data_for_note(self, notes: dict[NoteId, Note], notes_ranking_factors: dict[NoteId, dict[str, float]], notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
+    def __set_fields_meta_data_for_note(self, notes_from_new_cards: dict[NoteId, Note], notes_ranking_factors: dict[NoteId, dict[str, float]], notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
 
-        for note_id, note in notes.items():
+        for note_id, note in notes_from_new_cards.items():
 
             note_metrics = notes_metrics[note_id]
 

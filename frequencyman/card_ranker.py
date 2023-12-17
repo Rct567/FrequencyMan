@@ -98,8 +98,8 @@ class CardRanker:
         self.ranking_factors_span = {
             'words_fr_score': 0.25,
             'lowest_fr_word_score': 0.25,
-            'words_ld_score': 0.5,
-            'highest_ld_word_score': 0.5,
+            'words_ld_score': 0.25,
+            'highest_ld_word_score': 0.25,
             'most_obscure_word': 1,
             'ideal_word_count': 1,
             'ideal_focus_word_count': 1.5,

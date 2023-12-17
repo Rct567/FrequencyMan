@@ -336,4 +336,4 @@ class ReorderCardsTab:
                 parent=self.fm_window,
                 op=reorder_operation,
                 success=reorder_show_results
-            ).with_progress(label="Reordering cards...").run_in_background()
+            ).with_progress(label="Reordering new cards...").run_in_background()

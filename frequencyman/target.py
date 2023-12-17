@@ -265,11 +265,14 @@ class Target:
             elif new_target_cards.all_cards_ids == target_cards.all_cards_ids:
                 event_logger.add_entry("Reorder scope had no effect (same result as main scope of target)!")
             else:
-                num_cards_main_scope = len(target_cards.all_cards)
-                num_card_reorder_scope = len(new_target_cards.all_cards)
-                if num_card_reorder_scope < num_cards_main_scope:
-                    event_logger.add_entry("Reorder scope query reduced cards in target from {:n} to {:n}.".format(num_cards_main_scope, num_card_reorder_scope))
-                    reorder_scope_target_cards = new_target_cards
+                reorder_scope_target_cards = new_target_cards
+                num_new_cards_main_scope = len(target_cards.new_cards)
+                num_new_card_reorder_scope = len(new_target_cards.new_cards)
+                if num_new_card_reorder_scope < num_new_cards_main_scope:
+                    event_logger.add_entry("Reorder scope query reduced new cards in target from {:n} to {:n}.".format(num_new_cards_main_scope, num_new_card_reorder_scope))
+                else:
+                    event_logger.add_entry("Using reorder scope query, but it did not reduce the amount of new cards in target.")
+
 
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):

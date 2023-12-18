@@ -62,6 +62,7 @@ class AggregatedFieldsMetrics:
     fr_scores: list[float] = field(default_factory=list)
     ld_scores: list[float] = field(default_factory=list)
     familiarity_sweetspot_scores: list[float] = field(default_factory=list)
+    familiarity_scores: list[float] = field(default_factory=list)
 
     ideal_unseen_words_count_scores: list[float] = field(default_factory=list)
     ideal_words_count_scores: list[float] = field(default_factory=list)
@@ -103,6 +104,7 @@ class CardRanker:
             'most_obscure_word': 1,
             'ideal_word_count': 1,
             'ideal_focus_word_count': 1.5,
+            'words_familiarity_scores': 0,
             'words_familiarity_sweetspot_scores': 1,
             'lowest_fr_least_familiar_word_scores': 1,
             'ideal_unseen_word_count': 0.1,
@@ -260,6 +262,12 @@ class CardRanker:
                 # ideal word count
                 note_metrics.ideal_words_count_scores.append(self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), 2, 5))
 
+                # familiarity scores
+                if len(field_metrics.words_familiarity_scores) > 0:
+                    note_metrics.familiarity_scores.append(fmean(field_metrics.words_familiarity_scores.values()))
+                else:
+                    note_metrics.familiarity_scores.append(0)
+
                 # familiarity sweetspot scores
                 if len(field_metrics.words_familiarity_sweetspot_scores) > 0:
                     note_metrics.familiarity_sweetspot_scores.append(fsum(field_metrics.words_familiarity_sweetspot_scores.values()))
@@ -293,7 +301,9 @@ class CardRanker:
             note_ranking_factors['ideal_word_count'] = fmean(note_metrics.ideal_words_count_scores)
             note_ranking_factors['ideal_focus_word_count'] = fmean(note_metrics.ideal_focus_words_count_scores)
 
+            note_ranking_factors['words_familiarity_scores'] = fmean(note_metrics.familiarity_scores)
             note_ranking_factors['words_familiarity_sweetspot_scores'] = fmean(note_metrics.familiarity_sweetspot_scores)
+
 
             note_ranking_factors['lowest_fr_least_familiar_word_scores'] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
             note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)
@@ -380,6 +390,7 @@ class CardRanker:
                     'highest_ld_word': note_metrics.highest_ld_word,
                     'ideal_focus_word_count': note_metrics.ideal_focus_words_count_scores,
                     'ideal_word_count': note_metrics.ideal_words_count_scores,
+                    'familiarity_scores': note_metrics.familiarity_scores,
                     'familiarity_sweetspot_scores': note_metrics.familiarity_sweetspot_scores,
                     'lowest_fr_least_familiar_word': note_metrics.lowest_fr_least_familiar_word,
                     'lowest_fr_word': note_metrics.lowest_fr_word,

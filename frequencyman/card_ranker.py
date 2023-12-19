@@ -101,12 +101,12 @@ class CardRanker:
             'lowest_fr_word_score': 0.25,
             'words_ld_score': 0.25,
             'highest_ld_word_score': 0.25,
-            'most_obscure_word': 1,
-            'ideal_word_count': 1,
+            'most_obscure_word': 1.0,
+            'ideal_word_count': 1.0,
             'ideal_focus_word_count': 1.5,
-            'words_familiarity_scores': 0,
-            'words_familiarity_sweetspot_scores': 1,
-            'lowest_fr_least_familiar_word_scores': 1,
+            'words_familiarity_scores': 0.0,
+            'words_familiarity_sweetspot_scores': 1.0,
+            'lowest_fr_least_familiar_word_scores': 1.0,
             'ideal_unseen_word_count': 0.1,
         }
 
@@ -160,40 +160,37 @@ class CardRanker:
     def __calc_notes_ranking(self, notes_ranking_factors: dict[NoteId, dict[str, float]]) -> tuple[dict[NoteId, dict[str, float]], dict[NoteId, float]]:
 
         notes_ranking_factors_normalized = deepcopy(notes_ranking_factors)
+        useable_factors: set[str] = set()
 
-        # normalize min value and apply sigmoid
+        # perform Z-score standardization, use sigmoid and then 0 to 1 normalization
 
-        min_value_per_attribute: dict[str, float] = {}
+        for attribute in self.ranking_factors_span.keys():
 
-        for note_id, factors in notes_ranking_factors_normalized.items():
-            for attribute, value in factors.items():
-                if value < 0:
-                    raise ValueError("Low value found in ranking factor {}.".format(attribute))
-                if attribute not in min_value_per_attribute or value < min_value_per_attribute[attribute]:
-                    min_value_per_attribute[attribute] = value
+            values = [note[attribute] for note in notes_ranking_factors_normalized.values()]
+            mean_val = fmean(values)
+            std_dev = (fsum((x - mean_val) ** 2 for x in values) / len(values)) ** 0.5
 
-        for note_id, factors in notes_ranking_factors_normalized.items():
-            for attribute, value in factors.items():
-                # normalize lowest value
-                if min_value_per_attribute[attribute] > 0:
-                    notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]-min_value_per_attribute[attribute]
-                # apply sigmoid
+            if (min(values) < 0):
+                raise ValueError("Low value found in ranking factor {}.".format(attribute))
+            if not std_dev > 0:
+                continue
+
+            for note_id, factors in notes_ranking_factors_normalized.items():
+                notes_ranking_factors_normalized[note_id][attribute] = (notes_ranking_factors_normalized[note_id][attribute] - mean_val) / std_dev
                 notes_ranking_factors_normalized[note_id][attribute] = sigmoid(notes_ranking_factors_normalized[note_id][attribute])
 
-        # get max values and normalize
+            lowest = min([note[attribute] for note in notes_ranking_factors_normalized.values()])
 
-        max_value_per_attribute: dict[str, float] = {}
+            if lowest < 0:
+                for note_id, factors in notes_ranking_factors_normalized.items():
+                    notes_ranking_factors_normalized[note_id][attribute] = abs(lowest)+notes_ranking_factors_normalized[note_id][attribute]
 
-        for note_id, factors in notes_ranking_factors_normalized.items():
-            for attribute, value in factors.items():
-                if attribute not in max_value_per_attribute or value > max_value_per_attribute[attribute]:
-                    max_value_per_attribute[attribute] = value
+            highest = max([note[attribute] for note in notes_ranking_factors_normalized.values()])
 
-        for note_id, factors in notes_ranking_factors_normalized.items():
-            for attribute, value in factors.items():
-                if max_value_per_attribute[attribute] == 0 or max_value_per_attribute[attribute] == 1:
-                    continue
-                notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]/max_value_per_attribute[attribute]
+            if highest > 0:
+                for note_id, factors in notes_ranking_factors_normalized.items():
+                    notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]/highest
+                useable_factors.add(attribute)
 
         # set stats
 
@@ -211,6 +208,8 @@ class CardRanker:
             for attribute, value in factors.items():
                 if attribute not in self.ranking_factors_span:
                     raise Exception("Unknown span for ranking factor {}".format(attribute))
+                if not attribute in useable_factors:
+                    continue
                 if self.ranking_factors_span[attribute] == 0:
                     continue
                 notes_spanned_ranking_factors[note_id][attribute] = value * float(self.ranking_factors_span[attribute])
@@ -303,7 +302,6 @@ class CardRanker:
 
             note_ranking_factors['words_familiarity_scores'] = fmean(note_metrics.familiarity_scores)
             note_ranking_factors['words_familiarity_sweetspot_scores'] = fmean(note_metrics.familiarity_sweetspot_scores)
-
 
             note_ranking_factors['lowest_fr_least_familiar_word_scores'] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
             note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)

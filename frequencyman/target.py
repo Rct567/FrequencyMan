@@ -45,37 +45,39 @@ class TargetReorderResult():
 
     success: bool
     error: Optional[str]
-    cards_repositioned: bool
     num_cards_repositioned: int
+    cards_repositioned: bool
     sorted_cards_ids: list[CardId]
     target_cards: Optional[TargetCardsResult]
     modified_dirty_notes: dict[NoteId, Note]
-    repositioning_anki_op_changes: Optional[OpChangesWithCount] = None
+    repositioning_anki_op_changes: Optional[OpChangesWithCount]
 
-    def __init__(self, success: bool, sorted_cards_ids: Optional[list[CardId]] = None, num_cards_repositioned: Optional[int] = 0,
-                 error: Optional[str] = None, modified_dirty_notes: dict[NoteId, Note] = {}, repositioning_anki_op_changes: Optional[OpChangesWithCount] = None,
-                 target_cards: Optional[TargetCardsResult] = None) -> None:
+    def __init__(self, success: bool, error: Optional[str] = None) -> None:
 
         if not success and error is None:
             raise ValueError("No error given for unsuccessful result!")
 
-        if sorted_cards_ids is not None:
-            self.sorted_cards_ids = sorted_cards_ids
-            if num_cards_repositioned is None:
-                raise ValueError("No num_cards_repositioned given for sorted cards!")
-            if target_cards is None:
-                raise ValueError("No target_cards given for sorted cards!")
-            else:
-                self.target_cards = target_cards
-        else:
-            self.sorted_cards_ids = []
-        self.modified_dirty_notes = modified_dirty_notes
-
-        self.num_cards_repositioned = num_cards_repositioned if num_cards_repositioned is not None else 0
-        self.cards_repositioned = num_cards_repositioned > 0 if num_cards_repositioned is not None else False
-        self.repositioning_anki_op_changes = repositioning_anki_op_changes
         self.success = success
         self.error = error
+        self.num_cards_repositioned = 0
+        self.cards_repositioned = False
+        self.sorted_cards_ids = []
+        self.target_cards = None
+        self.modified_dirty_notes = {}
+        self.repositioning_anki_op_changes = None
+
+    def with_repositioning_data(self, sorted_cards_ids: list[CardId], num_cards_repositioned: int,
+            modified_dirty_notes: dict[NoteId, Note], target_cards: TargetCardsResult,
+            repositioning_anki_op_changes: Optional[OpChangesWithCount] = None):
+
+        self.sorted_cards_ids = sorted_cards_ids
+        self.num_cards_repositioned = num_cards_repositioned
+        self.cards_repositioned = num_cards_repositioned > 0
+        self.modified_dirty_notes = modified_dirty_notes
+        self.target_cards = target_cards
+        self.repositioning_anki_op_changes = repositioning_anki_op_changes
+
+        return self
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
@@ -273,7 +275,6 @@ class Target:
                 else:
                     event_logger.add_entry("Using reorder scope query, but it did not reduce the amount of new cards in target.")
 
-
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
 
@@ -311,8 +312,7 @@ class Target:
             num_cards_repositioned = len(sorted_cards_ids)
 
         # Result
-        return TargetReorderResult(
-            success=True,
+        return TargetReorderResult(success=True).with_repositioning_data(
             sorted_cards_ids=sorted_cards_ids,
             target_cards=target_cards,
             num_cards_repositioned=num_cards_repositioned,

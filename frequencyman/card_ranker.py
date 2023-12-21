@@ -144,10 +144,10 @@ class CardRanker:
 
         # final ranking of cards from notes
 
-        notes_ranking_factors_normalized, notes_rankings = self.__calc_notes_ranking(notes_ranking_factors)
+        notes_ranking_scores_normalized, notes_rankings = self.__calc_notes_ranking(notes_ranking_factors)
 
         # Set meta data that will be saved in note fields
-        self.__set_fields_meta_data_for_note(notes_from_new_cards, notes_ranking_factors_normalized, notes_metrics)
+        self.__set_fields_meta_data_for_note(notes_from_new_cards, notes_ranking_scores_normalized, notes_metrics)
         self.__update_meta_data_for_notes_with_non_new_cards(target_cards)  # reviewed card also need updating
 
         #
@@ -157,16 +157,16 @@ class CardRanker:
 
         return card_rankings
 
-    def __calc_notes_ranking(self, notes_ranking_factors: dict[NoteId, dict[str, float]]) -> tuple[dict[NoteId, dict[str, float]], dict[NoteId, float]]:
+    def __calc_notes_ranking(self, notes_ranking_scores: dict[str, dict[NoteId, float]]) -> tuple[dict[str, dict[NoteId, float]], dict[NoteId, float]]:
 
-        notes_ranking_factors_normalized = deepcopy(notes_ranking_factors)
+        notes_ranking_scores_normalized = deepcopy(notes_ranking_scores)
         useable_factors: set[str] = set()
 
         # perform Z-score standardization, use sigmoid and then 0 to 1 normalization
 
-        for attribute in self.ranking_factors_span.keys():
+        for attribute, notes_scores in notes_ranking_scores_normalized.items():
 
-            values = [note[attribute] for note in notes_ranking_factors_normalized.values()]
+            values = notes_scores.values()
             mean_val = fmean(values)
             std_dev = (fsum((x - mean_val) ** 2 for x in values) / len(values)) ** 0.5
 
@@ -177,28 +177,32 @@ class CardRanker:
 
             lowest_val = 0
 
-            for note_id, factors in notes_ranking_factors_normalized.items():
-                notes_ranking_factors_normalized[note_id][attribute] = (notes_ranking_factors_normalized[note_id][attribute] - mean_val) / std_dev
-                notes_ranking_factors_normalized[note_id][attribute] = sigmoid(notes_ranking_factors_normalized[note_id][attribute])
-                if lowest_val > notes_ranking_factors_normalized[note_id][attribute]:
-                    lowest_val = notes_ranking_factors_normalized[note_id][attribute]
+            for note_id in notes_scores.keys():
+                notes_scores[note_id] = (notes_scores[note_id] - mean_val) / std_dev
+                notes_scores[note_id] = sigmoid(notes_scores[note_id])
+                if lowest_val > notes_scores[note_id]:
+                    lowest_val = notes_scores[note_id]
 
             if lowest_val < 0:
-                for note_id, factors in notes_ranking_factors_normalized.items():
-                    notes_ranking_factors_normalized[note_id][attribute] = abs(lowest_val)+notes_ranking_factors_normalized[note_id][attribute]
+                for note_id in notes_scores.keys():
+                    notes_scores[note_id] = abs(lowest_val)+notes_scores[note_id]
 
-            highest_val = max([note[attribute] for note in notes_ranking_factors_normalized.values()])
+            highest_val = max(notes_scores.values())
 
             if highest_val > 0:
-                for note_id, factors in notes_ranking_factors_normalized.items():
-                    notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]/highest_val
+                for note_id in notes_scores.keys():
+                    notes_scores[note_id] = notes_scores[note_id]/highest_val
                 useable_factors.add(attribute)
+
+            notes_ranking_scores_normalized[attribute] = notes_scores
 
         # set stats
 
         self.ranking_factors_stats = defaultdict(dict)
         for attribute in self.ranking_factors_span.keys():
-            vals = [note[attribute] for note in notes_ranking_factors_normalized.values()]
+            if attribute not in notes_ranking_scores_normalized:
+                raise Exception("Span set for unknown ranking factor {}".format(attribute))
+            vals = notes_ranking_scores_normalized[attribute]
             self.ranking_factors_stats[attribute]['avg'] = fmean(vals)
             self.ranking_factors_stats[attribute]['median'] = median(vals)
 
@@ -206,30 +210,30 @@ class CardRanker:
 
         notes_spanned_ranking_factors: dict[NoteId, dict[str, float]] = defaultdict(dict)
 
-        for note_id, factors in notes_ranking_factors_normalized.items():
-            for attribute, value in factors.items():
-                if attribute not in self.ranking_factors_span:
-                    raise Exception("Unknown span for ranking factor {}".format(attribute))
-                if not attribute in useable_factors:
-                    continue
-                if self.ranking_factors_span[attribute] == 0:
-                    continue
+        for attribute, notes_scores in notes_ranking_scores_normalized.items():
+            if attribute not in self.ranking_factors_span:
+                raise Exception("No span set for ranking factor {}".format(attribute))
+            if not attribute in useable_factors:
+                continue
+            if self.ranking_factors_span[attribute] == 0:
+                continue
+            for note_id, value in notes_scores.items():
                 notes_spanned_ranking_factors[note_id][attribute] = value * float(self.ranking_factors_span[attribute])
 
         # final ranking value for notes
 
         notes_rankings: dict[NoteId, float] = {}
 
-        for note_id in notes_ranking_factors_normalized.keys():
+        for note_id in notes_spanned_ranking_factors.keys():
             total_value = fsum(notes_spanned_ranking_factors[note_id].values())
             span = fsum(self.ranking_factors_span.values())
             notes_rankings[note_id] = total_value/span
 
-        return notes_ranking_factors_normalized, notes_rankings
+        return notes_ranking_scores_normalized, notes_rankings
 
-    def __calc_card_notes_field_metrics(self, notes_from_new_cards: dict[NoteId, Note]) -> Tuple[dict[NoteId, dict[str, float]], dict[NoteId, AggregatedFieldsMetrics]]:
+    def __calc_card_notes_field_metrics(self, notes_from_new_cards: dict[NoteId, Note]) -> Tuple[dict[str, dict[NoteId, float]], dict[NoteId, AggregatedFieldsMetrics]]:
 
-        notes_ranking_factors: dict[NoteId, dict[str, float]] = {}
+        notes_ranking_factors: dict[str, dict[NoteId, float]] = defaultdict(dict)
         notes_metrics: dict[NoteId, AggregatedFieldsMetrics] = {}
 
         for note_id, note in notes_from_new_cards.items():
@@ -289,29 +293,23 @@ class CardRanker:
 
             # define ranking factors for note, based on avg of fields
 
-            note_ranking_factors: dict[str, float] = {}
+            notes_ranking_factors['words_fr_score'][note_id] = fmean(note_metrics.fr_scores)
+            notes_ranking_factors['words_ld_score'][note_id]  = fmean(note_metrics.ld_scores)
 
-            note_ranking_factors['words_fr_score'] = fmean(note_metrics.fr_scores)
-            note_ranking_factors['words_ld_score'] = fmean(note_metrics.ld_scores)
+            notes_ranking_factors['lowest_fr_word_score'][note_id]  = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
+            notes_ranking_factors['highest_ld_word_score'][note_id]  = fmean([highest_ld_word[1] for highest_ld_word in note_metrics.highest_ld_word])
 
-            note_ranking_factors['lowest_fr_word_score'] = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
-            note_ranking_factors['highest_ld_word_score'] = fmean([highest_ld_word[1] for highest_ld_word in note_metrics.highest_ld_word])
+            notes_ranking_factors['most_obscure_word'][note_id]  = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
 
-            note_ranking_factors['most_obscure_word'] = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
+            notes_ranking_factors['ideal_word_count'][note_id]  = fmean(note_metrics.ideal_words_count_scores)
+            notes_ranking_factors['ideal_focus_word_count'][note_id]  = fmean(note_metrics.ideal_focus_words_count_scores)
 
-            note_ranking_factors['ideal_word_count'] = fmean(note_metrics.ideal_words_count_scores)
-            note_ranking_factors['ideal_focus_word_count'] = fmean(note_metrics.ideal_focus_words_count_scores)
+            notes_ranking_factors['words_familiarity_scores'][note_id]  = fmean(note_metrics.familiarity_scores)
+            notes_ranking_factors['words_familiarity_sweetspot_scores'][note_id]  = fmean(note_metrics.familiarity_sweetspot_scores)
 
-            note_ranking_factors['words_familiarity_scores'] = fmean(note_metrics.familiarity_scores)
-            note_ranking_factors['words_familiarity_sweetspot_scores'] = fmean(note_metrics.familiarity_sweetspot_scores)
+            notes_ranking_factors['lowest_fr_least_familiar_word_scores'][note_id]  = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
+            notes_ranking_factors['ideal_unseen_word_count'][note_id]  = fmean(note_metrics.ideal_unseen_words_count_scores)
 
-            note_ranking_factors['lowest_fr_least_familiar_word_scores'] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
-            note_ranking_factors['ideal_unseen_word_count'] = fmean(note_metrics.ideal_unseen_words_count_scores)
-
-            # todo:
-            # card_ranking_factors['words_fresh_occurrence_scores'] = fmean(fields_words_fresh_occurrence_scores)
-
-            notes_ranking_factors[note_id] = note_ranking_factors
             notes_metrics[note_id] = note_metrics
 
         return notes_ranking_factors, notes_metrics
@@ -374,7 +372,7 @@ class CardRanker:
 
         return field_metrics
 
-    def __set_fields_meta_data_for_note(self, notes_from_new_cards: dict[NoteId, Note], notes_ranking_factors: dict[NoteId, dict[str, float]], notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
+    def __set_fields_meta_data_for_note(self, notes_from_new_cards: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]], notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
 
         for note_id, note in notes_from_new_cards.items():
 
@@ -403,8 +401,8 @@ class CardRanker:
                 update_note = True
             if 'fm_debug_ranking_info' in note:
                 note['fm_debug_ranking_info'] = ''
-                for info_name, info_val in notes_ranking_factors[note_id].items():
-                    note['fm_debug_ranking_info'] += f"{info_name}: {info_val:.3f}<br />\n"
+                for info_name, info_val in notes_ranking_scores.items():
+                     note['fm_debug_ranking_info'] += f"{info_name}: {info_val[note_id]:.3f}<br />\n"
                 update_note = True
             if 'fm_debug_words_info' in note:
                 note['fm_debug_words_info'] = ''

@@ -5,7 +5,7 @@ import os
 import pprint
 import pstats
 import threading
-from typing import Any, TypeVar
+from typing import IO, Any, TypeVar
 from aqt.utils import showInfo
 
 from ..text_processing import WordToken
@@ -38,19 +38,26 @@ def var_dump_log(var: Any, show_as_info=False) -> None:
 
 
 @contextmanager
-def profile_context(sortby=pstats.SortKey.TIME, amount=40):
+def profile_context(amount=40):
     profiler = cProfile.Profile()
     profiler.enable()
     try:
         yield profiler
     finally:
         profiler.disable()
-        s = io.StringIO()
-        ps = pstats.Stats(profiler, stream=s).sort_stats(sortby)
-        ps.print_callers(amount)
-        print("\n\n\n=========================================\n\n\n")
-        ps.print_stats(amount)
-        profiling_results = s.getvalue()
+
+        def print_results(output: IO[Any], sort_key: pstats.SortKey):
+            ps = pstats.Stats(profiler, stream=output).sort_stats(sort_key)
+            ps.print_callers(amount)
+            output.write("\n\n-------------------------------------------------\n\n\n")
+            ps.print_stats(amount)
+            output.write("\n\n================================================\n\n\n\n")
+
+        output = io.StringIO()
+        print_results(output, pstats.SortKey.CUMULATIVE)
+        print_results(output, pstats.SortKey.TIME)
+        profiling_results = output.getvalue()
+
         dump_file = os.path.join(os.path.dirname(__file__), '..', '..', 'profiling_results.txt')
         with open(dump_file, 'w') as f:
             f.write(profiling_results)

@@ -170,26 +170,28 @@ class CardRanker:
             mean_val = fmean(values)
             std_dev = (fsum((x - mean_val) ** 2 for x in values) / len(values)) ** 0.5
 
-            if (min(values) < 0):
-                raise ValueError("Low value found in ranking factor {}.".format(attribute))
+            if min(values) < 0:
+                raise ValueError("Below zero value found in ranking factor {}.".format(attribute))
             if not std_dev > 0:
                 continue
+
+            lowest_val = 0
 
             for note_id, factors in notes_ranking_factors_normalized.items():
                 notes_ranking_factors_normalized[note_id][attribute] = (notes_ranking_factors_normalized[note_id][attribute] - mean_val) / std_dev
                 notes_ranking_factors_normalized[note_id][attribute] = sigmoid(notes_ranking_factors_normalized[note_id][attribute])
+                if lowest_val > notes_ranking_factors_normalized[note_id][attribute]:
+                    lowest_val = notes_ranking_factors_normalized[note_id][attribute]
 
-            lowest = min([note[attribute] for note in notes_ranking_factors_normalized.values()])
-
-            if lowest < 0:
+            if lowest_val < 0:
                 for note_id, factors in notes_ranking_factors_normalized.items():
-                    notes_ranking_factors_normalized[note_id][attribute] = abs(lowest)+notes_ranking_factors_normalized[note_id][attribute]
+                    notes_ranking_factors_normalized[note_id][attribute] = abs(lowest_val)+notes_ranking_factors_normalized[note_id][attribute]
 
-            highest = max([note[attribute] for note in notes_ranking_factors_normalized.values()])
+            highest_val = max([note[attribute] for note in notes_ranking_factors_normalized.values()])
 
-            if highest > 0:
+            if highest_val > 0:
                 for note_id, factors in notes_ranking_factors_normalized.items():
-                    notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]/highest
+                    notes_ranking_factors_normalized[note_id][attribute] = notes_ranking_factors_normalized[note_id][attribute]/highest_val
                 useable_factors.add(attribute)
 
         # set stats

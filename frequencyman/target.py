@@ -1,11 +1,10 @@
-from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple, TypedDict
+from typing import Optional, Sequence, TypedDict
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
-from .lib.utilities import var_dump, var_dump_log
+from .lib.utilities import profile_context, var_dump, var_dump_log
 
 from .lib.event_logger import EventLogger
 from .word_frequency_list import WordFrequencyLists
@@ -75,8 +74,8 @@ class TargetReorderResult():
         self.repositioning_anki_op_changes = None
 
     def with_repositioning_data(self, sorted_cards_ids: list[CardId], num_cards_repositioned: int,
-            modified_dirty_notes: dict[NoteId, Note], target_cards: TargetCardsResult,
-            repositioning_anki_op_changes: Optional[OpChangesWithCount] = None):
+                                modified_dirty_notes: dict[NoteId, Note], target_cards: TargetCardsResult,
+                                repositioning_anki_op_changes: Optional[OpChangesWithCount] = None):
 
         self.sorted_cards_ids = sorted_cards_ids
         self.num_cards_repositioned = num_cards_repositioned
@@ -89,6 +88,10 @@ class TargetReorderResult():
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
+
+
+ConfigTargetDataNotes = TypedDict('ConfigTargetDataNotes', {'name': str, 'fields': dict[str, str]})
+ConfigTargetData = TypedDict('ConfigTargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
 
 
 class Target:

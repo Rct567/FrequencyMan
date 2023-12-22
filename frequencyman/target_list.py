@@ -15,6 +15,7 @@ from .lib.event_logger import EventLogger
 class TargetListReorderResult():
     reorder_result_list: list[TargetReorderResult]
     update_notes_anki_op_changes: Optional[OpChanges]
+    modified_dirty_notes: dict[NoteId, Optional[Note]]
     num_cards_repositioned: int
 
 
@@ -41,7 +42,7 @@ class TargetList:
     def set_targets(self, target_list: list[ConfigTargetData]) -> tuple[int, str]:
         (validity_state, err_desc) = self.validate_list(target_list)
         if (validity_state == 1):
-            self.target_list = [Target(target, target_num) for target_num, target in enumerate(target_list)]
+            self.target_list = [Target(target, target_num, self.col) for target_num, target in enumerate(target_list)]
         return (validity_state, err_desc)
 
     def has_targets(self) -> bool:
@@ -118,14 +119,13 @@ class TargetList:
     def reorder_cards(self, col: Collection, event_logger: EventLogger) -> TargetListReorderResult:
 
         reorder_result_list: list[TargetReorderResult] = []
-        modified_dirty_notes: dict[NoteId, Note] = {}
+        modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
         num_cards_repositioned = 0
 
         for target in self.target_list:
             with event_logger.add_benchmarked_entry(f"Reordering target #{target.index_num}."):
-                reorder_result = target.reorder_cards(num_cards_repositioned+1, self.word_frequency_lists, col, event_logger)
+                reorder_result = target.reorder_cards(num_cards_repositioned+1, self.word_frequency_lists, event_logger, modified_dirty_notes)
                 reorder_result_list.append(reorder_result)
-                modified_dirty_notes.update({key: value for key, value in reorder_result.modified_dirty_notes.items() if key not in modified_dirty_notes})
                 if reorder_result.cards_repositioned:
                     num_cards_repositioned += reorder_result.num_cards_repositioned
 
@@ -137,12 +137,13 @@ class TargetList:
         num_modified_dirty_notes = len(modified_dirty_notes)
         if (num_modified_dirty_notes > 0):
             with event_logger.add_benchmarked_entry("Updating {:n} modified notes from targets.".format(num_modified_dirty_notes)):
-                update_notes_anki_op_changes = col.update_notes([note for note in modified_dirty_notes.values()])
+                update_notes_anki_op_changes = col.update_notes([note for note in modified_dirty_notes.values() if note is not None])
 
         # Done
         event_logger.add_entry("Done with reordering of all targets! {:n} cards repositioned.".format(num_cards_repositioned))
         return TargetListReorderResult(
             num_cards_repositioned=num_cards_repositioned,
             reorder_result_list=reorder_result_list,
-            update_notes_anki_op_changes=update_notes_anki_op_changes
+            update_notes_anki_op_changes=update_notes_anki_op_changes,
+            modified_dirty_notes=modified_dirty_notes
         )

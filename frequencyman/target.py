@@ -56,7 +56,7 @@ class TargetReorderResult():
     cards_repositioned: bool
     sorted_cards_ids: list[CardId]
     target_cards: Optional[TargetCardsResult]
-    modified_dirty_notes: dict[NoteId, Note]
+    modified_dirty_notes: dict[NoteId, Optional[Note]]
     repositioning_anki_op_changes: Optional[OpChangesWithCount]
 
     def __init__(self, success: bool, error: Optional[str] = None) -> None:
@@ -74,13 +74,11 @@ class TargetReorderResult():
         self.repositioning_anki_op_changes = None
 
     def with_repositioning_data(self, sorted_cards_ids: list[CardId], num_cards_repositioned: int,
-                                modified_dirty_notes: dict[NoteId, Note], target_cards: TargetCardsResult,
-                                repositioning_anki_op_changes: Optional[OpChangesWithCount] = None):
+                                target_cards: TargetCardsResult, repositioning_anki_op_changes: Optional[OpChangesWithCount] = None):
 
         self.sorted_cards_ids = sorted_cards_ids
         self.num_cards_repositioned = num_cards_repositioned
         self.cards_repositioned = num_cards_repositioned > 0
-        self.modified_dirty_notes = modified_dirty_notes
         self.target_cards = target_cards
         self.repositioning_anki_op_changes = repositioning_anki_op_changes
 
@@ -98,17 +96,19 @@ class Target:
 
     target: ConfigTargetData
     index_num: int
+    col: Collection
     scope_query: Optional[str]
     reorder_scope_query: Optional[str]
 
     corpus_cache: dict[tuple, TargetCorpusData] = {}
     target_cards_cache: dict[tuple, TargetCardsResult] = {}
 
-    def __init__(self, target: ConfigTargetData, index_num: int) -> None:
+    def __init__(self, target: ConfigTargetData, index_num: int, col: Collection) -> None:
         self.target = target
         self.index_num = index_num
         self.scope_query = None
         self.reorder_scope_query = None
+        self.col = col
 
     def __getitem__(self, key):
         return self.target[key]
@@ -201,34 +201,35 @@ class Target:
                 self.reorder_scope_query = self.__construct_scope_query()+" AND ("+self.get("reorder_scope_query")+")"
         return self.reorder_scope_query
 
-    def get_cards(self, col: Collection, search_query: Optional[str] = None, use_cache: bool = False) -> TargetCardsResult:
+    def get_cards(self, search_query: Optional[str] = None, use_cache: bool = False) -> TargetCardsResult:
 
         if not search_query:
             search_query = self.__get_scope_query()
 
-        cache_key = (search_query, str(self.get_notes()), col)
+        cache_key = (search_query, str(self.get_notes()), self.col)
 
         if use_cache and cache_key in self.target_cards_cache:
             return self.target_cards_cache[cache_key]
 
-        target_cards_ids = col.find_cards(search_query, order="c.due asc")
-        target_cards = TargetCardsResult(target_cards_ids, col)
+        target_cards_ids = self.col.find_cards(search_query, order="c.due asc")
+        target_cards = TargetCardsResult(target_cards_ids, self.col)
         if use_cache:
             self.target_cards_cache[cache_key] = target_cards
         return target_cards
 
-    def __get_cached_corpus_data(self, target_cards: TargetCardsResult, col: Collection, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
+    def __get_cached_corpus_data(self, target_cards: TargetCardsResult, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
 
-        cache_key = (str(target_cards.all_cards_ids), str(self.get_notes()), col, word_frequency_lists)
+        cache_key = (str(target_cards.all_cards_ids), str(self.get_notes()), self.col, word_frequency_lists)
         if cache_key in self.corpus_cache:
             return self.corpus_cache[cache_key]
 
         target_corpus_data = TargetCorpusData()
-        target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), col, word_frequency_lists)
+        target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), self.col, word_frequency_lists)
         self.corpus_cache[cache_key] = target_corpus_data
         return target_corpus_data
 
-    def reorder_cards(self, reorder_starting_from: int, word_frequency_lists: WordFrequencyLists, col: Collection, event_logger: EventLogger) -> TargetReorderResult:
+    def reorder_cards(self, reorder_starting_from: int, word_frequency_lists: WordFrequencyLists,
+                      event_logger: EventLogger, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> TargetReorderResult:
 
         from .card_ranker import CardRanker
 
@@ -249,7 +250,7 @@ class Target:
 
         # Get cards for target
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):
-            target_cards = self.get_cards(col, use_cache=True)
+            target_cards = self.get_cards(use_cache=True)
 
         num_new_cards = len(target_cards.new_cards_ids)
 
@@ -262,13 +263,13 @@ class Target:
         # Get corpus data
 
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
-            target_corpus_data = self.__get_cached_corpus_data(target_cards, col, word_frequency_lists)
+            target_corpus_data = self.__get_cached_corpus_data(target_cards, word_frequency_lists)
 
         # If reorder scope is defined, use it for reordering
         reorder_scope_query = self.__get_reorder_scope_query()
         reorder_scope_target_cards = target_cards
         if reorder_scope_query:
-            new_target_cards = self.get_cards(col, reorder_scope_query)
+            new_target_cards = self.get_cards(reorder_scope_query)
             if not new_target_cards.all_cards:
                 event_logger.add_entry("Reorder scope query yielded no results!")
                 return TargetReorderResult(success=False, error="Reorder scope query yielded no results!")
@@ -289,7 +290,7 @@ class Target:
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
 
-            card_ranker = CardRanker(target_corpus_data, word_frequency_lists, col)
+            card_ranker = CardRanker(target_corpus_data, word_frequency_lists, self.col, modified_dirty_notes)
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():
@@ -312,8 +313,8 @@ class Target:
             event_logger.add_entry("Repositioning {:n} cards not needed for this target.".format(len(sorted_cards_ids)))
         else:
             event_logger.add_entry("Repositioning {:n} cards for this target.".format(len(sorted_cards_ids)))
-            col.sched.schedule_cards_as_new(sorted_cards_ids)
-            repositioning_anki_op_changes = col.sched.reposition_new_cards(
+            self.col.sched.schedule_cards_as_new(sorted_cards_ids)
+            repositioning_anki_op_changes = self.col.sched.reposition_new_cards(
                 card_ids=sorted_cards_ids,
                 starting_from=reorder_starting_from,
                 step_size=1,
@@ -327,6 +328,5 @@ class Target:
             sorted_cards_ids=sorted_cards_ids,
             target_cards=target_cards,
             num_cards_repositioned=num_cards_repositioned,
-            repositioning_anki_op_changes=repositioning_anki_op_changes,
-            modified_dirty_notes=card_ranker.modified_dirty_notes
+            repositioning_anki_op_changes=repositioning_anki_op_changes
         )

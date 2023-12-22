@@ -84,16 +84,17 @@ class AggregatedFieldsMetrics:
 
 class CardRanker:
 
-    modified_dirty_notes: dict[NoteId, Note]
+    modified_dirty_notes: dict[NoteId, Optional[Note]]
     ranking_factors_span: dict[str, float]
     ranking_factors_stats: Optional[dict[str, dict[str, float]]]
 
-    def __init__(self, cards_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists, col: Collection) -> None:
+    def __init__(self, cards_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists,
+                 col: Collection, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> None:
 
         self.cards_corpus_data = cards_corpus_data
         self.word_frequency_lists = word_frequency_lists
         self.col = col
-        self.modified_dirty_notes = {}
+        self.modified_dirty_notes = modified_dirty_notes
         self.ranking_factors_stats = None
 
         self.ranking_factors_span = {
@@ -372,6 +373,9 @@ class CardRanker:
 
         for note_id, note in notes_from_new_cards.items():
 
+            if note_id in self.modified_dirty_notes:
+                continue
+
             note_metrics = notes_metrics[note_id]
 
             # set data in card fields
@@ -445,21 +449,23 @@ class CardRanker:
     def __update_meta_data_for_notes_with_non_new_cards(self, target_cards: TargetCardsResult) -> None:
 
         for note_id, note in target_cards.get_notes().items():
-            if not note_id in self.modified_dirty_notes:
-                update_note = False
-                field_to_clear = ['fm_debug_info', 'fm_debug_ranking_info', 'fm_debug_words_info', 'fm_seen_words', 'fm_unseen_words']
-                for field_name in field_to_clear:
-                    if field_name in note and note[field_name] != '':
-                        note[field_name] = ''
-                        update_note = True
+            if note_id in self.modified_dirty_notes:
+                continue
 
-                if 'fm_focus_words' in note:
-                    focus_words_per_field: list[str] = []
-                    for focus_words in self.__get_note_field_metrics(note_id).focus_words:
-                        focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
-                        focus_words_per_field.append(", ".join([word for word in focus_words.keys()]))
-                    note['fm_focus_words'] = " | ".join(focus_words_per_field).strip("| ")
+            update_note = False
+            field_to_clear = ['fm_debug_info', 'fm_debug_ranking_info', 'fm_debug_words_info', 'fm_seen_words', 'fm_unseen_words']
+            for field_name in field_to_clear:
+                if field_name in note and note[field_name] != '':
+                    note[field_name] = ''
                     update_note = True
 
-                if update_note:
-                    self.modified_dirty_notes[note_id] = note
+            if 'fm_focus_words' in note:
+                focus_words_per_field: list[str] = []
+                for focus_words in self.__get_note_field_metrics(note_id).focus_words:
+                    focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
+                    focus_words_per_field.append(", ".join([word for word in focus_words.keys()]))
+                note['fm_focus_words'] = " | ".join(focus_words_per_field).strip("| ")
+                update_note = True
+
+            if update_note:
+                self.modified_dirty_notes[note_id] = note

@@ -75,7 +75,7 @@ class TestTargetListReorder:
         ])
 
         assert len(target_list) == 1
-        pre_sort_cards = target_list[0].get_cards(col)
+        pre_sort_cards = target_list[0].get_cards()
 
         # reorder cards
         event_logger = EventLogger()
@@ -83,21 +83,22 @@ class TestTargetListReorder:
 
         assert isinstance(result, TargetListReorderResult)
         assert len(result.reorder_result_list) == len(target_list)
+        assert len(result.modified_dirty_notes) == 7895
 
         # check result
-        reorder_result = result.reorder_result_list[0]
-        assert reorder_result.success
-        assert reorder_result.cards_repositioned
-        assert reorder_result.error is None
-        assert len(reorder_result.sorted_cards_ids) == len(pre_sort_cards.new_cards_ids)
-        assert reorder_result.sorted_cards_ids != pre_sort_cards.new_cards_ids
-        assert reorder_result.sorted_cards_ids == target_list[0].get_cards(col).new_cards_ids
-        assert len(reorder_result.modified_dirty_notes) == 7895
+        target_result = result.reorder_result_list[0]
+        assert target_result.success
+        assert target_result.cards_repositioned
+        assert target_result.error is None
+        assert len(target_result.sorted_cards_ids) == len(pre_sort_cards.new_cards_ids)
+        assert target_result.sorted_cards_ids != pre_sort_cards.new_cards_ids
+        assert target_result.sorted_cards_ids == target_list[0].get_cards().new_cards_ids
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Repositioning 6566 cards" in str(event_logger)
+        assert "Updating 7895 modified notes" in str(event_logger)
 
         # check order
-        assert_locked_order(reorder_result.sorted_cards_ids)
+        assert_locked_order(target_result.sorted_cards_ids)
 
     def test_two_deck_collection(self):
 

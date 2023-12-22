@@ -130,13 +130,9 @@ class CardRanker:
 
     def calc_cards_ranking(self, target_cards: TargetCardsResult) -> dict[CardId, float]:
 
-        notes_from_new_cards: dict[NoteId, Note] = {}
-
         # card ranking is calculates per note (which may have different card, but same ranking)
 
-        for card in target_cards.new_cards:
-            if card.nid not in notes_from_new_cards:
-                notes_from_new_cards[card.nid] = self.col.get_note(card.nid)
+        notes_from_new_cards = target_cards.get_notes_from_new_cards()
 
         # get ranking factors for notes
 
@@ -147,7 +143,7 @@ class CardRanker:
         notes_ranking_scores_normalized, notes_rankings = self.__calc_notes_ranking(notes_ranking_factors)
 
         # Set meta data that will be saved in note fields
-        self.__set_fields_meta_data_for_note(notes_from_new_cards, notes_ranking_scores_normalized, notes_metrics)
+        self.__set_fields_meta_data_for_notes(notes_from_new_cards, notes_ranking_scores_normalized, notes_metrics)
         self.__update_meta_data_for_notes_with_non_new_cards(target_cards)  # reviewed card also need updating
 
         #
@@ -372,7 +368,7 @@ class CardRanker:
 
         return field_metrics
 
-    def __set_fields_meta_data_for_note(self, notes_from_new_cards: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]], notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
+    def __set_fields_meta_data_for_notes(self, notes_from_new_cards: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]], notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
 
         for note_id, note in notes_from_new_cards.items():
 
@@ -435,7 +431,7 @@ class CardRanker:
             if update_note:
                 self.modified_dirty_notes[note_id] = note
 
-    def __get_note_focus_word(self, note_id: NoteId) -> AggregatedFieldsMetrics:
+    def __get_note_field_metrics(self, note_id: NoteId) -> AggregatedFieldsMetrics:
 
         note_fields_defined_in_target = self.cards_corpus_data.fields_per_card_note[note_id]
         note_metrics = AggregatedFieldsMetrics()
@@ -459,7 +455,7 @@ class CardRanker:
 
                 if 'fm_focus_words' in note:
                     focus_words_per_field: list[str] = []
-                    for focus_words in self.__get_note_focus_word(note_id).focus_words:
+                    for focus_words in self.__get_note_field_metrics(note_id).focus_words:
                         focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
                         focus_words_per_field.append(", ".join([word for word in focus_words.keys()]))
                     note['fm_focus_words'] = " | ".join(focus_words_per_field).strip("| ")

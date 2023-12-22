@@ -12,10 +12,6 @@ from .word_frequency_list import WordFrequencyLists
 from .target_corpus_data import LangKey, TargetCorpusData
 
 
-ConfigTargetDataNotes = TypedDict('ConfigTargetDataNotes', {'name': str, 'fields': dict[str, str]})
-ConfigTargetData = TypedDict('ConfigTargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
-
-
 class TargetCardsResult:
 
     col: Collection
@@ -23,22 +19,34 @@ class TargetCardsResult:
     all_cards: list[Card]
     new_cards: list[Card]
     new_cards_ids: list[CardId]
+    notes_from_cards: dict[NoteId, Note]
 
     def __init__(self, all_cards_ids: Sequence[CardId], col: Collection) -> None:
+
         self.all_cards_ids = all_cards_ids
         self.all_cards = [col.get_card(card_id) for card_id in self.all_cards_ids]
         self.new_cards = [card for card in self.all_cards if card.queue == 0]
         self.new_cards_ids = [card.id for card in self.new_cards]
         self.col = col
+        self.notes_from_cards = {}
 
     def get_notes(self) -> dict[NoteId, Note]:
-        notes_from_cards: dict[NoteId, Note] = {}
 
         for card in self.all_cards:
-            if card.nid not in notes_from_cards:
-                notes_from_cards[card.nid] = self.col.get_note(card.nid)
+            if card.nid not in self.notes_from_cards:
+                self.notes_from_cards[card.nid] = self.col.get_note(card.nid)
 
-        return notes_from_cards
+        return self.notes_from_cards
+
+    def get_notes_from_new_cards(self) -> dict[NoteId, Note]:
+
+        notes_from_new_cards: dict[NoteId, Note] = {}
+        for card in self.new_cards:
+            if card.nid not in self.notes_from_cards:
+                self.notes_from_cards[card.nid] = self.col.get_note(card.nid)
+            notes_from_new_cards[card.nid] = self.notes_from_cards[card.nid]
+
+        return notes_from_new_cards
 
 
 class TargetReorderResult():

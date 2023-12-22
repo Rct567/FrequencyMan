@@ -106,7 +106,7 @@ class ReorderCardsTab:
 
         # textarea (user can input json to define targets)
         self.targets_input_textarea = TargetsDefiningTextArea()
-        self.targets_input_textarea.set_validator(self.target_list.handle_json)
+        self.targets_input_textarea.set_validator(self.target_list.get_validated_data_from_json)
 
         def update_textarea_text_color_by_validity(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
             palette = QPalette()
@@ -222,7 +222,7 @@ class ReorderCardsTab:
 
         @pyqtSlot()
         def user_clicked_reset_button():
-            (_, targets_defined, _) = self.target_list.handle_json(self.targets_input_textarea.toPlainText())
+            (_, targets_defined, _) = self.target_list.get_validated_data_from_json(self.targets_input_textarea.toPlainText())
 
             if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
                 showInfo("Defined targets are the same as those stored in the configuration!")
@@ -248,7 +248,7 @@ class ReorderCardsTab:
 
         @pyqtSlot()
         def user_clicked_save_button():
-            (json_validity_state, targets_defined, _) = self.target_list.handle_json(self.targets_input_textarea.toPlainText())
+            (json_validity_state, targets_defined, _) = self.target_list.get_validated_data_from_json(self.targets_input_textarea.toPlainText())
 
             if (json_validity_state == 1 and self.fm_window.addon_config['reorder_target_list'] != targets_defined):
                 self.fm_window.addon_config['reorder_target_list'] = targets_defined

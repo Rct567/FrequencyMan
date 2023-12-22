@@ -40,6 +40,7 @@ class TargetList:
         return self.target_list[index]
 
     def set_targets(self, target_list: list[ConfigTargetData]) -> tuple[int, str]:
+
         (validity_state, err_desc) = self.validate_list(target_list)
         if (validity_state == 1):
             self.target_list = [Target(target, target_num, self.col) for target_num, target in enumerate(target_list)]
@@ -53,6 +54,7 @@ class TargetList:
         return json.dumps(target_list, indent=4)
 
     def validate_target(self, target: ConfigTargetData, index: int) -> tuple[int, str]:
+
         if not isinstance(target, dict):
             return (0, "Target #{} is not a valid type (object expected). ".format(index))
         if len(target.keys()) == 0:
@@ -94,6 +96,7 @@ class TargetList:
         return (1, "")
 
     def validate_list(self, target_data: list[ConfigTargetData]) -> tuple[int, str]:
+
         if not isinstance(target_data, list):
             return (0, "Reorder target is not a list (array expected).")
         elif len(target_data) < 1:
@@ -104,7 +107,8 @@ class TargetList:
                 return (0, err_desc)
         return (1, "")
 
-    def handle_json(self, json_data: str) -> tuple[int, list[ConfigTargetData], str]:
+    def get_validated_data_from_json(self, json_data: str) -> tuple[int, list[ConfigTargetData], str]:
+
         if json_data == "":
             return (0, [], "")
         try:
@@ -122,6 +126,7 @@ class TargetList:
         modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
         num_cards_repositioned = 0
 
+        # Reposition cards for each target
         for target in self.target_list:
             with event_logger.add_benchmarked_entry(f"Reordering target #{target.index_num}."):
                 reorder_result = target.reorder_cards(num_cards_repositioned+1, self.word_frequency_lists, event_logger, modified_dirty_notes)

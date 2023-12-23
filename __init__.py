@@ -1,3 +1,8 @@
+"""
+FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
+See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
+"""
+
 from aqt import QAction
 from aqt.qt import *
 from aqt.main import AnkiQt

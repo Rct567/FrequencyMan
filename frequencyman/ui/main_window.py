@@ -1,3 +1,8 @@
+"""
+FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
+See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
+"""
+
 from typing import Any, Tuple, Callable
 
 from aqt import QAction
@@ -10,6 +15,7 @@ from aqt.main import AnkiQt
 class FrequencyManMainWindow(QDialog):
 
     root_dir: str
+
     tab_menu_options: dict[str, QWidget]
 
     addon_config: dict[str, Any]

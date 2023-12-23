@@ -1,6 +1,9 @@
-from enum import Enum
+"""
+FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
+See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
+"""
+
 import json
-from time import sleep
 from typing import Optional, Tuple, Callable
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount

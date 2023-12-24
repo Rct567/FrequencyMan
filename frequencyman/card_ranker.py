@@ -113,7 +113,7 @@ class CardRanker:
             'words_familiarity_scores': 0.0,
             'words_familiarity_sweetspot_scores': 1.0,
             'lowest_fr_least_familiar_word_scores': 1.0,
-            'ideal_unseen_word_count': 0.1,
+            'ideal_unseen_word_count': 0.01,
         }
 
     @staticmethod

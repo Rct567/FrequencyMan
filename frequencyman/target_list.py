@@ -146,8 +146,13 @@ class TargetList:
         update_notes_anki_op_changes: Optional[OpChanges] = None
         num_modified_dirty_notes = len(modified_dirty_notes)
         if (num_modified_dirty_notes > 0):
-            with event_logger.add_benchmarked_entry("Updating {:n} modified notes from targets.".format(num_modified_dirty_notes)):
-                update_notes_anki_op_changes = col.update_notes([note for note in modified_dirty_notes.values() if note is not None])
+            notes_to_update = [note for note in modified_dirty_notes.values() if note is not None]
+            with event_logger.add_benchmarked_entry("Updating {:n} modified notes from targets.".format(len(notes_to_update))):
+                update_notes_anki_op_changes = col.update_notes(notes_to_update)
+
+        # Clear cache
+        Target.corpus_cache = {}
+        Target.target_cards_cache = {}
 
         # Done
         event_logger.add_entry("Done with reordering of all targets! {:n} cards repositioned.".format(num_cards_repositioned))

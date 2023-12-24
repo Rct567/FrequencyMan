@@ -96,7 +96,7 @@ class TestTargetListReorder:
         assert target_result.sorted_cards_ids == target_list[0].get_cards().new_cards_ids
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Repositioning 6566 cards" in str(event_logger)
-        assert "Updating 7895 modified notes" in str(event_logger)
+        assert "Updating 5479 modified notes" in str(event_logger)
 
         # check value of focus words
         assert col.get_note(NoteId(1548089874907))['fm_focus_words'] == "ajedrez | chess"

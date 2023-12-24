@@ -33,6 +33,7 @@ def test_get_word_frequency(word_frequency_lists: WordFrequencyLists):
     frequency = word_frequency_lists.get_word_frequency(LangKey('en'), 'ccc', default=-1.0)
     assert frequency == 1/3
 
+
 def test_get_word_frequency_from_combined_files(word_frequency_lists: WordFrequencyLists):
 
     word_frequency_lists.load_frequency_lists([LangKey('jp')])

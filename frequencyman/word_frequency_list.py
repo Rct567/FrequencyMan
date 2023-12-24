@@ -104,7 +104,7 @@ class WordFrequencyLists:
                 continue
 
             for word, line_number in self.__get_word_rankings_from_file(file_path):
-                if word not in all_files_word_rankings_combined or line_number < all_files_word_rankings_combined[word]: # highest ranking among lists (lowest line number)
+                if word not in all_files_word_rankings_combined or line_number < all_files_word_rankings_combined[word]:  # highest ranking among lists (lowest line number)
                     all_files_word_rankings_combined[word] = line_number
 
         max_rank = max(all_files_word_rankings_combined.values())

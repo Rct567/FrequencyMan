@@ -296,21 +296,21 @@ class CardRanker:
             # define ranking factors for note, based on avg of fields
 
             notes_ranking_factors['words_fr_score'][note_id] = fmean(note_metrics.fr_scores)
-            notes_ranking_factors['words_ld_score'][note_id]  = fmean(note_metrics.ld_scores)
+            notes_ranking_factors['words_ld_score'][note_id] = fmean(note_metrics.ld_scores)
 
-            notes_ranking_factors['lowest_fr_word_score'][note_id]  = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
-            notes_ranking_factors['highest_ld_word_score'][note_id]  = fmean([highest_ld_word[1] for highest_ld_word in note_metrics.highest_ld_word])
+            notes_ranking_factors['lowest_fr_word_score'][note_id] = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
+            notes_ranking_factors['highest_ld_word_score'][note_id] = fmean([highest_ld_word[1] for highest_ld_word in note_metrics.highest_ld_word])
 
-            notes_ranking_factors['most_obscure_word'][note_id]  = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
+            notes_ranking_factors['most_obscure_word'][note_id] = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
 
-            notes_ranking_factors['ideal_word_count'][note_id]  = fmean(note_metrics.ideal_words_count_scores)
-            notes_ranking_factors['ideal_focus_word_count'][note_id]  = fmean(note_metrics.ideal_focus_words_count_scores)
+            notes_ranking_factors['ideal_word_count'][note_id] = fmean(note_metrics.ideal_words_count_scores)
+            notes_ranking_factors['ideal_focus_word_count'][note_id] = fmean(note_metrics.ideal_focus_words_count_scores)
 
-            notes_ranking_factors['words_familiarity_scores'][note_id]  = fmean(note_metrics.familiarity_scores)
-            notes_ranking_factors['words_familiarity_sweetspot_scores'][note_id]  = fmean(note_metrics.familiarity_sweetspot_scores)
+            notes_ranking_factors['words_familiarity_scores'][note_id] = fmean(note_metrics.familiarity_scores)
+            notes_ranking_factors['words_familiarity_sweetspot_scores'][note_id] = fmean(note_metrics.familiarity_sweetspot_scores)
 
-            notes_ranking_factors['lowest_fr_least_familiar_word_scores'][note_id]  = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
-            notes_ranking_factors['ideal_unseen_word_count'][note_id]  = fmean(note_metrics.ideal_unseen_words_count_scores)
+            notes_ranking_factors['lowest_fr_least_familiar_word_scores'][note_id] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
+            notes_ranking_factors['ideal_unseen_word_count'][note_id] = fmean(note_metrics.ideal_unseen_words_count_scores)
 
             notes_metrics[note_id] = note_metrics
 

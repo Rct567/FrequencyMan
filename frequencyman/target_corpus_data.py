@@ -173,7 +173,6 @@ class TargetCorpusData:
                         self.notes_fields_data.reviewed_words[field_key][word_token] = []
                     self.notes_fields_data.reviewed_words[field_key][word_token].append(card)
 
-
     def __set_notes_reviewed_words_presence(self) -> None:
 
         card_memorized_scores = self.__get_reviewed_words_card_memorized_scores()
@@ -199,7 +198,6 @@ class TargetCorpusData:
 
                     self.notes_fields_data.reviewed_words_presence[field_key][word_token].append(presence_impact_score)
                     self.notes_fields_data.reviewed_words_presence_card_score[field_key][word_token].append(card_memorized_scores[card.id])
-
 
     def __set_notes_reviewed_words_familiarity(self) -> None:
         """

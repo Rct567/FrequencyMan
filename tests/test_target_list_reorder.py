@@ -113,7 +113,7 @@ class TestTargetListReorder:
 
         # these were empty before, but should now have a value
         notes_none_empty_focus_word = {1548089873399, 1548089879591, 1546160205490, 1562346819967, 1546959316161, 1562346819250, 1548089878113,
-        1548089874025, 1651511363702, 1548089877279, 1548089878563, 1548089878527}
+                                       1548089874025, 1651511363702, 1548089877279, 1548089878563, 1548089878527}
 
         for note_id in notes_none_empty_focus_word:
             assert len(col.get_note(NoteId(note_id))['fm_focus_words']) > 20

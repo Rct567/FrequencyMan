@@ -133,6 +133,12 @@ class Target:
     def get(self, key, default=None):
         return self.target.get(key, default)
 
+    def getFloat(self, key: str) -> Optional[float]:
+        val =  self.target.get(key)
+        if val and str(val).replace(".", "").isnumeric():
+            return float(val)
+        return None
+
     def get_notes(self) -> dict[str, dict[str, str]]:
         return {note.get('name'): note.get('fields', {}) for note in self.target.get('notes', [])}
 
@@ -229,6 +235,9 @@ class Target:
             return self.corpus_cache[cache_key]
 
         target_corpus_data = TargetCorpusData()
+        if familiarity_sweetspot_point := self.getFloat('familiarity_sweetspot_point'):
+            target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
+
         target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), self.col, word_frequency_lists)
         self.corpus_cache[cache_key] = target_corpus_data
         return target_corpus_data
@@ -299,9 +308,8 @@ class Target:
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():
-                target_setting_val = self.get('ranking_'+attribute)
-                if target_setting_val is not None and str(target_setting_val).replace(".", "").isnumeric():
-                    card_ranker.ranking_factors_span[attribute] = float(target_setting_val)
+                if target_setting_val := self.getFloat('ranking_'+attribute):
+                    card_ranker.ranking_factors_span[attribute] = target_setting_val
 
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards)

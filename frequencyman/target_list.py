@@ -69,7 +69,7 @@ class TargetList:
         for key in target.keys():
             if key == "":
                 return (0, "Target #{} has an empty key.".format(index))
-            elif key not in ("deck", "decks", "notes", "scope_query", "reorder_scope_query") and not key.startswith("ranking_"):
+            elif key not in ("deck", "decks", "notes", "scope_query", "reorder_scope_query", "familiarity_sweetspot_point") and not key.startswith("ranking_"):
                 return (0, "Target #{} has unknown key '{}'.".format(index, key))
         # check field value for notes
         if 'notes' not in target.keys():

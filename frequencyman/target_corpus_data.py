@@ -62,11 +62,14 @@ class TargetCorpusData:
     target_cards_reviewed: Iterable[Card]
     fields_per_card_note: dict[NoteId, list[TargetFieldData]]
     notes_fields_data: NoteFieldContentData
+    familiarity_sweetspot_point: float
+
 
     def __init__(self):
 
         self.fields_per_card_note = {}
         self.notes_fields_data = NoteFieldContentData()
+        self.familiarity_sweetspot_point = 0.75
 
     def create_data(self, target_cards: Iterable[Card], target_fields_by_notes_name: dict[str, dict[str, str]], col: Collection, word_frequency_lists: WordFrequencyLists) -> None:
         """
@@ -253,11 +256,12 @@ class TargetCorpusData:
             for word_token in self.notes_fields_data.reviewed_words_familiarity[field_key]:
 
                 familiarity = self.notes_fields_data.reviewed_words_familiarity[field_key][word_token]
+                familiarity_sweetspot_value = median_familiarity*self.familiarity_sweetspot_point
 
-                if (familiarity > median_familiarity*2):
+                if (familiarity > familiarity_sweetspot_value*2.6666):
                     continue
 
-                familiarity_sweetspot_rating = 1-abs(familiarity-(median_familiarity*0.75))
+                familiarity_sweetspot_rating = 1-abs(familiarity-familiarity_sweetspot_value)
 
                 self.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key][word_token] = familiarity_sweetspot_rating
 

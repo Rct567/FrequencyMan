@@ -13,7 +13,7 @@ from anki.notes import Note, NoteId
 
 from .card_ranker import CardRanker
 
-from .target import ConfigTargetData, TargetReorderResult, Target, ConfigTargetDataNotes
+from .target import ConfigTargetData, TargetReorderResult, Target, ConfigTargetDataNote
 from .word_frequency_list import WordFrequencyLists
 from .lib.event_logger import EventLogger
 
@@ -57,7 +57,7 @@ class TargetList:
         return len(self.target_list) > 0
 
     def dump_json(self) -> str:
-        target_list = [target.target for target in self.target_list]
+        target_list = [target.config_target for target in self.target_list]
         return json.dumps(target_list, indent=4)
 
     def validate_target(self, target: ConfigTargetData, index: int) -> tuple[int, str]:
@@ -91,10 +91,10 @@ class TargetList:
             if "fields" not in note:
                 return (0, "Note object specified in target[{}].notes is is missing key 'fields'.".format(index))
 
-            note_model = self.col.models.by_name(note.get('name'))
+            note_model = self.col.models.by_name(note['name'])
 
             if not note_model:
-                return (0, "Name '{}' for note object specified in target[{}].notes does not exist.".format(note.get('name'), index))
+                return (0, "Name '{}' for note object specified in target[{}].notes does not exist.".format(note['name'], index))
 
             for field_name, defined_lang_key in note.get('fields', {}).items():
                 if not any(field['name'] == field_name for field in note_model['flds']):

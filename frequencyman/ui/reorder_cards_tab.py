@@ -20,7 +20,7 @@ from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log
 
 from ..word_frequency_list import WordFrequencyLists
-from ..target_list import ConfigTargetData, TargetList, TargetListReorderResult, ConfigTargetDataNotes
+from ..target_list import ConfigTargetData, TargetList, TargetListReorderResult, ConfigTargetDataNote
 
 
 class TargetsDefiningTextArea(QTextEdit):
@@ -138,7 +138,7 @@ class ReorderCardsTab:
         if (self.target_list.has_targets()):
             self.targets_input_textarea.set_target_list(self.target_list)
         else:  # when does this even happen?
-            example_data_notes_item: ConfigTargetDataNotes = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
+            example_data_notes_item: ConfigTargetDataNote = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
             example_target: ConfigTargetData = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
             example_target_list = [example_target]
             self.targets_input_textarea.setText(json.dumps(example_target_list, indent=4))

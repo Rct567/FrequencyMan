@@ -93,88 +93,71 @@ class TargetReorderResult():
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 
 
-class ConfigTargetDataNotes(TypedDict):
+class ConfigTargetDataNote(TypedDict):
     name: str
     fields: dict[str, str]
 
 
 class ConfigTargetData(TypedDict, total=False):
-    deck:str
-    decks:str
-    reorder_scope_query:str
-    notes: list[ConfigTargetDataNotes]
+    deck: str
+    decks: str
+    scope_query: str
+    reorder_scope_query: str
+    notes: list[ConfigTargetDataNote]
 
 
 class Target:
 
-    target: ConfigTargetData
+    config_target: ConfigTargetData
     index_num: int
-    col: Collection
     scope_query: Optional[str]
+    col: Collection
     reorder_scope_query: Optional[str]
 
     corpus_cache: dict[tuple, TargetCorpusData] = {}
     target_cards_cache: dict[tuple, TargetCardsResult] = {}
 
     def __init__(self, target: ConfigTargetData, index_num: int, col: Collection) -> None:
-        self.target = target
+        self.config_target = target
         self.index_num = index_num
         self.scope_query = None
         self.reorder_scope_query = None
         self.col = col
 
-    def __getitem__(self, key):
-        return self.target[key]
-
-    def __contains__(self, key):
-        return key in self.target
-
-    def keys(self):
-        return self.target.keys()
-
-    def values(self):
-        return self.target.values()
-
-    def items(self):
-        return self.target.items()
-
-    def get(self, key, default=None):
-        return self.target.get(key, default)
-
-    def getFloat(self, key: str) -> Optional[float]:
-        val =  self.target.get(key)
-        if val and str(val).replace(".", "").isnumeric():
+    def get_config_target_float_val(self, key: str) -> Optional[float]:
+        val = self.config_target.get(key, "")
+        if isinstance(val, str) and val.replace(".", "").isnumeric():
             return float(val)
         return None
 
     def get_notes(self) -> dict[str, dict[str, str]]:
-        return {note.get('name'): note.get('fields', {}) for note in self.target.get('notes', [])}
+        return {note['name']: note['fields'] for note in self.config_target.get('notes', [])}
 
     def __get_all_language_keys(self) -> list[LangKey]:
         keys = []
-        for note in self.target.get('notes', []):
+        for note in self.config_target.get('notes', []):
             for lang_key in note['fields'].values():
                 keys.append(LangKey(lang_key.lower()))
         return keys
 
     def __get_query_defined_scope(self) -> Optional[str]:
 
-        scope_queries = []
+        scope_queries: list[str] = []
 
         # defined deck
 
-        target_decks = []
+        target_decks: list[str] = []
 
-        if "deck" in self.target:
-            if isinstance(self.target.get("deck"), str) and len(self.target.get("deck", "")) > 0:
-                target_decks.append(self.target.get("deck"))
-            elif isinstance(self.target.get("deck"), list):
-                target_decks.extend([deck_name for deck_name in self.target.get("deck", []) if isinstance(deck_name, str) and len(deck_name) > 0])
-        if "decks" in self.target:
-            if isinstance(self.target.get("decks"), str) and len(self.target.get("decks", "")) > 1:
-                target_decks.extend([deck_name.strip(" ,") for deck_name in self.target.get("decks", "").split(",") if len(deck_name.strip(" ,")) > 0])
-            elif isinstance(self.target.get("decks"), list):
-                target_decks.extend([deck_name for deck_name in self.target.get("decks", []) if isinstance(deck_name, str) and len(deck_name) > 0])
+        if "deck" in self.config_target:
+            if isinstance(self.config_target["deck"], str) and len(self.config_target["deck"]) > 0:
+                target_decks.append(self.config_target["deck"])
+            elif isinstance(self.config_target["deck"], list):
+                target_decks.extend([deck_name for deck_name in self.config_target["deck"] if isinstance(deck_name, str) and len(deck_name) > 0])
+        if "decks" in self.config_target:
+            if isinstance(self.config_target["decks"], str) and len(self.config_target["decks"]) > 1:
+                target_decks.extend([deck_name.strip(" ,") for deck_name in self.config_target["decks"].split(",") if len(deck_name.strip(" ,")) > 0])
+            elif isinstance(self.config_target["decks"], list):
+                target_decks.extend([deck_name for deck_name in self.config_target["decks"] if isinstance(deck_name, str) and len(deck_name) > 0])
 
         if len(target_decks) > 0:
             for deck_name in target_decks:
@@ -183,8 +166,8 @@ class Target:
 
         # scope query
 
-        if "scope_query" in self.target and isinstance(self.target.get("scope_query"), str) and len(self.target.get("scope_query")) > 0:
-            scope_queries.append(self.target.get('scope_query'))
+        if "scope_query" in self.config_target and isinstance(self.config_target["scope_query"], str) and len(self.config_target["scope_query"]) > 0:
+            scope_queries.append(self.config_target["scope_query"])
 
         # result
         if len(scope_queries) > 0:
@@ -194,7 +177,7 @@ class Target:
         return ""
 
     def __construct_scope_query(self) -> str:
-        target_notes = self.target.get("notes", []) if isinstance(self.target.get("notes"), list) else []
+        target_notes = self.config_target.get("notes", []) if isinstance(self.config_target.get("notes"), list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
 
         if len(note_queries) < 1:
@@ -216,8 +199,8 @@ class Target:
 
     def __get_reorder_scope_query(self) -> Optional[str]:
         if self.reorder_scope_query is None:
-            if isinstance(self.target.get("reorder_scope_query"), str) and len(self.target.get("reorder_scope_query", "")) > 0:
-                self.reorder_scope_query = self.__construct_scope_query()+" AND ("+self.target.get("reorder_scope_query", "")+")"
+            if isinstance(self.config_target.get("reorder_scope_query"), str) and len(self.config_target.get("reorder_scope_query", "")) > 0:
+                self.reorder_scope_query = self.__construct_scope_query()+" AND ("+self.config_target.get("reorder_scope_query", "")+")"
         return self.reorder_scope_query
 
     def get_cards(self, search_query: Optional[str] = None, use_cache: bool = False) -> TargetCardsResult:
@@ -243,7 +226,7 @@ class Target:
             return self.corpus_cache[cache_key]
 
         target_corpus_data = TargetCorpusData()
-        if familiarity_sweetspot_point := self.getFloat('familiarity_sweetspot_point'):
+        if familiarity_sweetspot_point := self.get_config_target_float_val('familiarity_sweetspot_point'):
             target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
         target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), self.col, word_frequency_lists)
@@ -277,7 +260,7 @@ class Target:
         num_new_cards = len(target_cards.new_cards_ids)
 
         if num_new_cards < 1:
-            event_logger.add_entry("Found no new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.all_cards)))
+            event_logger.add_entry("Found no new cards in a target collection of {:n} cards.".format(len(target_cards.all_cards)))
             return TargetReorderResult(success=False, error="No new cards to reorder.")
         else:
             event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.all_cards)))
@@ -316,7 +299,7 @@ class Target:
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():
-                if target_setting_val := self.getFloat('ranking_'+attribute):
+                if target_setting_val := self.get_config_target_float_val('ranking_'+attribute):
                     card_ranker.ranking_factors_span[attribute] = target_setting_val
 
             # Calculate ranking and sort cards

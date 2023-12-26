@@ -102,8 +102,11 @@ class CardRanker:
         self.col = col
         self.modified_dirty_notes = modified_dirty_notes
         self.ranking_factors_stats = None
+        self.ranking_factors_span = self.get_default_ranking_factors_span()
 
-        self.ranking_factors_span = {
+    @staticmethod
+    def get_default_ranking_factors_span() -> dict[str, float]:
+        return {
             'words_fr_score': 0.25,
             'lowest_fr_word_score': 0.25,
             'words_ld_score': 0.25,

@@ -11,6 +11,8 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
+from .card_ranker import CardRanker
+
 from .target import ConfigTargetData, TargetReorderResult, Target, ConfigTargetDataNotes
 from .word_frequency_list import WordFrequencyLists
 from .lib.event_logger import EventLogger
@@ -69,7 +71,9 @@ class TargetList:
         for key in target.keys():
             if key == "":
                 return (0, "Target #{} has an empty key.".format(index))
-            elif key not in ("deck", "decks", "notes", "scope_query", "reorder_scope_query", "familiarity_sweetspot_point") and not key.startswith("ranking_"):
+            known_keys = {"deck", "decks", "notes", "scope_query", "reorder_scope_query", "familiarity_sweetspot_point"}
+            known_keys.update(map(lambda s: "ranking_"+s, CardRanker.get_default_ranking_factors_span().keys()))
+            if key not in known_keys:
                 return (0, "Target #{} has unknown key '{}'.".format(index, key))
         # check field value for notes
         if 'notes' not in target.keys():

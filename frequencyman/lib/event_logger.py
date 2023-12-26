@@ -41,7 +41,7 @@ class EventLogger:
         yield
         self.timed_entries_open -= 1
         elapsed_time = time.time() - start_time
-        self.event_log[index] += f" (took {elapsed_time:.2f} seconds)"
+        self.event_log[index] += " (took {:.2f} seconds)".format(elapsed_time)
 
     def append_to_file(self, target_file) -> None:
         if os.path.exists(target_file) and os.path.getsize(target_file) > 0.5 * 1024 * 1024:

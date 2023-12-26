@@ -133,7 +133,7 @@ class TargetList:
 
         # Reposition cards for each target
         for target in self.target_list:
-            with event_logger.add_benchmarked_entry(f"Reordering target #{target.index_num}."):
+            with event_logger.add_benchmarked_entry("Reordering target #{}.".format(target.index_num)):
                 reorder_result = target.reorder_cards(num_cards_repositioned+1, self.word_frequency_lists, event_logger, modified_dirty_notes)
                 reorder_result_list.append(reorder_result)
                 if reorder_result.cards_repositioned:

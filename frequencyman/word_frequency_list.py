@@ -45,9 +45,9 @@ class WordFrequencyLists:
             raise Exception("No word frequency lists loaded.")
         if key is not None:
             if key not in self.word_frequency_lists:
-                raise Exception(f"Word frequency list '{key}' not loaded.")
+                raise Exception("Word frequency list '{}' not loaded.".format(key))
             if (len(self.word_frequency_lists[key]) < 1):
-                raise Exception(f"Word frequency list '{key}' not loaded.")
+                raise Exception("Word frequency list '{}' not loaded.".format(key))
 
     def str_key_has_frequency_list_file(self, key: str) -> bool:
         return self.key_has_frequency_list_file(LangKey(key))

@@ -410,7 +410,7 @@ class CardRanker:
             if 'fm_debug_ranking_info' in note:
                 new_note_vals['fm_debug_ranking_info'] = ''
                 for info_name, info_val in notes_ranking_scores.items():
-                    new_note_vals['fm_debug_ranking_info'] += f"{info_name}: {info_val[note_id]:.3f}<br />\n"
+                    new_note_vals['fm_debug_ranking_info'] += "{}: {:.3f}<br />\n".format(info_name, info_val[note_id])
             if 'fm_debug_words_info' in note:
                 new_note_vals['fm_debug_words_info'] = ''
                 fields_words_ld_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ld_scores]

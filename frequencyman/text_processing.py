@@ -22,7 +22,7 @@ class TextProcessing:
     def acceptable_word(word: str, lang_id: Optional[str] = None) -> bool:
 
         if (lang_id is not None and len(lang_id) != 2):
-            raise ValueError(f"Invalid lang_id '{lang_id}'!")
+            raise ValueError("Invalid lang_id '{}'!".format(lang_id))
 
         min_length = 1
         if lang_id == 'zh':

@@ -86,7 +86,7 @@ class TargetCorpusData:
                 card_note_type = col.models.get(card_note.mid)
 
                 if (card_note_type is None):
-                    raise Exception(f"Card note type not found for card.nid={card_note.mid}!")
+                    raise Exception("Card note type not found for card.nid '{}'!".format(card_note.mid))
                 if card_note_type['name'] not in target_fields_by_notes_name:  # note type name is not defined as target
                     continue
 

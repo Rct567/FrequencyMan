@@ -93,8 +93,16 @@ class TargetReorderResult():
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 
 
-ConfigTargetDataNotes = TypedDict('ConfigTargetDataNotes', {'name': str, 'fields': dict[str, str]})
-ConfigTargetData = TypedDict('ConfigTargetData', {'deck': str, 'notes': list[ConfigTargetDataNotes]})
+class ConfigTargetDataNotes(TypedDict):
+    name: str
+    fields: dict[str, str]
+
+
+class ConfigTargetData(TypedDict, total=False):
+    deck:str
+    decks:str
+    reorder_scope_query:str
+    notes: list[ConfigTargetDataNotes]
 
 
 class Target:
@@ -157,12 +165,12 @@ class Target:
 
         target_decks = []
 
-        if "deck" in self:
-            if isinstance(self.target.get("deck"), str) and len(self.target.get("deck")) > 0:
-                target_decks.append(self.get("deck"))
+        if "deck" in self.target:
+            if isinstance(self.target.get("deck"), str) and len(self.target.get("deck", "")) > 0:
+                target_decks.append(self.target.get("deck"))
             elif isinstance(self.target.get("deck"), list):
                 target_decks.extend([deck_name for deck_name in self.target.get("deck", []) if isinstance(deck_name, str) and len(deck_name) > 0])
-        if "decks" in self:
+        if "decks" in self.target:
             if isinstance(self.target.get("decks"), str) and len(self.target.get("decks", "")) > 1:
                 target_decks.extend([deck_name.strip(" ,") for deck_name in self.target.get("decks", "").split(",") if len(deck_name.strip(" ,")) > 0])
             elif isinstance(self.target.get("decks"), list):
@@ -175,8 +183,8 @@ class Target:
 
         # scope query
 
-        if "scope_query" in self and isinstance(self.get("scope_query"), str) and len(self.get("scope_query")) > 0:
-            scope_queries.append(self.get('scope_query'))
+        if "scope_query" in self.target and isinstance(self.target.get("scope_query"), str) and len(self.target.get("scope_query")) > 0:
+            scope_queries.append(self.target.get('scope_query'))
 
         # result
         if len(scope_queries) > 0:
@@ -186,7 +194,7 @@ class Target:
         return ""
 
     def __construct_scope_query(self) -> str:
-        target_notes = self.get("notes", []) if isinstance(self.get("notes"), list) else []
+        target_notes = self.target.get("notes", []) if isinstance(self.target.get("notes"), list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
 
         if len(note_queries) < 1:
@@ -208,8 +216,8 @@ class Target:
 
     def __get_reorder_scope_query(self) -> Optional[str]:
         if self.reorder_scope_query is None:
-            if isinstance(self.get("reorder_scope_query"), str) and len(self.get("reorder_scope_query")) > 0:
-                self.reorder_scope_query = self.__construct_scope_query()+" AND ("+self.get("reorder_scope_query")+")"
+            if isinstance(self.target.get("reorder_scope_query"), str) and len(self.target.get("reorder_scope_query", "")) > 0:
+                self.reorder_scope_query = self.__construct_scope_query()+" AND ("+self.target.get("reorder_scope_query", "")+")"
         return self.reorder_scope_query
 
     def get_cards(self, search_query: Optional[str] = None, use_cache: bool = False) -> TargetCardsResult:

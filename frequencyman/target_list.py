@@ -12,8 +12,8 @@ from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
 from .card_ranker import CardRanker
-
 from .target import ConfigTargetData, TargetReorderResult, Target, ConfigTargetDataNote
+from .target_cards import TargetCards
 from .word_frequency_list import WordFrequencyLists
 from .lib.event_logger import EventLogger
 
@@ -157,6 +157,7 @@ class TargetList:
         # Clear cache
         Target.corpus_cache = {}
         Target.target_cards_cache = {}
+        TargetCards.notes_from_cards_cached = {}
 
         # Done
         event_logger.add_entry("Done with reordering of all targets! {:n} cards repositioned.".format(num_cards_repositioned))

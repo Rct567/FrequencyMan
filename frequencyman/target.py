@@ -9,48 +9,13 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
+
 from .lib.utilities import profile_context, var_dump, var_dump_log
 
 from .lib.event_logger import EventLogger
 from .word_frequency_list import WordFrequencyLists
 from .target_corpus_data import LangKey, TargetCorpusData
-
-
-class TargetCardsResult:
-
-    col: Collection
-    all_cards_ids: Sequence[CardId]
-    all_cards: list[Card]
-    new_cards: list[Card]
-    new_cards_ids: list[CardId]
-    notes_from_cards: dict[NoteId, Note]
-
-    def __init__(self, all_cards_ids: Sequence[CardId], col: Collection) -> None:
-
-        self.all_cards_ids = all_cards_ids
-        self.all_cards = [col.get_card(card_id) for card_id in self.all_cards_ids]
-        self.new_cards = [card for card in self.all_cards if card.queue == 0]
-        self.new_cards_ids = [card.id for card in self.new_cards]
-        self.col = col
-        self.notes_from_cards = {}
-
-    def get_notes(self) -> dict[NoteId, Note]:
-
-        for card in self.all_cards:
-            if card.nid not in self.notes_from_cards:
-                self.notes_from_cards[card.nid] = self.col.get_note(card.nid)
-
-        return self.notes_from_cards
-
-    def get_notes_from_new_cards(self) -> dict[NoteId, Note]:
-
-        notes_from_new_cards: dict[NoteId, Note] = {}
-        for card in self.new_cards:
-            if card.nid not in self.notes_from_cards:
-                self.notes_from_cards[card.nid] = self.col.get_note(card.nid)
-            notes_from_new_cards[card.nid] = self.notes_from_cards[card.nid]
-
-        return notes_from_new_cards
+from .target_cards import TargetCards
 
 
 class TargetReorderResult():
@@ -60,7 +25,7 @@ class TargetReorderResult():
     num_cards_repositioned: int
     cards_repositioned: bool
     sorted_cards_ids: list[CardId]
-    target_cards: Optional[TargetCardsResult]
+    target_cards: Optional[TargetCards]
     modified_dirty_notes: dict[NoteId, Optional[Note]]
     repositioning_anki_op_changes: Optional[OpChangesWithCount]
 
@@ -79,7 +44,7 @@ class TargetReorderResult():
         self.repositioning_anki_op_changes = None
 
     def with_repositioning_data(self, sorted_cards_ids: list[CardId], num_cards_repositioned: int,
-                                target_cards: TargetCardsResult, repositioning_anki_op_changes: Optional[OpChangesWithCount] = None):
+                                target_cards: TargetCards, repositioning_anki_op_changes: Optional[OpChangesWithCount] = None):
 
         self.sorted_cards_ids = sorted_cards_ids
         self.num_cards_repositioned = num_cards_repositioned
@@ -115,7 +80,7 @@ class Target:
     reorder_scope_query: Optional[str]
 
     corpus_cache: dict[tuple, TargetCorpusData] = {}
-    target_cards_cache: dict[tuple, TargetCardsResult] = {}
+    target_cards_cache: dict[tuple, TargetCards] = {}
 
     def __init__(self, target: ConfigTargetData, index_num: int, col: Collection) -> None:
         self.config_target = target
@@ -177,6 +142,7 @@ class Target:
         return ""
 
     def __construct_scope_query(self) -> str:
+        
         target_notes = self.config_target.get("notes", []) if isinstance(self.config_target.get("notes"), list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
 
@@ -193,33 +159,37 @@ class Target:
         return search_query
 
     def __get_scope_query(self) -> str:
+
         if self.scope_query is None:
             self.scope_query = self.__construct_scope_query()
         return self.scope_query
 
     def __get_reorder_scope_query(self) -> Optional[str]:
+
         if self.reorder_scope_query is None:
             if isinstance(self.config_target.get("reorder_scope_query"), str) and len(self.config_target.get("reorder_scope_query", "")) > 0:
                 self.reorder_scope_query = self.__construct_scope_query()+" AND ("+self.config_target.get("reorder_scope_query", "")+")"
         return self.reorder_scope_query
 
-    def get_cards(self, search_query: Optional[str] = None, use_cache: bool = False) -> TargetCardsResult:
+    def get_cards(self, search_query: Optional[str] = None, use_cache: bool = False) -> TargetCards:
 
         if not search_query:
             search_query = self.__get_scope_query()
 
-        cache_key = (search_query, str(self.get_notes()), self.col)
+        cache_key = (search_query, self.col)
 
         if use_cache and cache_key in self.target_cards_cache:
             return self.target_cards_cache[cache_key]
 
         target_cards_ids = self.col.find_cards(search_query, order="c.due asc")
-        target_cards = TargetCardsResult(target_cards_ids, self.col)
+        target_cards = TargetCards(target_cards_ids, self.col)
+
         if use_cache:
             self.target_cards_cache[cache_key] = target_cards
+
         return target_cards
 
-    def __get_cached_corpus_data(self, target_cards: TargetCardsResult, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
+    def __get_cached_corpus_data(self, target_cards: TargetCards, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
 
         cache_key = (str(target_cards.all_cards_ids), str(self.get_notes()), self.col, word_frequency_lists)
         if cache_key in self.corpus_cache:
@@ -229,7 +199,7 @@ class Target:
         if familiarity_sweetspot_point := self.get_config_target_float_val('familiarity_sweetspot_point'):
             target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
-        target_corpus_data.create_data(target_cards.all_cards, self.get_notes(), self.col, word_frequency_lists)
+        target_corpus_data.create_data(target_cards, self.get_notes(), word_frequency_lists)
         self.corpus_cache[cache_key] = target_corpus_data
         return target_corpus_data
 

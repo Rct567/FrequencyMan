@@ -14,7 +14,7 @@ from anki.cards import Card, CardId
 from anki.notes import Note, NoteId
 from anki.collection import Collection
 
-from .target import TargetCardsResult
+from .target import TargetCards
 
 from .text_processing import WordToken
 from .lib.utilities import *
@@ -138,7 +138,7 @@ class CardRanker:
         score = min(1, abs(0-(1.4*1/min(num_unseen_words, 10))))
         return score
 
-    def calc_cards_ranking(self, target_cards: TargetCardsResult) -> dict[CardId, float]:
+    def calc_cards_ranking(self, target_cards: TargetCards) -> dict[CardId, float]:
 
         # card ranking is calculates per note (which may have different card, but same ranking)
 
@@ -442,7 +442,7 @@ class CardRanker:
             for attr_name, new_attr_val in new_note_vals.items():
                 if note[attr_name] != new_attr_val:
                     note[attr_name] = new_attr_val
-                    update_note_data = True # only update if anything is different
+                    update_note_data = True  # only update if anything is different
 
             lock_note_data = len(new_note_vals) > 0
 
@@ -462,7 +462,7 @@ class CardRanker:
 
         return note_metrics
 
-    def __update_meta_data_for_notes_with_non_new_cards(self, target_cards: TargetCardsResult) -> None:
+    def __update_meta_data_for_notes_with_non_new_cards(self, target_cards: TargetCards) -> None:
 
         for note_id, note in target_cards.get_notes().items():
             if note_id in self.modified_dirty_notes:

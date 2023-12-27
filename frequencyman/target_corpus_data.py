@@ -13,6 +13,7 @@ from anki.collection import Collection
 from anki.cards import CardId, Card
 from anki.notes import NoteId
 
+from .target_cards import TargetCards
 from .word_frequency_list import LangId, LangKey, WordFrequencyLists
 from .lib.utilities import *
 from .text_processing import TextProcessing, WordToken
@@ -22,8 +23,6 @@ from .text_processing import TextProcessing, WordToken
 FieldKey = NewType('FieldKey', str)
 
 # Meta data for each field (in target)
-
-
 @dataclass(frozen=True)
 class TargetFieldData:
     field_key: FieldKey
@@ -64,14 +63,13 @@ class TargetCorpusData:
     notes_fields_data: NoteFieldContentData
     familiarity_sweetspot_point: float
 
-
     def __init__(self):
 
         self.fields_per_card_note = {}
         self.notes_fields_data = NoteFieldContentData()
         self.familiarity_sweetspot_point = 0.75
 
-    def create_data(self, target_cards: Iterable[Card], target_fields_by_notes_name: dict[str, dict[str, str]], col: Collection, word_frequency_lists: WordFrequencyLists) -> None:
+    def create_data(self, target_cards: TargetCards, target_fields_by_notes_name: dict[str, dict[str, str]], word_frequency_lists: WordFrequencyLists) -> None:
         """
         Create corpus data for the given target and its cards.
         """
@@ -81,12 +79,12 @@ class TargetCorpusData:
         if not target_cards:
             return
 
-        for card in target_cards:
+        for card in target_cards.all_cards:
 
             if card.nid not in self.fields_per_card_note:
 
-                card_note = col.get_note(card.nid)
-                card_note_type = col.models.get(card_note.mid)
+                card_note = target_cards.get_note(card.nid)
+                card_note_type = target_cards.get_model(card_note.mid)
 
                 if (card_note_type is None):
                     raise Exception("Card note type not found for card.nid '{}'!".format(card_note.mid))

@@ -181,7 +181,7 @@ class CardRanker:
             if not std_dev > 0:
                 continue
 
-            lowest_val = 0
+            lowest_val = 0.0
 
             for note_id in notes_scores.keys():
                 notes_scores[note_id] = (notes_scores[note_id] - mean_val) / std_dev
@@ -393,7 +393,7 @@ class CardRanker:
             new_note_vals: dict[str, str] = {}
 
             if 'fm_debug_info' in note:
-                debug_info = {
+                debug_info: dict[str, list] = {
                     'fr_scores': note_metrics.fr_scores,
                     'ld_scores': note_metrics.ld_scores,
                     'most_obscure_word': note_metrics.most_obscure_word,

@@ -129,9 +129,9 @@ class TargetCorpusData:
 
     def __get_reviewed_words_card_memorized_scores(self) -> dict[CardId, float]:
 
-        cards_interval: list[int] = []
-        cards_reps: list[int] = []
-        cards_ease: list[int] = []
+        cards_interval: list[float] = []
+        cards_reps: list[float] = []
+        cards_ease: list[float] = []
 
         for card in self.target_cards_reviewed:
             cards_interval.append(card.ivl)
@@ -140,7 +140,7 @@ class TargetCorpusData:
 
         # smooth out top values
 
-        for metric_list, turnover_val in [(cards_interval, 30*7), (cards_reps, 14)]:
+        for metric_list, turnover_val in ((cards_interval, 30*7), (cards_reps, 14)):
             for index in range(len(metric_list)):
                 if metric_list[index] > turnover_val:
                     metric_list[index] = mean([turnover_val, metric_list[index]])

@@ -44,7 +44,7 @@ class TargetReorderResult():
         self.repositioning_anki_op_changes = None
 
     def with_repositioning_data(self, sorted_cards_ids: list[CardId], num_cards_repositioned: int,
-                                target_cards: TargetCards, repositioning_anki_op_changes: Optional[OpChangesWithCount] = None):
+                                target_cards: TargetCards, repositioning_anki_op_changes: OpChangesWithCount):
 
         self.sorted_cards_ids = sorted_cards_ids
         self.num_cards_repositioned = num_cards_repositioned
@@ -273,7 +273,7 @@ class Target:
                 if target_setting_val := self.get_config_target_float_val('ranking_'+attribute):
                     card_ranker.ranking_factors_span[attribute] = target_setting_val
 
-            # Use custom ranking weight object 
+            # Use custom ranking weight object
             if 'ranking_factors' in self.config_target:
                 if isinstance(self.config_target['ranking_factors'], dict) and len(self.config_target['ranking_factors']) > 0:
                     card_ranker.ranking_factors_span = self.config_target['ranking_factors']
@@ -281,32 +281,34 @@ class Target:
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards)
             sorted_cards = sorted(reorder_scope_target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
-
             sorted_cards_ids = [card.id for card in sorted_cards]
 
-        # Reposition
+        # Reposition cards
         repositioning_required = reorder_scope_target_cards.new_cards_ids != sorted_cards_ids
-        repositioning_anki_op_changes = None
-        num_cards_repositioned = 0
 
         if not repositioning_required:
             event_logger.add_entry("Repositioning {:n} cards not needed for this target.".format(len(sorted_cards_ids)))
-        else:
-            event_logger.add_entry("Repositioning {:n} cards for this target.".format(len(sorted_cards_ids)))
-            self.col.sched.schedule_cards_as_new(sorted_cards_ids)
-            repositioning_anki_op_changes = self.col.sched.reposition_new_cards(
-                card_ids=sorted_cards_ids,
-                starting_from=reorder_starting_from,
-                step_size=1,
-                randomize=False,
-                shift_existing=True
-            )
-            num_cards_repositioned = len(sorted_cards_ids)
+            return TargetReorderResult(success=True)
 
-        # Result
+        return self.__reposition_cards(sorted_cards_ids, target_cards, reorder_starting_from, event_logger)
+
+    def __reposition_cards(self, sorted_cards_ids: list[CardId], target_cards: TargetCards, reorder_starting_from: int, event_logger: EventLogger) -> TargetReorderResult:
+
+        event_logger.add_entry("Repositioning {:n} cards for this target.".format(len(sorted_cards_ids)))
+
+        self.col.sched.schedule_cards_as_new(sorted_cards_ids)
+
+        repositioning_anki_op_changes = self.col.sched.reposition_new_cards(
+            card_ids=sorted_cards_ids,
+            starting_from=reorder_starting_from,
+            step_size=1,
+            randomize=False,
+            shift_existing=True
+        )
+
         return TargetReorderResult(success=True).with_repositioning_data(
             sorted_cards_ids=sorted_cards_ids,
             target_cards=target_cards,
-            num_cards_repositioned=num_cards_repositioned,
+            num_cards_repositioned=len(sorted_cards_ids),
             repositioning_anki_op_changes=repositioning_anki_op_changes
         )

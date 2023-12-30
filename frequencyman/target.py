@@ -68,6 +68,7 @@ class ConfigTargetData(TypedDict, total=False):
     decks: str
     scope_query: str
     reorder_scope_query: str
+    ranking_factors: dict[str, float]
     notes: list[ConfigTargetDataNote]
 
 
@@ -142,7 +143,7 @@ class Target:
         return ""
 
     def __construct_scope_query(self) -> str:
-        
+
         target_notes = self.config_target.get("notes", []) if isinstance(self.config_target.get("notes"), list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
 
@@ -271,6 +272,11 @@ class Target:
             for attribute in card_ranker.ranking_factors_span.keys():
                 if target_setting_val := self.get_config_target_float_val('ranking_'+attribute):
                     card_ranker.ranking_factors_span[attribute] = target_setting_val
+
+            # Use custom ranking weight object 
+            if 'ranking_factors' in self.config_target:
+                if isinstance(self.config_target['ranking_factors'], dict) and len(self.config_target['ranking_factors']) > 0:
+                    card_ranker.ranking_factors_span = self.config_target['ranking_factors']
 
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards)

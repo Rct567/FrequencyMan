@@ -66,17 +66,18 @@ class TargetList:
             return (0, "Target #{} is not a valid type (object expected). ".format(index))
         if len(target.keys()) == 0:
             return (0, "Target #{} does not have any keys.".format(index))
-        if "deck" not in target.keys() and "decks" not in target.keys() and "scope_query" not in target.keys():
+        if "deck" not in target and "decks" not in target and "scope_query" not in target:
             return (0, "Target #{} is missing key 'deck', 'decks' or 'scope_query'.".format(index))
         for key in target.keys():
             if key == "":
                 return (0, "Target #{} has an empty key.".format(index))
-            known_keys = {"deck", "decks", "notes", "scope_query", "reorder_scope_query", "familiarity_sweetspot_point"}
+            known_keys = {"deck", "decks", "notes", "scope_query", "reorder_scope_query", "ranking_factors", "familiarity_sweetspot_point"}
             known_keys.update(map(lambda s: "ranking_"+s, CardRanker.get_default_ranking_factors_span().keys()))
             if key not in known_keys:
                 return (0, "Target #{} has unknown key '{}'.".format(index, key))
+
         # check field value for notes
-        if 'notes' not in target.keys():
+        if 'notes' not in target:
             return (0, "Target object #{} is missing key 'notes'.".format(index))
         elif not isinstance(target.get('notes'), list):
             return (0, "Target object #{} value for 'notes' is not a valid type (array expected).".format(index))
@@ -102,6 +103,26 @@ class TargetList:
                 if not self.word_frequency_lists.str_key_has_frequency_list_file(defined_lang_key):
                     return (0, "No word frequency list file found for key '{}'!".format(defined_lang_key))
 
+        # check custom ranking factors object and its weights values
+        if 'ranking_factors' in target:
+            if not isinstance(target['ranking_factors'], dict):
+                return (0, "Ranking factors specified in target #{} is not a valid type (object expected).".format(index))
+            if len(target['ranking_factors']) < 0:
+                return (0, "Ranking factors specified in target #{} is empty.".format(index))
+            allowed_keys = CardRanker.get_default_ranking_factors_span().keys()
+            for key, value in target['ranking_factors'].items():
+                if key not in allowed_keys:
+                    return (0, "Ranking factors specified in target[{}].ranking_factors is unknown.".format(index))
+                if not str(value).replace(".", "").isnumeric():
+                    return (0, "Ranking factors '{}' specified in target[{}].ranking_factors has a non-numeric value.".format(key, index))
+
+        # check custom ranking weights defined
+        for key in CardRanker.get_default_ranking_factors_span().keys():
+            ranking_key = 'ranking_'+key
+            if ranking_key in target and not str(target[ranking_key]).replace(".", "").isnumeric():
+                return (0, "Custom ranking factors '{}' specified in target #{} has a non-numeric value.".format(ranking_key, index))
+
+        # defined target seems valid
         return (1, "")
 
     def validate_list(self, target_data: list[ConfigTargetData]) -> tuple[int, str]:

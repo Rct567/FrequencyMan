@@ -58,23 +58,23 @@ class TargetReorderResult():
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 
 
-class ConfigTargetDataNote(TypedDict):
+class ConfiguredTargetNote(TypedDict):
     name: str
     fields: dict[str, str]
 
 
-class ConfigTargetData(TypedDict, total=False):
+class ConfiguredTarget(TypedDict, total=False):
     deck: str
     decks: str
     scope_query: str
     reorder_scope_query: str
     ranking_factors: dict[str, float]
-    notes: list[ConfigTargetDataNote]
+    notes: list[ConfiguredTargetNote]
 
 
 class Target:
 
-    config_target: ConfigTargetData
+    config_target: ConfiguredTarget
     index_num: int
     scope_query: Optional[str]
     col: Collection
@@ -83,7 +83,7 @@ class Target:
     corpus_cache: dict[tuple, TargetCorpusData] = {}
     target_cards_cache: dict[tuple, TargetCards] = {}
 
-    def __init__(self, target: ConfigTargetData, index_num: int, col: Collection) -> None:
+    def __init__(self, target: ConfiguredTarget, index_num: int, col: Collection) -> None:
         self.config_target = target
         self.index_num = index_num
         self.scope_query = None

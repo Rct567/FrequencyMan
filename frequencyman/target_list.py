@@ -12,7 +12,7 @@ from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
 from .card_ranker import CardRanker
-from .target import ConfigTargetData, TargetReorderResult, Target, ConfigTargetDataNote
+from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote
 from .target_cards import TargetCards
 from .word_frequency_list import WordFrequencyLists
 from .lib.event_logger import EventLogger
@@ -46,9 +46,9 @@ class TargetList:
     def __getitem__(self, index: int) -> Target:
         return self.target_list[index]
 
-    def set_targets(self, target_list: list[ConfigTargetData]) -> tuple[int, str]:
+    def set_targets(self, target_list: list[ConfiguredTarget]) -> tuple[int, str]:
 
-        (validity_state, err_desc) = self.validate_list(target_list)
+        (validity_state, err_desc) = self.validate_target_list(target_list)
         if (validity_state == 1):
             self.target_list = [Target(target, target_num, self.col) for target_num, target in enumerate(target_list)]
         return (validity_state, err_desc)
@@ -60,7 +60,7 @@ class TargetList:
         target_list = [target.config_target for target in self.target_list]
         return json.dumps(target_list, indent=4)
 
-    def validate_target(self, target: ConfigTargetData, index: int) -> tuple[int, str]:
+    def validate_target(self, target: ConfiguredTarget, index: int) -> tuple[int, str]:
 
         if not isinstance(target, dict):
             return (0, "Target #{} is not a valid type (object expected). ".format(index))
@@ -125,7 +125,7 @@ class TargetList:
         # defined target seems valid
         return (1, "")
 
-    def validate_list(self, target_data: list[ConfigTargetData]) -> tuple[int, str]:
+    def validate_target_list(self, target_data: list[ConfiguredTarget]) -> tuple[int, str]:
 
         if not isinstance(target_data, list):
             return (0, "Reorder target is not a list (array expected).")
@@ -137,7 +137,7 @@ class TargetList:
                 return (0, err_desc)
         return (1, "")
 
-    def get_validated_data_from_json(self, json_data: str) -> tuple[int, list[ConfigTargetData], str]:
+    def get_targets_from_json(self, json_data: str) -> tuple[int, list[ConfiguredTarget], str]:
 
         if json_data == "":
             return (0, [], "")
@@ -145,7 +145,7 @@ class TargetList:
             data: TargetList = json.loads(json_data)
             if not isinstance(data, list):
                 return (0, [], "JSON does not contain a list!")
-            (validity_state, err_desc) = self.validate_list(data)
+            (validity_state, err_desc) = self.validate_target_list(data)
             return (validity_state, data, err_desc)
         except json.JSONDecodeError as e:
             return (-1, [], "Invalid JSON! ({})".format(e.msg))

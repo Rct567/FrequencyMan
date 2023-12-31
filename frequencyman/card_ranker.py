@@ -207,7 +207,7 @@ class CardRanker:
         self.ranking_factors_stats = defaultdict(dict)
         for attribute in self.ranking_factors_span.keys():
             if attribute not in notes_ranking_scores_normalized:
-                raise Exception("Span set for unknown ranking factor {}".format(attribute))
+                raise Exception("Span set for unknown ranking factor {}.".format(attribute))
             vals = notes_ranking_scores_normalized[attribute]
             self.ranking_factors_stats[attribute]['avg'] = fmean(vals)
             self.ranking_factors_stats[attribute]['median'] = median(vals)
@@ -218,7 +218,7 @@ class CardRanker:
 
         for attribute, notes_scores in notes_ranking_scores_normalized.items():
             if attribute not in self.ranking_factors_span:
-                raise Exception("No span set for ranking factor {}".format(attribute))
+                raise Exception("No span set for ranking factor {}.".format(attribute))
             if not attribute in useable_factors:
                 continue
             if self.ranking_factors_span[attribute] == 0:

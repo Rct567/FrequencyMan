@@ -11,6 +11,7 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
+from .lib.utilities import is_numeric_value
 from .card_ranker import CardRanker
 from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote
 from .target_cards import TargetCards
@@ -113,13 +114,13 @@ class TargetList:
             for key, value in target['ranking_factors'].items():
                 if key not in allowed_keys:
                     return (0, "Ranking factors specified in target[{}].ranking_factors is unknown.".format(index))
-                if not str(value).replace(".", "").isnumeric():
+                if not is_numeric_value(value):
                     return (0, "Ranking factors '{}' specified in target[{}].ranking_factors has a non-numeric value.".format(key, index))
 
         # check custom ranking weights defined
         for key in CardRanker.get_default_ranking_factors_span().keys():
             ranking_key = 'ranking_'+key
-            if ranking_key in target and not str(target[ranking_key]).replace(".", "").isnumeric():
+            if ranking_key in target and not is_numeric_value(target[ranking_key]):
                 return (0, "Custom ranking factors '{}' specified in target #{} has a non-numeric value.".format(ranking_key, index))
 
         # defined target seems valid

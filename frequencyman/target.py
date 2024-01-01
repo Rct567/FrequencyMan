@@ -3,15 +3,14 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Optional, Sequence, TypedDict
+from typing import Optional, Sequence, TypedDict, Union
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
 
-from .lib.utilities import profile_context, var_dump, var_dump_log
-
+from .lib.utilities import get_float, profile_context, var_dump, var_dump_log
 from .lib.event_logger import EventLogger
 from .word_frequency_list import WordFrequencyLists
 from .target_corpus_data import LangKey, TargetCorpusData
@@ -68,7 +67,8 @@ class ConfiguredTarget(TypedDict, total=False):
     decks: str
     scope_query: str
     reorder_scope_query: str
-    ranking_factors: dict[str, float]
+    familiarity_sweetspot_point: Union[float, str, int]
+    ranking_factors: dict[str, Union[float, str, int]]
     notes: list[ConfiguredTargetNote]
 
 
@@ -89,14 +89,6 @@ class Target:
         self.scope_query = None
         self.reorder_scope_query = None
         self.col = col
-
-    def get_config_target_float_val(self, key: str) -> Optional[float]:
-        val = self.config_target.get(key)
-        if isinstance(val, int) or (isinstance(val, str) and val.replace(".", "").isnumeric()):
-            return float(val)
-        if isinstance(val, float):
-            return val
-        return None
 
     def get_notes(self) -> dict[str, dict[str, str]]:
         return {note['name']: note['fields'] for note in self.config_target.get('notes', [])}
@@ -199,7 +191,7 @@ class Target:
             return self.corpus_cache[cache_key]
 
         target_corpus_data = TargetCorpusData()
-        if familiarity_sweetspot_point := self.get_config_target_float_val('familiarity_sweetspot_point'):
+        if familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point')):
             target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
         target_corpus_data.create_data(target_cards, self.get_notes(), word_frequency_lists)
@@ -272,7 +264,7 @@ class Target:
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():
-                if target_setting_val := self.get_config_target_float_val('ranking_'+attribute):
+                if target_setting_val := get_float(self.config_target.get('ranking_'+attribute)):
                     card_ranker.ranking_factors_span[attribute] = target_setting_val
 
             # Use custom ranking weight object

@@ -10,10 +10,8 @@ import os
 import pprint
 import pstats
 import threading
-from typing import IO, Any, TypeVar
+from typing import IO, Any, Optional, TypeVar
 from aqt.utils import showInfo
-
-from ..text_processing import WordToken
 
 var_dump_count = 0
 
@@ -40,6 +38,27 @@ def var_dump_log(var: Any, show_as_info=False) -> None:
         if (show_as_info):
             var_dump(var)
         var_dump_log_count += 1
+
+
+def is_numeric_value(val: Any) -> bool:
+
+    return isinstance(val, int) or isinstance(val, float) or str(val).replace(".", "", 1).isnumeric()
+
+
+def get_float(val: Any) -> Optional[float]:
+
+    if val is None or isinstance(val, float):
+        return val
+
+    if isinstance(val, str) and not is_numeric_value(val):
+        return None
+
+    try:
+        return float(val)
+    except ValueError:
+        return None
+
+    return None
 
 
 @contextmanager

@@ -91,9 +91,9 @@ class TestTargetListReorder:
         assert target_result.success
         assert target_result.cards_repositioned
         assert target_result.error is None
-        assert len(target_result.sorted_cards_ids) == len(pre_sort_cards.new_cards_ids)
-        assert target_result.sorted_cards_ids != pre_sort_cards.new_cards_ids
-        assert target_result.sorted_cards_ids == target_list[0].get_cards().new_cards_ids
+        assert len(target_result.sorted_cards_ids) == len(pre_sort_cards.get_new_cards_ids())
+        assert target_result.sorted_cards_ids != pre_sort_cards.get_new_cards_ids()
+        assert target_result.sorted_cards_ids == target_list[0].get_cards().get_new_cards_ids()
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Repositioning 6566 cards" in str(event_logger)
         assert "Updating 5479 modified notes" in str(event_logger)

@@ -79,7 +79,7 @@ class TargetCorpusData:
         if not target_cards:
             return
 
-        for card in target_cards.all_cards:
+        for card in target_cards.get_all_cards():
 
             if card.nid not in self.fields_per_card_note:
 

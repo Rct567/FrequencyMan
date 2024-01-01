@@ -3,32 +3,72 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Optional, Sequence
+from typing import Iterator, Optional, Sequence
 
 from anki.collection import Collection
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 from anki.models import NotetypeId, NotetypeDict
 
-from .lib.utilities import profile_context, var_dump, var_dump_log
-
 
 class TargetCards:
 
     col: Collection
+
     all_cards_ids: Sequence[CardId]
-    all_cards: list[Card]
-    new_cards: list[Card]
-    new_cards_ids: list[CardId]
+
+    cards_cached:dict[CardId, Card] = {}
     notes_from_cards_cached: dict[NoteId, Note] = {}
+
+    new_cards_cached: Optional[dict[CardId, Card]]
+    new_cards_ids_cached: Optional[list[CardId]]
 
     def __init__(self, all_cards_ids: Sequence[CardId], col: Collection) -> None:
 
         self.all_cards_ids = all_cards_ids
-        self.all_cards = [col.get_card(card_id) for card_id in self.all_cards_ids]
-        self.new_cards = [card for card in self.all_cards if card.queue == 0]
-        self.new_cards_ids = [card.id for card in self.new_cards]
         self.col = col
+        self.new_cards_cached = None
+        self.new_cards_ids_cached = None
+
+    def get_all_cards_ids(self) -> Sequence[CardId]:
+
+        return self.all_cards_ids
+
+    def get_card(self, card_id: CardId) -> Card:
+
+        if card_id in self.cards_cached:
+            return self.cards_cached[card_id]
+
+        self.cards_cached[card_id] = self.col.get_card(card_id)
+        return self.cards_cached[card_id]
+
+
+    def get_all_cards(self) -> Iterator[Card]:
+
+        for card_id in self.all_cards_ids:
+            yield self.get_card(card_id);
+
+
+    def get_new_cards(self) -> Iterator[Card]:
+
+        if self.new_cards_cached:
+            for card in self.new_cards_cached.values():
+                yield card
+            return
+
+        new_cards_cached = {}
+        for card in self.get_all_cards():
+            if card.queue == 0:
+                yield card
+                new_cards_cached[card.id] = card
+        self.new_cards_cached = new_cards_cached
+
+
+    def get_new_cards_ids(self) -> list[CardId]:
+
+        if not self.new_cards_ids_cached:
+            self.new_cards_ids_cached = [card.id for card in self.get_new_cards()]
+        return self.new_cards_ids_cached
 
     def get_note(self, note_id: NoteId) -> Note:
 
@@ -38,7 +78,7 @@ class TargetCards:
 
     def get_notes(self) -> dict[NoteId, Note]:
 
-        for card in self.all_cards:
+        for card in self.get_all_cards():
             self.get_note(card.nid)
 
         return self.notes_from_cards_cached
@@ -46,7 +86,7 @@ class TargetCards:
     def get_notes_from_new_cards(self) -> dict[NoteId, Note]:
 
         notes_from_new_cards: dict[NoteId, Note] = {}
-        for card in self.new_cards:
+        for card in self.get_new_cards():
             notes_from_new_cards[card.nid] = self.get_note(card.nid)
 
         return notes_from_new_cards

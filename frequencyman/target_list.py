@@ -178,6 +178,7 @@ class TargetList:
         # Clear cache
         Target.corpus_cache = {}
         Target.target_cards_cache = {}
+        TargetCards.cards_cached = {}
         TargetCards.notes_from_cards_cached = {}
 
         # Done

@@ -20,15 +20,15 @@ class TargetCards:
     cards_cached:dict[CardId, Card] = {}
     notes_from_cards_cached: dict[NoteId, Note] = {}
 
-    new_cards_cached: Optional[dict[CardId, Card]]
-    new_cards_ids_cached: Optional[list[CardId]]
+    new_cards_stored: Optional[dict[CardId, Card]]
+    new_cards_ids_stored: Optional[list[CardId]]
 
     def __init__(self, all_cards_ids: Sequence[CardId], col: Collection) -> None:
 
         self.all_cards_ids = all_cards_ids
         self.col = col
-        self.new_cards_cached = None
-        self.new_cards_ids_cached = None
+        self.new_cards_stored = None
+        self.new_cards_ids_stored = None
 
     def get_all_cards_ids(self) -> Sequence[CardId]:
 
@@ -51,8 +51,8 @@ class TargetCards:
 
     def get_new_cards(self) -> Iterator[Card]:
 
-        if self.new_cards_cached:
-            for card in self.new_cards_cached.values():
+        if self.new_cards_stored:
+            for card in self.new_cards_stored.values():
                 yield card
             return
 
@@ -61,14 +61,14 @@ class TargetCards:
             if card.queue == 0:
                 yield card
                 new_cards_cached[card.id] = card
-        self.new_cards_cached = new_cards_cached
+        self.new_cards_stored = new_cards_cached
 
 
     def get_new_cards_ids(self) -> list[CardId]:
 
-        if not self.new_cards_ids_cached:
-            self.new_cards_ids_cached = [card.id for card in self.get_new_cards()]
-        return self.new_cards_ids_cached
+        if not self.new_cards_ids_stored:
+            self.new_cards_ids_stored = [card.id for card in self.get_new_cards()]
+        return self.new_cards_ids_stored
 
     def get_note(self, note_id: NoteId) -> Note:
 
@@ -78,16 +78,21 @@ class TargetCards:
 
     def get_notes(self) -> dict[NoteId, Note]:
 
-        for card in self.get_all_cards():
-            self.get_note(card.nid)
+        notes_from_all_cards: dict[NoteId, Note] = {}
 
-        return self.notes_from_cards_cached
+        for card in self.get_all_cards():
+            if card.nid not in notes_from_all_cards:
+                notes_from_all_cards[card.nid] = self.get_note(card.nid)
+
+        return notes_from_all_cards
+
 
     def get_notes_from_new_cards(self) -> dict[NoteId, Note]:
 
         notes_from_new_cards: dict[NoteId, Note] = {}
         for card in self.get_new_cards():
-            notes_from_new_cards[card.nid] = self.get_note(card.nid)
+            if card.nid not in notes_from_new_cards:
+                notes_from_new_cards[card.nid] = self.get_note(card.nid)
 
         return notes_from_new_cards
 

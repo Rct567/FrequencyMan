@@ -29,7 +29,7 @@ class TestTargetListReorder:
     TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
     TEST_COLLECTIONS_DIR = os.path.join(TEST_DATA_DIR, 'collections')
 
-    def get_test_collection(self, test_collection_name: str, collection_test_seq_num: int):
+    def __get_test_collection(self, test_collection_name: str, collection_test_seq_num: int):
 
         collection_dir = os.path.join(self.TEST_COLLECTIONS_DIR, test_collection_name)
 
@@ -58,7 +58,7 @@ class TestTargetListReorder:
 
     def test_reorder_cards_big_collection_es(self):
 
-        col, word_frequency_lists, assert_locked_order = self.get_test_collection('big_collection_es', collection_test_seq_num=0)
+        col, word_frequency_lists, assert_locked_order = self.__get_test_collection('big_collection_es', collection_test_seq_num=0)
 
         target_list = TargetList(word_frequency_lists, col)
 
@@ -123,7 +123,7 @@ class TestTargetListReorder:
 
     def test_two_deck_collection(self):
 
-        col, word_frequency_lists, assert_locked_order = self.get_test_collection('two_deck_collection', collection_test_seq_num=0)
+        col, word_frequency_lists, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=0)
 
         target_list = TargetList(word_frequency_lists, col)
 
@@ -170,6 +170,19 @@ class TestTargetListReorder:
         assert "Found 7 new cards in a target collection of 10 cards" in str(event_logger)
         assert "Reordering target #1" in str(event_logger)
         assert "Found 4 new cards in a target collection of 6 cards" in str(event_logger)
+
+        assert result.reorder_result_list[0].num_cards_repositioned == 7
+        assert result.reorder_result_list[1].num_cards_repositioned == 4
+
+        # check cards for each target
+        assert len(target_list[0].get_cards().get_all_cards_ids()) == 10
+        assert len(target_list[0].get_cards().get_notes()) == 10
+        assert len(target_list[0].get_cards().get_new_cards_ids()) == 7
+        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 7
+        assert len(target_list[1].get_cards().get_all_cards_ids()) == 6
+        assert len(target_list[1].get_cards().get_notes()) == 6
+        assert len(target_list[1].get_cards().get_new_cards_ids()) == 4
+        assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 4
 
         # check order
         assert_locked_order(result.reorder_result_list[0].sorted_cards_ids+result.reorder_result_list[1].sorted_cards_ids)

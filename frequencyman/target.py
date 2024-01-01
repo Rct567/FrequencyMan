@@ -90,7 +90,7 @@ class Target:
         self.reorder_scope_query = None
         self.col = col
 
-    def get_notes(self) -> dict[str, dict[str, str]]:
+    def get_config_notes(self) -> dict[str, dict[str, str]]:
         return {note['name']: note['fields'] for note in self.config_target.get('notes', [])}
 
     def __get_all_language_keys(self) -> list[LangKey]:
@@ -186,7 +186,7 @@ class Target:
 
     def __get_cached_corpus_data(self, target_cards: TargetCards, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
 
-        cache_key = (str(target_cards.get_all_cards_ids()), str(self.get_notes()), self.col, word_frequency_lists)
+        cache_key = (str(target_cards.get_all_cards_ids()), str(self.get_config_notes()), self.col, word_frequency_lists)
         if cache_key in self.corpus_cache:
             return self.corpus_cache[cache_key]
 
@@ -194,7 +194,7 @@ class Target:
         if familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point')):
             target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
-        target_corpus_data.create_data(target_cards, self.get_notes(), word_frequency_lists)
+        target_corpus_data.create_data(target_cards, self.get_config_notes(), word_frequency_lists)
         self.corpus_cache[cache_key] = target_corpus_data
         return target_corpus_data
 

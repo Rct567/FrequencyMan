@@ -91,9 +91,11 @@ class Target:
         self.col = col
 
     def get_config_target_float_val(self, key: str) -> Optional[float]:
-        val = self.config_target.get(key, "")
-        if isinstance(val, str) and val.replace(".", "").isnumeric():
+        val = self.config_target.get(key)
+        if isinstance(val, int) or (isinstance(val, str) and val.replace(".", "").isnumeric()):
             return float(val)
+        if isinstance(val, float):
+            return val
         return None
 
     def get_notes(self) -> dict[str, dict[str, str]]:
@@ -276,7 +278,12 @@ class Target:
             # Use custom ranking weight object
             if 'ranking_factors' in self.config_target:
                 if isinstance(self.config_target['ranking_factors'], dict) and len(self.config_target['ranking_factors']) > 0:
-                    card_ranker.ranking_factors_span = self.config_target['ranking_factors']
+                    card_ranker.ranking_factors_span = {}
+                    for factor in CardRanker.get_default_ranking_factors_span().keys():
+                        if factor in self.config_target['ranking_factors']:
+                            card_ranker.ranking_factors_span[factor] = float(self.config_target['ranking_factors'][factor])
+                        else:
+                            card_ranker.ranking_factors_span[factor] = 0.0
 
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards)

@@ -153,6 +153,13 @@ class TargetList:
 
     def reorder_cards(self, col: Collection, event_logger: EventLogger) -> TargetListReorderResult:
 
+        # Clear any existing global cache
+        Target.corpus_cache = {}
+        Target.target_cards_cache = {}
+        TargetCards.cards_cached = {}
+        TargetCards.notes_from_cards_cached = {}
+
+        #
         reorder_result_list: list[TargetReorderResult] = []
         modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
         num_cards_repositioned = 0
@@ -176,11 +183,6 @@ class TargetList:
             with event_logger.add_benchmarked_entry("Updating {:n} modified notes from targets.".format(len(notes_to_update))):
                 update_notes_anki_op_changes = col.update_notes(notes_to_update)
 
-        # Clear cache
-        Target.corpus_cache = {}
-        Target.target_cards_cache = {}
-        TargetCards.cards_cached = {}
-        TargetCards.notes_from_cards_cached = {}
 
         # Done
         event_logger.add_entry("Done with reordering of all targets! {:n} cards repositioned.".format(num_cards_repositioned))

@@ -44,7 +44,7 @@ class TestTargetListReorder:
 
         # helper function used to lock-in and assert order
         def assert_locked_order(sorted_cards_ids: list[CardId]):
-            order_file = os.path.join(collection_dir, 'expected_order.txt')
+            order_file = os.path.join(collection_dir, 'expected_order_{}.txt'.format(collection_test_seq_num))
 
             if os.path.exists(order_file):
                 expected_order = read_card_id_list(order_file)
@@ -112,14 +112,79 @@ class TestTargetListReorder:
             assert col.get_note(NoteId(note_id))['fm_focus_words'] == ""
 
         # these were empty before, but should now have a value
-        notes_none_empty_focus_word = {1548089873399, 1548089879591, 1546160205490, 1562346819967, 1546959316161, 1562346819250, 1548089878113,
-                                       1548089874025, 1651511363702, 1548089877279, 1548089878563, 1548089878527}
+        notes_none_empty_focus_word = {1548089873399, 1548089879591, 1546160205490, 1562346819967, 1546959316161,
+                                       1562346819250, 1548089878113, 1548089874025, 1651511363702, 1548089877279,
+                                       1548089878563, 1548089878527}
 
         for note_id in notes_none_empty_focus_word:
             assert len(col.get_note(NoteId(note_id))['fm_focus_words']) > 20
 
+        # check acquired cards for each target
+        assert len(target_list[0].get_cards().get_all_cards_ids()) == 15790
+        assert len(target_list[0].get_cards().get_notes()) == 7895
+        assert len(target_list[0].get_cards().get_new_cards_ids()) == 6566
+        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
+
         # check order
         assert_locked_order(target_result.sorted_cards_ids)
+
+    def test_reorder_cards_big_collection_es_with_reorder_scope(self):
+
+        col, word_frequency_lists, assert_locked_order = self.__get_test_collection('big_collection_es', collection_test_seq_num=1)
+
+        target_list = TargetList(word_frequency_lists, col)
+
+        target_list.set_targets([
+            {
+                'deck': 'Spanish',
+                'notes': [{
+                    "name": "-- My spanish --",
+                    "fields": {
+                        "Meaning": "EN",
+                        "Sentence": "ES"
+                    },
+                }],
+                "reorder_scope_query": "card:2",
+                "ranking_factors": {
+                    "familiarity_scores": 1,
+                    "lowest_fr_word_score": 1
+                }
+            }
+        ])
+
+        assert len(target_list) == 1
+        pre_sort_cards = target_list[0].get_cards()
+
+        # reorder cards
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+
+        assert isinstance(result, TargetListReorderResult)
+        assert len(result.reorder_result_list) == len(target_list)
+        assert len(result.modified_dirty_notes) == 7895
+
+        # check result
+        target_result = result.reorder_result_list[0]
+        assert target_result.success
+        assert target_result.cards_repositioned
+        assert target_result.error is None
+        assert len(target_result.sorted_cards_ids) < len(pre_sort_cards.get_new_cards_ids())
+        assert len(target_result.sorted_cards_ids) == 4223
+        assert target_result.sorted_cards_ids != pre_sort_cards.get_new_cards_ids()
+        assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
+        assert "Reorder scope query reduced new cards in target from 6566 to 4223" in str(event_logger)
+        assert "Repositioning 4223 cards" in str(event_logger)
+        assert "Updating 5479 modified notes" in str(event_logger)
+
+        # check acquired cards
+        assert len(target_list[0].get_cards().get_all_cards_ids()) == 15790
+        assert len(target_list[0].get_cards().get_notes()) == 7895
+        assert len(target_list[0].get_cards().get_new_cards_ids()) == 6566
+        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
+
+        # check order
+        assert_locked_order(target_result.sorted_cards_ids)
+
 
     def test_two_deck_collection(self):
 
@@ -164,8 +229,7 @@ class TestTargetListReorder:
         assert reorder_result.success
         assert reorder_result.cards_repositioned
         assert reorder_result.error is None
-        assert len(result.reorder_result_list[0].modified_dirty_notes) == 0
-        assert len(result.reorder_result_list[1].modified_dirty_notes) == 0
+        assert len(result.modified_dirty_notes) == 0
         assert "Reordering target #0" in str(event_logger)
         assert "Found 7 new cards in a target collection of 10 cards" in str(event_logger)
         assert "Reordering target #1" in str(event_logger)
@@ -174,7 +238,7 @@ class TestTargetListReorder:
         assert result.reorder_result_list[0].num_cards_repositioned == 7
         assert result.reorder_result_list[1].num_cards_repositioned == 4
 
-        # check cards for each target
+        # check acquired cards for each target
         assert len(target_list[0].get_cards().get_all_cards_ids()) == 10
         assert len(target_list[0].get_cards().get_notes()) == 10
         assert len(target_list[0].get_cards().get_new_cards_ids()) == 7

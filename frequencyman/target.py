@@ -25,7 +25,6 @@ class TargetReorderResult():
     cards_repositioned: bool
     sorted_cards_ids: list[CardId]
     target_cards: Optional[TargetCards]
-    modified_dirty_notes: dict[NoteId, Optional[Note]]
     repositioning_anki_op_changes: Optional[OpChangesWithCount]
 
     def __init__(self, success: bool, error: Optional[str] = None) -> None:
@@ -39,7 +38,6 @@ class TargetReorderResult():
         self.cards_repositioned = False
         self.sorted_cards_ids = []
         self.target_cards = None
-        self.modified_dirty_notes = {}
         self.repositioning_anki_op_changes = None
 
     def with_repositioning_data(self, sorted_cards_ids: list[CardId], num_cards_repositioned: int,

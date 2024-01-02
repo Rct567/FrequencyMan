@@ -23,6 +23,8 @@ from .text_processing import TextProcessing, WordToken
 FieldKey = NewType('FieldKey', str)
 
 # Meta data for each field (in target)
+
+
 @dataclass(frozen=True)
 class TargetFieldData:
     field_key: FieldKey
@@ -59,13 +61,13 @@ class TargetCorpusData:
     """
 
     target_cards_reviewed: Iterable[Card]
-    fields_per_card_note: dict[NoteId, list[TargetFieldData]]
+    field_data_per_card_note: dict[NoteId, list[TargetFieldData]]
     notes_fields_data: NoteFieldContentData
     familiarity_sweetspot_point: float
 
     def __init__(self):
 
-        self.fields_per_card_note = {}
+        self.field_data_per_card_note = {}
         self.notes_fields_data = NoteFieldContentData()
         self.familiarity_sweetspot_point = 0.75
 
@@ -81,7 +83,7 @@ class TargetCorpusData:
 
         for card in target_cards.get_all_cards():
 
-            if card.nid not in self.fields_per_card_note:
+            if card.nid not in self.field_data_per_card_note:
 
                 card_note = target_cards.get_note(card.nid)
                 card_note_type = target_cards.get_model(card_note.mid)
@@ -116,7 +118,7 @@ class TargetCorpusData:
                             target_language_id=LangId(lang_id)
                         ))
 
-                self.fields_per_card_note[card.nid] = card_note_fields_in_target
+                self.field_data_per_card_note[card.nid] = card_note_fields_in_target
 
             if card.type == 2 and card.queue != 0:  # card is of type 'review' and queue is not 'new'
                 self.target_cards_reviewed.append(card)
@@ -165,7 +167,7 @@ class TargetCorpusData:
 
         for card in self.target_cards_reviewed:
 
-            for field_data in self.fields_per_card_note[card.nid]:
+            for field_data in self.field_data_per_card_note[card.nid]:
 
                 field_key = field_data.field_key
 
@@ -180,7 +182,7 @@ class TargetCorpusData:
 
         for card in self.target_cards_reviewed:
 
-            for field_data in self.fields_per_card_note[card.nid]:
+            for field_data in self.field_data_per_card_note[card.nid]:
 
                 field_key = field_data.field_key
                 field_num_tokens = len(field_data.field_value_tokenized)
@@ -278,7 +280,7 @@ class TargetCorpusData:
 
     def __set_notes_lexical_discrepancy(self, word_frequency_lists: WordFrequencyLists) -> None:
 
-        for note_fields in self.fields_per_card_note.values():
+        for note_fields in self.field_data_per_card_note.values():
 
             for field in note_fields:
 

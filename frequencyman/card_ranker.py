@@ -94,10 +94,10 @@ class CardRanker:
     ranking_factors_span: dict[str, float]
     ranking_factors_stats: Optional[dict[str, dict[str, float]]]
 
-    def __init__(self, cards_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists,
+    def __init__(self, target_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists,
                  col: Collection, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> None:
 
-        self.cards_corpus_data = cards_corpus_data
+        self.corpus_data = target_corpus_data
         self.word_frequency_lists = word_frequency_lists
         self.col = col
         self.modified_dirty_notes = modified_dirty_notes
@@ -246,7 +246,7 @@ class CardRanker:
 
             # get scores per field and assign to note metrics
 
-            note_fields_defined_in_target = self.cards_corpus_data.fields_per_card_note[note.id]
+            note_fields_defined_in_target = self.corpus_data.field_data_per_card_note[note.id]
             note_metrics = AggregatedFieldsMetrics()
 
             for field_data in note_fields_defined_in_target:
@@ -328,7 +328,7 @@ class CardRanker:
         for word in field_data.field_value_tokenized:
 
             word_fr = self.word_frequency_lists.get_word_frequency(field_data.target_language_key, word, 0)
-            word_ld = self.cards_corpus_data.get_words_lexical_discrepancy(field_key, word)  # unfamiliarity of high frequency words
+            word_ld = self.corpus_data.get_words_lexical_discrepancy(field_key, word)  # unfamiliarity of high frequency words
 
             field_metrics.fr_scores.append(word_fr)
             field_metrics.words_fr_scores[word] = word_fr
@@ -345,30 +345,30 @@ class CardRanker:
                 field_metrics.highest_ld_word = (word, word_ld)
 
             #  familiarity score of words
-            word_familiarity_score = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity[field_key].get(word, 0)
+            word_familiarity_score = self.corpus_data.notes_fields_data.reviewed_words_familiarity[field_key].get(word, 0)
             field_metrics.words_familiarity_scores[word] = word_familiarity_score
 
-            words_familiarity_positional = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_positional[field_key].get(word, 0)
+            words_familiarity_positional = self.corpus_data.notes_fields_data.reviewed_words_familiarity_positional[field_key].get(word, 0)
             field_metrics.words_familiarity_positional_scores[word] = words_familiarity_positional
 
             # familiarity sweetspot score of words in sweetspot range
-            word_familiarity_sweetspot_score = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key].get(word, None)
+            word_familiarity_sweetspot_score = self.corpus_data.notes_fields_data.reviewed_words_familiarity_sweetspot[field_key].get(word, None)
             if word_familiarity_sweetspot_score is not None:
                 field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
 
             # most obscure word (lowest ubiquity)
-            word_familiarity_score = self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity[field_key].get(word, 0)
+            word_familiarity_score = self.corpus_data.notes_fields_data.reviewed_words_familiarity[field_key].get(word, 0)
             word_ubiquity_score = (word_fr+word_familiarity_score)/2
 
             if field_metrics.most_obscure_word[0] == "" or word_ubiquity_score < field_metrics.most_obscure_word[1]:
                 field_metrics.most_obscure_word = (word, word_ubiquity_score)
 
             # focus words
-            if word_familiarity_score < (0.9*self.cards_corpus_data.notes_fields_data.reviewed_words_familiarity_median[field_key]):
+            if word_familiarity_score < (0.9*self.corpus_data.notes_fields_data.reviewed_words_familiarity_median[field_key]):
                 field_metrics.focus_words[word] = word_familiarity_score
 
             # set seen and unseen
-            if word in self.cards_corpus_data.notes_fields_data.reviewed_words[field_key]:
+            if word in self.corpus_data.notes_fields_data.reviewed_words[field_key]:
                 field_metrics.seen_words.append(word)  # word seen, word exist in at least one reviewed card
             else:
                 field_metrics.unseen_words.append(word)
@@ -453,7 +453,7 @@ class CardRanker:
 
     def __get_note_field_metrics(self, note_id: NoteId) -> AggregatedFieldsMetrics:
 
-        note_fields_defined_in_target = self.cards_corpus_data.fields_per_card_note[note_id]
+        note_fields_defined_in_target = self.corpus_data.field_data_per_card_note[note_id]
         note_metrics = AggregatedFieldsMetrics()
 
         for field_data in note_fields_defined_in_target:

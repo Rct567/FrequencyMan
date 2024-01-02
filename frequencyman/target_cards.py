@@ -19,6 +19,7 @@ class TargetCards:
 
     cards_cached:dict[CardId, Card] = {}
     notes_from_cards_cached: dict[NoteId, Note] = {}
+    cache_lock: Optional[Collection] = None
 
     new_cards_stored: Optional[dict[CardId, Card]]
     new_cards_ids_stored: Optional[list[CardId]]
@@ -29,6 +30,11 @@ class TargetCards:
         self.col = col
         self.new_cards_stored = None
         self.new_cards_ids_stored = None
+
+        if not TargetCards.cache_lock or TargetCards.cache_lock != col:
+            TargetCards.cache_lock = col
+            TargetCards.cards_cached = {}
+            TargetCards.notes_from_cards_cached = {}
 
     def get_all_cards_ids(self) -> Sequence[CardId]:
 

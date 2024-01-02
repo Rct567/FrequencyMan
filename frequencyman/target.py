@@ -80,6 +80,7 @@ class Target:
 
     corpus_cache: dict[tuple, TargetCorpusData] = {}
     target_cards_cache: dict[tuple, TargetCards] = {}
+    cache_lock: Optional[Collection] = None
 
     def __init__(self, target: ConfiguredTarget, index_num: int, col: Collection) -> None:
         self.config_target = target
@@ -87,6 +88,11 @@ class Target:
         self.scope_query = None
         self.reorder_scope_query = None
         self.col = col
+        if not Target.cache_lock or Target.cache_lock != col:
+            Target.cache_lock = col
+            Target.corpus_cache = {}
+            Target.target_cards_cache = {}
+
 
     def get_config_notes(self) -> dict[str, dict[str, str]]:
         return {note['name']: note['fields'] for note in self.config_target.get('notes', [])}
@@ -184,7 +190,7 @@ class Target:
 
     def __get_cached_corpus_data(self, target_cards: TargetCards, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
 
-        cache_key = (str(target_cards.get_all_cards_ids()), str(self.get_config_notes()), self.col, word_frequency_lists)
+        cache_key = (str(target_cards.get_all_cards_ids()), str(self.get_config_notes()), self.col, word_frequency_lists, self.config_target.get('familiarity_sweetspot_point'))
         if cache_key in self.corpus_cache:
             return self.corpus_cache[cache_key]
 

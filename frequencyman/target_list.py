@@ -153,13 +153,6 @@ class TargetList:
 
     def reorder_cards(self, col: Collection, event_logger: EventLogger) -> TargetListReorderResult:
 
-        # Clear any existing global cache
-        Target.corpus_cache = {}
-        Target.target_cards_cache = {}
-        TargetCards.cards_cached = {}
-        TargetCards.notes_from_cards_cached = {}
-
-        #
         reorder_result_list: list[TargetReorderResult] = []
         modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
         num_cards_repositioned = 0

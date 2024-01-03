@@ -217,11 +217,9 @@ class CardRanker:
         notes_spanned_ranking_factors: dict[NoteId, dict[str, float]] = defaultdict(dict)
 
         for attribute, notes_scores in notes_ranking_scores_normalized.items():
-            if attribute not in self.ranking_factors_span:
-                raise Exception("No span set for ranking factor {}.".format(attribute))
-            if not attribute in useable_factors:
+            if attribute not in self.ranking_factors_span or self.ranking_factors_span[attribute] == 0:
                 continue
-            if self.ranking_factors_span[attribute] == 0:
+            if not attribute in useable_factors:
                 continue
             for note_id, value in notes_scores.items():
                 notes_spanned_ranking_factors[note_id][attribute] = value * float(self.ranking_factors_span[attribute])

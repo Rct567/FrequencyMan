@@ -278,8 +278,6 @@ class Target:
                     for factor in CardRanker.get_default_ranking_factors_span().keys():
                         if factor in self.config_target['ranking_factors']:
                             card_ranker.ranking_factors_span[factor] = float(self.config_target['ranking_factors'][factor])
-                        else:
-                            card_ranker.ranking_factors_span[factor] = 0.0
 
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards)

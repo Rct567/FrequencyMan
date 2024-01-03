@@ -43,11 +43,8 @@ class WordFrequencyLists:
     def require_loaded_lists(self, key: Optional[LangKey] = None) -> None:
         if (len(self.word_frequency_lists) < 1):
             raise Exception("No word frequency lists loaded.")
-        if key is not None:
-            if key not in self.word_frequency_lists:
-                raise Exception("Word frequency list '{}' not loaded.".format(key))
-            if (len(self.word_frequency_lists[key]) < 1):
-                raise Exception("Word frequency list '{}' not loaded.".format(key))
+        if key is not None and key not in self.word_frequency_lists:
+            raise Exception("Word frequency list '{}' not loaded.".format(key))
 
     def str_key_has_frequency_list_file(self, key: str) -> bool:
         return self.key_has_frequency_list_file(LangKey(key))
@@ -106,6 +103,9 @@ class WordFrequencyLists:
             for word, line_number in self.__get_word_rankings_from_file(file_path):
                 if word not in all_files_word_rankings_combined or line_number < all_files_word_rankings_combined[word]:  # highest ranking among lists (lowest line number)
                     all_files_word_rankings_combined[word] = line_number
+
+        if not all_files_word_rankings_combined:
+            return {}
 
         max_rank = max(all_files_word_rankings_combined.values())
         return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in all_files_word_rankings_combined.items()}

@@ -85,13 +85,15 @@ class TargetList:
         elif len(target.get('notes', [])) == 0:
             return (0, "Target object #{} value for 'notes' is empty.".format(index))
 
-        for note in target.get('notes', []):
+        for note_index, note in enumerate(target.get('notes', [])):
             if not isinstance(note, dict):
                 return (0, "Note specified in target[{}].notes is not a valid type (object expected).".format(index))
             if "name" not in note:
                 return (0, "Note object specified in target[{}].notes is missing key 'name'.".format(index))
             if "fields" not in note:
                 return (0, "Note object specified in target[{}].notes is is missing key 'fields'.".format(index))
+            if not isinstance(note.get('fields'), dict) :
+                return (0, "Fields for note object specified in target[{}].notes[{}] is not a valid type (object expected).".format(index, note_index))
 
             note_model = self.col.models.by_name(note['name'])
 

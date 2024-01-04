@@ -74,19 +74,6 @@ class AggregatedFieldsMetrics:
     ideal_words_count_scores: list[float] = field(default_factory=list)
     ideal_focus_words_count_scores: list[float] = field(default_factory=list)
 
-    def append_field_metrics(self, field_metrics: FieldMetrics):
-        self.seen_words.append(field_metrics.seen_words)
-        self.unseen_words.append(field_metrics.unseen_words)
-        self.lowest_fr_word.append(field_metrics.lowest_fr_word)
-        self.lowest_fr_least_familiar_word.append(field_metrics.lowest_fr_least_familiar_word)
-        self.most_obscure_word.append(field_metrics.most_obscure_word)
-        self.highest_ld_word.append(field_metrics.highest_ld_word)
-        self.words_fr_scores.append(field_metrics.words_fr_scores)
-        self.words_ld_scores.append(field_metrics.words_ld_scores)
-        self.words_familiarity_sweetspot_scores.append(field_metrics.words_familiarity_sweetspot_scores)
-        self.words_familiarity_scores.append(field_metrics.words_familiarity_scores)
-        self.focus_words.append(field_metrics.focus_words)
-
 
 class CardRanker:
 
@@ -146,7 +133,8 @@ class CardRanker:
 
         # get ranking factors for notes
 
-        notes_ranking_factors, notes_metrics = self.__calc_card_notes_field_metrics(notes_from_new_cards)
+        notes_metrics = self.__calc_card_notes_field_metrics(notes_from_new_cards, with_additional_props=True)
+        notes_ranking_factors = self.__get_notes_ranking_factors(notes_metrics)
 
         # final ranking of cards from notes
 
@@ -235,30 +223,41 @@ class CardRanker:
 
         return notes_ranking_scores_normalized, notes_rankings
 
-    def __calc_card_notes_field_metrics(self, notes_from_new_cards: dict[NoteId, Note]) -> Tuple[dict[str, dict[NoteId, float]], dict[NoteId, AggregatedFieldsMetrics]]:
+    def __calc_card_notes_field_metrics(self, notes_from_new_cards: dict[NoteId, Note], with_additional_props: bool) -> dict[NoteId, AggregatedFieldsMetrics]:
 
-        notes_ranking_factors: dict[str, dict[NoteId, float]] = defaultdict(dict)
         notes_metrics: dict[NoteId, AggregatedFieldsMetrics] = {}
 
         for note_id, note in notes_from_new_cards.items():
 
-            # get scores per field and assign to note metrics
+            # get scores per note field and append to note metrics
 
             note_fields_defined_in_target = self.corpus_data.field_data_per_card_note[note.id]
             note_metrics = AggregatedFieldsMetrics()
 
             for field_data in note_fields_defined_in_target:
 
-                corpus_id = field_data.corpus_id
-
-                if not corpus_id.startswith(str(note.mid)):
+                if not field_data.corpus_id.startswith(str(note.mid)):
                     raise Exception("Card note type id is not matching!?")
 
                 # get metrics for field
-                field_metrics = self.__get_field_metrics_from_data(field_data, corpus_id)
+                field_metrics = self.__get_field_metrics_from_data(field_data, field_data.corpus_id)
 
                 # append existing field metrics (additional metrics created and added below)
-                note_metrics.append_field_metrics(field_metrics)
+                note_metrics.seen_words.append(field_metrics.seen_words)
+                note_metrics.unseen_words.append(field_metrics.unseen_words)
+                note_metrics.lowest_fr_word.append(field_metrics.lowest_fr_word)
+                note_metrics.lowest_fr_least_familiar_word.append(field_metrics.lowest_fr_least_familiar_word)
+                note_metrics.most_obscure_word.append(field_metrics.most_obscure_word)
+                note_metrics.highest_ld_word.append(field_metrics.highest_ld_word)
+                note_metrics.words_fr_scores.append(field_metrics.words_fr_scores)
+                note_metrics.words_ld_scores.append(field_metrics.words_ld_scores)
+                note_metrics.words_familiarity_sweetspot_scores.append(field_metrics.words_familiarity_sweetspot_scores)
+                note_metrics.words_familiarity_scores.append(field_metrics.words_familiarity_scores)
+                note_metrics.focus_words.append(field_metrics.focus_words)
+
+                # skip the rest if needed
+                if not with_additional_props:
+                    continue
 
                 # ideal unseen words count
                 num_unseen_words = len(field_metrics.unseen_words)
@@ -296,6 +295,18 @@ class CardRanker:
                 else:
                     note_metrics.ld_scores.append(0)
 
+            notes_metrics[note_id] = note_metrics
+
+        return notes_metrics
+
+    def __get_notes_ranking_factors(self, notes_metrics: dict[NoteId, AggregatedFieldsMetrics]) -> dict[str, dict[NoteId, float]]:
+
+        notes_ranking_factors: dict[str, dict[NoteId, float]] = defaultdict(dict)
+
+        for note_id in notes_metrics.keys():
+
+            note_metrics = notes_metrics[note_id]
+
             # define ranking factors for note, based on avg of fields
 
             notes_ranking_factors['words_fr_score'][note_id] = fmean(note_metrics.fr_scores)
@@ -315,9 +326,8 @@ class CardRanker:
             notes_ranking_factors['lowest_fr_least_familiar_word_scores'][note_id] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
             notes_ranking_factors['ideal_unseen_word_count'][note_id] = fmean(note_metrics.ideal_unseen_words_count_scores)
 
-            notes_metrics[note_id] = note_metrics
+        return notes_ranking_factors
 
-        return notes_ranking_factors, notes_metrics
 
     def __get_field_metrics_from_data(self, field_data: TargetFieldData, corpus_key: CorpusId) -> FieldMetrics:
 
@@ -449,20 +459,14 @@ class CardRanker:
             elif lock_note_data:  # lock to keep it as it is
                 self.modified_dirty_notes[note_id] = None
 
-    def __get_note_field_metrics(self, note_id: NoteId) -> AggregatedFieldsMetrics:
-
-        note_fields_defined_in_target = self.corpus_data.field_data_per_card_note[note_id]
-        note_metrics = AggregatedFieldsMetrics()
-
-        for field_data in note_fields_defined_in_target:
-            field_metrics = self.__get_field_metrics_from_data(field_data, field_data.corpus_id)
-            note_metrics.append_field_metrics(field_metrics)
-
-        return note_metrics
 
     def __update_meta_data_for_notes_with_non_new_cards(self, target_cards: TargetCards) -> None:
 
-        for note_id, note in target_cards.get_notes().items():
+        notes = target_cards.get_notes()
+
+        notes_metrics = None
+
+        for note_id, note in notes.items():
             if note_id in self.modified_dirty_notes:
                 continue
 
@@ -477,9 +481,11 @@ class CardRanker:
                         update_note_data = True
 
             if 'fm_focus_words' in note:
+                if not notes_metrics:
+                    notes_metrics = self.__calc_card_notes_field_metrics(notes, with_additional_props=False)
                 lock_note_data = True
                 focus_words_per_field: list[str] = []
-                for focus_words in self.__get_note_field_metrics(note_id).focus_words:
+                for focus_words in notes_metrics[note_id].focus_words:
                     focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
                     focus_words_per_field.append(", ".join([word for word in focus_words.keys()]))
                 new_fm_focus_words = " | ".join(focus_words_per_field).strip("| ")

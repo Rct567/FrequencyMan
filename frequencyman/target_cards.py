@@ -10,7 +10,6 @@ from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 from anki.models import NotetypeId, NotetypeDict
 
-
 class TargetCards:
 
     col: Collection
@@ -23,6 +22,7 @@ class TargetCards:
 
     new_cards_stored: Optional[dict[CardId, Card]]
     new_cards_ids_stored: Optional[list[CardId]]
+    reviewed_cards_stored: Optional[dict[CardId, Card]]
 
     def __init__(self, all_cards_ids: Sequence[CardId], col: Collection) -> None:
 
@@ -30,6 +30,7 @@ class TargetCards:
         self.col = col
         self.new_cards_stored = None
         self.new_cards_ids_stored = None
+        self.reviewed_cards_stored = None
 
         if not TargetCards.cache_lock or TargetCards.cache_lock != col:
             TargetCards.cache_lock = col
@@ -57,22 +58,36 @@ class TargetCards:
 
     def get_new_cards(self) -> Iterator[Card]:
 
-        if self.new_cards_stored:
+        if self.new_cards_stored is not None:
             for card in self.new_cards_stored.values():
                 yield card
             return
 
-        new_cards_cached = {}
+        new_cards_stored = {}
         for card in self.get_all_cards():
             if card.queue == 0:
                 yield card
-                new_cards_cached[card.id] = card
-        self.new_cards_stored = new_cards_cached
+                new_cards_stored[card.id] = card
+        self.new_cards_stored = new_cards_stored
+
+    def get_reviewed_cards(self) -> Iterator[Card]:
+
+        if self.reviewed_cards_stored is not None:
+            for card in self.reviewed_cards_stored.values():
+                yield card
+            return
+
+        reviewed_cards_stored = {}
+        for card in self.get_all_cards():
+            if card.queue != 0 and card.type == 2: # queue is not 'new' and card is of type 'review'
+                yield card
+                reviewed_cards_stored[card.id] = card
+        self.reviewed_cards_stored = reviewed_cards_stored
 
 
     def get_new_cards_ids(self) -> list[CardId]:
 
-        if not self.new_cards_ids_stored:
+        if self.new_cards_ids_stored is None:
             self.new_cards_ids_stored = [card.id for card in self.get_new_cards()]
         return self.new_cards_ids_stored
 
@@ -105,3 +120,7 @@ class TargetCards:
     def get_model(self, model_id: NotetypeId) -> Optional[NotetypeDict]:
 
         return self.col.models.get(model_id)
+
+    def __len__(self):
+
+        return len(self.all_cards_ids)

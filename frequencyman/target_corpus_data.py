@@ -61,7 +61,7 @@ class TargetCorpusData:
     Class representing corpus data from target cards.
     """
 
-    target_cards_reviewed: Iterable[Card]
+    target_cards: TargetCards
     field_data_per_card_note: dict[NoteId, list[TargetFieldData]]
     notes_fields_data: NoteFieldContentData
     familiarity_sweetspot_point: float
@@ -77,10 +77,10 @@ class TargetCorpusData:
         Create corpus data for the given target and its cards.
         """
 
-        self.target_cards_reviewed = []
-
-        if not target_cards:
+        if len(target_cards) == 0:
             return
+
+        self.target_cards = target_cards
 
         for card in target_cards.get_all_cards():
 
@@ -121,9 +121,6 @@ class TargetCorpusData:
 
                 self.field_data_per_card_note[card.nid] = card_note_fields_in_target
 
-            if card.type == 2 and card.queue != 0:  # card is of type 'review' and queue is not 'new'
-                self.target_cards_reviewed.append(card)
-
         self.__set_notes_reviewed_words()
         self.__set_notes_reviewed_words_presence()
         self.__set_notes_reviewed_words_familiarity()
@@ -136,7 +133,7 @@ class TargetCorpusData:
         cards_reps: list[float] = []
         cards_ease: list[float] = []
 
-        for card in self.target_cards_reviewed:
+        for card in self.target_cards.get_reviewed_cards():
             cards_interval.append(card.ivl)
             cards_reps.append(card.reps)
             cards_ease.append(card.factor)
@@ -156,7 +153,7 @@ class TargetCorpusData:
         cards_reps_max = max(cards_reps)
         cards_ease_max = max(cards_ease)
 
-        for card in self.target_cards_reviewed:
+        for card in self.target_cards.get_reviewed_cards():
             card_memorized_scores[card.id] = fmean([(card.ivl/cards_interval_max), (card.reps/cards_reps_max), (card.factor/cards_ease_max)])
 
         card_memorized_scores = normalize_dict_floats_values(card_memorized_scores)
@@ -166,7 +163,7 @@ class TargetCorpusData:
 
     def __set_notes_reviewed_words(self) -> None:
 
-        for card in self.target_cards_reviewed:
+        for card in self.target_cards.get_reviewed_cards():
 
             for field_data in self.field_data_per_card_note[card.nid]:
 
@@ -189,7 +186,7 @@ class TargetCorpusData:
 
         card_memorized_scores = self.__get_reviewed_words_card_memorized_scores()
 
-        for card in self.target_cards_reviewed:
+        for card in self.target_cards.get_reviewed_cards():
 
             for field_data in self.field_data_per_card_note[card.nid]:
 

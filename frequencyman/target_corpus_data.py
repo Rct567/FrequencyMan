@@ -177,6 +177,14 @@ class TargetCorpusData:
                         self.notes_fields_data.reviewed_words[corpus_key][word_token] = []
                     self.notes_fields_data.reviewed_words[corpus_key][word_token].append(card)
 
+    @staticmethod
+    def __calc_word_presence_score(word_token: str, context_num_chars :int, context_num_tokens: int, position_index: int) -> float:
+
+        presence_num_chars = len(word_token)/context_num_chars
+        presence_num_tokens = 1/context_num_tokens
+        position_value = 1/(position_index+1)
+        return (presence_num_chars+presence_num_tokens+position_value)/3
+
     def __set_notes_reviewed_words_presence(self) -> None:
 
         card_memorized_scores = self.__get_reviewed_words_card_memorized_scores()
@@ -195,12 +203,8 @@ class TargetCorpusData:
                         self.notes_fields_data.reviewed_words_presence[corpus_key][word_token] = []
                         self.notes_fields_data.reviewed_words_presence_card_score[corpus_key][word_token] = []
 
-                    presence_num_chars = len(word_token)/field_num_chars_tokens
-                    presence_num_words = 1/field_num_tokens
-                    position_value = 1/(index+1)
-                    presence_impact_score = (presence_num_chars+presence_num_words+position_value)/3
-
-                    self.notes_fields_data.reviewed_words_presence[corpus_key][word_token].append(presence_impact_score)
+                    word_presence_score = self.__calc_word_presence_score(word_token, field_num_chars_tokens, field_num_tokens, index)
+                    self.notes_fields_data.reviewed_words_presence[corpus_key][word_token].append(word_presence_score)
                     self.notes_fields_data.reviewed_words_presence_card_score[corpus_key][word_token].append(card_memorized_scores[card.id])
 
     def __set_notes_reviewed_words_familiarity(self) -> None:

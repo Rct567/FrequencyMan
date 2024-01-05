@@ -190,7 +190,7 @@ class Target:
 
     def __get_cached_corpus_data(self, target_cards: TargetCards, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
 
-        cache_key = (str(target_cards.get_all_cards_ids()), str(self.get_config_notes()), self.col, word_frequency_lists, self.config_target.get('familiarity_sweetspot_point'))
+        cache_key = (str(target_cards.all_cards_ids), str(self.get_config_notes()), self.col, word_frequency_lists, self.config_target.get('familiarity_sweetspot_point'))
         if cache_key in self.corpus_cache:
             return self.corpus_cache[cache_key]
 
@@ -226,13 +226,13 @@ class Target:
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):
             target_cards = self.get_cards(use_cache=True)
 
-        num_new_cards = len(target_cards.get_new_cards_ids())
+        num_new_cards = len(target_cards.new_cards_ids)
 
         if num_new_cards < 1:
-            event_logger.add_entry("Found no new cards in a target collection of {:n} cards.".format(len(target_cards.get_all_cards_ids())))
+            event_logger.add_entry("Found no new cards in a target collection of {:n} cards.".format(len(target_cards.all_cards_ids)))
             return TargetReorderResult(success=False, error="No new cards to reorder.")
         else:
-            event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.get_all_cards_ids())))
+            event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.all_cards_ids)))
 
         # Get corpus data
 
@@ -244,18 +244,18 @@ class Target:
         reorder_scope_target_cards = target_cards
         if reorder_scope_query:
             new_target_cards = self.get_cards(reorder_scope_query)
-            if len(new_target_cards.get_all_cards_ids()) == 0:
+            if len(new_target_cards.all_cards_ids) == 0:
                 event_logger.add_entry("Reorder scope query yielded no results!")
                 return TargetReorderResult(success=False, error="Reorder scope query yielded no results!")
-            elif len(new_target_cards.get_new_cards_ids()) == 0:
+            elif len(new_target_cards.new_cards_ids) == 0:
                 event_logger.add_entry("Reorder scope query yielded no new cards to reorder!")
                 return TargetReorderResult(success=True)
-            elif new_target_cards.get_all_cards_ids() == target_cards.get_all_cards_ids():
+            elif new_target_cards.all_cards_ids == target_cards.all_cards_ids:
                 event_logger.add_entry("Reorder scope had no effect (same result as main scope of target)!")
             else:
                 reorder_scope_target_cards = new_target_cards
-                num_new_cards_main_scope = len(target_cards.get_new_cards_ids())
-                num_new_card_reorder_scope = len(new_target_cards.get_new_cards_ids())
+                num_new_cards_main_scope = len(target_cards.new_cards_ids)
+                num_new_card_reorder_scope = len(new_target_cards.new_cards_ids)
                 if num_new_card_reorder_scope < num_new_cards_main_scope:
                     event_logger.add_entry("Reorder scope query reduced new cards in target from {:n} to {:n}.".format(num_new_cards_main_scope, num_new_card_reorder_scope))
                 else:
@@ -281,11 +281,11 @@ class Target:
 
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards)
-            sorted_cards = sorted(reorder_scope_target_cards.get_new_cards(), key=lambda card: card_rankings[card.id], reverse=True)
+            sorted_cards = sorted(reorder_scope_target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
             sorted_cards_ids = [card.id for card in sorted_cards]
 
         # Reposition cards
-        repositioning_required = reorder_scope_target_cards.get_new_cards_ids() != sorted_cards_ids
+        repositioning_required = reorder_scope_target_cards.new_cards_ids != sorted_cards_ids
 
         if not repositioning_required:
             event_logger.add_entry("Repositioning {:n} cards not needed for this target.".format(len(sorted_cards_ids)))

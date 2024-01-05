@@ -146,7 +146,7 @@ class CardRanker:
 
         #
         card_rankings: dict[CardId, float] = {}
-        for card in target_cards.get_new_cards():
+        for card in target_cards.new_cards:
             card_rankings[card.id] = notes_rankings[card.nid]
 
         return card_rankings

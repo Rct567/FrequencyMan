@@ -13,7 +13,7 @@ from anki.collection import Collection
 from anki.cards import CardId, Card
 from anki.notes import NoteId
 
-from .target_cards import TargetCards
+from .target_cards import TargetCard, TargetCards
 from .word_frequency_list import LangId, LangKey, WordFrequencyLists
 from .lib.utilities import *
 from .text_processing import TextProcessing, WordToken
@@ -40,7 +40,7 @@ class TargetFieldData:
 @dataclass
 class NoteFieldContentData:
     # reviewed words and the cards they they occur in, per "field of note"
-    reviewed_words: dict[CorpusId, dict[WordToken, list[Card]]] = field(default_factory=lambda: defaultdict(dict))
+    reviewed_words: dict[CorpusId, dict[WordToken, list[TargetCard]]] = field(default_factory=lambda: defaultdict(dict))
     #
     reviewed_words_presence: dict[CorpusId, dict[WordToken, list[float]]] = field(default_factory=lambda: defaultdict(dict))  # list because a word can occur multiple times in a field
     reviewed_words_presence_card_score: dict[CorpusId, dict[WordToken, list[float]]] = field(default_factory=lambda: defaultdict(dict))
@@ -82,7 +82,7 @@ class TargetCorpusData:
 
         self.target_cards = target_cards
 
-        for card in target_cards.get_all_cards():
+        for card in target_cards.all_cards:
 
             if card.nid not in self.field_data_per_card_note:
 
@@ -133,7 +133,7 @@ class TargetCorpusData:
         cards_reps: list[float] = []
         cards_ease: list[float] = []
 
-        for card in self.target_cards.get_reviewed_cards():
+        for card in self.target_cards.reviewed_cards:
             cards_interval.append(card.ivl)
             cards_reps.append(card.reps)
             cards_ease.append(card.factor)
@@ -153,7 +153,7 @@ class TargetCorpusData:
         cards_reps_max = max(cards_reps)
         cards_ease_max = max(cards_ease)
 
-        for card in self.target_cards.get_reviewed_cards():
+        for card in self.target_cards.reviewed_cards:
             card_memorized_scores[card.id] = fmean([(card.ivl/cards_interval_max), (card.reps/cards_reps_max), (card.factor/cards_ease_max)])
 
         card_memorized_scores = normalize_dict_floats_values(card_memorized_scores)
@@ -163,7 +163,7 @@ class TargetCorpusData:
 
     def __set_notes_reviewed_words(self) -> None:
 
-        for card in self.target_cards.get_reviewed_cards():
+        for card in self.target_cards.reviewed_cards:
 
             for field_data in self.field_data_per_card_note[card.nid]:
 
@@ -186,7 +186,7 @@ class TargetCorpusData:
 
         card_memorized_scores = self.__get_reviewed_words_card_memorized_scores()
 
-        for card in self.target_cards.get_reviewed_cards():
+        for card in self.target_cards.reviewed_cards:
 
             for field_data in self.field_data_per_card_note[card.nid]:
 

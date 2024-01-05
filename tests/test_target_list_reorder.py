@@ -91,9 +91,9 @@ class TestTargetListReorder:
         assert target_result.success
         assert target_result.cards_repositioned
         assert target_result.error is None
-        assert len(target_result.sorted_cards_ids) == len(pre_sort_cards.get_new_cards_ids())
-        assert target_result.sorted_cards_ids != pre_sort_cards.get_new_cards_ids()
-        assert target_result.sorted_cards_ids == target_list[0].get_cards().get_new_cards_ids()
+        assert len(target_result.sorted_cards_ids) == len(pre_sort_cards.new_cards_ids)
+        assert target_result.sorted_cards_ids != pre_sort_cards.new_cards_ids
+        assert target_result.sorted_cards_ids == target_list[0].get_cards().new_cards_ids
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Repositioning 6566 cards" in str(event_logger)
         assert "Updating 5479 modified notes" in str(event_logger)
@@ -120,9 +120,9 @@ class TestTargetListReorder:
             assert len(col.get_note(NoteId(note_id))['fm_focus_words']) > 20
 
         # check acquired cards for each target
-        assert len(target_list[0].get_cards().get_all_cards_ids()) == 15790
+        assert len(target_list[0].get_cards().all_cards_ids) == 15790
         assert len(target_list[0].get_cards().get_notes()) == 7895
-        assert len(target_list[0].get_cards().get_new_cards_ids()) == 6566
+        assert len(target_list[0].get_cards().new_cards_ids) == 6566
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
 
         # check order
@@ -168,18 +168,18 @@ class TestTargetListReorder:
         assert target_result.success
         assert target_result.cards_repositioned
         assert target_result.error is None
-        assert len(target_result.sorted_cards_ids) < len(pre_sort_cards.get_new_cards_ids())
+        assert len(target_result.sorted_cards_ids) < len(pre_sort_cards.new_cards_ids)
         assert len(target_result.sorted_cards_ids) == 4223
-        assert target_result.sorted_cards_ids != pre_sort_cards.get_new_cards_ids()
+        assert target_result.sorted_cards_ids != pre_sort_cards.new_cards_ids
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Reorder scope query reduced new cards in target from 6566 to 4223" in str(event_logger)
         assert "Repositioning 4223 cards" in str(event_logger)
         assert "Updating 5479 modified notes" in str(event_logger)
 
         # check acquired cards
-        assert len(target_list[0].get_cards().get_all_cards_ids()) == 15790
+        assert len(target_list[0].get_cards().all_cards_ids) == 15790
         assert len(target_list[0].get_cards().get_notes()) == 7895
-        assert len(target_list[0].get_cards().get_new_cards_ids()) == 6566
+        assert len(target_list[0].get_cards().new_cards_ids) == 6566
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
 
         # check order
@@ -239,13 +239,13 @@ class TestTargetListReorder:
         assert result.reorder_result_list[1].num_cards_repositioned == 4
 
         # check acquired cards for each target
-        assert len(target_list[0].get_cards().get_all_cards_ids()) == 10
+        assert len(target_list[0].get_cards().all_cards_ids) == 10
         assert len(target_list[0].get_cards().get_notes()) == 10
-        assert len(target_list[0].get_cards().get_new_cards_ids()) == 7
+        assert len(target_list[0].get_cards().new_cards_ids) == 7
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 7
-        assert len(target_list[1].get_cards().get_all_cards_ids()) == 6
+        assert len(target_list[1].get_cards().all_cards_ids) == 6
         assert len(target_list[1].get_cards().get_notes()) == 6
-        assert len(target_list[1].get_cards().get_new_cards_ids()) == 4
+        assert len(target_list[1].get_cards().new_cards_ids) == 4
         assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 4
 
         # check order

@@ -3,115 +3,97 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Iterator, Optional, Sequence
+from dataclasses import dataclass
+from typing import Optional, Sequence
 
 from anki.collection import Collection
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 from anki.models import NotetypeId, NotetypeDict
 
+
+@dataclass
+class TargetCard:
+    id: CardId
+    nid: NoteId
+    type: int
+    queue: int
+    ivl: int
+    reps: int
+    factor: int
+
+
 class TargetCards:
 
     col: Collection
 
     all_cards_ids: Sequence[CardId]
+    all_cards: list[TargetCard]
+    new_cards: list[TargetCard]
+    new_cards_ids: list[CardId]
+    reviewed_cards: list[TargetCard]
 
-    cards_cached:dict[CardId, Card] = {}
     notes_from_cards_cached: dict[NoteId, Note] = {}
     cache_lock: Optional[Collection] = None
-
-    new_cards_stored: Optional[dict[CardId, Card]]
-    new_cards_ids_stored: Optional[list[CardId]]
-    reviewed_cards_stored: Optional[dict[CardId, Card]]
 
     def __init__(self, all_cards_ids: Sequence[CardId], col: Collection) -> None:
 
         self.all_cards_ids = all_cards_ids
         self.col = col
-        self.new_cards_stored = None
-        self.new_cards_ids_stored = None
-        self.reviewed_cards_stored = None
+
+        self.all_cards = []
+        self.new_cards = []
+        self.new_cards_ids = []
+        self.reviewed_cards = []
+
+        self.get_cards_from_db()
 
         if not TargetCards.cache_lock or TargetCards.cache_lock != col:
             TargetCards.cache_lock = col
-            TargetCards.cards_cached = {}
             TargetCards.notes_from_cards_cached = {}
 
-    def get_all_cards_ids(self) -> Sequence[CardId]:
+    def get_cards_from_db(self) -> None:
 
-        return self.all_cards_ids
+        if not self.col.db:
+            raise Exception("No database connection found when trying to get cards from database!")
 
-    def get_card(self, card_id: CardId) -> Card:
+        card_ids_str = ",".join(map(str, self.all_cards_ids))
+        cards = self.col.db.execute("SELECT id, nid, type, queue, ivl, reps, factor FROM cards WHERE id IN ({}) ORDER BY due ASC".format(card_ids_str))
 
-        if card_id in self.cards_cached:
-            return self.cards_cached[card_id]
-
-        self.cards_cached[card_id] = self.col.get_card(card_id)
-        return self.cards_cached[card_id]
-
-
-    def get_all_cards(self) -> Iterator[Card]:
-
-        for card_id in self.all_cards_ids:
-            yield self.get_card(card_id);
-
-
-    def get_new_cards(self) -> Iterator[Card]:
-
-        if self.new_cards_stored is not None:
-            for card in self.new_cards_stored.values():
-                yield card
-            return
-
-        new_cards_stored = {}
-        for card in self.get_all_cards():
+        for card_row in cards:
+            card = TargetCard(*card_row)
+            self.all_cards.append(card)
             if card.queue == 0:
-                yield card
-                new_cards_stored[card.id] = card
-        self.new_cards_stored = new_cards_stored
+                self.new_cards.append(card)
+                self.new_cards_ids.append(CardId(card.id))
+            if card.queue != 0 and card.type == 2:
+                self.reviewed_cards.append(card)
 
-    def get_reviewed_cards(self) -> Iterator[Card]:
-
-        if self.reviewed_cards_stored is not None:
-            for card in self.reviewed_cards_stored.values():
-                yield card
-            return
-
-        reviewed_cards_stored = {}
-        for card in self.get_all_cards():
-            if card.queue != 0 and card.type == 2: # queue is not 'new' and card is of type 'review'
-                yield card
-                reviewed_cards_stored[card.id] = card
-        self.reviewed_cards_stored = reviewed_cards_stored
+        if len(self.all_cards_ids) != len(self.all_cards):
+            raise Exception("Could not get cards from database!")
 
 
-    def get_new_cards_ids(self) -> list[CardId]:
-
-        if self.new_cards_ids_stored is None:
-            self.new_cards_ids_stored = [card.id for card in self.get_new_cards()]
-        return self.new_cards_ids_stored
-
-    def get_note(self, note_id: NoteId) -> Note:
+    def get_note(self, note_id) -> Note:
 
         if note_id not in self.notes_from_cards_cached:
             self.notes_from_cards_cached[note_id] = self.col.get_note(note_id)
+
         return self.notes_from_cards_cached[note_id]
 
     def get_notes(self) -> dict[NoteId, Note]:
 
         notes_from_all_cards: dict[NoteId, Note] = {}
 
-        for card in self.get_all_cards():
+        for card in self.all_cards:
             if card.nid not in notes_from_all_cards:
                 notes_from_all_cards[card.nid] = self.get_note(card.nid)
 
         return notes_from_all_cards
 
-
     def get_notes_from_new_cards(self) -> dict[NoteId, Note]:
 
         notes_from_new_cards: dict[NoteId, Note] = {}
-        for card in self.get_new_cards():
+        for card in self.new_cards:
             if card.nid not in notes_from_new_cards:
                 notes_from_new_cards[card.nid] = self.get_note(card.nid)
 

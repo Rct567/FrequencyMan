@@ -4,7 +4,6 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from collections import defaultdict
-from copy import deepcopy
 from dataclasses import dataclass, field
 from math import fsum, exp
 from statistics import fmean, median
@@ -153,7 +152,8 @@ class CardRanker:
 
     def __calc_notes_ranking(self, notes_ranking_scores: dict[str, dict[NoteId, float]]) -> tuple[dict[str, dict[NoteId, float]], dict[NoteId, float]]:
 
-        notes_ranking_scores_normalized = deepcopy(notes_ranking_scores)
+        notes_ranking_scores_normalized = notes_ranking_scores.copy()
+
         useable_factors: set[str] = set()
 
         # perform Z-score standardization, use sigmoid and then 0 to 1 normalization

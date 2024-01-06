@@ -16,49 +16,60 @@ LangId = NewType('LangId', str)  # first part of lang_key (en/jp/sp)
 class WordFrequencyLists:
 
     list_dir: str
-    word_frequency_lists: dict[LangKey, dict[str, float]]
+    word_frequency_lists: Optional[dict[LangKey, dict[str, float]]]
 
     def __init__(self, list_dir) -> None:
+
         if not os.path.isdir(list_dir):
             raise ValueError("Invalid 'word frequency list' directory. Directory not found: "+list_dir)
         self.list_dir = list_dir
-        self.word_frequency_lists = {}
-
-    def __getitem__(self, key: LangKey):
-        self.require_loaded_lists(key)
-        return self.word_frequency_lists[key]
+        self.word_frequency_lists = None
 
     def __contains__(self, key: LangKey):
-        self.require_loaded_lists(key)
+
+        if self.word_frequency_lists is None:
+            raise Exception("No word frequency lists loaded.")
         return key in self.word_frequency_lists
 
     def get(self, key: LangKey, default=None):
-        self.require_loaded_lists(key)
+
+        if self.word_frequency_lists is None:
+            raise Exception("No word frequency lists loaded.")
         return self.word_frequency_lists.get(key, default)
 
     def get_word_frequency(self, key: LangKey, word: str, default: float):
-        self.require_loaded_lists(key)
-        return self.word_frequency_lists[key].get(word, default)
 
-    def require_loaded_lists(self, key: Optional[LangKey] = None) -> None:
-        if (len(self.word_frequency_lists) < 1):
+        if self.word_frequency_lists is None:
             raise Exception("No word frequency lists loaded.")
-        if key is not None and key not in self.word_frequency_lists:
+        try:
+            return self.word_frequency_lists[key][word]
+        except KeyError:
+            return default
+
+    def require_loaded_lists(self, key: LangKey) -> None:
+
+        if self.word_frequency_lists is None:
+            raise Exception("No word frequency lists loaded.")
+        if key not in self.word_frequency_lists:
             raise Exception("Word frequency list '{}' not loaded.".format(key))
 
     def str_key_has_frequency_list_file(self, key: str) -> bool:
+
         return self.key_has_frequency_list_file(LangKey(key))
 
     def key_has_frequency_list_file(self, key: LangKey) -> bool:
+
         return len(self.__get_files_for_lang_key(key)) > 0
 
     def keys_have_frequency_list_file(self, keys: list[LangKey]) -> bool:
+
         for key in keys:
             if not self.key_has_frequency_list_file(key):
                 return False
         return True
 
     def __get_files_for_lang_key(self, key: LangKey) -> list[str]:
+
         key_str = key.lower()
         possible_file = os.path.join(self.list_dir, key_str+".txt")
         possible_dir = os.path.join(self.list_dir, key_str)
@@ -75,13 +86,16 @@ class WordFrequencyLists:
         return files
 
     def __list_already_loaded(self, key: LangKey) -> bool:
-        return key in self.word_frequency_lists
+
+        return self.word_frequency_lists is not None and key in self.word_frequency_lists
 
     def load_frequency_lists(self, keys: list[LangKey]) -> None:
+
         for key in keys:
             self.__load_frequency_list(key)
 
     def __load_frequency_list(self, key: LangKey) -> None:
+
         if self.__list_already_loaded(key):
             return
 
@@ -89,6 +103,9 @@ class WordFrequencyLists:
 
         if len(files) < 1:
             raise ValueError(f"No word frequency list found for key '{key}'.")
+
+        if self.word_frequency_lists is None:
+            self.word_frequency_lists = {}
 
         self.word_frequency_lists[key] = self.__produce_word_frequency_list(files)
 

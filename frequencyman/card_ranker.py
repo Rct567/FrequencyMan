@@ -17,7 +17,7 @@ from .target import TargetCards
 
 from .text_processing import WordToken
 from .lib.utilities import *
-from .target_corpus_data import CorpusId, TargetCorpusData, TargetFieldData
+from .target_corpus_data import CorpusId, TargetCorpusData, TargetNoteFieldContentData
 from .word_frequency_list import WordFrequencyLists
 
 
@@ -331,15 +331,15 @@ class CardRanker:
 
         return notes_ranking_factors
 
-    def __get_field_metrics_from_data(self, field_data: TargetFieldData, corpus_key: CorpusId) -> FieldMetrics:
+    def __get_field_metrics_from_data(self, field_data: TargetNoteFieldContentData, corpus_key: CorpusId) -> FieldMetrics:
 
         field_metrics = FieldMetrics()
-        field_content_data = self.corpus_data.notes_fields_data[corpus_key]
+        content_metrics = self.corpus_data.content_metrics[corpus_key]
 
         for word in field_data.field_value_tokenized:
 
             word_fr = self.word_frequency_lists.get_word_frequency(field_data.target_language_key, word, 0)
-            word_ld = field_content_data.words_lexical_discrepancy.get(word, 0)
+            word_ld = content_metrics.words_lexical_discrepancy.get(word, 0)
 
             field_metrics.fr_scores.append(word_fr)
             field_metrics.words_fr_scores[word] = word_fr
@@ -356,30 +356,30 @@ class CardRanker:
                 field_metrics.highest_ld_word = (word, word_ld)
 
             #  familiarity score of words
-            word_familiarity_score = field_content_data.reviewed_words_familiarity.get(word, 0)
+            word_familiarity_score = content_metrics.reviewed.words_familiarity.get(word, 0)
             field_metrics.words_familiarity_scores[word] = word_familiarity_score
 
-            words_familiarity_positional = field_content_data.reviewed_words_familiarity_positional.get(word, 0)
+            words_familiarity_positional = content_metrics.reviewed.words_familiarity_positional.get(word, 0)
             field_metrics.words_familiarity_positional_scores[word] = words_familiarity_positional
 
             # familiarity sweetspot score of words in sweetspot range
-            word_familiarity_sweetspot_score = field_content_data.reviewed_words_familiarity_sweetspot.get(word, None)
+            word_familiarity_sweetspot_score = content_metrics.reviewed.words_familiarity_sweetspot.get(word, None)
             if word_familiarity_sweetspot_score is not None:
                 field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
 
             # most obscure word (lowest ubiquity)
-            word_familiarity_score = field_content_data.reviewed_words_familiarity.get(word, 0)
+            word_familiarity_score = content_metrics.reviewed.words_familiarity.get(word, 0)
             word_ubiquity_score = (word_fr+word_familiarity_score)/2
 
             if field_metrics.most_obscure_word[0] == "" or word_ubiquity_score < field_metrics.most_obscure_word[1]:
                 field_metrics.most_obscure_word = (word, word_ubiquity_score)
 
             # focus words
-            if word_familiarity_score < (0.9*field_content_data.reviewed_words_familiarity_median):
+            if word_familiarity_score < (0.9*content_metrics.reviewed.words_familiarity_median):
                 field_metrics.focus_words[word] = word_familiarity_score
 
             # set seen and unseen
-            if word in field_content_data.reviewed_words:
+            if word in content_metrics.reviewed.words:
                 field_metrics.seen_words.append(word)  # word seen, word exist in at least one reviewed card
             else:
                 field_metrics.unseen_words.append(word)

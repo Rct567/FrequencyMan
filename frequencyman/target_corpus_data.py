@@ -25,9 +25,9 @@ from .text_processing import TextProcessing, WordToken
 # when they have to same LangId)
 CorpusId = NewType('CorpusId', str)
 
-# Meta data for each field (in target)
+
 @dataclass(frozen=True)
-class TargetFieldData:
+class TargetNoteFieldContentData:
     corpus_id: CorpusId
     field_name: str
     field_value_plain_text: str
@@ -36,24 +36,22 @@ class TargetFieldData:
     target_language_id: LangId
 
 
-# Data of content in fields (in target)
 @dataclass
-class NoteFieldContentData:
-    # reviewed words and the cards they they occur in, per "field of note"
-    reviewed_words: dict[WordToken, list[TargetCard]] = field(default_factory=dict)
-    #
-    reviewed_words_presence: dict[WordToken, list[float]] = field(default_factory=dict)  # list because a word can occur multiple times in a field
-    reviewed_words_presence_card_score: dict[WordToken, list[float]] = field(default_factory=dict)
-    #
-    reviewed_words_familiarity: dict[WordToken, float] = field(default_factory=dict)
-    reviewed_words_familiarity_mean: float = field(default=0.0)
-    reviewed_words_familiarity_median: float = field(default=0.0)
-    #
-    reviewed_words_familiarity_positional: dict[WordToken, float] = field(default_factory=dict)
-    #
-    reviewed_words_familiarity_sweetspot: dict[WordToken, float] = field(default_factory=dict)
-    #
+class TargetReviewedContentMetrics:
+    words: dict[WordToken, list[TargetCard]] = field(default_factory=dict)
+    words_presence: dict[WordToken, list[float]] = field(default_factory=dict)  # list because a word can occur multiple times in a field
+    words_presence_card_score: dict[WordToken, list[float]] = field(default_factory=dict)
+    words_familiarity: dict[WordToken, float] = field(default_factory=dict)
+    words_familiarity_mean: float = field(default=0.0)
+    words_familiarity_median: float = field(default=0.0)
+    words_familiarity_positional: dict[WordToken, float] = field(default_factory=dict)
+    words_familiarity_sweetspot: dict[WordToken, float] = field(default_factory=dict)
+
+
+@dataclass
+class TargetContentMetrics:
     words_lexical_discrepancy: dict[WordToken, float] = field(default_factory=dict)
+    reviewed: TargetReviewedContentMetrics = field(default_factory=TargetReviewedContentMetrics)
 
 
 class TargetCorpusData:
@@ -62,14 +60,14 @@ class TargetCorpusData:
     """
 
     target_cards: TargetCards
-    field_data_per_card_note: dict[NoteId, list[TargetFieldData]]
-    notes_fields_data: dict[CorpusId, NoteFieldContentData]
+    field_data_per_card_note: dict[NoteId, list[TargetNoteFieldContentData]]
+    content_metrics: dict[CorpusId, TargetContentMetrics]
     familiarity_sweetspot_point: float
 
     def __init__(self):
 
         self.field_data_per_card_note = {}
-        self.notes_fields_data = defaultdict(NoteFieldContentData)
+        self.content_metrics = defaultdict(TargetContentMetrics)
         self.familiarity_sweetspot_point = 0.75
 
     def create_data(self, target_cards: TargetCards, target_fields_by_notes_name: dict[str, dict[str, str]], word_frequency_lists: WordFrequencyLists) -> None:
@@ -96,7 +94,7 @@ class TargetCorpusData:
 
                 target_note_fields = target_fields_by_notes_name[card_note_type['name']]
 
-                card_note_fields_in_target: list[TargetFieldData] = []
+                card_note_fields_in_target: list[TargetNoteFieldContentData] = []
                 for field_name, field_val in card_note.items():
                     if field_name in target_note_fields.keys():
 
@@ -110,7 +108,7 @@ class TargetCorpusData:
                         plain_text = TextProcessing.get_plain_text(field_val).lower()
                         field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
 
-                        card_note_fields_in_target.append(TargetFieldData(
+                        card_note_fields_in_target.append(TargetNoteFieldContentData(
                             corpus_id=CorpusId(corpus_id),
                             field_name=field_name,
                             field_value_plain_text=plain_text,
@@ -170,12 +168,12 @@ class TargetCorpusData:
                 corpus_key = field_data.corpus_id
 
                 for word_token in field_data.field_value_tokenized:
-                    if word_token not in self.notes_fields_data[corpus_key].reviewed_words:
-                        self.notes_fields_data[corpus_key].reviewed_words[word_token] = []
-                    self.notes_fields_data[corpus_key].reviewed_words[word_token].append(card)
+                    if word_token not in self.content_metrics[corpus_key].reviewed.words:
+                        self.content_metrics[corpus_key].reviewed.words[word_token] = []
+                    self.content_metrics[corpus_key].reviewed.words[word_token].append(card)
 
     @staticmethod
-    def __calc_word_presence_score(word_token: str, context_num_chars :int, context_num_tokens: int, position_index: int) -> float:
+    def __calc_word_presence_score(word_token: str, context_num_chars: int, context_num_tokens: int, position_index: int) -> float:
 
         presence_num_chars = len(word_token)/context_num_chars
         presence_num_tokens = 1/context_num_tokens
@@ -196,29 +194,29 @@ class TargetCorpusData:
 
                 for index, word_token in enumerate(field_data.field_value_tokenized):
 
-                    if word_token not in self.notes_fields_data[corpus_key].reviewed_words_presence:
-                        self.notes_fields_data[corpus_key].reviewed_words_presence[word_token] = []
-                        self.notes_fields_data[corpus_key].reviewed_words_presence_card_score[word_token] = []
+                    if word_token not in self.content_metrics[corpus_key].reviewed.words_presence:
+                        self.content_metrics[corpus_key].reviewed.words_presence[word_token] = []
+                        self.content_metrics[corpus_key].reviewed.words_presence_card_score[word_token] = []
 
                     word_presence_score = self.__calc_word_presence_score(word_token, field_num_chars_tokens, field_num_tokens, index)
-                    self.notes_fields_data[corpus_key].reviewed_words_presence[word_token].append(word_presence_score)
-                    self.notes_fields_data[corpus_key].reviewed_words_presence_card_score[word_token].append(card_memorized_scores[card.id])
+                    self.content_metrics[corpus_key].reviewed.words_presence[word_token].append(word_presence_score)
+                    self.content_metrics[corpus_key].reviewed.words_presence_card_score[word_token].append(card_memorized_scores[card.id])
 
     def __set_notes_reviewed_words_familiarity(self) -> None:
         """
         Set the familiarity score for each word per field of card note, based on word presence in reviewed cards and score of card.
         """
-        for corpus_key in self.notes_fields_data.keys():
+        for corpus_key in self.content_metrics.keys():
 
             field_familiarity_scores_per_word: list[float] = []
 
-            for word_token, word_presence_scores in self.notes_fields_data[corpus_key].reviewed_words_presence.items():
-                word_presence_card_scores = self.notes_fields_data[corpus_key].reviewed_words_presence_card_score[word_token]
+            for word_token, word_presence_scores in self.content_metrics[corpus_key].reviewed.words_presence.items():
+                word_presence_card_scores = self.content_metrics[corpus_key].reviewed.words_presence_card_score[word_token]
                 field_familiarity_scores_per_word.append(fsum(word_presence_scores)+fsum(word_presence_card_scores))
 
             field_avg_word_familiarity_score = fmean(field_familiarity_scores_per_word)
 
-            for index, word_token in enumerate(self.notes_fields_data[corpus_key].reviewed_words_presence.keys()):
+            for index, word_token in enumerate(self.content_metrics[corpus_key].reviewed.words_presence.keys()):
 
                 word_familiarity_smooth_score = field_familiarity_scores_per_word[index]
 
@@ -229,35 +227,35 @@ class TargetCorpusData:
                 if (word_familiarity_smooth_score > field_avg_word_familiarity_score):
                     word_familiarity_smooth_score = fmean([word_familiarity_smooth_score, field_avg_word_familiarity_score])
 
-                self.notes_fields_data[corpus_key].reviewed_words_familiarity[word_token] = word_familiarity_smooth_score
+                self.content_metrics[corpus_key].reviewed.words_familiarity[word_token] = word_familiarity_smooth_score
 
             # make scores values relative
 
-            self.notes_fields_data[corpus_key].reviewed_words_familiarity = normalize_dict_floats_values(self.notes_fields_data[corpus_key].reviewed_words_familiarity)
-            self.notes_fields_data[corpus_key].reviewed_words_familiarity = sort_dict_floats_values(self.notes_fields_data[corpus_key].reviewed_words_familiarity)
+            self.content_metrics[corpus_key].reviewed.words_familiarity = normalize_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity)
+            self.content_metrics[corpus_key].reviewed.words_familiarity = sort_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity)
 
             # set avg and median
 
-            self.notes_fields_data[corpus_key].reviewed_words_familiarity_mean = mean(self.notes_fields_data[corpus_key].reviewed_words_familiarity.values())
-            self.notes_fields_data[corpus_key].reviewed_words_familiarity_median = median(self.notes_fields_data[corpus_key].reviewed_words_familiarity.values())
+            self.content_metrics[corpus_key].reviewed.words_familiarity_mean = mean(self.content_metrics[corpus_key].reviewed.words_familiarity.values())
+            self.content_metrics[corpus_key].reviewed.words_familiarity_median = median(self.content_metrics[corpus_key].reviewed.words_familiarity.values())
 
             # also relative, but based on (sorted) position, just like value received from WordFrequencyList.get_word_frequency
 
-            max_rank = len(self.notes_fields_data[corpus_key].reviewed_words_familiarity)
+            max_rank = len(self.content_metrics[corpus_key].reviewed.words_familiarity)
 
-            for index, word_token in enumerate(self.notes_fields_data[corpus_key].reviewed_words_familiarity.keys()):
+            for index, word_token in enumerate(self.content_metrics[corpus_key].reviewed.words_familiarity.keys()):
                 familiarity_positional = (max_rank-(index))/max_rank
-                self.notes_fields_data[corpus_key].reviewed_words_familiarity_positional[word_token] = familiarity_positional
+                self.content_metrics[corpus_key].reviewed.words_familiarity_positional[word_token] = familiarity_positional
 
     def __set_notes_reviewed_words_familiarity_sweetspot(self) -> None:
 
-        for corpus_key in self.notes_fields_data.keys():
+        for corpus_key in self.content_metrics.keys():
 
-            median_familiarity = median(self.notes_fields_data[corpus_key].reviewed_words_familiarity.values())
+            median_familiarity = median(self.content_metrics[corpus_key].reviewed.words_familiarity.values())
 
-            for word_token in self.notes_fields_data[corpus_key].reviewed_words_familiarity:
+            for word_token in self.content_metrics[corpus_key].reviewed.words_familiarity:
 
-                familiarity = self.notes_fields_data[corpus_key].reviewed_words_familiarity[word_token]
+                familiarity = self.content_metrics[corpus_key].reviewed.words_familiarity[word_token]
                 familiarity_sweetspot_value = median_familiarity*self.familiarity_sweetspot_point
 
                 if (familiarity > familiarity_sweetspot_value*2.6666):
@@ -265,11 +263,10 @@ class TargetCorpusData:
 
                 familiarity_sweetspot_rating = 1-abs(familiarity-familiarity_sweetspot_value)
 
-                self.notes_fields_data[corpus_key].reviewed_words_familiarity_sweetspot[word_token] = familiarity_sweetspot_rating
+                self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot[word_token] = familiarity_sweetspot_rating
 
-            self.notes_fields_data[corpus_key].reviewed_words_familiarity_sweetspot = normalize_dict_floats_values(self.notes_fields_data[corpus_key].reviewed_words_familiarity_sweetspot)
-            self.notes_fields_data[corpus_key].reviewed_words_familiarity_sweetspot = sort_dict_floats_values(self.notes_fields_data[corpus_key].reviewed_words_familiarity_sweetspot)
-
+            self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = normalize_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
+            self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = sort_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
 
     def __set_notes_lexical_discrepancy(self, word_frequency_lists: WordFrequencyLists) -> None:
 
@@ -283,11 +280,11 @@ class TargetCorpusData:
                 for word_token in field.field_value_tokenized:
 
                     word_fr = word_frequency_lists.get_word_frequency(language_key, word_token, 0)
-                    word_familiarity = self.notes_fields_data[corpus_key].reviewed_words_familiarity_positional.get(word_token, 0)
+                    word_familiarity = self.content_metrics[corpus_key].reviewed.words_familiarity_positional.get(word_token, 0)
                     word_lexical_discrepancy_rating = (word_fr - word_familiarity)
                     if (word_lexical_discrepancy_rating >= 0):
-                        self.notes_fields_data[corpus_key].words_lexical_discrepancy[word_token] = word_lexical_discrepancy_rating
+                        self.content_metrics[corpus_key].words_lexical_discrepancy[word_token] = word_lexical_discrepancy_rating
 
-        for corpus_key in self.notes_fields_data.keys():
-            self.notes_fields_data[corpus_key].words_lexical_discrepancy = normalize_dict_floats_values(self.notes_fields_data[corpus_key].words_lexical_discrepancy)
-            self.notes_fields_data[corpus_key].words_lexical_discrepancy = sort_dict_floats_values(self.notes_fields_data[corpus_key].words_lexical_discrepancy)
+        for corpus_key in self.content_metrics.keys():
+            self.content_metrics[corpus_key].words_lexical_discrepancy = normalize_dict_floats_values(self.content_metrics[corpus_key].words_lexical_discrepancy)
+            self.content_metrics[corpus_key].words_lexical_discrepancy = sort_dict_floats_values(self.content_metrics[corpus_key].words_lexical_discrepancy)

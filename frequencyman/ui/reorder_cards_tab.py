@@ -19,7 +19,7 @@ from .main_window import FrequencyManMainWindow
 from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log
 
-from ..word_frequency_list import WordFrequencyLists
+from ..language_data import LanguageData
 from ..target_list import ConfiguredTarget, TargetList, TargetListReorderResult, ConfiguredTargetNote
 
 
@@ -99,11 +99,11 @@ class ReorderCardsTab:
         self.col = col
 
         # word frequency lists can be used for all targets
-        frequency_lists_dir = os.path.join(self.fm_window.root_dir, 'user_files', 'frequency_lists')
-        word_frequency_lists = WordFrequencyLists(frequency_lists_dir)
+        user_files_dir = os.path.join(self.fm_window.root_dir, 'user_files')
+        language_data = LanguageData(user_files_dir)
 
         # target data (list of targets for reordering)
-        self.target_list = TargetList(word_frequency_lists, col)
+        self.target_list = TargetList(language_data, col)
         if self.fm_window.addon_config and "reorder_target_list" in self.fm_window.addon_config:
             self.target_list.set_targets(self.fm_window.addon_config.get("reorder_target_list", []))
 

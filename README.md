@@ -21,7 +21,7 @@ Please note: this plugin is a __WORK IN PROGRESS__. Don't use it on your main pr
 1. Go to the Anki plugin folder, such as __C:\Users\%USERNAME%\AppData\Roaming\Anki2\addons21__
 2. Create a new folder for the plugin, such as __addons21\FrequencyMan__
 3. Clone the project in the new folder: `git clone https://github.com/Rct567/FrequencyMan.git`
-4. Place your word frequency lists (*.txt files) in a subfolder in FrequencyMan/user_files/, such as __\FrequencyMan\user_files\frequency_lists\en__
+4. Place your word frequency lists (*.txt files) in a subfolder in FrequencyMan/user_files/, such as __\FrequencyMan\user_files\lang_data\en__
 5. Start Anki.
 
 ## Basic usage

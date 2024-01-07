@@ -14,7 +14,7 @@ from anki.cards import CardId, Card
 from anki.notes import NoteId
 
 from .target_cards import TargetCard, TargetCards
-from .word_frequency_list import LangId, LangKey, WordFrequencyLists
+from .language_data import LangId, LangDataId, LanguageData
 from .lib.utilities import *
 from .text_processing import TextProcessing, WordToken
 
@@ -32,7 +32,7 @@ class TargetNoteFieldContentData:
     field_name: str
     field_value_plain_text: str
     field_value_tokenized: list[WordToken]
-    target_language_key: LangKey
+    target_language_key: LangDataId
     target_language_id: LangId
 
 
@@ -70,7 +70,7 @@ class TargetCorpusData:
         self.content_metrics = defaultdict(TargetContentMetrics)
         self.familiarity_sweetspot_point = 0.75
 
-    def create_data(self, target_cards: TargetCards, target_fields_by_notes_name: dict[str, dict[str, str]], word_frequency_lists: WordFrequencyLists) -> None:
+    def create_data(self, target_cards: TargetCards, target_fields_by_notes_name: dict[str, dict[str, str]], language_data: LanguageData) -> None:
         """
         Create corpus data for the given target and its cards.
         """
@@ -113,7 +113,7 @@ class TargetCorpusData:
                             field_name=field_name,
                             field_value_plain_text=plain_text,
                             field_value_tokenized=field_value_tokenized,
-                            target_language_key=LangKey(lang_key),
+                            target_language_key=LangDataId(lang_key),
                             target_language_id=LangId(lang_id)
                         ))
 
@@ -123,7 +123,7 @@ class TargetCorpusData:
         self.__set_notes_reviewed_words_presence()
         self.__set_notes_reviewed_words_familiarity()
         self.__set_notes_reviewed_words_familiarity_sweetspot()
-        self.__set_notes_lexical_discrepancy(word_frequency_lists)
+        self.__set_notes_lexical_discrepancy(language_data)
 
     def __get_reviewed_words_card_memorized_scores(self) -> dict[CardId, float]:
 
@@ -268,7 +268,7 @@ class TargetCorpusData:
             self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = normalize_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
             self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = sort_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
 
-    def __set_notes_lexical_discrepancy(self, word_frequency_lists: WordFrequencyLists) -> None:
+    def __set_notes_lexical_discrepancy(self, language_data: LanguageData) -> None:
 
         for note_fields in self.field_data_per_card_note.values():
 
@@ -279,7 +279,7 @@ class TargetCorpusData:
 
                 for word_token in field.field_value_tokenized:
 
-                    word_fr = word_frequency_lists.get_word_frequency(language_key, word_token, 0)
+                    word_fr = language_data.get_word_frequency(language_key, word_token, 0)
                     word_familiarity = self.content_metrics[corpus_key].reviewed.words_familiarity_positional.get(word_token, 0)
                     word_lexical_discrepancy_rating = (word_fr - word_familiarity)
                     if (word_lexical_discrepancy_rating >= 0):

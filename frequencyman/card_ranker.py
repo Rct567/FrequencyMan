@@ -18,7 +18,7 @@ from .target import TargetCards
 from .text_processing import WordToken
 from .lib.utilities import *
 from .target_corpus_data import CorpusId, TargetCorpusData, TargetNoteFieldContentData
-from .word_frequency_list import WordFrequencyLists
+from .language_data import LanguageData
 
 
 def sigmoid(x: float):
@@ -82,11 +82,11 @@ class CardRanker:
     ideal_word_count_min: int
     ideal_word_count_max: int
 
-    def __init__(self, target_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists,
+    def __init__(self, target_corpus_data: TargetCorpusData, language_data: LanguageData,
                  col: Collection, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> None:
 
         self.corpus_data = target_corpus_data
-        self.word_frequency_lists = word_frequency_lists
+        self.language_data = language_data
         self.col = col
         self.modified_dirty_notes = modified_dirty_notes
         self.ranking_factors_stats = None
@@ -338,7 +338,7 @@ class CardRanker:
 
         for word in field_data.field_value_tokenized:
 
-            word_fr = self.word_frequency_lists.get_word_frequency(field_data.target_language_key, word, 0)
+            word_fr = self.language_data.get_word_frequency(field_data.target_language_key, word, 0)
             word_ld = content_metrics.words_lexical_discrepancy.get(word, 0)
 
             field_metrics.fr_scores.append(word_fr)

@@ -12,8 +12,8 @@ from anki.notes import Note, NoteId
 
 from .lib.utilities import get_float, profile_context, var_dump, var_dump_log
 from .lib.event_logger import EventLogger
-from .word_frequency_list import WordFrequencyLists
-from .target_corpus_data import LangKey, TargetCorpusData
+from .language_data import LanguageData, LangDataId
+from .target_corpus_data import TargetCorpusData
 from .target_cards import TargetCards
 
 
@@ -93,15 +93,14 @@ class Target:
             Target.corpus_cache = {}
             Target.target_cards_cache = {}
 
-
     def get_config_notes(self) -> dict[str, dict[str, str]]:
         return {note['name']: note['fields'] for note in self.config_target.get('notes', [])}
 
-    def __get_all_language_keys(self) -> list[LangKey]:
+    def __get_all_language_keys(self) -> list[LangDataId]:
         keys = []
         for note in self.config_target.get('notes', []):
             for lang_key in note['fields'].values():
-                keys.append(LangKey(lang_key.lower()))
+                keys.append(LangDataId(lang_key.lower()))
         return keys
 
     def __get_query_defined_scope(self) -> Optional[str]:
@@ -188,9 +187,9 @@ class Target:
 
         return target_cards
 
-    def __get_cached_corpus_data(self, target_cards: TargetCards, word_frequency_lists: WordFrequencyLists) -> TargetCorpusData:
+    def __get_cached_corpus_data(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
 
-        cache_key = (str(target_cards.all_cards_ids), str(self.get_config_notes()), self.col, word_frequency_lists, self.config_target.get('familiarity_sweetspot_point'))
+        cache_key = (str(target_cards.all_cards_ids), str(self.get_config_notes()), self.col, language_data, self.config_target.get('familiarity_sweetspot_point'))
         if cache_key in self.corpus_cache:
             return self.corpus_cache[cache_key]
 
@@ -198,11 +197,11 @@ class Target:
         if familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point')):
             target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
-        target_corpus_data.create_data(target_cards, self.get_config_notes(), word_frequency_lists)
+        target_corpus_data.create_data(target_cards, self.get_config_notes(), language_data)
         self.corpus_cache[cache_key] = target_corpus_data
         return target_corpus_data
 
-    def reorder_cards(self, reorder_starting_from: int, word_frequency_lists: WordFrequencyLists,
+    def reorder_cards(self, reorder_starting_from: int, language_data: LanguageData,
                       event_logger: EventLogger, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> TargetReorderResult:
 
         from .card_ranker import CardRanker
@@ -214,13 +213,13 @@ class Target:
 
         # Check defined target lang keys and then load frequency lists for target
         for lang_key in self.__get_all_language_keys():
-            if not word_frequency_lists.key_has_frequency_list_file(lang_key):
+            if not language_data.key_has_frequency_list_file(lang_key):
                 error_msg = "No word frequency list file found for key '{}'!".format(lang_key)
                 event_logger.add_entry(error_msg)
                 return TargetReorderResult(success=False, error=error_msg)
 
         with event_logger.add_benchmarked_entry("Loading word frequency lists."):
-            word_frequency_lists.load_frequency_lists(self.__get_all_language_keys())
+            language_data.load_frequency_lists(self.__get_all_language_keys())
 
         # Get cards for target
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):
@@ -237,7 +236,7 @@ class Target:
         # Get corpus data
 
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
-            target_corpus_data = self.__get_cached_corpus_data(target_cards, word_frequency_lists)
+            target_corpus_data = self.__get_cached_corpus_data(target_cards, language_data)
 
         # If reorder scope is defined, use it for reordering
         reorder_scope_query = self.__get_reorder_scope_query()
@@ -264,7 +263,7 @@ class Target:
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
 
-            card_ranker = CardRanker(target_corpus_data, word_frequency_lists, self.col, modified_dirty_notes)
+            card_ranker = CardRanker(target_corpus_data, language_data, self.col, modified_dirty_notes)
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():

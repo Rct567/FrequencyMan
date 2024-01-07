@@ -4,7 +4,7 @@ import shutil
 
 from frequencyman.target_list import TargetList, TargetListReorderResult
 from frequencyman.lib.event_logger import EventLogger
-from frequencyman.word_frequency_list import LangKey, WordFrequencyLists
+from frequencyman.language_data import LangDataId, LanguageData
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from aqt.operations import QueryOp, CollectionOp
@@ -33,7 +33,7 @@ class TestTargetListReorder:
 
         collection_dir = os.path.join(self.TEST_COLLECTIONS_DIR, test_collection_name)
 
-        word_frequency_lists = WordFrequencyLists(os.path.join(collection_dir, 'frequency_lists'))
+        lang_data = LanguageData(collection_dir)
 
         # create temporary collection
         collection_file = os.path.join(collection_dir, test_collection_name+".anki2")
@@ -54,13 +54,13 @@ class TestTargetListReorder:
                 print("WARNING: Order file for '{}' didn't exist yet!".format(test_collection_name))
 
         # return result
-        return Collection(temp_collection_file), word_frequency_lists, assert_locked_order
+        return Collection(temp_collection_file), lang_data, assert_locked_order
 
     def test_reorder_cards_big_collection_es(self):
 
-        col, word_frequency_lists, assert_locked_order = self.__get_test_collection('big_collection_es', collection_test_seq_num=0)
+        col, lang_data, assert_locked_order = self.__get_test_collection('big_collection_es', collection_test_seq_num=0)
 
-        target_list = TargetList(word_frequency_lists, col)
+        target_list = TargetList(lang_data, col)
 
         target_list.set_targets([
             {
@@ -130,9 +130,9 @@ class TestTargetListReorder:
 
     def test_reorder_cards_big_collection_es_with_reorder_scope(self):
 
-        col, word_frequency_lists, assert_locked_order = self.__get_test_collection('big_collection_es', collection_test_seq_num=1)
+        col, lang_data, assert_locked_order = self.__get_test_collection('big_collection_es', collection_test_seq_num=1)
 
-        target_list = TargetList(word_frequency_lists, col)
+        target_list = TargetList(lang_data, col)
 
         target_list.set_targets([
             {
@@ -185,12 +185,11 @@ class TestTargetListReorder:
         # check order
         assert_locked_order(target_result.sorted_cards_ids)
 
-
     def test_two_deck_collection(self):
 
-        col, word_frequency_lists, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=0)
+        col, language_data, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=0)
 
-        target_list = TargetList(word_frequency_lists, col)
+        target_list = TargetList(language_data, col)
 
         validity_state = target_list.set_targets([
             {

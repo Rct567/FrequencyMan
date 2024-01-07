@@ -15,7 +15,7 @@ from .lib.utilities import is_numeric_value
 from .card_ranker import CardRanker
 from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote
 from .target_cards import TargetCards
-from .word_frequency_list import WordFrequencyLists
+from .language_data import LanguageData
 from .lib.event_logger import EventLogger
 
 
@@ -30,12 +30,12 @@ class TargetListReorderResult():
 class TargetList:
 
     target_list: list[Target]
-    word_frequency_lists: WordFrequencyLists
+    language_data: LanguageData
     col: Collection
 
-    def __init__(self, word_frequency_lists: WordFrequencyLists, col: Collection) -> None:
+    def __init__(self, language_data: LanguageData, col: Collection) -> None:
         self.target_list = []
-        self.word_frequency_lists = word_frequency_lists
+        self.language_data = language_data
         self.col = col
 
     def __iter__(self):
@@ -92,7 +92,7 @@ class TargetList:
                 return (0, "Note object specified in target[{}].notes is missing key 'name'.".format(index))
             if "fields" not in note:
                 return (0, "Note object specified in target[{}].notes is is missing key 'fields'.".format(index))
-            if not isinstance(note.get('fields'), dict) :
+            if not isinstance(note.get('fields'), dict):
                 return (0, "Fields for note object specified in target[{}].notes[{}] is not a valid type (object expected).".format(index, note_index))
 
             note_model = self.col.models.by_name(note['name'])
@@ -103,7 +103,7 @@ class TargetList:
             for field_name, defined_lang_key in note.get('fields', {}).items():
                 if not any(field['name'] == field_name for field in note_model['flds']):
                     return (0, "Field name '{}' for note object specified in target[{}].notes does not exist.".format(field_name, index))
-                if not self.word_frequency_lists.str_key_has_frequency_list_file(defined_lang_key):
+                if not self.language_data.str_key_has_frequency_list_file(defined_lang_key):
                     return (0, "No word frequency list file found for key '{}'!".format(defined_lang_key))
 
         # check custom ranking factors object and its weights values
@@ -162,7 +162,7 @@ class TargetList:
         # Reposition cards for each target
         for target in self.target_list:
             with event_logger.add_benchmarked_entry("Reordering target #{}.".format(target.index_num)):
-                reorder_result = target.reorder_cards(num_cards_repositioned+1, self.word_frequency_lists, event_logger, modified_dirty_notes)
+                reorder_result = target.reorder_cards(num_cards_repositioned+1, self.language_data, event_logger, modified_dirty_notes)
                 reorder_result_list.append(reorder_result)
                 if reorder_result.cards_repositioned:
                     num_cards_repositioned += reorder_result.num_cards_repositioned
@@ -177,7 +177,6 @@ class TargetList:
             notes_to_update = [note for note in modified_dirty_notes.values() if note is not None]
             with event_logger.add_benchmarked_entry("Updating {:n} modified notes from targets.".format(len(notes_to_update))):
                 update_notes_anki_op_changes = col.update_notes(notes_to_update)
-
 
         # Done
         event_logger.add_entry("Done with reordering of all targets! {:n} cards repositioned.".format(num_cards_repositioned))

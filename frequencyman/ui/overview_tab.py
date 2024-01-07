@@ -16,7 +16,7 @@ from .main_window import FrequencyManMainWindow
 
 from ..card_ranker import CardRanker
 from ..target_corpus_data import TargetCorpusData
-from ..word_frequency_list import WordFrequencyLists
+from ..language_data import LanguageData
 from ..target_list import ConfiguredTarget, Target, TargetList
 
 from ..lib.utilities import var_dump_log

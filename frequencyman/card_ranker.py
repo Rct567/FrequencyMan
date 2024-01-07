@@ -79,6 +79,8 @@ class CardRanker:
     modified_dirty_notes: dict[NoteId, Optional[Note]]
     ranking_factors_span: dict[str, float]
     ranking_factors_stats: Optional[dict[str, dict[str, float]]]
+    ideal_word_count_min: int
+    ideal_word_count_max: int
 
     def __init__(self, target_corpus_data: TargetCorpusData, word_frequency_lists: WordFrequencyLists,
                  col: Collection, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> None:
@@ -89,6 +91,8 @@ class CardRanker:
         self.modified_dirty_notes = modified_dirty_notes
         self.ranking_factors_stats = None
         self.ranking_factors_span = self.get_default_ranking_factors_span()
+        self.ideal_word_count_min = 2
+        self.ideal_word_count_max = 5
 
     @staticmethod
     def get_default_ranking_factors_span() -> dict[str, float]:
@@ -225,14 +229,14 @@ class CardRanker:
 
     def __calc_card_notes_field_metrics(self, notes_from_new_cards: dict[NoteId, Note], with_additional_props: bool) -> dict[NoteId, AggregatedFieldsMetrics]:
 
-        notes_metrics: dict[NoteId, AggregatedFieldsMetrics] = {}
+        notes_metrics: dict[NoteId, AggregatedFieldsMetrics] = {note_id: AggregatedFieldsMetrics() for note_id in notes_from_new_cards.keys()}
 
         for note_id, note in notes_from_new_cards.items():
 
             # get scores per note field and append to note metrics
 
             note_fields_defined_in_target = self.corpus_data.field_data_per_card_note[note.id]
-            note_metrics = AggregatedFieldsMetrics()
+            note_metrics = notes_metrics[note_id]
 
             for field_data in note_fields_defined_in_target:
 
@@ -268,7 +272,8 @@ class CardRanker:
                 note_metrics.ideal_focus_words_count_scores.append(self.__calc_ideal_unseen_words_count_score(num_focus_words))
 
                 # ideal word count
-                note_metrics.ideal_words_count_scores.append(self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), 2, 5))
+                ideal_word_count_score = self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), self.ideal_word_count_min, self.ideal_word_count_max)
+                note_metrics.ideal_words_count_scores.append(ideal_word_count_score)
 
                 # familiarity scores
                 if len(field_metrics.words_familiarity_positional_scores) > 0:
@@ -294,8 +299,6 @@ class CardRanker:
                     note_metrics.ld_scores.append(fsum(field_metrics.ld_scores))
                 else:
                     note_metrics.ld_scores.append(0)
-
-            notes_metrics[note_id] = note_metrics
 
         return notes_metrics
 
@@ -328,7 +331,6 @@ class CardRanker:
 
         return notes_ranking_factors
 
-
     def __get_field_metrics_from_data(self, field_data: TargetFieldData, corpus_key: CorpusId) -> FieldMetrics:
 
         field_metrics = FieldMetrics()
@@ -337,7 +339,7 @@ class CardRanker:
         for word in field_data.field_value_tokenized:
 
             word_fr = self.word_frequency_lists.get_word_frequency(field_data.target_language_key, word, 0)
-            word_ld = field_content_data.words_lexical_discrepancy.get(word, 0)  # unfamiliarity of high frequency words
+            word_ld = field_content_data.words_lexical_discrepancy.get(word, 0)
 
             field_metrics.fr_scores.append(word_fr)
             field_metrics.words_fr_scores[word] = word_fr
@@ -459,7 +461,6 @@ class CardRanker:
                 self.modified_dirty_notes[note_id] = note
             elif lock_note_data:  # lock to keep it as it is
                 self.modified_dirty_notes[note_id] = None
-
 
     def __update_meta_data_for_notes_with_non_new_cards(self, target_cards: TargetCards) -> None:
 

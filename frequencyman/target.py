@@ -83,6 +83,7 @@ class Target:
     cache_lock: Optional[Collection] = None
 
     def __init__(self, target: ConfiguredTarget, index_num: int, col: Collection) -> None:
+
         self.config_target = target
         self.index_num = index_num
         self.scope_query = None
@@ -93,14 +94,22 @@ class Target:
             Target.corpus_cache = {}
             Target.target_cards_cache = {}
 
-    def get_config_notes(self) -> dict[str, dict[str, str]]:
-        return {note['name']: note['fields'] for note in self.config_target.get('notes', [])}
+    def get_config_fields_per_note_type(self) -> dict[str, dict[str, LangDataId]]:
 
-    def __get_all_language_keys(self) -> list[LangDataId]:
+        config_notes = {}
+
+        for note in self.config_target.get('notes', []):
+            note_fields = {field_name: LangDataId(lang_data_id.lower()) for field_name, lang_data_id in note['fields'].items()}
+            config_notes[note['name']] = note_fields
+
+        return config_notes
+
+    def __get_all_language_data_keys(self) -> list[LangDataId]:
+
         keys = []
         for note in self.config_target.get('notes', []):
-            for lang_key in note['fields'].values():
-                keys.append(LangDataId(lang_key.lower()))
+            for lang_data_id in note['fields'].values():
+                keys.append(LangDataId(lang_data_id.lower()))
         return keys
 
     def __get_query_defined_scope(self) -> Optional[str]:
@@ -189,7 +198,7 @@ class Target:
 
     def __get_cached_corpus_data(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
 
-        cache_key = (str(target_cards.all_cards_ids), str(self.get_config_notes()), self.col, language_data, self.config_target.get('familiarity_sweetspot_point'))
+        cache_key = (str(target_cards.all_cards_ids), str(self.get_config_fields_per_note_type()), self.col, language_data, self.config_target.get('familiarity_sweetspot_point'))
         if cache_key in self.corpus_cache:
             return self.corpus_cache[cache_key]
 
@@ -197,7 +206,7 @@ class Target:
         if familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point')):
             target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
-        target_corpus_data.create_data(target_cards, self.get_config_notes(), language_data)
+        target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(), language_data)
         self.corpus_cache[cache_key] = target_corpus_data
         return target_corpus_data
 
@@ -212,14 +221,14 @@ class Target:
             return TargetReorderResult(success=False, error=error_msg)
 
         # Check defined target lang keys and then load frequency lists for target
-        for lang_key in self.__get_all_language_keys():
-            if not language_data.key_has_frequency_list_file(lang_key):
+        for lang_key in self.__get_all_language_data_keys():
+            if not language_data.id_has_word_frequency_list(lang_key):
                 error_msg = "No word frequency list file found for key '{}'!".format(lang_key)
                 event_logger.add_entry(error_msg)
                 return TargetReorderResult(success=False, error=error_msg)
 
         with event_logger.add_benchmarked_entry("Loading word frequency lists."):
-            language_data.load_frequency_lists(self.__get_all_language_keys())
+            language_data.load_word_frequency_lists(self.__get_all_language_data_keys())
 
         # Get cards for target
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):

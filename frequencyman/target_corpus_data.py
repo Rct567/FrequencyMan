@@ -32,7 +32,7 @@ class TargetNoteFieldContentData:
     field_name: str
     field_value_plain_text: str
     field_value_tokenized: list[WordToken]
-    target_language_key: LangDataId
+    target_language_data_id: LangDataId
     target_language_id: LangId
 
 
@@ -70,7 +70,7 @@ class TargetCorpusData:
         self.content_metrics = defaultdict(TargetContentMetrics)
         self.familiarity_sweetspot_point = 0.75
 
-    def create_data(self, target_cards: TargetCards, target_fields_by_notes_name: dict[str, dict[str, str]], language_data: LanguageData) -> None:
+    def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData) -> None:
         """
         Create corpus data for the given target and its cards.
         """
@@ -89,10 +89,10 @@ class TargetCorpusData:
 
                 if (card_note_type is None):
                     raise Exception("Card note type not found for card.nid '{}'!".format(card_note.mid))
-                if card_note_type['name'] not in target_fields_by_notes_name:  # note type name is not defined as target
+                if card_note_type['name'] not in target_fields_per_note_type:  # note type name is not defined as target
                     continue
 
-                target_note_fields = target_fields_by_notes_name[card_note_type['name']]
+                target_note_fields = target_fields_per_note_type[card_note_type['name']]
 
                 card_note_fields_in_target: list[TargetNoteFieldContentData] = []
                 for field_name, field_val in card_note.items():
@@ -100,8 +100,8 @@ class TargetCorpusData:
 
                         corpus_id = str(card_note_type['id'])+" => "+field_name
 
-                        lang_key = target_note_fields[field_name].lower()
-                        lang_id = lang_key
+                        lang_data_id = target_note_fields[field_name]
+                        lang_id = lang_data_id
                         if (len(lang_id) > 3 and lang_id[2] == '_'):
                             lang_id = lang_id[:2]
 
@@ -113,7 +113,7 @@ class TargetCorpusData:
                             field_name=field_name,
                             field_value_plain_text=plain_text,
                             field_value_tokenized=field_value_tokenized,
-                            target_language_key=LangDataId(lang_key),
+                            target_language_data_id=lang_data_id,
                             target_language_id=LangId(lang_id)
                         ))
 
@@ -275,11 +275,11 @@ class TargetCorpusData:
             for field in note_fields:
 
                 corpus_key = field.corpus_id
-                language_key = field.target_language_key
+                lang_data_id = field.target_language_data_id
 
                 for word_token in field.field_value_tokenized:
 
-                    word_fr = language_data.get_word_frequency(language_key, word_token, 0)
+                    word_fr = language_data.get_word_frequency(lang_data_id, word_token, 0)
                     word_familiarity = self.content_metrics[corpus_key].reviewed.words_familiarity_positional.get(word_token, 0)
                     word_lexical_discrepancy_rating = (word_fr - word_familiarity)
                     if (word_lexical_discrepancy_rating >= 0):

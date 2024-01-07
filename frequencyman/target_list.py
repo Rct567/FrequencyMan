@@ -15,7 +15,7 @@ from .lib.utilities import is_numeric_value
 from .card_ranker import CardRanker
 from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote
 from .target_cards import TargetCards
-from .language_data import LanguageData
+from .language_data import LangDataId, LanguageData
 from .lib.event_logger import EventLogger
 
 
@@ -100,11 +100,14 @@ class TargetList:
             if not note_model:
                 return (0, "Name '{}' for note object specified in target[{}].notes does not exist.".format(note['name'], index))
 
-            for field_name, defined_lang_key in note.get('fields', {}).items():
+            for field_name, lang_key in note.get('fields', {}).items():
+                lang_data_id = LangDataId(lang_key.lower())
                 if not any(field['name'] == field_name for field in note_model['flds']):
                     return (0, "Field name '{}' for note object specified in target[{}].notes does not exist.".format(field_name, index))
-                if not self.language_data.str_key_has_frequency_list_file(defined_lang_key):
-                    return (0, "No word frequency list file found for key '{}'!".format(defined_lang_key))
+                if not self.language_data.id_has_directory(lang_data_id):
+                    return (0, "No directory found for key '{}' in 'lang_data/'!".format(lang_data_id))
+                if not self.language_data.id_has_word_frequency_list(lang_data_id):
+                    return (0, "No word frequency list file found for key '{}'!".format(lang_data_id))
 
         # check custom ranking factors object and its weights values
         if 'ranking_factors' in target:

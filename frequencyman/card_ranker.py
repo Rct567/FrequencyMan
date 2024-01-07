@@ -338,7 +338,7 @@ class CardRanker:
 
         for word in field_data.field_value_tokenized:
 
-            word_fr = self.language_data.get_word_frequency(field_data.target_language_key, word, 0)
+            word_fr = self.language_data.get_word_frequency(field_data.target_language_data_id, word, 0)
             word_ld = content_metrics.words_lexical_discrepancy.get(word, 0)
 
             field_metrics.fr_scores.append(word_fr)

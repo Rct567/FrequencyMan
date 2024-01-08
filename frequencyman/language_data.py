@@ -6,12 +6,10 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from typing import Iterator, NewType, Optional
 
 from .lib.utilities import *
-from .text_processing import TextProcessing
+from .text_processing import TextProcessing, LangId
 import os
 
 LangDataId = NewType('LangDataId', str)  # full lowercased string of specified language of field
-LangId = NewType('LangId', str)  # first part of lang_data_id (en/jp/sp)
-
 
 class LanguageData:
 
@@ -45,6 +43,13 @@ class LanguageData:
 
         possible_lang_dir = os.path.join(self.root_dir, lang_data_id)
         return os.path.isdir(possible_lang_dir)
+
+    @staticmethod
+    def get_lang_id_from_data_id(lang_data_id: LangDataId) -> LangId:
+
+        if (len(lang_data_id) > 3 and lang_data_id[2] == '_'):
+            return LangId(lang_data_id[:2])
+        return LangId(lang_data_id)
 
     def all_ids_have_word_frequency_list(self, lang_data_ids: list[LangDataId]) -> bool:
 

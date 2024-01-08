@@ -1,12 +1,12 @@
 import re
-from frequencyman.text_processing import TextProcessing
+from frequencyman.text_processing import LangId, TextProcessing
 
 
 def test_acceptable_word():
 
     assert TextProcessing.acceptable_word("app-le") == True
     assert TextProcessing.acceptable_word("won't") == True
-    assert TextProcessing.acceptable_word("你", "zh") == True
+    assert TextProcessing.acceptable_word("你", LangId("zh")) == True
 
     assert TextProcessing.acceptable_word("s") == False
     assert TextProcessing.acceptable_word("s ") == False

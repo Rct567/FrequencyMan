@@ -101,9 +101,7 @@ class TargetCorpusData:
                         corpus_id = str(card_note_type['id'])+" => "+field_name
 
                         lang_data_id = target_note_fields[field_name]
-                        lang_id = lang_data_id
-                        if (len(lang_id) > 3 and lang_id[2] == '_'):
-                            lang_id = lang_id[:2]
+                        lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
 
                         plain_text = TextProcessing.get_plain_text(field_val).lower()
                         field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
@@ -114,7 +112,7 @@ class TargetCorpusData:
                             field_value_plain_text=plain_text,
                             field_value_tokenized=field_value_tokenized,
                             target_language_data_id=lang_data_id,
-                            target_language_id=LangId(lang_id)
+                            target_language_id=lang_id
                         ))
 
                 self.field_data_per_card_note[card.nid] = card_note_fields_in_target

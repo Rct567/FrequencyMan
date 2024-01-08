@@ -8,6 +8,7 @@ import html
 from typing import NewType, Optional
 
 WordToken = NewType('WordToken', str)
+LangId = NewType('LangId', str)
 
 
 class TextProcessing:
@@ -19,10 +20,7 @@ class TextProcessing:
     DEFAULT_PATTERN = re.compile(r'[\w]{2,}', re.UNICODE)
 
     @staticmethod
-    def acceptable_word(word: str, lang_id: Optional[str] = None) -> bool:
-
-        if (lang_id is not None and len(lang_id) != 2):
-            raise ValueError("Invalid lang_id '{}'!".format(lang_id))
+    def acceptable_word(word: str, lang_id: Optional[LangId] = None) -> bool:
 
         min_length = 1
         if lang_id == 'zh':
@@ -57,10 +55,7 @@ class TextProcessing:
         return val.strip()
 
     @staticmethod
-    def get_word_tokens_from_text(text: str, lang_id: Optional[str] = None) -> list[WordToken]:
-
-        if (lang_id is not None and len(lang_id) != 2):
-            raise ValueError(f"Invalid lang_id '{lang_id}'!")
+    def get_word_tokens_from_text(text: str, lang_id: Optional[LangId] = None) -> list[WordToken]:
 
         result_tokens = re.split(r"([^\w\-\_\'\’\.]{1,})", text)
         result_tokens = [s.strip(".'’") for s in result_tokens]

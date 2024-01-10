@@ -11,18 +11,25 @@ def lang_data():
     return LanguageData(LIST_DIR)
 
 
-def test_load_frequency_lists(lang_data: LanguageData):
+def test_load_lang_data(lang_data: LanguageData):
 
-    keys = [LangDataId('en'), LangDataId('es')]
-    lang_data.load_word_frequency_lists(keys)
+    lang_data_ids = {LangDataId('en'), LangDataId('es')}
+    lang_data.load_data(lang_data_ids)
 
-    for key in keys:
-        assert lang_data.word_frequency_lists is not None and key in lang_data.word_frequency_lists
+    assert lang_data.word_frequency_lists.word_frequency_lists is not None
+    assert len(lang_data.word_frequency_lists.word_frequency_lists.keys()) == len(lang_data_ids)
+
+    assert lang_data.ignore_lists.ignore_lists is not None
+    assert len(lang_data.ignore_lists.ignore_lists.keys()) == len(lang_data_ids)
+
+    for lang_data_id in lang_data_ids:
+        assert lang_data_id in lang_data.word_frequency_lists.word_frequency_lists
+        assert lang_data.id_has_directory(lang_data_id)
 
 
 def test_get_word_frequency(lang_data: LanguageData):
 
-    lang_data.load_word_frequency_lists([LangDataId('en'), LangDataId('es')])
+    lang_data.load_data({LangDataId('en'), LangDataId('es')})
 
     frequency = lang_data.get_word_frequency(LangDataId('en'), 'aaa', default=-1.0)
     assert frequency == 1
@@ -33,10 +40,16 @@ def test_get_word_frequency(lang_data: LanguageData):
     frequency = lang_data.get_word_frequency(LangDataId('en'), 'ccc', default=-1.0)
     assert frequency == 1/3
 
+    frequency = lang_data.get_word_frequency(LangDataId('en'), 'none_existing', default=-1.0)
+    assert frequency == -1.0
+
 
 def test_get_word_frequency_from_combined_files(lang_data: LanguageData):
 
-    lang_data.load_word_frequency_lists([LangDataId('jp')])
+    lang_data.load_data({LangDataId('jp')})
+
+    assert lang_data.word_frequency_lists.word_frequency_lists is not None
+    assert len(lang_data.word_frequency_lists.get_files_by_id(LangDataId('jp'))) == 2
 
     frequency = lang_data.get_word_frequency(LangDataId('jp'), 'aaaa', default=-1.0)
     assert frequency == 1
@@ -44,23 +57,45 @@ def test_get_word_frequency_from_combined_files(lang_data: LanguageData):
     frequency = lang_data.get_word_frequency(LangDataId('jp'), 'bbbb', default=-1.0)
     assert frequency == 7/8
 
+    frequency = lang_data.get_word_frequency(LangDataId('en'), 'none_existing', default=-1.0)
+    assert frequency == -1.0
 
-def test_key_has_frequency_list_file(lang_data: LanguageData):
 
-    keys_with_files = [LangDataId('en'), LangDataId('es')]
-    keys_without_files = [LangDataId('fr'), LangDataId('de'), LangDataId('it')]
+def test_id_has_frequency_list_file(lang_data: LanguageData):
 
-    for key in keys_with_files:
-        assert lang_data.id_has_word_frequency_list(key)
+    ids_with_files = {LangDataId('en'), LangDataId('es')}
+    ids_without_files = {LangDataId('fr'), LangDataId('de'), LangDataId('it')}
 
-    assert lang_data.all_ids_have_word_frequency_list(keys_with_files)
+    for lang_data_id in ids_with_files:
+        assert lang_data.word_frequency_lists.id_has_list_file(lang_data_id)
 
-    # test files not exist
+    for lang_data_id in ids_without_files:
+        assert not lang_data.word_frequency_lists.id_has_list_file(lang_data_id)
 
-    for key in keys_without_files:
-        assert not lang_data.id_has_word_frequency_list(key)
 
-    assert not lang_data.all_ids_have_word_frequency_list(keys_without_files)
+def test_id_has_ignore_file(lang_data: LanguageData):
+
+    ids_with_files = {LangDataId('jp')}
+    ids_without_files = {LangDataId('fr'), LangDataId('de'), LangDataId('it'), LangDataId('es')}
+
+    for lang_data_id in ids_with_files:
+        assert lang_data.ignore_lists.id_has_list_file(lang_data_id)
+
+    for lang_data_id in ids_without_files:
+        assert not lang_data.ignore_lists.id_has_list_file(lang_data_id)
+
+
+def test_is_ignore_word(lang_data: LanguageData):
+
+    lang_data.load_data({LangDataId('jp')})
+
+    assert lang_data.ignore_lists.ignore_lists is not None
+    assert len(lang_data.ignore_lists.get_files_by_id(LangDataId('jp'))) == 2
+
+    assert lang_data.is_ignore_word(LangDataId('jp'), 'yes')
+    assert lang_data.is_ignore_word(LangDataId('jp'), 'yes_with_trailing_space')
+    assert lang_data.is_ignore_word(LangDataId('jp'), 'from_second_file')
+    assert not lang_data.is_ignore_word(LangDataId('jp'), 'no')
 
 
 def test_invalid_lists_directory():

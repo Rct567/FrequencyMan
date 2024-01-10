@@ -104,12 +104,12 @@ class Target:
 
         return config_notes
 
-    def __get_all_language_data_keys(self) -> list[LangDataId]:
+    def __get_all_language_data_keys(self) -> set[LangDataId]:
 
-        keys = []
+        keys = set()
         for note in self.config_target.get('notes', []):
             for lang_data_id in note['fields'].values():
-                keys.append(LangDataId(lang_data_id.lower()))
+                keys.add(LangDataId(lang_data_id.lower()))
         return keys
 
     def __get_query_defined_scope(self) -> Optional[str]:
@@ -222,13 +222,13 @@ class Target:
 
         # Check defined target lang keys and then load frequency lists for target
         for lang_key in self.__get_all_language_data_keys():
-            if not language_data.id_has_word_frequency_list(lang_key):
+            if not language_data.word_frequency_lists.id_has_list_file(lang_key):
                 error_msg = "No word frequency list file found for key '{}'!".format(lang_key)
                 event_logger.add_entry(error_msg)
                 return TargetReorderResult(success=False, error=error_msg)
 
         with event_logger.add_benchmarked_entry("Loading word frequency lists."):
-            language_data.load_word_frequency_lists(self.__get_all_language_data_keys())
+            language_data.load_data(self.__get_all_language_data_keys())
 
         # Get cards for target
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):

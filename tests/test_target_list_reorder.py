@@ -1,7 +1,9 @@
+import pprint
 import pytest
 import os
 import shutil
 
+from frequencyman.target import Target
 from frequencyman.target_list import TargetList, TargetListReorderResult
 from frequencyman.lib.event_logger import EventLogger
 from frequencyman.language_data import LangDataId, LanguageData
@@ -249,3 +251,42 @@ class TestTargetListReorder:
 
         # check order
         assert_locked_order(result.reorder_result_list[0].sorted_cards_ids+result.reorder_result_list[1].sorted_cards_ids)
+
+    def test_two_deck_collection_with_ignore_list(self):
+
+        col, language_data, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=1)
+
+        target_list = TargetList(language_data, col)
+
+        validity_state = target_list.set_targets([
+            {
+                'decks': 'decka, deckb',
+                'notes': [{
+                    "name": "Basic",
+                    "fields": {
+                        "Front": "EN_with_ignore",
+                        "Back": "EN_with_ignore"
+                    },
+                }]
+            }
+        ])
+
+        assert validity_state == (1, "")
+        assert len(target_list) == 1
+
+        # reorder cards
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+
+        # check result
+        reorder_result = result.reorder_result_list[0]
+        assert reorder_result.success
+        assert reorder_result.cards_repositioned
+        assert reorder_result.error is None
+        assert len(result.modified_dirty_notes) == 0
+        assert "Reordering target #0" in str(event_logger)
+        assert "Found 11 new cards in a target collection of 16 cards" in str(event_logger)
+        assert "11 cards repositioned" in str(event_logger)
+
+        # check order
+        assert_locked_order(result.reorder_result_list[0].sorted_cards_ids)

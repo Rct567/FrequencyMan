@@ -338,6 +338,11 @@ class CardRanker:
 
         for word in field_data.field_value_tokenized:
 
+            # skip if word is in ignore list
+            if self.language_data.is_ignore_word(field_data.target_language_data_id, word):
+                continue
+
+            # word frequency
             word_fr = self.language_data.get_word_frequency(field_data.target_language_data_id, word, 0)
             word_ld = content_metrics.words_lexical_discrepancy.get(word, 0)
 

@@ -55,9 +55,14 @@ class TextProcessing:
         return val.strip()
 
     @staticmethod
-    def get_word_tokens_from_text(text: str, lang_id: Optional[LangId] = None) -> list[WordToken]:
+    def create_word_token(text: str, lang_id: Optional[LangId] = None) -> WordToken:
+        assert "\t" not in text and "\n" not in text and "\r" not in text
+        token = text.strip(".,'’\"' \t\n\r!@#$%^&*()_-=+{}:\"<>?/;")
+        return WordToken(token.lower())
 
-        result_tokens = re.split(r"([^\w\-\_\'\’\.]{1,})", text)
-        result_tokens = [s.strip(".'’") for s in result_tokens]
-        word_tokens = [WordToken(token) for token in result_tokens if TextProcessing.acceptable_word(token, lang_id)]
+    @staticmethod
+    def get_word_tokens_from_text(text: str, lang_id: Optional[LangId] = None) -> list[WordToken]:
+        result_tokens = re.split(r"[^\w\-\_\'\’\.]{1,}", text)
+        result_tokens = [TextProcessing.create_word_token(token, lang_id) for token in result_tokens]
+        word_tokens = [token for token in result_tokens if TextProcessing.acceptable_word(token, lang_id)]
         return word_tokens

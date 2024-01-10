@@ -102,7 +102,7 @@ class TargetCorpusData:
                         lang_data_id = target_note_fields[field_name]
                         lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
 
-                        plain_text = TextProcessing.get_plain_text(field_val).lower()
+                        plain_text = TextProcessing.get_plain_text(field_val)
                         field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
 
                         card_note_fields_in_target.append(TargetNoteFieldContentData(

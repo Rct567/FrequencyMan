@@ -17,6 +17,7 @@ def test_acceptable_word():
 
 
 def test_get_plain_text():
+
     assert TextProcessing.get_plain_text("This a <b>sample</b></b> text with HTML<p>tags</P>and example.") == "This a sample text with HTML tags and example."
     assert TextProcessing.get_plain_text("This a <script> kk </script> example.") == "This a example."
     assert TextProcessing.get_plain_text("This N&amp;M that") == "This N&M that"
@@ -27,16 +28,22 @@ def test_get_plain_text():
 
 def test_get_word_tokens_from_text():
 
-    text_with_special_chars = "I can't believe it's here (wow) 1-character!"
-    assert TextProcessing.get_word_tokens_from_text(text_with_special_chars) == ["can't", "believe", "it's", "here", "wow", "1-character"]
+    text_with_special_chars = "I can't \"believe\" it's here (wow) 1-character! 'amazinG'"
+    assert TextProcessing.get_word_tokens_from_text(text_with_special_chars) == ["can't", "believe", "it's", "here", "wow", "1-character", "amazing"]
 
     # Test with an empty string
     assert TextProcessing.get_word_tokens_from_text("") == []
     assert TextProcessing.get_word_tokens_from_text("12345") == []
 
-    assert TextProcessing.get_word_tokens_from_text("Simple sente-nce. EE.UU.") == ['Simple', 'sente-nce', 'EE.UU']
-    assert TextProcessing.get_word_tokens_from_text("This is a test.") == ['This', 'is', 'test']
-    assert TextProcessing.get_word_tokens_from_text("Hello, world!") == ['Hello', 'world']
+    assert TextProcessing.get_word_tokens_from_text("Simple sente-nce. EE.UU.") == ['simple', 'sente-nce', 'ee.uu']
+    assert TextProcessing.get_word_tokens_from_text("This is a\ttest.\t") == ['this', 'is', 'test']
+    assert TextProcessing.get_word_tokens_from_text("Hello, world!") == ['hello', 'world']
 
-    assert TextProcessing.get_word_tokens_from_text("Мне … лет.") == ['Мне', 'лет']
+    assert TextProcessing.get_word_tokens_from_text("Мне … лет.") == ['мне', 'лет']
     assert TextProcessing.get_word_tokens_from_text("你跟我") == ['你跟我']
+
+
+def test_get_word_token():
+
+    assert TextProcessing.create_word_token("$$hellO") == "hello"
+    assert TextProcessing.create_word_token("Iñtërnâtiônàlizætiøn") == "iñtërnâtiônàlizætiøn"

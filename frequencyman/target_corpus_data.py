@@ -29,7 +29,6 @@ CorpusId = NewType('CorpusId', str)
 class TargetNoteFieldContentData:
     corpus_id: CorpusId
     field_name: str
-    field_value_plain_text: str
     field_value_tokenized: list[WordToken]
     target_language_data_id: LangDataId
     target_language_id: LangId
@@ -108,7 +107,6 @@ class TargetCorpusData:
                         card_note_fields_in_target.append(TargetNoteFieldContentData(
                             corpus_id=CorpusId(corpus_id),
                             field_name=field_name,
-                            field_value_plain_text=plain_text,
                             field_value_tokenized=field_value_tokenized,
                             target_language_data_id=lang_data_id,
                             target_language_id=lang_id

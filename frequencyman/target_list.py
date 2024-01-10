@@ -13,8 +13,7 @@ from anki.notes import Note, NoteId
 
 from .lib.utilities import is_numeric_value
 from .card_ranker import CardRanker
-from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote
-from .target_cards import TargetCards
+from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote as ConfiguredTargetNote
 from .language_data import LangDataId, LanguageData
 from .lib.event_logger import EventLogger
 

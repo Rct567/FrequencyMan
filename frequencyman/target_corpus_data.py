@@ -7,9 +7,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from math import fsum
 from statistics import fmean, mean, median
-from typing import Iterable, NewType, Type, TypedDict, Union
+from typing import NewType
 
-from anki.collection import Collection
 from anki.cards import CardId, Card
 from anki.notes import NoteId
 

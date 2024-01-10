@@ -3,14 +3,14 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Optional, Sequence, TypedDict, Union
+from typing import Optional, TypedDict, Union
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
 
-from .lib.utilities import get_float, profile_context, var_dump, var_dump_log
+from .lib.utilities import get_float, profile_context, var_dump_log
 from .lib.event_logger import EventLogger
 from .language_data import LanguageData, LangDataId
 from .target_corpus_data import TargetCorpusData

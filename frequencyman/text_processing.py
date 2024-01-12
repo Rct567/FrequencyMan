@@ -15,53 +15,46 @@ from .lib.utilities import var_dump, var_dump_log
 
 WordToken = NewType('WordToken', str)
 LangId = NewType('LangId', str)
+Tokenizer = Callable[[str], list[str]]
 
-USER_PROVIDED_TOKENIZERS_LOADED: dict[LangId, Callable[[str], list[str]]] = {}
+USER_PROVIDED_TOKENIZERS_LOADED: dict[LangId, Tokenizer] = {}
 
 fm_plugin_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 tokenizers_user_dir = os.path.join(fm_plugin_root, 'user_files', 'tokenizers')
 
+
+# load custom defined tokenizers from user_files directory
+
 if os.path.exists(tokenizers_user_dir):
 
-    sys.path.append(tokenizers_user_dir)
+    for sub_dir in os.listdir(tokenizers_user_dir):
 
-    # jieba tokenizer (zh) from user_files/tokenizers
+        sub_dir_path = os.path.join(tokenizers_user_dir, sub_dir)
+        init_module_name = 'fm_init_'+sub_dir
+        fm_init_file = os.path.join(sub_dir_path, init_module_name+'.py')
 
-    if os.path.exists(os.path.join(tokenizers_user_dir, 'jieba')) and not LangId('zh') in USER_PROVIDED_TOKENIZERS_LOADED:
+        if not os.path.isdir(sub_dir_path):
+            continue
+        if not os.path.isfile(fm_init_file):
+            continue
 
-        if TYPE_CHECKING:
-            from ..user_files.tokenizers.jieba import lcut as jieba_lcut, setLogLevel as jieba_set_log_level
-        else:
-            from jieba import lcut as jieba_lcut, setLogLevel as jieba_set_log_level
+        sys.path.append(sub_dir_path)
+        module = importlib.import_module(init_module_name, sub_dir_path)
+        tokenizers_provider: Callable[[], list[tuple[str, Tokenizer]]] = getattr(module, sub_dir+'_tokenizers_provider')
 
-        jieba_set_log_level('WARNING')
+        for lang_id, tokenizer in tokenizers_provider():
+            if not isinstance(lang_id, str) or len(lang_id) != 2:
+                raise Exception("Invalid lang_id given by provide_tokenizer in tokenizer {} in {}.".format(sub_dir, sub_dir_path))
+            if LangId(lang_id) not in USER_PROVIDED_TOKENIZERS_LOADED:
+                USER_PROVIDED_TOKENIZERS_LOADED[LangId(lang_id)] = tokenizer
 
-        def jieba_tokenizer_user_files(txt: str) -> list[str]:
-            return list(token for token in jieba_lcut(txt) if token is not None)
 
-        USER_PROVIDED_TOKENIZERS_LOADED[LangId('zh')] = jieba_tokenizer_user_files
-
-    # janome tokenizer (ja) from user_files/tokenizers
-
-    if os.path.exists(os.path.join(tokenizers_user_dir, 'janome')) and not LangId('ja') in USER_PROVIDED_TOKENIZERS_LOADED:
-
-        if TYPE_CHECKING:
-            from ..user_files.tokenizers.janome.tokenizer import Tokenizer
-        else:
-            from janome.tokenizer import Tokenizer
-        JANOME_TOKENIZER = Tokenizer()
-
-        def janome_tokenizer_user_files(txt: str) -> list[str]:
-            result_list = list(token for token in JANOME_TOKENIZER.tokenize(txt, wakati=True) if isinstance(token, str))
-            return result_list
-
-        USER_PROVIDED_TOKENIZERS_LOADED[LangId('ja')] = janome_tokenizer_user_files
-
-#  morphman mecab and jieba
+#  mecab and jieba tokenizer from morphman plugin
 
 morphman_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '900801631'))
+morphman_is_useful = not LangId('ja') in USER_PROVIDED_TOKENIZERS_LOADED or not LangId('zh') in USER_PROVIDED_TOKENIZERS_LOADED
 
-if os.path.exists(morphman_plugin_path):
+if os.path.exists(morphman_plugin_path) and morphman_is_useful:
 
     sys.path.append(morphman_plugin_path)
     morphemizer_module = importlib.import_module('morph.morphemizer')
@@ -83,7 +76,6 @@ if os.path.exists(morphman_plugin_path):
             return [token.base for token in morphemizer_jieba.getMorphemesFromExpr(txt)]
 
         USER_PROVIDED_TOKENIZERS_LOADED[LangId('zh')] = morphman_jieba_tokenizer
-
 
 
 # text processing class
@@ -141,20 +133,22 @@ class TextProcessing:
         return WordToken(token.lower())
 
     @staticmethod
-    def tokenize_text(text: str, lang_id: Optional[LangId] = None) -> list[str]:
+    def default_tokenizer(text: str) -> list[str]:
+
+        return re.split(r"[^\w\-\_\'\’\.]{1,}", text)
+
+    @staticmethod
+    def get_tokenizer(lang_id: Optional[LangId] = None) -> Tokenizer:
 
         if not lang_id is None and lang_id in USER_PROVIDED_TOKENIZERS_LOADED:
-            result_tokens = USER_PROVIDED_TOKENIZERS_LOADED[lang_id](text)
+            return USER_PROVIDED_TOKENIZERS_LOADED[lang_id]
         else:
-            result_tokens = re.split(r"[^\w\-\_\'\’\.]{1,}", text)
-
-        return result_tokens
+            return TextProcessing.default_tokenizer
 
     @staticmethod
     def get_word_tokens_from_text(text: str, lang_id: Optional[LangId] = None) -> list[WordToken]:
 
-        text_tokens = TextProcessing.tokenize_text(text, lang_id)
-
-        result_tokens = [TextProcessing.create_word_token(token, lang_id) for token in text_tokens]
-        word_tokens = [token for token in result_tokens if TextProcessing.acceptable_word(token, lang_id)]
-        return word_tokens
+        tokenizer = TextProcessing.get_tokenizer(lang_id)
+        word_tokens = (TextProcessing.create_word_token(token, lang_id) for token in tokenizer(text))
+        accepted_word_tokens = [token for token in word_tokens if TextProcessing.acceptable_word(token, lang_id)]
+        return accepted_word_tokens

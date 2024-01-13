@@ -101,7 +101,7 @@ class WordFrequencyLists:
                     line_number += 1
 
 
-class IgnoreList:
+class IgnoreLists:
 
     root_dir: str
     ignore_lists: Optional[dict[LangDataId, set[str]]]
@@ -178,7 +178,7 @@ class LanguageData:
 
     root_dir: str
     word_frequency_lists: WordFrequencyLists
-    ignore_lists: IgnoreList
+    ignore_lists: IgnoreLists
 
     def __init__(self, lang_data_parent_dir) -> None:
 
@@ -189,7 +189,7 @@ class LanguageData:
 
         self.root_dir = lang_data_dir
         self.word_frequency_lists = WordFrequencyLists(self.root_dir)
-        self.ignore_lists = IgnoreList(self.root_dir)
+        self.ignore_lists = IgnoreLists(self.root_dir)
 
     def id_has_directory(self, lang_data_id: LangDataId) -> bool:
 
@@ -226,4 +226,5 @@ class LanguageData:
 
         if (len(lang_data_id) > 3 and lang_data_id[2] == '_'):
             return LangId(lang_data_id[:2])
+        
         return LangId(lang_data_id)

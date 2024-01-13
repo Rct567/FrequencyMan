@@ -8,5 +8,5 @@
             }]
         }
     ],
-    "log_reorder_events": "true"
+    "log_reorder_events": false
 }

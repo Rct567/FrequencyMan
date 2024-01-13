@@ -326,7 +326,7 @@ class ReorderCardsTab:
             else:
                 showInfo(result_info_str)
 
-            if (self.fm_window.addon_config.get('log_reorder_events', 'false') == 'true'):
+            if self.fm_window.addon_config.get('log_reorder_events', False):
                 event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))
 
         shift_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier

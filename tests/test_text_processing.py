@@ -6,6 +6,7 @@ def test_acceptable_word():
 
     assert TextProcessing.acceptable_word("app-le") == True
     assert TextProcessing.acceptable_word("won't") == True
+    assert TextProcessing.acceptable_word("iñtërnâtiônàlizætiøn") == True
     assert TextProcessing.acceptable_word("你", LangId("zh")) == True
 
     assert TextProcessing.acceptable_word("s") == False
@@ -68,7 +69,8 @@ def test_get_word_tokens_from_text_user_tokenizer_zh():
     assert TextProcessing.get_word_tokens_from_text("我爱自然语言处理。", LangId('zh')) == ['我', '爱', '自然语言', '处理']
 
 
-def test_get_word_token():
+def test_create_word_token():
 
     assert TextProcessing.create_word_token("$$hellO") == "hello"
+    assert TextProcessing.create_word_token("hello!") == "hello"
     assert TextProcessing.create_word_token("Iñtërnâtiônàlizætiøn") == "iñtërnâtiônàlizætiøn"

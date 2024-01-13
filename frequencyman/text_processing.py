@@ -49,6 +49,25 @@ if os.path.exists(tokenizers_user_dir):
                 USER_PROVIDED_TOKENIZERS_LOADED[LangId(lang_id)] = tokenizer
 
 
+# mecab tokenizer from ajt japanese plugin
+
+ajt_japanese_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '1344485230'))
+
+if os.path.exists(ajt_japanese_plugin_path) and not LangId('ja') in USER_PROVIDED_TOKENIZERS_LOADED:
+
+    sys.path.append(ajt_japanese_plugin_path)
+    ajt_japanese_module = importlib.import_module('mecab_controller.mecab_controller')
+
+    if not LangId('ja') in USER_PROVIDED_TOKENIZERS_LOADED:
+
+        mecab = ajt_japanese_module.MecabController(verbose=False)
+
+        def ajt_japanese_mecab_tokenizer(txt: str) -> list[str]:
+            return [token.word for token in mecab.translate(txt)]
+
+        USER_PROVIDED_TOKENIZERS_LOADED[LangId('ja')] = ajt_japanese_mecab_tokenizer
+
+
 #  mecab and jieba tokenizer from morphman plugin
 
 morphman_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '900801631'))

@@ -74,9 +74,11 @@ class Target:
 
     config_target: ConfiguredTarget
     index_num: int
-    scope_query: Optional[str]
     col: Collection
+
+    main_scope_query: Optional[str]
     reorder_scope_query: Optional[str]
+    target_corpus_data: Optional[TargetCorpusData]
 
     corpus_cache: dict[tuple, TargetCorpusData] = {}
     target_cards_cache: dict[tuple, TargetCards] = {}
@@ -86,9 +88,11 @@ class Target:
 
         self.config_target = target
         self.index_num = index_num
-        self.scope_query = None
+        self.main_scope_query = None
         self.reorder_scope_query = None
+        self.target_corpus_data = None
         self.col = col
+
         if not Target.cache_lock or Target.cache_lock != col:
             Target.cache_lock = col
             Target.corpus_cache = {}
@@ -112,7 +116,7 @@ class Target:
                 keys.add(LangDataId(lang_data_id.lower()))
         return keys
 
-    def __get_query_defined_scope(self) -> Optional[str]:
+    def __get_query_from_defined_scope(self) -> Optional[str]:
 
         scope_queries: list[str] = []
 
@@ -148,7 +152,7 @@ class Target:
 
         return ""
 
-    def __construct_scope_query(self) -> str:
+    def __construct_main_scope_query(self) -> str:
 
         target_notes = self.config_target.get("notes", []) if isinstance(self.config_target.get("notes"), list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
@@ -158,55 +162,73 @@ class Target:
 
         search_query = "(" + " OR ".join(note_queries) + ")"
 
-        scope_query = self.__get_query_defined_scope()
+        scope_query = self.__get_query_from_defined_scope()
 
         if (scope_query is not None):
             search_query = scope_query+" AND "+search_query
 
         return search_query
 
-    def __get_scope_query(self) -> str:
+    def __get_main_scope_query(self) -> str:
 
-        if self.scope_query is None:
-            self.scope_query = self.__construct_scope_query()
-        return self.scope_query
+        if self.main_scope_query is None:
+            self.main_scope_query = self.__construct_main_scope_query()
+        return self.main_scope_query
 
     def __get_reorder_scope_query(self) -> Optional[str]:
 
         if self.reorder_scope_query is None:
             if isinstance(self.config_target.get("reorder_scope_query"), str) and len(self.config_target.get("reorder_scope_query", "")) > 0:
-                self.reorder_scope_query = self.__construct_scope_query()+" AND ("+self.config_target.get("reorder_scope_query", "")+")"
+                self.reorder_scope_query = self.__construct_main_scope_query()+" AND ("+self.config_target.get("reorder_scope_query", "")+")"
         return self.reorder_scope_query
 
-    def get_cards(self, search_query: Optional[str] = None, use_cache: bool = False) -> TargetCards:
+    def get_cards(self, search_query: Optional[str] = None) -> TargetCards:
 
         if not search_query:
-            search_query = self.__get_scope_query()
-
-        cache_key = (search_query, self.col)
-
-        if use_cache and cache_key in self.target_cards_cache:
-            return self.target_cards_cache[cache_key]
+            search_query = self.__get_main_scope_query()
 
         target_cards_ids = self.col.find_cards(search_query, order="c.due asc")
         target_cards = TargetCards(target_cards_ids, self.col)
 
-        if use_cache:
-            self.target_cards_cache[cache_key] = target_cards
+        return target_cards
+
+    def __get_cards_cached(self, search_query: Optional[str] = None) -> TargetCards:
+
+        if not search_query:
+            search_query = self.__get_main_scope_query()
+
+        cache_key = (search_query, self.col)
+
+        if cache_key in self.target_cards_cache:
+            return self.target_cards_cache[cache_key]
+
+        target_cards = self.get_cards(search_query)
+        self.target_cards_cache[cache_key] = target_cards
 
         return target_cards
 
-    def __get_cached_corpus_data(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
+    def get_corpus_data(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
+
+        if not self.target_corpus_data is None:
+            return self.target_corpus_data
+
+        self.target_corpus_data = TargetCorpusData()
+        
+        if familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point')):
+            self.target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
+
+        self.target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(), language_data)
+
+        return self.target_corpus_data
+
+    def __get_corpus_data_cached(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
 
         cache_key = (str(target_cards.all_cards_ids), str(self.get_config_fields_per_note_type()), self.col, language_data, self.config_target.get('familiarity_sweetspot_point'))
         if cache_key in self.corpus_cache:
             return self.corpus_cache[cache_key]
 
-        target_corpus_data = TargetCorpusData()
-        if familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point')):
-            target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
+        target_corpus_data = self.get_corpus_data(target_cards, language_data)
 
-        target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(), language_data)
         self.corpus_cache[cache_key] = target_corpus_data
         return target_corpus_data
 
@@ -215,7 +237,7 @@ class Target:
 
         from .card_ranker import CardRanker
 
-        if "note:" not in self.__get_scope_query():
+        if "note:" not in self.__get_main_scope_query():
             error_msg = "No valid note type defined. At least one note is required for reordering!"
             event_logger.add_entry(error_msg)
             return TargetReorderResult(success=False, error=error_msg)
@@ -232,7 +254,7 @@ class Target:
 
         # Get cards for target
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):
-            target_cards = self.get_cards(use_cache=True)
+            target_cards = self.__get_cards_cached()
 
         num_new_cards = len(target_cards.new_cards_ids)
 
@@ -245,7 +267,7 @@ class Target:
         # Get corpus data
 
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
-            target_corpus_data = self.__get_cached_corpus_data(target_cards, language_data)
+            target_corpus_data = self.__get_corpus_data_cached(target_cards, language_data)
 
         # If reorder scope is defined, use it for reordering
         reorder_scope_query = self.__get_reorder_scope_query()

@@ -76,6 +76,9 @@ class TargetCorpusData:
         if len(target_cards) == 0:
             return
 
+        if len(self.content_metrics) > 0:
+            raise Exception("Data already created by TargetCorpusData.")
+
         self.target_cards = target_cards
 
         for card in target_cards.all_cards:
@@ -198,9 +201,7 @@ class TargetCorpusData:
                     self.content_metrics[corpus_key].reviewed.words_presence_card_score[word_token].append(card_memorized_scores[card.id])
 
     def __set_notes_reviewed_words_familiarity(self) -> None:
-        """
-        Set the familiarity score for each word per field of card note, based on word presence in reviewed cards and score of card.
-        """
+
         for corpus_key in self.content_metrics.keys():
 
             field_familiarity_scores_per_word: list[float] = []

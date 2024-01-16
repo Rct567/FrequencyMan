@@ -3,12 +3,14 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from hmac import new
 import io
 import cProfile
 from contextlib import contextmanager
 import os
 import pprint
 import pstats
+import sys
 import threading
 from typing import IO, Any, Optional, TypeVar
 from aqt.utils import showInfo
@@ -17,6 +19,7 @@ var_dump_count = 0
 
 
 def var_dump(var: Any) -> None:
+
     global var_dump_count
     if var_dump_count < 10:
         var_str = pprint.pformat(var, sort_dicts=False)
@@ -30,6 +33,7 @@ var_dump_log_count = 0
 
 
 def var_dump_log(var: Any, show_as_info=False) -> None:
+
     global var_dump_log_count
     if var_dump_log_count < 10:
         dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
@@ -58,11 +62,10 @@ def get_float(val: Any) -> Optional[float]:
     except ValueError:
         return None
 
-    return None
-
 
 @contextmanager
 def profile_context(amount=40):
+
     profiler = cProfile.Profile()
     profiler.enable()
     try:
@@ -107,18 +110,21 @@ K = TypeVar('K')
 def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
     new_dict = input_dict.copy()
+
+    if len(input_dict) == 0:
+        return new_dict
+
     min_value = min(new_dict.values())
 
-    if (min_value > 0):
+    if min_value > 0:
         for key in new_dict:
-            new_dict[key] = (new_dict[key]-min_value)+0.00001
-    elif (min_value < 0):
-        for key in new_dict:
-            new_dict[key] = (new_dict[key]+abs(min_value))+0.00001
+            new_dict[key] = (new_dict[key]-min_value)+sys.float_info.epsilon
+    elif min_value < 0:
+        raise Exception("Unexpected below zero value found.")
 
     max_val = max(new_dict.values())
 
-    if (max_val != 0):
+    if max_val > 0:
         for key in new_dict:
             new_dict[key] = new_dict[key]/max_val
 
@@ -126,4 +132,5 @@ def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
 
 def sort_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
+
     return dict(sorted(input_dict.items(), key=lambda x: x[1], reverse=True))

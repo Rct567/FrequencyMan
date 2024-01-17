@@ -191,8 +191,8 @@ class ReorderCardsTab:
 
         # informational text on the left
 
-        self.targets_input_validation_info_txt_line = QLabel("Hello :)")
-        self.targets_input_validation_info_txt_line.setStyleSheet("font-weight: bolder; font-size: 13px;")
+        self.targets_input_validation_info_txt_line = QLabel()
+        self.targets_input_validation_info_txt_line.setStyleSheet("font-weight: bolder; font-size: 13px; margin-top:8px;")
         self.targets_input_validation_info_txt_line.setWordWrap(True)
 
         def update_validation_info_txt_line(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
@@ -276,7 +276,7 @@ class ReorderCardsTab:
         # set layout
 
         grid_layout = QGridLayout()
-        grid_layout.addWidget(self.targets_input_validation_info_txt_line, 0, 0, 1, 1)
+        grid_layout.addWidget(self.targets_input_validation_info_txt_line, 1, 0, 1, 4)
         grid_layout.setColumnStretch(0, 1)
         spacer_item = QSpacerItem(12, 12, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         grid_layout.addItem(spacer_item, 0, 1, 1, 1)

@@ -4,8 +4,6 @@
 
 As an Anki plugin, __FrequencyMan__ goal is to optimize your Anki learning journey by allowing you to intelligently __sort your new cards__ in a personalized way.
 
-The order in which you study your cards has a major influence on how fast you can progress. Which order would be perfect for your decks?
-
 Please note: this plugin is a __WORK IN PROGRESS__. Don't use it on your main profile!
 
 ## Features
@@ -21,8 +19,13 @@ Please note: this plugin is a __WORK IN PROGRESS__. Don't use it on your main pr
 1. Go to the Anki plugin folder, such as __C:\Users\%USERNAME%\AppData\Roaming\Anki2\addons21__
 2. Create a new folder for the plugin, such as __addons21\FrequencyMan__
 3. Clone the project in the new folder: `git clone https://github.com/Rct567/FrequencyMan.git`
-4. Place your word frequency lists (*.txt files) in a subfolder in FrequencyMan/user_files/, such as __\FrequencyMan\user_files\lang_data\en__
+4. Place your word frequency lists (*.txt files) in a subfolder in FrequencyMan/user_files/, such as __\FrequencyMan\user_files\lang_data\en__. If multiple lists exists for a language, they will be combined (based on highest score/position).
 5. Start Anki.
+
+## Download word frequency lists
+
+- Based on Open Subtitles: https://github.com/hermitdave/FrequencyWords/tree/master
+- Based on Wikipedia: https://github.com/IlyaSemenov/wikipedia-word-frequency
 
 ## Basic usage
 
@@ -36,7 +39,7 @@ Please note: this plugin is a __WORK IN PROGRESS__. Don't use it on your main pr
 ### Example 1
 Reorders a single deck. This will only match cards with note type `-- My spanish --` located in deck `Spanish`. It will also use the default ranking factors.
 
-The content of your cards and all the ranking metrics will be analyzed per field. The result of this will be combined to determine the final ranking of a new card. Each field is effectively its own little "universe".
+The content of your cards and all the ranking metrics will be analyzed per field. The result of this will be combined to determine the final ranking of all new cards. Each field is effectively its own little "universe".
 
 Note: For both languages, a word frequency list file should exist (although it could be empty).
 
@@ -124,6 +127,15 @@ Reorder only based on word frequency (using word frequency from both front and b
 ]
 ```
 
-## Downloading word frequency lists
+## Tokenizers
 
-...
+Custom tokenizers can be defined in `user_files\tokenizers`.
+
+To use, or to see how a custom tokenizer is defined, you can download [here](https://github.com/Rct567/FrequencyMan_tokenizer_jieba) a working copy of Jieba (ZH), and [here](https://github.com/Rct567/FrequencyMan_tokenizer_janome) a version of Janome (JA).
+
+### Automatic support
+
+FrequencyMan will use tokenizers from other plugins, if there is no custom tokenizer for a given language:
+
+- If [AJT Japanese](https://ankiweb.net/shared/info/1344485230) is installed, Mecab can be used.
+- If [Morphman](https://ankiweb.net/shared/info/900801631) is installed, Mecab and Jieba can be used (assuming those also work in Morphman itself).

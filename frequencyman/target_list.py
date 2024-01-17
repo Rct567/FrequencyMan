@@ -105,8 +105,6 @@ class TargetList:
                     return (0, "Field name '{}' for note object specified in target[{}].notes does not exist.".format(field_name, index))
                 if not self.language_data.id_has_directory(lang_data_id):
                     return (0, "No directory found for key '{}' in '{}'!".format(lang_data_id, self.language_data.root_dir))
-                if not self.language_data.word_frequency_lists.id_has_list_file(lang_data_id):
-                    return (0, "No word frequency list file found for key '{}' in 'lang_data/!".format(lang_data_id))
 
         # check custom ranking factors object and its weights values
         if 'ranking_factors' in target:

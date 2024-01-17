@@ -213,7 +213,7 @@ class Target:
             return self.target_corpus_data
 
         self.target_corpus_data = TargetCorpusData()
-        
+
         if familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point')):
             self.target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
@@ -243,14 +243,18 @@ class Target:
             return TargetReorderResult(success=False, error=error_msg)
 
         # Check defined target lang keys and then load frequency lists for target
-        for lang_key in self.__get_all_language_data_keys():
-            if not language_data.word_frequency_lists.id_has_list_file(lang_key):
-                error_msg = "No word frequency list file found for key '{}'!".format(lang_key)
+        for lang_data_id in self.__get_all_language_data_keys():
+            if not language_data.id_has_directory(lang_data_id):
+                error_msg = "No directory found for key '{}' in '{}'!".format(lang_data_id, language_data.root_dir)
                 event_logger.add_entry(error_msg)
                 return TargetReorderResult(success=False, error=error_msg)
 
         with event_logger.add_benchmarked_entry("Loading word frequency lists."):
             language_data.load_data(self.__get_all_language_data_keys())
+
+            for lang_key in self.__get_all_language_data_keys():
+                if not language_data.word_frequency_lists.id_has_list_file(lang_key):
+                    event_logger.add_entry("No word frequency list file found for language '{}'!".format(lang_key))
 
         # Get cards for target
         with event_logger.add_benchmarked_entry("Gathering cards from target collection."):

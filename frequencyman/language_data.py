@@ -59,9 +59,6 @@ class WordFrequencyLists:
 
         files = self.get_files_by_id(lang_data_id)
 
-        if len(files) < 1:
-            raise ValueError("No word frequency list file found for lang_data_id {}.".format(lang_data_id))
-
         if self.word_frequency_lists is None:
             self.word_frequency_lists = {}
 
@@ -226,5 +223,5 @@ class LanguageData:
 
         if (len(lang_data_id) > 3 and lang_data_id[2] == '_'):
             return LangId(lang_data_id[:2])
-        
+
         return LangId(lang_data_id)

@@ -41,7 +41,7 @@ Reorders a single deck. This will only match cards with note type `-- My spanish
 
 The content of your cards and all the ranking metrics will be analyzed per field. The result of this will be combined to determine the final ranking of all new cards. Each field is effectively its own little "universe".
 
-Note: For both languages, a word frequency list file should exist (although it could be empty).
+Note: For both languages, a directory should exist (although it could be empty), such as `\user_files\lang_data\en`.
 
 ```json
 [

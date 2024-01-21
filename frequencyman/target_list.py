@@ -60,7 +60,7 @@ class TargetList:
         target_list = [target.config_target for target in self.target_list]
         return json.dumps(target_list, indent=4)
 
-    def validate_target(self, target: ConfiguredTarget, index: int) -> tuple[int, str]:
+    def __validate_target(self, target: ConfiguredTarget, index: int) -> tuple[int, str]:
 
         if not isinstance(target, dict):
             return (0, "Target #{} is not a valid type (object expected). ".format(index))
@@ -135,7 +135,7 @@ class TargetList:
         elif len(target_data) < 1:
             return (0, "Reorder target list is empty.")
         for index, target in enumerate(target_data):
-            (validity_state, err_desc) = self.validate_target(target, index)
+            (validity_state, err_desc) = self.__validate_target(target, index)
             if validity_state == 0:
                 return (0, err_desc)
         return (1, "")

@@ -153,7 +153,14 @@ class TargetList:
             (validity_state, err_desc) = self.validate_target_list(data)
             return (validity_state, data, err_desc)
         except json.JSONDecodeError as e:
-            return (-1, [], "Invalid JSON! ({})".format(e.msg))
+            error_message = "Invalid JSON at line " + str(e.lineno) + "! "+e.msg+"."
+            line_number = e.lineno
+            content_lines = json_data.split("\n")
+            if len(content_lines) > line_number-1:
+                invalid_line = content_lines[line_number-1].lstrip()
+                if invalid_line.strip() != "":
+                    error_message += "\n\nInvalid JSON: <span class=\"alt\">" + invalid_line + "</span>"
+            return (-1, [], error_message)
 
     def reorder_cards(self, col: Collection, event_logger: EventLogger) -> TargetListReorderResult:
 

@@ -202,13 +202,16 @@ class ReorderCardsTab:
         # informational text on the left
 
         self.targets_input_validation_info_txt_line = QLabel()
+        self.targets_input_validation_info_txt_line.setTextFormat(Qt.TextFormat.RichText)
         self.targets_input_validation_info_txt_line.setStyleSheet("font-weight: bolder; font-size: 13px; margin-top:8px;")
         self.targets_input_validation_info_txt_line.setWordWrap(True)
 
         def update_validation_info_txt_line(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
             if (targets_input_textarea.err_desc != ""):
                 self.targets_input_validation_info_txt_line.setVisible(True)
-                self.targets_input_validation_info_txt_line.setText(targets_input_textarea.err_desc)
+                new_txt = "<style>.alt { font-style: italic; color: gray; }</style>"
+                new_txt += targets_input_textarea.err_desc.replace('\n', '<br>')
+                self.targets_input_validation_info_txt_line.setText(new_txt)
             else:
                 self.targets_input_validation_info_txt_line.setVisible(False)
 

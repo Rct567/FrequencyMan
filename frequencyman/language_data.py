@@ -190,6 +190,9 @@ class LanguageData:
 
     def id_has_directory(self, lang_data_id: LangDataId) -> bool:
 
+        if lang_data_id == "":
+            return False
+
         possible_lang_dir = os.path.join(self.root_dir, lang_data_id)
         return os.path.isdir(possible_lang_dir)
 

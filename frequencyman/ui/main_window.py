@@ -15,6 +15,8 @@ from aqt.main import AnkiQt
 class FrequencyManMainWindow(QDialog):
 
     root_dir: str
+    mw: AnkiQt
+    is_dark_mode: bool
 
     tab_menu_options: dict[str, QWidget]
 
@@ -24,6 +26,8 @@ class FrequencyManMainWindow(QDialog):
     def __init__(self, mw: AnkiQt):
 
         super().__init__(mw)
+        self.mw = mw
+        self.is_dark_mode = mw.app.styleSheet().lower().find("dark") != -1
         self.setWindowTitle("FrequencyMan")
 
         self.setMinimumSize(650, 600)

@@ -32,11 +32,12 @@ class TargetsDefiningTextArea(QTextEdit):
     change_callbacks: list[Callable[[int, 'TargetsDefiningTextArea'], None]]
     valid_targets_defined: Optional[list[ConfiguredTarget]]
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setMinimumHeight(300)
+    def __init__(self, fm_window: FrequencyManMainWindow):
+        super().__init__(None)
+        self.fm_window = fm_window
+        self.setMinimumHeight(330)
         self.setAcceptRichText(False)
-        self.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2;")
+        self.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2; font-family: 'Consolas', 'Courier New', monospace;")
         self.textChanged.connect(self.__handle_content_change)
         self.validity_change_callbacks = []
         self.change_callbacks = []
@@ -112,13 +113,16 @@ class ReorderCardsTab:
         self.target_list = TargetList(language_data, col)
 
         # textarea (user can input json to define targets)
-        self.targets_input_textarea = TargetsDefiningTextArea()
+        self.targets_input_textarea = TargetsDefiningTextArea(fm_window)
         self.targets_input_textarea.set_validator(self.target_list.get_targets_from_json)
 
         def update_textarea_text_color_by_validity(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
             palette = QPalette()
             if (json_validity_state == 1):  # valid
-                palette.setColor(QPalette.ColorRole.Text, QColor("#23b442"))  # Green
+                if fm_window.is_dark_mode:
+                    palette.setColor(QPalette.ColorRole.Text, QColor("#23b442"))  # Green
+                else:
+                    palette.setColor(QPalette.ColorRole.Text, QColor("#15842d"))
             if (json_validity_state == -1):  # invalid json
                 palette.setColor(QPalette.ColorRole.Text, QColor("#bb462c"))  # Red
             targets_input_textarea.setPalette(palette)

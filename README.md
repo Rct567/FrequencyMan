@@ -6,6 +6,8 @@ As an Anki plugin, __FrequencyMan__ goal is to optimize your Anki learning journ
 
 Please note: this plugin is a __WORK IN PROGRESS__. Don't use it on your main profile!
 
+Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
+
 ## Features
 - Sort cards based on 'word frequency' and other useful factors.
 - Define multiple sorting targets for different decks or selection of cards.

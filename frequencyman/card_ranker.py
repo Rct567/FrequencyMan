@@ -97,14 +97,14 @@ class CardRanker:
     @staticmethod
     def get_default_ranking_factors_span() -> dict[str, float]:
         return {
-            'words_fr_score': 0.25,
-            'lowest_fr_word_score': 0.25,
-            'words_ld_score': 0.25,
-            'highest_ld_word_score': 0.25,
+            'words_fr_score': 0.3,
+            'lowest_fr_word_score': 0.3,
+            'words_ld_score': 0.2,
+            'highest_ld_word_score': 0.2,
             'most_obscure_word': 1.0,
             'ideal_word_count': 1.0,
             'ideal_focus_word_count': 1.5,
-            'familiarity_scores': 0.01,
+            'familiarity_scores': 0.1,
             'words_familiarity_sweetspot_scores': 1.0,
             'lowest_fr_least_familiar_word_scores': 1.0,
             'ideal_unseen_word_count': 0,

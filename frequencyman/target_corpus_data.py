@@ -276,9 +276,14 @@ class TargetCorpusData:
                 for word_token in field.field_value_tokenized:
 
                     word_fr = language_data.get_word_frequency(lang_data_id, word_token, 0)
+
+                    if word_fr == 0:
+                        continue
+
                     word_familiarity = self.content_metrics[corpus_key].reviewed.words_familiarity_positional.get(word_token, 0)
                     word_underexposure_rating = (word_fr - word_familiarity)
-                    if (word_underexposure_rating >= 0):
+
+                    if (word_underexposure_rating > 0):
                         self.content_metrics[corpus_key].words_underexposure[word_token] = word_underexposure_rating
 
         for corpus_key in self.content_metrics.keys():

@@ -296,7 +296,7 @@ class CardRanker:
 
                 # ue scores
                 if (len(field_metrics.ue_scores) > 0):
-                    note_metrics.ue_scores.append(fsum(field_metrics.ue_scores))
+                    note_metrics.ue_scores.append(fmean(field_metrics.ue_scores))
                 else:
                     note_metrics.ue_scores.append(0)
 

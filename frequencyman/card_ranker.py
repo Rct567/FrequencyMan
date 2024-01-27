@@ -264,21 +264,21 @@ class CardRanker:
                     continue
 
                 # ideal unseen words count
-                num_unseen_words = len(field_metrics.unseen_words)
-                note_metrics.ideal_unseen_words_count_scores.append(self.__calc_ideal_unseen_words_count_score(num_unseen_words))
+                field_num_unseen_words_score = self.__calc_ideal_unseen_words_count_score(len(field_metrics.unseen_words))
+                note_metrics.ideal_unseen_words_count_scores.append(field_num_unseen_words_score)
 
                 # ideal focus words count
-                num_focus_words = len(field_metrics.focus_words)
-                note_metrics.ideal_focus_words_count_scores.append(self.__calc_ideal_unseen_words_count_score(num_focus_words))
+                field_num_focus_words_score = self.__calc_ideal_unseen_words_count_score(len(field_metrics.focus_words))
+                note_metrics.ideal_focus_words_count_scores.append(field_num_focus_words_score)
 
                 # ideal word count
-                ideal_word_count_score = self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), self.ideal_word_count_min, self.ideal_word_count_max)
-                note_metrics.ideal_words_count_scores.append(ideal_word_count_score)
+                field_ideal_word_count_score = self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), self.ideal_word_count_min, self.ideal_word_count_max)
+                note_metrics.ideal_words_count_scores.append(field_ideal_word_count_score)
 
                 # familiarity scores
                 if len(field_metrics.words_familiarity_positional_scores) > 0:
-                    familiarity_score_factors = [median(field_metrics.words_familiarity_positional_scores.values()), min(field_metrics.words_familiarity_positional_scores.values())]
-                    note_metrics.familiarity_scores.append(fmean(familiarity_score_factors))
+                    field_familiarity_score = fmean([median(field_metrics.words_familiarity_positional_scores.values()), min(field_metrics.words_familiarity_positional_scores.values())])
+                    note_metrics.familiarity_scores.append(field_familiarity_score)
                 else:
                     note_metrics.familiarity_scores.append(0)
 

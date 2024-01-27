@@ -117,9 +117,9 @@ class TargetList:
             allowed_keys = CardRanker.get_default_ranking_factors_span().keys()
             for key, value in target['ranking_factors'].items():
                 if key not in allowed_keys:
-                    return (0, "Ranking factors specified in target[{}].ranking_factors is unknown.".format(index))
+                    return (0, "Ranking factor '{}' specified in target[{}].ranking_factors is unknown.".format(key, index))
                 if not is_numeric_value(value):
-                    return (0, "Ranking factors '{}' specified in target[{}].ranking_factors has a non-numeric value.".format(key, index))
+                    return (0, "Value for ranking factors '{}' specified in target[{}].ranking_factors is not numeric.".format(key, index))
 
         # check custom ranking weights defined
         for key in CardRanker.get_default_ranking_factors_span().keys():

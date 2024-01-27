@@ -28,7 +28,7 @@ def sigmoid(x: float):
 @dataclass
 class FieldMetrics:
     words_fr_scores: dict[WordToken, float] = field(default_factory=dict)
-    words_ld_scores: dict[WordToken, float] = field(default_factory=dict)
+    words_ue_scores: dict[WordToken, float] = field(default_factory=dict)
     words_familiarity_sweetspot_scores: dict[WordToken, float] = field(default_factory=dict)
     words_familiarity_scores: dict[WordToken, float] = field(default_factory=dict)
     words_familiarity_positional_scores: dict[WordToken, float] = field(default_factory=dict)
@@ -40,17 +40,17 @@ class FieldMetrics:
     lowest_fr_least_familiar_word: Tuple[WordToken, float, float] = (WordToken(""), 0, 0)
     lowest_fr_word: Tuple[WordToken, float] = (WordToken(""), 0)
 
-    highest_ld_word: Tuple[WordToken, float] = (WordToken(""), 0)
+    highest_ue_word: Tuple[WordToken, float] = (WordToken(""), 0)
     most_obscure_word: Tuple[WordToken, float] = (WordToken(""), 0)
 
     fr_scores: list[float] = field(default_factory=list)
-    ld_scores: list[float] = field(default_factory=list)
+    ue_scores: list[float] = field(default_factory=list)
 
 
 @dataclass
 class AggregatedFieldsMetrics:
     words_fr_scores: list[dict[WordToken, float]] = field(default_factory=list)
-    words_ld_scores: list[dict[WordToken, float]] = field(default_factory=list)
+    words_ue_scores: list[dict[WordToken, float]] = field(default_factory=list)
     words_familiarity_sweetspot_scores: list[dict[WordToken, float]] = field(default_factory=list)
     words_familiarity_scores: list[dict[WordToken, float]] = field(default_factory=list)
     focus_words: list[dict[WordToken, float]] = field(default_factory=list)
@@ -61,11 +61,11 @@ class AggregatedFieldsMetrics:
     lowest_fr_least_familiar_word: list[Tuple[WordToken, float, float]] = field(default_factory=list)
     lowest_fr_word: list[Tuple[WordToken, float]] = field(default_factory=list)
 
-    highest_ld_word: list[Tuple[WordToken, float]] = field(default_factory=list)
+    highest_ue_word: list[Tuple[WordToken, float]] = field(default_factory=list)
     most_obscure_word: list[Tuple[WordToken, float]] = field(default_factory=list)
 
     fr_scores: list[float] = field(default_factory=list)
-    ld_scores: list[float] = field(default_factory=list)
+    ue_scores: list[float] = field(default_factory=list)
     familiarity_sweetspot_scores: list[float] = field(default_factory=list)
     familiarity_scores: list[float] = field(default_factory=list)
 
@@ -99,8 +99,8 @@ class CardRanker:
         return {
             'words_fr_score': 0.3,
             'lowest_fr_word_score': 0.3,
-            'words_ld_score': 0.2,
-            'highest_ld_word_score': 0.2,
+            'words_ue_score': 0.2,
+            'highest_ue_word_score': 0.2,
             'most_obscure_word': 1.0,
             'ideal_word_count': 1.0,
             'ideal_focus_word_count': 1.5,
@@ -252,9 +252,9 @@ class CardRanker:
                 note_metrics.lowest_fr_word.append(field_metrics.lowest_fr_word)
                 note_metrics.lowest_fr_least_familiar_word.append(field_metrics.lowest_fr_least_familiar_word)
                 note_metrics.most_obscure_word.append(field_metrics.most_obscure_word)
-                note_metrics.highest_ld_word.append(field_metrics.highest_ld_word)
+                note_metrics.highest_ue_word.append(field_metrics.highest_ue_word)
                 note_metrics.words_fr_scores.append(field_metrics.words_fr_scores)
-                note_metrics.words_ld_scores.append(field_metrics.words_ld_scores)
+                note_metrics.words_ue_scores.append(field_metrics.words_ue_scores)
                 note_metrics.words_familiarity_sweetspot_scores.append(field_metrics.words_familiarity_sweetspot_scores)
                 note_metrics.words_familiarity_scores.append(field_metrics.words_familiarity_scores)
                 note_metrics.focus_words.append(field_metrics.focus_words)
@@ -294,42 +294,13 @@ class CardRanker:
                 else:
                     note_metrics.fr_scores.append(0)
 
-                # ld scores
-                if (len(field_metrics.ld_scores) > 0):
-                    note_metrics.ld_scores.append(fsum(field_metrics.ld_scores))
+                # ue scores
+                if (len(field_metrics.ue_scores) > 0):
+                    note_metrics.ue_scores.append(fsum(field_metrics.ue_scores))
                 else:
-                    note_metrics.ld_scores.append(0)
+                    note_metrics.ue_scores.append(0)
 
         return notes_metrics
-
-    def __get_notes_ranking_factors(self, notes_metrics: dict[NoteId, AggregatedFieldsMetrics]) -> dict[str, dict[NoteId, float]]:
-
-        notes_ranking_factors: dict[str, dict[NoteId, float]] = defaultdict(dict)
-
-        for note_id in notes_metrics.keys():
-
-            note_metrics = notes_metrics[note_id]
-
-            # define ranking factors for note, based on avg of fields
-
-            notes_ranking_factors['words_fr_score'][note_id] = fmean(note_metrics.fr_scores)
-            notes_ranking_factors['words_ld_score'][note_id] = fmean(note_metrics.ld_scores)
-
-            notes_ranking_factors['lowest_fr_word_score'][note_id] = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
-            notes_ranking_factors['highest_ld_word_score'][note_id] = fmean([highest_ld_word[1] for highest_ld_word in note_metrics.highest_ld_word])
-
-            notes_ranking_factors['most_obscure_word'][note_id] = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
-
-            notes_ranking_factors['ideal_word_count'][note_id] = fmean(note_metrics.ideal_words_count_scores)
-            notes_ranking_factors['ideal_focus_word_count'][note_id] = fmean(note_metrics.ideal_focus_words_count_scores)
-
-            notes_ranking_factors['familiarity_scores'][note_id] = fmean(note_metrics.familiarity_scores)
-            notes_ranking_factors['words_familiarity_sweetspot_scores'][note_id] = fmean(note_metrics.familiarity_sweetspot_scores)
-
-            notes_ranking_factors['lowest_fr_least_familiar_word_scores'][note_id] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
-            notes_ranking_factors['ideal_unseen_word_count'][note_id] = fmean(note_metrics.ideal_unseen_words_count_scores)
-
-        return notes_ranking_factors
 
     def __get_field_metrics_from_data(self, field_data: TargetNoteFieldContentData, corpus_key: CorpusId) -> FieldMetrics:
 
@@ -344,21 +315,21 @@ class CardRanker:
 
             # word frequency
             word_fr = self.language_data.get_word_frequency(field_data.target_language_data_id, word, 0)
-            word_ld = content_metrics.words_lexical_discrepancy.get(word, 0)
+            word_ue = content_metrics.words_underexposure.get(word, 0)
 
             field_metrics.fr_scores.append(word_fr)
             field_metrics.words_fr_scores[word] = word_fr
 
-            field_metrics.ld_scores.append(word_ld)
-            field_metrics.words_ld_scores[word] = word_ld
+            field_metrics.ue_scores.append(word_ue)
+            field_metrics.words_ue_scores[word] = word_ue
 
             # lowest fr word
             if field_metrics.lowest_fr_word[0] == "" or word_fr < field_metrics.lowest_fr_word[1]:
                 field_metrics.lowest_fr_word = (word, word_fr)
 
-            # highest ld word
-            if field_metrics.highest_ld_word[0] == "" or word_ld > field_metrics.highest_ld_word[1]:
-                field_metrics.highest_ld_word = (word, word_ld)
+            # most underexposure word
+            if field_metrics.highest_ue_word[0] == "" or word_ue > field_metrics.highest_ue_word[1]:
+                field_metrics.highest_ue_word = (word, word_ue)
 
             #  familiarity score of words
             word_familiarity_score = content_metrics.reviewed.words_familiarity.get(word, 0)
@@ -398,6 +369,35 @@ class CardRanker:
 
         return field_metrics
 
+    def __get_notes_ranking_factors(self, notes_metrics: dict[NoteId, AggregatedFieldsMetrics]) -> dict[str, dict[NoteId, float]]:
+
+        notes_ranking_factors: dict[str, dict[NoteId, float]] = defaultdict(dict)
+
+        for note_id in notes_metrics.keys():
+
+            note_metrics = notes_metrics[note_id]
+
+            # define ranking factors for note, based on avg of fields
+
+            notes_ranking_factors['words_fr_score'][note_id] = fmean(note_metrics.fr_scores)
+            notes_ranking_factors['words_ue_score'][note_id] = fmean(note_metrics.ue_scores)
+
+            notes_ranking_factors['lowest_fr_word_score'][note_id] = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
+            notes_ranking_factors['highest_ue_word_score'][note_id] = fmean([highest_ue_word[1] for highest_ue_word in note_metrics.highest_ue_word])
+
+            notes_ranking_factors['most_obscure_word'][note_id] = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
+
+            notes_ranking_factors['ideal_word_count'][note_id] = fmean(note_metrics.ideal_words_count_scores)
+            notes_ranking_factors['ideal_focus_word_count'][note_id] = fmean(note_metrics.ideal_focus_words_count_scores)
+
+            notes_ranking_factors['familiarity_scores'][note_id] = fmean(note_metrics.familiarity_scores)
+            notes_ranking_factors['words_familiarity_sweetspot_scores'][note_id] = fmean(note_metrics.familiarity_sweetspot_scores)
+
+            notes_ranking_factors['lowest_fr_least_familiar_word_scores'][note_id] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
+            notes_ranking_factors['ideal_unseen_word_count'][note_id] = fmean(note_metrics.ideal_unseen_words_count_scores)
+
+        return notes_ranking_factors
+
     def __set_fields_meta_data_for_notes(self, notes_from_new_cards: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]], notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
 
         for note_id, note in notes_from_new_cards.items():
@@ -411,9 +411,9 @@ class CardRanker:
             if 'fm_debug_info' in note:
                 debug_info: dict[str, list] = {
                     'fr_scores': note_metrics.fr_scores,
-                    'ld_scores': note_metrics.ld_scores,
+                    'ue_scores': note_metrics.ue_scores,
                     'most_obscure_word': note_metrics.most_obscure_word,
-                    'highest_ld_word': note_metrics.highest_ld_word,
+                    'highest_ue_word': note_metrics.highest_ue_word,
                     'ideal_focus_word_count': note_metrics.ideal_focus_words_count_scores,
                     'ideal_word_count': note_metrics.ideal_words_count_scores,
                     'familiarity_scores': note_metrics.familiarity_scores,
@@ -432,8 +432,8 @@ class CardRanker:
                     new_note_vals['fm_debug_ranking_info'] += "{}: {:.3f}<br />\n".format(info_name, info_val[note_id])
             if 'fm_debug_words_info' in note:
                 new_note_vals['fm_debug_words_info'] = ''
-                fields_words_ld_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ld_scores]
-                new_note_vals['fm_debug_words_info'] += 'words_ld_scores: '+str(fields_words_ld_scores_sorted)+"<br />\n"
+                fields_words_ue_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ue_scores]
+                new_note_vals['fm_debug_words_info'] += 'words_ue_scores: '+str(fields_words_ue_scores_sorted)+"<br />\n"
                 fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]
                 new_note_vals['fm_debug_words_info'] += 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"<br />\n"
                 fields_words_familiarity_sweetspot_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))

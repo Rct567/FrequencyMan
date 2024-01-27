@@ -48,7 +48,7 @@ class TargetReviewedContentMetrics:
 
 @dataclass
 class TargetContentMetrics:
-    words_lexical_discrepancy: dict[WordToken, float] = field(default_factory=dict)
+    words_underexposure: dict[WordToken, float] = field(default_factory=dict)
     reviewed: TargetReviewedContentMetrics = field(default_factory=TargetReviewedContentMetrics)
 
 
@@ -121,7 +121,7 @@ class TargetCorpusData:
         self.__set_notes_reviewed_words_presence()
         self.__set_notes_reviewed_words_familiarity()
         self.__set_notes_reviewed_words_familiarity_sweetspot()
-        self.__set_notes_lexical_discrepancy(language_data)
+        self.__set_notes_words_underexposure(language_data)
 
     def __get_reviewed_words_card_memorized_scores(self) -> dict[CardId, float]:
 
@@ -264,7 +264,7 @@ class TargetCorpusData:
             self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = normalize_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
             self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = sort_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
 
-    def __set_notes_lexical_discrepancy(self, language_data: LanguageData) -> None:
+    def __set_notes_words_underexposure(self, language_data: LanguageData) -> None:
 
         for note_fields in self.field_data_per_card_note.values():
 
@@ -277,10 +277,10 @@ class TargetCorpusData:
 
                     word_fr = language_data.get_word_frequency(lang_data_id, word_token, 0)
                     word_familiarity = self.content_metrics[corpus_key].reviewed.words_familiarity_positional.get(word_token, 0)
-                    word_lexical_discrepancy_rating = (word_fr - word_familiarity)
-                    if (word_lexical_discrepancy_rating >= 0):
-                        self.content_metrics[corpus_key].words_lexical_discrepancy[word_token] = word_lexical_discrepancy_rating
+                    word_underexposure_rating = (word_fr - word_familiarity)
+                    if (word_underexposure_rating >= 0):
+                        self.content_metrics[corpus_key].words_underexposure[word_token] = word_underexposure_rating
 
         for corpus_key in self.content_metrics.keys():
-            self.content_metrics[corpus_key].words_lexical_discrepancy = normalize_dict_floats_values(self.content_metrics[corpus_key].words_lexical_discrepancy)
-            self.content_metrics[corpus_key].words_lexical_discrepancy = sort_dict_floats_values(self.content_metrics[corpus_key].words_lexical_discrepancy)
+            self.content_metrics[corpus_key].words_underexposure = normalize_dict_floats_values(self.content_metrics[corpus_key].words_underexposure)
+            self.content_metrics[corpus_key].words_underexposure = sort_dict_floats_values(self.content_metrics[corpus_key].words_underexposure)

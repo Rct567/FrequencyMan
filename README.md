@@ -84,7 +84,7 @@ Note: Both targets use the same 'main scope', which is the selection of cards us
             }
         ],
         "reorder_scope_query": "-card:*Speaking*",
-        "ranking_familiarity_scores": 2
+        "ranking_familiarity": 2
     },
     {
         "deck": "Spanish",
@@ -99,8 +99,8 @@ Note: Both targets use the same 'main scope', which is the selection of cards us
         ],
         "reorder_scope_query": "card:*Speaking*",
         "ranking_factors": {
-            "familiarity_scores": 1,
-            "lowest_fr_word_score": 1
+            "familiarity": 1,
+            "word_frequency": 1
         }
     }
 ]
@@ -123,7 +123,7 @@ Reorder only based on word frequency (using word frequency from both front and b
             }
         ],
         "ranking_factors": {
-            "words_fr_score": 1
+            "word_frequency": 1
         }
     }
 ]

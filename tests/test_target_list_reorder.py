@@ -148,8 +148,8 @@ class TestTargetListReorder:
                 }],
                 "reorder_scope_query": "card:2",
                 "ranking_factors": {
-                    "familiarity_scores": 1,
-                    "lowest_fr_word_score": 1
+                    "familiarity": 1,
+                    "word_frequency_lowest": 1
                 }
             }
         ])

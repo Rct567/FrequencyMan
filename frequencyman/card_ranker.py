@@ -97,17 +97,16 @@ class CardRanker:
     @staticmethod
     def get_default_ranking_factors_span() -> dict[str, float]:
         return {
-            'words_fr_score': 0.3,
-            'lowest_fr_word_score': 0.3,
-            'words_ue_score': 0.2,
-            'highest_ue_word_score': 0.2,
-            'most_obscure_word': 1.0,
-            'ideal_word_count': 1.0,
+            'word_frequency': 0.6,
+            'lexical_underexposure': 0.4,
+            'familiarity': 0.5,
             'ideal_focus_word_count': 1.5,
-            'familiarity_scores': 0.1,
-            'words_familiarity_sweetspot_scores': 1.0,
-            'lowest_fr_least_familiar_word_scores': 1.0,
+            'ideal_word_count': 1.0,
+            'most_obscure_word': 1.0,
+            'familiarity_sweetspot': 1.0,
+            'lowest_fr_least_familiar_word': 1.0,
             'ideal_unseen_word_count': 0,
+            'word_frequency_lowest': 0,
         }
 
     @staticmethod
@@ -199,7 +198,7 @@ class CardRanker:
         self.ranking_factors_stats = defaultdict(dict)
         for attribute in self.ranking_factors_span.keys():
             if attribute not in notes_ranking_scores_normalized:
-                raise Exception("Span set for unknown ranking factor {}.".format(attribute))
+                raise Exception("Span set for unknown ranking factor '{}'.".format(attribute))
             vals = notes_ranking_scores_normalized[attribute]
             self.ranking_factors_stats[attribute]['avg'] = fmean(vals)
             self.ranking_factors_stats[attribute]['median'] = median(vals)
@@ -275,28 +274,33 @@ class CardRanker:
                 field_ideal_word_count_score = self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), self.ideal_word_count_min, self.ideal_word_count_max)
                 note_metrics.ideal_words_count_scores.append(field_ideal_word_count_score)
 
-                # familiarity scores
+                # familiarity scores (push down)
                 if len(field_metrics.words_familiarity_positional_scores) > 0:
-                    field_familiarity_score = fmean([median(field_metrics.words_familiarity_positional_scores.values()), min(field_metrics.words_familiarity_positional_scores.values())])
+                    words_familiarity_positional_scores = field_metrics.words_familiarity_positional_scores.values()
+                    field_familiarity_score = fmean([median(words_familiarity_positional_scores), min(words_familiarity_positional_scores)])
                     note_metrics.familiarity_scores.append(field_familiarity_score)
                 else:
                     note_metrics.familiarity_scores.append(0)
 
-                # familiarity sweetspot scores
+                # familiarity sweetspot scores (push up)
                 if len(field_metrics.words_familiarity_sweetspot_scores) > 0:
-                    note_metrics.familiarity_sweetspot_scores.append(fsum(field_metrics.words_familiarity_sweetspot_scores.values()))
+                    words_familiarity_sweetspot_scores = field_metrics.words_familiarity_sweetspot_scores.values()
+                    field_familiarity_sweetspot_score = fmean([fmean(words_familiarity_sweetspot_scores), max(words_familiarity_sweetspot_scores)])
+                    note_metrics.familiarity_sweetspot_scores.append(field_familiarity_sweetspot_score)
                 else:
                     note_metrics.familiarity_sweetspot_scores.append(0)
 
-                # fr scores
+                # word frequency scores (push down)
                 if (len(field_metrics.fr_scores) > 0):
-                    note_metrics.fr_scores.append(fmean(field_metrics.fr_scores))
+                    field_fr_score = fmean([median(field_metrics.fr_scores), min(field_metrics.fr_scores)])
+                    note_metrics.fr_scores.append(field_fr_score)
                 else:
                     note_metrics.fr_scores.append(0)
 
-                # ue scores
+                # underexposure scores (push up)
                 if (len(field_metrics.ue_scores) > 0):
-                    note_metrics.ue_scores.append(fmean(field_metrics.ue_scores))
+                    field_ue_score = fmean([fmean(field_metrics.ue_scores), max(field_metrics.ue_scores)])
+                    note_metrics.ue_scores.append(field_ue_score)
                 else:
                     note_metrics.ue_scores.append(0)
 
@@ -339,14 +343,12 @@ class CardRanker:
             field_metrics.words_familiarity_positional_scores[word] = words_familiarity_positional
 
             # familiarity sweetspot score of words in sweetspot range
-            word_familiarity_sweetspot_score = content_metrics.reviewed.words_familiarity_sweetspot.get(word, None)
-            if word_familiarity_sweetspot_score is not None:
+            word_familiarity_sweetspot_score = content_metrics.reviewed.words_familiarity_sweetspot.get(word, 0)
+            if word_familiarity_sweetspot_score > 0:
                 field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
 
             # most obscure word (lowest ubiquity)
-            word_familiarity_score = content_metrics.reviewed.words_familiarity.get(word, 0)
             word_ubiquity_score = (word_fr+word_familiarity_score)/2
-
             if field_metrics.most_obscure_word[0] == "" or word_ubiquity_score < field_metrics.most_obscure_word[1]:
                 field_metrics.most_obscure_word = (word, word_ubiquity_score)
 
@@ -379,21 +381,20 @@ class CardRanker:
 
             # define ranking factors for note, based on avg of fields
 
-            notes_ranking_factors['words_fr_score'][note_id] = fmean(note_metrics.fr_scores)
-            notes_ranking_factors['words_ue_score'][note_id] = fmean(note_metrics.ue_scores)
+            notes_ranking_factors['word_frequency'][note_id] = fmean(note_metrics.fr_scores)
+            notes_ranking_factors['word_frequency_lowest'][note_id] = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
 
-            notes_ranking_factors['lowest_fr_word_score'][note_id] = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
-            notes_ranking_factors['highest_ue_word_score'][note_id] = fmean([highest_ue_word[1] for highest_ue_word in note_metrics.highest_ue_word])
+            notes_ranking_factors['lexical_underexposure'][note_id] = fmean(note_metrics.ue_scores)
 
             notes_ranking_factors['most_obscure_word'][note_id] = fmean([most_obscure_word[1] for most_obscure_word in note_metrics.most_obscure_word])
 
             notes_ranking_factors['ideal_word_count'][note_id] = fmean(note_metrics.ideal_words_count_scores)
             notes_ranking_factors['ideal_focus_word_count'][note_id] = fmean(note_metrics.ideal_focus_words_count_scores)
 
-            notes_ranking_factors['familiarity_scores'][note_id] = fmean(note_metrics.familiarity_scores)
-            notes_ranking_factors['words_familiarity_sweetspot_scores'][note_id] = fmean(note_metrics.familiarity_sweetspot_scores)
+            notes_ranking_factors['familiarity'][note_id] = fmean(note_metrics.familiarity_scores)
+            notes_ranking_factors['familiarity_sweetspot'][note_id] = fmean(note_metrics.familiarity_sweetspot_scores)
 
-            notes_ranking_factors['lowest_fr_least_familiar_word_scores'][note_id] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
+            notes_ranking_factors['lowest_fr_least_familiar_word'][note_id] = fmean([lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word])
             notes_ranking_factors['ideal_unseen_word_count'][note_id] = fmean(note_metrics.ideal_unseen_words_count_scores)
 
         return notes_ranking_factors

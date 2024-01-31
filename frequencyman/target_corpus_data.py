@@ -66,7 +66,7 @@ class TargetCorpusData:
 
         self.field_data_per_card_note = {}
         self.content_metrics = defaultdict(TargetContentMetrics)
-        self.familiarity_sweetspot_point = 0.75
+        self.familiarity_sweetspot_point = 0.45
 
     def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData) -> None:
         """
@@ -247,7 +247,7 @@ class TargetCorpusData:
 
         for corpus_key in self.content_metrics.keys():
 
-            median_familiarity = median(self.content_metrics[corpus_key].reviewed.words_familiarity.values())
+            median_familiarity = self.content_metrics[corpus_key].reviewed.words_familiarity_median
 
             for word_token in self.content_metrics[corpus_key].reviewed.words_familiarity:
 

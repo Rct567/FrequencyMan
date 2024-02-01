@@ -3,7 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Optional, TypedDict, Union
+from typing import Any, Optional, TypedDict, Union
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -80,9 +80,7 @@ class Target:
     reorder_scope_query: Optional[str]
     target_corpus_data: Optional[TargetCorpusData]
 
-    corpus_cache: dict[tuple, TargetCorpusData] = {}
-    target_cards_cache: dict[tuple, TargetCards] = {}
-    cache_lock: Optional[Collection] = None
+    cache_data: dict[str, dict[tuple, Any]]
 
     def __init__(self, target: ConfiguredTarget, index_num: int, col: Collection) -> None:
 
@@ -92,11 +90,7 @@ class Target:
         self.reorder_scope_query = None
         self.target_corpus_data = None
         self.col = col
-
-        if not Target.cache_lock or Target.cache_lock != col:
-            Target.cache_lock = col
-            Target.corpus_cache = {}
-            Target.target_cards_cache = {}
+        self.cache_data = {}
 
     def get_config_fields_per_note_type(self) -> dict[str, dict[str, LangDataId]]:
 
@@ -194,16 +188,19 @@ class Target:
 
     def __get_cards_cached(self, search_query: Optional[str] = None) -> TargetCards:
 
+        if not 'target_cards' in self.cache_data:
+            self.cache_data['target_cards'] = {}
+
         if not search_query:
             search_query = self.__get_main_scope_query()
 
         cache_key = (search_query, self.col)
 
-        if cache_key in self.target_cards_cache:
-            return self.target_cards_cache[cache_key]
+        if cache_key in self.cache_data['target_cards']:
+            return self.cache_data['target_cards'][cache_key]
 
         target_cards = self.get_cards(search_query)
-        self.target_cards_cache[cache_key] = target_cards
+        self.cache_data['target_cards'][cache_key] = target_cards
 
         return target_cards
 
@@ -223,13 +220,16 @@ class Target:
 
     def __get_corpus_data_cached(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
 
+        if not 'corpus' in self.cache_data:
+            self.cache_data['corpus'] = {}
+
         cache_key = (str(target_cards.all_cards_ids), str(self.get_config_fields_per_note_type()), self.col, language_data, self.config_target.get('familiarity_sweetspot_point'))
-        if cache_key in self.corpus_cache:
-            return self.corpus_cache[cache_key]
+        if cache_key in self.cache_data['corpus']:
+            return self.cache_data['corpus'][cache_key]
 
         target_corpus_data = self.get_corpus_data(target_cards, language_data)
 
-        self.corpus_cache[cache_key] = target_corpus_data
+        self.cache_data['corpus'][cache_key] = target_corpus_data
         return target_corpus_data
 
     def reorder_cards(self, reorder_starting_from: int, language_data: LanguageData,

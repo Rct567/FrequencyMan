@@ -167,9 +167,11 @@ class TargetList:
         reorder_result_list: list[TargetReorderResult] = []
         modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
         num_cards_repositioned = 0
+        cache_data = {}
 
         # Reposition cards for each target
         for target in self.target_list:
+            target.cache_data = cache_data
             with event_logger.add_benchmarked_entry("Reordering target #{}.".format(target.index_num)):
                 reorder_result = target.reorder_cards(num_cards_repositioned+1, self.language_data, event_logger, modified_dirty_notes)
                 reorder_result_list.append(reorder_result)

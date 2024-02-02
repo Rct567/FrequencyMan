@@ -284,6 +284,9 @@ class TargetCorpusData:
                     word_underexposure_rating = (word_fr - word_familiarity)
 
                     if (word_underexposure_rating > 0):
+                        word_underexposure_rating = word_underexposure_rating * ( (1 + word_familiarity) ** 1.5 )
+                        if word_familiarity == 0:
+                            word_underexposure_rating = word_underexposure_rating*0.75
                         self.content_metrics[corpus_key].words_underexposure[word_token] = word_underexposure_rating
 
         for corpus_key in self.content_metrics.keys():

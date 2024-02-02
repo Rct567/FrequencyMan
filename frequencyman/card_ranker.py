@@ -99,7 +99,7 @@ class CardRanker:
         return {
             'word_frequency': 1,
             'familiarity': 1,
-            'familiarity_sweetspot': 0.5,
+            'familiarity_sweetspot': 0.8,
             'lexical_underexposure': 0.4,
             'ideal_focus_word_count': 1.5,
             'ideal_word_count': 1.0,

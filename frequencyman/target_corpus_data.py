@@ -125,6 +125,9 @@ class TargetCorpusData:
 
     def __get_reviewed_words_card_memorized_scores(self) -> dict[CardId, float]:
 
+        if not self.target_cards.reviewed_cards:
+            return {}
+
         cards_interval: list[float] = []
         cards_reps: list[float] = []
         cards_ease: list[float] = []

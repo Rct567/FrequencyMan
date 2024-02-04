@@ -38,7 +38,7 @@ class TargetNoteFieldContentData:
 class TargetReviewedContentMetrics:
     words: dict[WordToken, list[TargetCard]] = field(default_factory=dict)
     words_presence: dict[WordToken, list[float]] = field(default_factory=dict)  # list because a word can occur multiple times in a field
-    words_presence_card_score: dict[WordToken, list[float]] = field(default_factory=dict)
+    words_cards_memorized_score: dict[WordToken, list[float]] = field(default_factory=dict)
     words_familiarity: dict[WordToken, float] = field(default_factory=dict)
     words_familiarity_mean: float = field(default=0.0)
     words_familiarity_median: float = field(default=0.0)
@@ -197,27 +197,29 @@ class TargetCorpusData:
 
                     if word_token not in self.content_metrics[corpus_key].reviewed.words_presence:
                         self.content_metrics[corpus_key].reviewed.words_presence[word_token] = []
-                        self.content_metrics[corpus_key].reviewed.words_presence_card_score[word_token] = []
+                        self.content_metrics[corpus_key].reviewed.words_cards_memorized_score[word_token] = []
 
                     word_presence_score = self.__calc_word_presence_score(word_token, field_num_chars_tokens, field_num_tokens, index)
                     self.content_metrics[corpus_key].reviewed.words_presence[word_token].append(word_presence_score)
-                    self.content_metrics[corpus_key].reviewed.words_presence_card_score[word_token].append(card_memorized_scores[card.id])
+                    self.content_metrics[corpus_key].reviewed.words_cards_memorized_score[word_token].append(card_memorized_scores[card.id])
+                    assert word_presence_score <= 1 and card_memorized_scores[card.id] <= 1
 
     def __set_notes_reviewed_words_familiarity(self) -> None:
 
         for corpus_key in self.content_metrics.keys():
 
-            field_familiarity_scores_per_word: list[float] = []
-
             for word_token, word_presence_scores in self.content_metrics[corpus_key].reviewed.words_presence.items():
-                word_presence_card_scores = self.content_metrics[corpus_key].reviewed.words_presence_card_score[word_token]
-                field_familiarity_scores_per_word.append(fsum(word_presence_scores)+fsum(word_presence_card_scores))
+                card_memorized_scores = self.content_metrics[corpus_key].reviewed.words_cards_memorized_score[word_token]
+                words_familiarity = (word_presence*(1+card_memorized_score) for word_presence, card_memorized_score in zip(word_presence_scores, card_memorized_scores))
+                self.content_metrics[corpus_key].reviewed.words_familiarity[word_token] = fsum(words_familiarity)
 
-            field_avg_word_familiarity_score = fmean(field_familiarity_scores_per_word)
+            # smooth out top values
 
-            for index, word_token in enumerate(self.content_metrics[corpus_key].reviewed.words_presence.keys()):
+            field_avg_word_familiarity_score = fmean(self.content_metrics[corpus_key].reviewed.words_familiarity.values())
 
-                word_familiarity_smooth_score = field_familiarity_scores_per_word[index]
+            for word_token, words_familiarity in self.content_metrics[corpus_key].reviewed.words_familiarity.items():
+
+                word_familiarity_smooth_score = words_familiarity
 
                 if (word_familiarity_smooth_score > field_avg_word_familiarity_score*16):
                     word_familiarity_smooth_score = fmean([word_familiarity_smooth_score] + [field_avg_word_familiarity_score]*4)

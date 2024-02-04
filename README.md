@@ -21,7 +21,7 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 1. Go to the Anki plugin folder, such as __C:\Users\%USERNAME%\AppData\Roaming\Anki2\addons21__
 2. Create a new folder for the plugin, such as __addons21\FrequencyMan__
 3. Clone the project in the new folder: `git clone https://github.com/Rct567/FrequencyMan.git`
-4. Place your word frequency lists (*.txt files) in a subfolder in FrequencyMan/user_files/, such as __\FrequencyMan\user_files\lang_data\en__. If multiple lists exists for a language, they will be combined (based on highest score/position).
+4. Place your word frequency lists (*.txt files) in a subfolder in FrequencyMan/user_files/, such as __\FrequencyMan\user_files\lang_data\en__. If multiple lists exist for a language, they will be combined (based on the highest score/position).
 5. Start Anki.
 
 ## Download word frequency lists
@@ -141,3 +141,30 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 
 - If [AJT Japanese](https://ankiweb.net/shared/info/1344485230) is installed, Mecab can be used.
 - If [Morphman](https://ankiweb.net/shared/info/900801631) is installed, Mecab and Jieba can be used (assuming those also work in Morphman itself).
+
+## Ranking factors
+
+### Default ranking factors
+
+```json
+{
+    'word_frequency': 1,
+    'familiarity': 1,
+    'familiarity_sweetspot': 0.8,
+    'lexical_underexposure': 0.4,
+    'ideal_focus_word_count': 1.5,
+    'ideal_word_count': 1.0,
+    'most_obscure_word': 1.0,
+    'lowest_fr_least_familiar_word': 1.0,
+    'ideal_unseen_word_count': 0,
+    'word_frequency_lowest': 0,
+}
+```
+
+### Description
+
+- __word_frequency__: Represent the _word frequency_ of the words in the content, with a bias toward the lowest value. The _word frequency_ values come from the provided _word frequency lists_.
+- __familiarity__: Represent how familiar you are with the words in the content. Like _word_frequency_, it has a bias toward the lowest value. How familiar you are with a word depends on how many times you have seen the word and in what context that specific word was present (the interval and ease of the card, the amount of words in the content etc).
+- __familiarity_sweetspot__: Promotes cards with words close to a specific 'sweetspot' of familiarity. By default, this is 0.45 of the _median familiarity_ score. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These might be new words, or words that are 'hidden' (non-prominent) in older cards.
+- __lexical_underexposure__: Promotes cards with high-frequency words that you are not yet proportionally familiar with. Basically, _lexical_underexposure = (word_frequency-word_familiarity)_. Increasing this value means you will be 'pushed' forward more in your language learning journey (and word frequency list). Increase the value slightly if you experience too much overlap and not enough new words.
+- __ideal_focus_word_count__: Promotes cards with only a single 'focus word'. A focus word is a word that FrequencyMan assumes you are not appropriately familiar with. See also _N+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis

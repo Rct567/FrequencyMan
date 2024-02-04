@@ -6,7 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from collections import defaultdict
 from dataclasses import dataclass, field
 from math import fsum
-from statistics import fmean, mean, median
+from statistics import fmean, median
 from typing import NewType
 
 from anki.cards import CardId, Card
@@ -142,7 +142,7 @@ class TargetCorpusData:
         for metric_list, turnover_val in ((cards_interval, 30*7), (cards_reps, 14)):
             for index in range(len(metric_list)):
                 if metric_list[index] > turnover_val:
-                    metric_list[index] = mean([turnover_val, metric_list[index]])
+                    metric_list[index] = fmean([turnover_val, metric_list[index]])
 
         # get scores
 
@@ -237,7 +237,7 @@ class TargetCorpusData:
 
             # set avg and median
 
-            self.content_metrics[corpus_key].reviewed.words_familiarity_mean = mean(self.content_metrics[corpus_key].reviewed.words_familiarity.values())
+            self.content_metrics[corpus_key].reviewed.words_familiarity_mean = fmean(self.content_metrics[corpus_key].reviewed.words_familiarity.values())
             self.content_metrics[corpus_key].reviewed.words_familiarity_median = median(self.content_metrics[corpus_key].reviewed.words_familiarity.values())
 
             # also relative, but based on (sorted) position, just like value received from WordFrequencyList.get_word_frequency

@@ -71,7 +71,8 @@ class TargetList:
         for key in target.keys():
             if key == "":
                 return (0, "Target #{} has an empty key.".format(index))
-            known_keys = {"deck", "decks", "notes", "scope_query", "reorder_scope_query", "ranking_factors", "familiarity_sweetspot_point"}
+            known_keys = {"deck", "decks", "notes", "scope_query", "reorder_scope_query",
+                          "ranking_factors", "familiarity_sweetspot_point", "ideal_word_count"}
             known_keys.update(map(lambda s: "ranking_"+s, CardRanker.get_default_ranking_factors_span().keys()))
             if key not in known_keys:
                 return (0, "Target #{} has unknown key '{}'.".format(index, key))
@@ -120,6 +121,19 @@ class TargetList:
                     return (0, "Ranking factor '{}' specified in target[{}].ranking_factors is unknown.".format(key, index))
                 if not is_numeric_value(value):
                     return (0, "Value for ranking factors '{}' specified in target[{}].ranking_factors is not numeric.".format(key, index))
+
+        # check ideal_word_count
+        if 'ideal_word_count' in target:
+            if not isinstance(target['ideal_word_count'], list):
+                return (0, "Ideal word count specified in target #{} is not a valid type (array expected).".format(index))
+            if len(target['ideal_word_count']) == 0:
+                return (0, "Ideal word count specified in target #{} is empty.".format(index))
+            if len(target['ideal_word_count']) != 2:
+                return (0, "Ideal word count specified in target #{} should contain only two values (min and max).".format(index))
+            if not all(isinstance(val, int) for val in target['ideal_word_count']):
+                return (0, "Values specified for target[{}].ideal_word_count should all be a number (integer).".format(index))
+            if target['ideal_word_count'][0] > target['ideal_word_count'][1]:
+                return (0, "Ideal word count specified in target #{} should has a min value that is higher or equal to the max value.".format(index))
 
         # check custom ranking weights defined
         for key in CardRanker.get_default_ranking_factors_span().keys():

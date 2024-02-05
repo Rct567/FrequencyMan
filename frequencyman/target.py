@@ -66,6 +66,7 @@ class ConfiguredTarget(TypedDict, total=False):
     scope_query: str
     reorder_scope_query: str
     familiarity_sweetspot_point: Union[float, str, int]
+    ideal_word_count: list[int]
     ranking_factors: dict[str, Union[float, str, int]]
     notes: list[ConfiguredTargetNote]
 
@@ -312,6 +313,13 @@ class Target:
                     for factor in CardRanker.get_default_ranking_factors_span().keys():
                         if factor in self.config_target['ranking_factors']:
                             card_ranker.ranking_factors_span[factor] = float(self.config_target['ranking_factors'][factor])
+
+            # use custom ideal_word_count
+            if 'ideal_word_count' in self.config_target:
+                if isinstance(self.config_target['ideal_word_count'], list) and len(self.config_target['ideal_word_count']) == 2:
+                    if all(isinstance(val, int) for val in self.config_target['ideal_word_count']):
+                        card_ranker.ideal_word_count_min = self.config_target['ideal_word_count'][0]
+                        card_ranker.ideal_word_count_max = self.config_target['ideal_word_count'][1]
 
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards)

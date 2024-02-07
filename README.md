@@ -171,7 +171,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - __ideal_word_count__: Represents how close the _word count_ of the content is to the defined ideal range. By default this is 2 to 5, but you can customize it per target with:
 
   ```json
-  ideal_word_count = [1, 8]
+  "ideal_word_count": [1, 8]
   ```
 - __most_obscure_word__: Represents the lowest value that can be found when combining both _word_frequency_ and _word_familiarity_.
 - __lowest_fr_least_familiar_word__: Represents the lowest word frequency among the least familiar words.

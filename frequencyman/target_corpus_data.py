@@ -142,7 +142,7 @@ class TargetCorpusData:
         for metric_list, turnover_val in ((cards_interval, 30*7), (cards_reps, 14)):
             for index in range(len(metric_list)):
                 if metric_list[index] > turnover_val:
-                    metric_list[index] = fmean([turnover_val, metric_list[index]])
+                    metric_list[index] = (turnover_val + metric_list[index]) / 2
 
         # get scores
 
@@ -153,7 +153,7 @@ class TargetCorpusData:
         cards_ease_max = max(cards_ease)
 
         for card in self.target_cards.reviewed_cards:
-            card_memorized_scores[card.id] = fmean([(card.ivl/cards_interval_max), (card.reps/cards_reps_max), (card.factor/cards_ease_max)])
+            card_memorized_scores[card.id] = ((card.ivl/cards_interval_max) + (card.reps/cards_reps_max) + (card.factor/cards_ease_max)) / 3
 
         card_memorized_scores = normalize_dict_floats_values(card_memorized_scores)
         card_memorized_scores = sort_dict_floats_values(card_memorized_scores)
@@ -210,8 +210,8 @@ class TargetCorpusData:
 
             for word_token, word_presence_scores in self.content_metrics[corpus_key].reviewed.words_presence.items():
                 card_memorized_scores = self.content_metrics[corpus_key].reviewed.words_cards_memorized_score[word_token]
-                words_familiarity = (word_presence*(1+card_memorized_score) for word_presence, card_memorized_score in zip(word_presence_scores, card_memorized_scores))
-                self.content_metrics[corpus_key].reviewed.words_familiarity[word_token] = fsum(words_familiarity)
+                words_familiarity = fsum(word_presence*(1+card_memorized_score) for word_presence, card_memorized_score in zip(word_presence_scores, card_memorized_scores))
+                self.content_metrics[corpus_key].reviewed.words_familiarity[word_token] = words_familiarity
 
             # smooth out top values
 
@@ -222,11 +222,11 @@ class TargetCorpusData:
                 word_familiarity_smooth_score = words_familiarity
 
                 if (word_familiarity_smooth_score > field_avg_word_familiarity_score*16):
-                    word_familiarity_smooth_score = fmean([word_familiarity_smooth_score] + [field_avg_word_familiarity_score]*4)
+                    word_familiarity_smooth_score = (word_familiarity_smooth_score + (field_avg_word_familiarity_score*4)) / 5
                 if (word_familiarity_smooth_score > field_avg_word_familiarity_score*8):
-                    word_familiarity_smooth_score = fmean([word_familiarity_smooth_score] + [field_avg_word_familiarity_score]*2)
+                    word_familiarity_smooth_score = (word_familiarity_smooth_score + (field_avg_word_familiarity_score*2)) / 3
                 if (word_familiarity_smooth_score > field_avg_word_familiarity_score):
-                    word_familiarity_smooth_score = fmean([word_familiarity_smooth_score, field_avg_word_familiarity_score])
+                    word_familiarity_smooth_score = (word_familiarity_smooth_score + field_avg_word_familiarity_score) / 2
 
                 self.content_metrics[corpus_key].reviewed.words_familiarity[word_token] = word_familiarity_smooth_score
 

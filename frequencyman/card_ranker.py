@@ -117,7 +117,7 @@ class CardRanker:
         difference = abs(middle-word_count)
         score = 1 / (1 + (difference / middle) ** 7)
         if (word_count > 0 and word_count < ideal_num_min):
-            return fmean([score, 1])
+            return (score + 1) / 2
         return score
 
     @staticmethod
@@ -277,7 +277,7 @@ class CardRanker:
                 # familiarity scores (push down)
                 if len(field_metrics.words_familiarity_positional_scores) > 0:
                     words_familiarity_positional_scores = field_metrics.words_familiarity_positional_scores.values()
-                    field_familiarity_score = fmean([median(words_familiarity_positional_scores), min(words_familiarity_positional_scores)])
+                    field_familiarity_score = (median(words_familiarity_positional_scores) + min(words_familiarity_positional_scores)) / 2
                     note_metrics.familiarity_scores.append(field_familiarity_score)
                 else:
                     note_metrics.familiarity_scores.append(0)
@@ -285,21 +285,21 @@ class CardRanker:
                 # familiarity sweetspot scores (push up)
                 if len(field_metrics.words_familiarity_sweetspot_scores) > 0:
                     words_familiarity_sweetspot_scores = field_metrics.words_familiarity_sweetspot_scores.values()
-                    field_familiarity_sweetspot_score = fmean([fmean(words_familiarity_sweetspot_scores), max(words_familiarity_sweetspot_scores)])
+                    field_familiarity_sweetspot_score = (fmean(words_familiarity_sweetspot_scores) + max(words_familiarity_sweetspot_scores)) / 2
                     note_metrics.familiarity_sweetspot_scores.append(field_familiarity_sweetspot_score)
                 else:
                     note_metrics.familiarity_sweetspot_scores.append(0)
 
                 # word frequency scores (push down)
                 if (len(field_metrics.fr_scores) > 0):
-                    field_fr_score = fmean([median(field_metrics.fr_scores), min(field_metrics.fr_scores)])
+                    field_fr_score = (median(field_metrics.fr_scores) + min(field_metrics.fr_scores)) / 2
                     note_metrics.fr_scores.append(field_fr_score)
                 else:
                     note_metrics.fr_scores.append(0)
 
                 # underexposure scores (push up)
                 if (len(field_metrics.ue_scores) > 0):
-                    field_ue_score = fmean([fmean(field_metrics.ue_scores), max(field_metrics.ue_scores)])
+                    field_ue_score = (fmean(field_metrics.ue_scores) + max(field_metrics.ue_scores)) / 2
                     note_metrics.ue_scores.append(field_ue_score)
                 else:
                     note_metrics.ue_scores.append(0)

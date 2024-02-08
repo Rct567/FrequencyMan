@@ -17,7 +17,6 @@ from aqt.utils import showInfo
 
 var_dump_count = 0
 
-
 def var_dump(var: Any) -> None:
 
     global var_dump_count
@@ -29,18 +28,21 @@ def var_dump(var: Any) -> None:
         var_dump_count += 1
 
 
+
+var_dump_log_size = 0
 var_dump_log_count = 0
 
+def var_dump_log(var: Any) -> None:
 
-def var_dump_log(var: Any, show_as_info=False) -> None:
-
+    global var_dump_log_size
     global var_dump_log_count
-    if var_dump_log_count < 10:
+
+    if var_dump_log_size < (1024 * 1024) and var_dump_log_count < 100_000:
         dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
         with open(dump_log_file, 'a', encoding='utf-8') as file:
-            file.write(pprint.pformat(var, sort_dicts=False, width=160) + "\n\n=================================================================\n\n")
-        if (show_as_info):
-            var_dump(var)
+            log_entry = pprint.pformat(var, sort_dicts=False, width=160)
+            file.write(log_entry+ "\n\n=================================================================\n\n")
+        var_dump_log_size += len(log_entry)
         var_dump_log_count += 1
 
 

@@ -446,17 +446,37 @@ class CardRanker:
                 fields_words_familiarity_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_familiarity_scores]
                 new_note_vals['fm_debug_words_info'] += 'familiarity_scores: '+str(fields_words_familiarity_scores_sorted)+"<br />\n"
             if 'fm_seen_words' in note:
-                printed_fields_seen_words = [", ".join(words).strip(", ") for words in note_metrics.seen_words]
-                new_note_vals['fm_seen_words'] = " | ".join(printed_fields_seen_words).strip("| ")
+                seen_words_per_field: list[str] = []
+                for field_index, seen_words in enumerate(note_metrics.seen_words):
+                    if seen_words:
+                        seen_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(seen_words).strip(", ")+'</span>')
+                if seen_words_per_field:
+                    words_lists = ' <span class="separator">/</span> '.join(seen_words_per_field)
+                    new_note_vals['fm_seen_words'] = '<span id="fm_seen_words">'+words_lists+'</span>'
+                else:
+                    new_note_vals['fm_seen_words'] = ''
             if 'fm_unseen_words' in note:
-                printed_fields_unseen_words = [", ".join(words) for words in note_metrics.unseen_words]
-                new_note_vals['fm_unseen_words'] = " | ".join(printed_fields_unseen_words).strip("| ")
+                unseen_words_per_field: list[str] = []
+                for field_index, unseen_words in enumerate(note_metrics.unseen_words):
+                    if unseen_words:
+                        unseen_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(unseen_words).strip(", ")+'</span>')
+                if unseen_words_per_field:
+                    words_lists = ' <span class="separator">/</span> '.join(unseen_words_per_field)
+                    new_note_vals['fm_unseen_words'] = '<span id="fm_unseen_words">'+words_lists+'</span>'
+                else:
+                    new_note_vals['fm_unseen_words'] = ''
             if 'fm_focus_words' in note:
                 focus_words_per_field: list[str] = []
-                for focus_words in note_metrics.focus_words:
-                    focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
-                    focus_words_per_field.append(", ".join([word for word in focus_words.keys()]))
-                new_note_vals['fm_focus_words'] = " | ".join(focus_words_per_field).strip("| ")
+                for field_index, focus_words in enumerate(note_metrics.focus_words):
+                    if focus_words:
+                        focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
+                        focus_words_str = '<span data-field-index="'+str(field_index)+'">'+", ".join([word for word in focus_words.keys()])+'</span>'
+                        focus_words_per_field.append(focus_words_str)
+                if focus_words_per_field:
+                    words_lists = ' <span class="separator">/</span> '.join(focus_words_per_field)
+                    new_note_vals['fm_focus_words'] = '<span id="fm_focus_words">'+words_lists+'</span>'
+                else:
+                    new_note_vals['fm_focus_words'] = ''
 
             update_note_data = False
             for attr_name, new_attr_val in new_note_vals.items():

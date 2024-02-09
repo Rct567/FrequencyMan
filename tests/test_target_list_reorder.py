@@ -101,9 +101,9 @@ class TestTargetListReorder:
         assert "Updating 5519 modified notes" in str(event_logger)
 
         # check value of focus words
-        assert col.get_note(NoteId(1548089874907))['fm_focus_words'] == "ajedrez | chess"
-        assert col.get_note(NoteId(1548089876496))['fm_focus_words'] == "fotografías, pasatiempo | hobby"
-        assert col.get_note(NoteId(1671840154010))['fm_focus_words'] == "hacerlas, eficaz | efficient"
+        assert col.get_note(NoteId(1548089874907))['fm_focus_words'] == '<span id="fm_focus_words"><span data-field-index="0">ajedrez</span> <span class="separator">/</span> <span data-field-index="1">chess</span></span>'
+        assert col.get_note(NoteId(1548089876496))['fm_focus_words'] == '<span id="fm_focus_words"><span data-field-index="0">fotografías, pasatiempo</span> <span class="separator">/</span> <span data-field-index="1">hobby</span></span>'
+        assert col.get_note(NoteId(1671840154010))['fm_focus_words'] == '<span id="fm_focus_words"><span data-field-index="0">hacerlas, eficaz</span> <span class="separator">/</span> <span data-field-index="1">efficient</span></span>'
 
         # these had focus words set before, but should now be empty
         for note_id in {1678410313201, 1692391247701, 1548089872580}:

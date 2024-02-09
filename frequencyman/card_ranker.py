@@ -78,6 +78,7 @@ class CardRanker:
 
     modified_dirty_notes: dict[NoteId, Optional[Note]]
     ranking_factors_span: dict[str, float]
+    target_name: str
     ranking_factors_stats: Optional[dict[str, dict[str, float]]]
     ideal_word_count_min: int
     ideal_word_count_max: int
@@ -91,6 +92,7 @@ class CardRanker:
         self.modified_dirty_notes = modified_dirty_notes
         self.ranking_factors_stats = None
         self.ranking_factors_span = self.get_default_ranking_factors_span()
+        self.target_name = 'undefined'
         self.ideal_word_count_min = 2
         self.ideal_word_count_max = 5
 
@@ -399,7 +401,8 @@ class CardRanker:
 
         return notes_ranking_factors
 
-    def __set_fields_meta_data_for_notes(self, notes_from_new_cards: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]], notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
+    def __set_fields_meta_data_for_notes(self, notes_from_new_cards: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]],
+                                         notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
 
         for note_id, note in notes_from_new_cards.items():
 
@@ -423,16 +426,16 @@ class CardRanker:
                     'lowest_fr_word': note_metrics.lowest_fr_word,
                     'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
                 }
-                new_note_vals['fm_debug_info'] = ''
+                new_note_vals['fm_debug_info'] = 'Target '+self.target_name+'<br />'
                 for info_name, info_val in debug_info.items():
                     fields_info = " | ".join([str(field_info) for field_info in info_val]).strip("| ")
                     new_note_vals['fm_debug_info'] += info_name+": " + fields_info+"<br />\n"
             if 'fm_debug_ranking_info' in note:
-                new_note_vals['fm_debug_ranking_info'] = ''
+                new_note_vals['fm_debug_ranking_info'] = 'Target '+self.target_name+'<br />'
                 for info_name, info_val in notes_ranking_scores.items():
                     new_note_vals['fm_debug_ranking_info'] += "{}: {:.3f}<br />\n".format(info_name, info_val[note_id])
             if 'fm_debug_words_info' in note:
-                new_note_vals['fm_debug_words_info'] = ''
+                new_note_vals['fm_debug_words_info'] = 'Target '+self.target_name+'<br />'
                 fields_words_ue_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ue_scores]
                 new_note_vals['fm_debug_words_info'] += 'words_ue_scores: '+str(fields_words_ue_scores_sorted)+"<br />\n"
                 fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]

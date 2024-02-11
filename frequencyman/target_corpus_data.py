@@ -259,15 +259,20 @@ class TargetCorpusData:
                 familiarity = self.content_metrics[corpus_key].reviewed.words_familiarity[word_token]
                 familiarity_sweetspot_value = median_familiarity*self.familiarity_sweetspot_point
 
-                if (familiarity > familiarity_sweetspot_value*2.6666):
-                    continue
-
-                familiarity_sweetspot_rating = 1-abs(familiarity-familiarity_sweetspot_value)
+                familiarity_sweetspot_rating = (1-abs(familiarity-familiarity_sweetspot_value))
 
                 self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot[word_token] = familiarity_sweetspot_rating
 
-            self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = normalize_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
+            # sort
             self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = sort_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
+
+            # cut of bottom 10%
+            num_to_keep = int(len(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot ) * 0.9)
+            if num_to_keep > 100:
+                self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = dict(list(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot.items())[:num_to_keep])
+
+            # normalize
+            self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = normalize_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
 
     def __set_notes_words_underexposure(self, language_data: LanguageData) -> None:
 
@@ -295,5 +300,15 @@ class TargetCorpusData:
                         self.content_metrics[corpus_key].words_underexposure[word_token] = word_underexposure_rating
 
         for corpus_key in self.content_metrics.keys():
-            self.content_metrics[corpus_key].words_underexposure = normalize_dict_floats_values(self.content_metrics[corpus_key].words_underexposure)
+
+            # sort
             self.content_metrics[corpus_key].words_underexposure = sort_dict_floats_values(self.content_metrics[corpus_key].words_underexposure)
+
+            # cut of bottom 10%
+            num_to_keep = int(len(self.content_metrics[corpus_key].words_underexposure ) * 0.9)
+            if num_to_keep > 100:
+                self.content_metrics[corpus_key].words_underexposure = dict(list(self.content_metrics[corpus_key].words_underexposure.items())[:num_to_keep])
+
+            # normalize
+            self.content_metrics[corpus_key].words_underexposure = normalize_dict_floats_values(self.content_metrics[corpus_key].words_underexposure)
+

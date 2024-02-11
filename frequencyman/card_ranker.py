@@ -231,6 +231,7 @@ class CardRanker:
     def __calc_card_notes_field_metrics(self, notes_from_new_cards: dict[NoteId, Note], with_additional_props: bool) -> dict[NoteId, AggregatedFieldsMetrics]:
 
         notes_metrics: dict[NoteId, AggregatedFieldsMetrics] = {note_id: AggregatedFieldsMetrics() for note_id in notes_from_new_cards.keys()}
+        bucked_size = ( (self.ideal_word_count_min+self.ideal_word_count_max)/2 ) * 0.75
 
         for note_id, note in notes_from_new_cards.items():
 
@@ -278,16 +279,17 @@ class CardRanker:
 
                 # familiarity scores (push down)
                 if len(field_metrics.words_familiarity_positional_scores) > 0:
-                    words_familiarity_positional_scores = field_metrics.words_familiarity_positional_scores.values()
-                    field_familiarity_score = (median(words_familiarity_positional_scores) + min(words_familiarity_positional_scores)) / 2
+                    familiarity_positional_scores = field_metrics.words_familiarity_positional_scores.values()
+                    field_familiarity_score = (median(familiarity_positional_scores) + min(familiarity_positional_scores)) / 2
                     note_metrics.familiarity_scores.append(field_familiarity_score)
                 else:
                     note_metrics.familiarity_scores.append(0)
 
                 # familiarity sweetspot scores (push up)
                 if len(field_metrics.words_familiarity_sweetspot_scores) > 0:
-                    words_familiarity_sweetspot_scores = field_metrics.words_familiarity_sweetspot_scores.values()
-                    field_familiarity_sweetspot_score = (fmean(words_familiarity_sweetspot_scores) + max(words_familiarity_sweetspot_scores)) / 2
+                    familiarity_sweetspot_scores = field_metrics.words_familiarity_sweetspot_scores.values()
+                    bucked_score = min([bucked_size, fsum(familiarity_sweetspot_scores)]) / bucked_size
+                    field_familiarity_sweetspot_score = ((bucked_score*2) + fmean(familiarity_sweetspot_scores) + max(familiarity_sweetspot_scores)) / 4
                     note_metrics.familiarity_sweetspot_scores.append(field_familiarity_sweetspot_score)
                 else:
                     note_metrics.familiarity_sweetspot_scores.append(0)
@@ -301,7 +303,8 @@ class CardRanker:
 
                 # underexposure scores (push up)
                 if (len(field_metrics.ue_scores) > 0):
-                    field_ue_score = (fmean(field_metrics.ue_scores) + max(field_metrics.ue_scores)) / 2
+                    bucked_score = min([bucked_size, fsum(field_metrics.ue_scores)]) / bucked_size
+                    field_ue_score = ((bucked_score*2) + fmean(field_metrics.ue_scores) + max(field_metrics.ue_scores)) / 4
                     note_metrics.ue_scores.append(field_ue_score)
                 else:
                     note_metrics.ue_scores.append(0)
@@ -346,8 +349,7 @@ class CardRanker:
 
             # familiarity sweetspot score of words in sweetspot range
             word_familiarity_sweetspot_score = content_metrics.reviewed.words_familiarity_sweetspot.get(word, 0)
-            if word_familiarity_sweetspot_score > 0:
-                field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
+            field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
 
             # most obscure word (lowest ubiquity)
             word_ubiquity_score = (word_fr+word_familiarity_score)/2

@@ -163,16 +163,17 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 
 ### Description
 
-- __word_frequency__: Represents the _word frequency_ of the words in the content, with a bias toward the lowest value. The _word frequency_ values come from the provided _word frequency lists_.
-- __familiarity__: Represents how familiar you are with the words in the content. Like _word_frequency_, it has a bias toward the lowest value. How familiar you are with a word depends on how many times you have seen the word and in what context that specific word was present (the interval and ease of the card, the amount of words in the content etc).
-- __familiarity_sweetspot__: Promotes cards with words close to a specific 'sweetspot' of familiarity. By default, this is 0.45 of the _median familiarity_ score. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These can be new words, or words that are 'hidden' (non-prominent) in older cards.
-- __lexical_underexposure__: Promotes cards with high-frequency words that you are not yet proportionally familiar with. Basically, _lexical_underexposure = (word_frequency-word_familiarity)_. Increasing this value means you will be 'pushed' forward more in your language learning journey (and the word frequency list). Increase the value slightly if you experience too much overlap and not enough new words.
-- __ideal_focus_word_count__: Promotes cards with only a single 'focus word'. A focus word is a word that FrequencyMan assumes you are not appropriately familiar with. See also _N+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis
-- __ideal_word_count__: Represents how close the _word count_ of the content is to the defined ideal range. By default this is 2 to 5, but you can customize it per target with:
+- `word_frequency`: Represents the _word frequency_ of the words in the content, with a bias toward the lowest value. The _word frequency_ values come from the provided _word frequency lists_.
+- `familiarity`: Represents how familiar you are with the words in the content. Like _word_frequency_, it has a bias toward the lowest value. How familiar you are with a word depends on how many times you have seen the word and in what context that specific word was present (the interval and ease of the card, the amount of words in the content etc).
+- `familiarity_sweetspot`: Promotes cards with words close to a specific 'sweetspot' of familiarity. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These can be new words, or words that are 'hidden' (non-prominent) in older cards. The 'sweetspot' is 0.45 of the _median familiarity_ score by default. Use target setting `familiarity_sweetspot_point` to customize this value.
+- `lexical_underexposure`: Promotes cards with high-frequency words that you are not yet proportionally familiar with. Basically, _lexical_underexposure = (word_frequency-word_familiarity)_. Increasing this value means you will be 'pushed' forward more in your language learning journey (and the word frequency list). Increase the value slightly if you experience too much overlap and not enough new words.
+- `ideal_focus_word_count`: Promotes cards with only a single '_focus word_'. See also _N+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis. A _focus word_ is a word you are not appropriately familiar with. By default this is assumed when a word has a familiarity below 0.9 of the median value. Use target setting `focus_words_endpoint` to customize this value.
+
+- `ideal_word_count`: Represents how close the _word count_ of the content is to the defined ideal range. By default this is 2 to 5, but you can customize it per target with:
 
   ```json
   "ideal_word_count": [1, 8]
   ```
-- __most_obscure_word__: Represents the lowest value that can be found when combining both _word_frequency_ and _word_familiarity_.
-- __lowest_fr_least_familiar_word__: Represents the lowest word frequency among the least familiar words.
-- __ideal_unseen_word_count__: Like _ideal_focus_word_count_, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
+- `most_obscure_word`: Represents the lowest value that can be found when combining both _word_frequency_ and _word_familiarity_.
+- `lowest_fr_least_familiar_word`: Represents the lowest word frequency among the least familiar words.
+- `ideal_unseen_word_count`: Like _ideal_focus_word_count_, but promotes cards with only a single 'new word' (a word not found in any reviewed card).

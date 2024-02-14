@@ -72,7 +72,7 @@ class TargetList:
             if key == "":
                 return (0, "Target #{} has an empty key.".format(index))
             known_keys = {"deck", "decks", "notes", "scope_query", "reorder_scope_query",
-                          "ranking_factors", "familiarity_sweetspot_point", "ideal_word_count"}
+                          "ranking_factors", "familiarity_sweetspot_point", "ideal_word_count", "focus_words_endpoint"}
             known_keys.update(map(lambda s: "ranking_"+s, CardRanker.get_default_ranking_factors_span().keys()))
             if key not in known_keys:
                 return (0, "Target #{} has unknown key '{}'.".format(index, key))

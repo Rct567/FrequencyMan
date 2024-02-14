@@ -322,6 +322,10 @@ class Target:
                         card_ranker.ideal_word_count_min = self.config_target['ideal_word_count'][0]
                         card_ranker.ideal_word_count_max = self.config_target['ideal_word_count'][1]
 
+            # use custom focus_words_endpoint
+            if focus_words_endpoint := get_float(self.config_target.get('focus_words_endpoint')):
+                card_ranker.focus_words_endpoint = focus_words_endpoint
+
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards)
             sorted_cards = sorted(reorder_scope_target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)

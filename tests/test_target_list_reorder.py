@@ -98,7 +98,7 @@ class TestTargetListReorder:
         assert target_result.sorted_cards_ids == target_list[0].get_cards().new_cards_ids
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Repositioning 6566 cards" in str(event_logger)
-        assert "Updating 5519 modified notes" in str(event_logger)
+        assert "Updating 5632 modified notes" in str(event_logger)
 
         # check value of focus words
         assert col.get_note(NoteId(1548089874907))['fm_focus_words'] == '<span id="fm_focus_words"><span data-field-index="0">ajedrez</span> <span class="separator">/</span> <span data-field-index="1">chess</span></span>'
@@ -115,11 +115,11 @@ class TestTargetListReorder:
 
         # these were empty before, but should now have a value
         notes_none_empty_focus_word = {1548089873399, 1548089879591, 1546160205490, 1562346819967, 1546959316161,
-                                       1562346819250, 1548089878113, 1548089874025, 1651511363702, 1548089877279,
+                                       1562346819250, 1548089874025, 1651511363702, 1548089877279, 1548089878113,
                                        1548089878563, 1548089878527}
 
         for note_id in notes_none_empty_focus_word:
-            assert len(col.get_note(NoteId(note_id))['fm_focus_words']) > 20
+            assert len(col.get_note(NoteId(note_id))['fm_focus_words']) > 7, note_id
 
         # check acquired cards for each target
         assert len(target_list[0].get_cards().all_cards_ids) == 15790
@@ -176,7 +176,7 @@ class TestTargetListReorder:
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Reorder scope query reduced new cards in target from 6566 to 4223" in str(event_logger)
         assert "Repositioning 4223 cards" in str(event_logger)
-        assert "Updating 5519 modified notes" in str(event_logger)
+        assert "Updating 5632 modified notes" in str(event_logger)
 
         # check acquired cards
         assert len(target_list[0].get_cards().all_cards_ids) == 15790

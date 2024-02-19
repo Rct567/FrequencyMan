@@ -38,7 +38,7 @@ class TargetNoteFieldContentData:
 class TargetReviewedContentMetrics:
     words: dict[WordToken, list[TargetCard]] = field(default_factory=dict)
     words_presence: dict[WordToken, list[float]] = field(default_factory=dict)  # list because a word can occur multiple times in a field
-    words_cards_memorized_score: dict[WordToken, list[float]] = field(default_factory=dict)
+    words_cards_familiarity_factor: dict[WordToken, list[float]] = field(default_factory=dict)
     words_familiarity: dict[WordToken, float] = field(default_factory=dict)
     words_familiarity_mean: float = field(default=0.0)
     words_familiarity_median: float = field(default=0.0)
@@ -123,16 +123,17 @@ class TargetCorpusData:
         self.__set_notes_reviewed_words_familiarity_sweetspot()
         self.__set_notes_words_underexposure(language_data)
 
-    def __get_reviewed_words_card_memorized_scores(self) -> dict[CardId, float]:
+    @staticmethod
+    def __get_cards_familiarity_score(cards: list[TargetCard]) -> dict[CardId, float]:
 
-        if not self.target_cards.reviewed_cards:
+        if not cards:
             return {}
 
         cards_interval: list[float] = []
         cards_reps: list[float] = []
         cards_ease: list[float] = []
 
-        for card in self.target_cards.reviewed_cards:
+        for card in cards:
             cards_interval.append(card.ivl)
             cards_reps.append(card.reps)
             cards_ease.append(card.factor)
@@ -146,19 +147,50 @@ class TargetCorpusData:
 
         # get scores
 
-        card_memorized_scores: dict[CardId, float] = {}
+        cards_familiarity: dict[CardId, float] = {}
 
         cards_interval_max = max(cards_interval)
         cards_reps_max = max(cards_reps)
         cards_ease_max = max(cards_ease)
 
-        for card in self.target_cards.reviewed_cards:
-            card_memorized_scores[card.id] = ((card.ivl/cards_interval_max) + (card.reps/cards_reps_max) + (card.factor/cards_ease_max)) / 3
+        for card in cards:
+            card_score = ((card.ivl/cards_interval_max) + ((card.reps/cards_reps_max)/4) + (card.factor/cards_ease_max)) / 2.25
+            if card.queue == -1: # suspended card
+                card_score = card_score*0.5
+            cards_familiarity[card.id] = card_score
 
-        card_memorized_scores = normalize_dict_floats_values(card_memorized_scores)
-        card_memorized_scores = sort_dict_floats_values(card_memorized_scores)
+        # done
 
-        return card_memorized_scores
+        return cards_familiarity
+
+    @staticmethod
+    def __get_cards_familiarity_factors(cards: list[TargetCard]) -> dict[CardId, float]:
+
+        cards_familiarity_value = TargetCorpusData.__get_cards_familiarity_score(cards)
+        cards_familiarity_value = sort_dict_floats_values(cards_familiarity_value)
+
+        # devalue cards from same note (devalue subsequently more as more cards from same note are found)
+
+        note_count:dict[NoteId, int] = {}
+        cards_note_ids: dict[CardId, NoteId] = {card.id: card.nid for card in cards}
+
+        for card_id in cards_familiarity_value.keys():
+
+            note_id = cards_note_ids[card_id]
+
+            if note_id not in note_count:
+                note_count[note_id] = 1
+            else:
+                note_count[note_id] += 1
+                devalue_factor = (1+note_count[note_id])/2
+                cards_familiarity_value[card_id] = cards_familiarity_value[card_id]/devalue_factor
+
+        # normalize
+
+        cards_familiarity_value = normalize_dict_floats_values(cards_familiarity_value)
+
+        return cards_familiarity_value
+
 
     def __set_notes_reviewed_words(self) -> None:
 
@@ -183,7 +215,7 @@ class TargetCorpusData:
 
     def __set_notes_reviewed_words_presence(self) -> None:
 
-        card_memorized_scores = self.__get_reviewed_words_card_memorized_scores()
+        cards_familiarity_factor = self.__get_cards_familiarity_factors(self.target_cards.reviewed_cards)
 
         for card in self.target_cards.reviewed_cards:
 
@@ -197,20 +229,20 @@ class TargetCorpusData:
 
                     if word_token not in self.content_metrics[corpus_key].reviewed.words_presence:
                         self.content_metrics[corpus_key].reviewed.words_presence[word_token] = []
-                        self.content_metrics[corpus_key].reviewed.words_cards_memorized_score[word_token] = []
+                        self.content_metrics[corpus_key].reviewed.words_cards_familiarity_factor[word_token] = []
 
                     word_presence_score = self.__calc_word_presence_score(word_token, field_num_chars_tokens, field_num_tokens, index)
                     self.content_metrics[corpus_key].reviewed.words_presence[word_token].append(word_presence_score)
-                    self.content_metrics[corpus_key].reviewed.words_cards_memorized_score[word_token].append(card_memorized_scores[card.id])
-                    assert word_presence_score <= 1 and card_memorized_scores[card.id] <= 1
+                    self.content_metrics[corpus_key].reviewed.words_cards_familiarity_factor[word_token].append(cards_familiarity_factor[card.id])
+                    assert word_presence_score <= 1 and cards_familiarity_factor[card.id] <= 1
 
     def __set_notes_reviewed_words_familiarity(self) -> None:
 
         for corpus_key in self.content_metrics.keys():
 
             for word_token, word_presence_scores in self.content_metrics[corpus_key].reviewed.words_presence.items():
-                card_memorized_scores = self.content_metrics[corpus_key].reviewed.words_cards_memorized_score[word_token]
-                words_familiarity = fsum(word_presence*(1+card_memorized_score) for word_presence, card_memorized_score in zip(word_presence_scores, card_memorized_scores))
+                cards_familiarity_factor = self.content_metrics[corpus_key].reviewed.words_cards_familiarity_factor[word_token]
+                words_familiarity = fsum(word_presence*((1+card_familiarity_factor)**2.5) for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor))
                 self.content_metrics[corpus_key].reviewed.words_familiarity[word_token] = words_familiarity
 
             # smooth out top values

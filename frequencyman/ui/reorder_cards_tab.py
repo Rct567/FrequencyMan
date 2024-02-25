@@ -321,7 +321,10 @@ class ReorderCardsTab:
 
         def reorder_operation(col: Collection) -> TargetListReorderResult:
 
-            return self.target_list.reorder_cards(col, event_logger)
+            nonlocal ctrl_pressed
+            schedule_cards_as_new = bool(ctrl_pressed)
+
+            return self.target_list.reorder_cards(col, event_logger, schedule_cards_as_new)
 
         def reorder_show_results(reorder_cards_results: TargetListReorderResult):
 

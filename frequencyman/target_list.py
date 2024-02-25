@@ -176,7 +176,7 @@ class TargetList:
                     error_message += "\n\nInvalid JSON: <span class=\"alt\">" + invalid_line + "</span>"
             return (-1, [], error_message)
 
-    def reorder_cards(self, col: Collection, event_logger: EventLogger) -> TargetListReorderResult:
+    def reorder_cards(self, col: Collection, event_logger: EventLogger, schedule_cards_as_new: bool = False) -> TargetListReorderResult:
 
         reorder_result_list: list[TargetReorderResult] = []
         modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
@@ -187,7 +187,7 @@ class TargetList:
         for target in self.target_list:
             target.cache_data = cache_data
             with event_logger.add_benchmarked_entry("Reordering target #{}.".format(target.index_num)):
-                reorder_result = target.reorder_cards(num_cards_repositioned+1, self.language_data, event_logger, modified_dirty_notes)
+                reorder_result = target.reorder_cards(num_cards_repositioned+1, self.language_data, event_logger, modified_dirty_notes, schedule_cards_as_new)
                 reorder_result_list.append(reorder_result)
                 if reorder_result.cards_repositioned:
                     num_cards_repositioned += reorder_result.num_cards_repositioned

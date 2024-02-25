@@ -233,8 +233,8 @@ class Target:
         self.cache_data['corpus'][cache_key] = target_corpus_data
         return target_corpus_data
 
-    def reorder_cards(self, repositioning_starting_from: int, language_data: LanguageData,
-                      event_logger: EventLogger, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> TargetReorderResult:
+    def reorder_cards(self, repositioning_starting_from: int, language_data: LanguageData, event_logger: EventLogger,
+                      modified_dirty_notes: dict[NoteId, Optional[Note]], schedule_cards_as_new: bool) -> TargetReorderResult:
 
         from .card_ranker import CardRanker
 
@@ -338,13 +338,16 @@ class Target:
             event_logger.add_entry("Repositioning {:n} cards not needed for this target.".format(len(sorted_cards_ids)))
             return TargetReorderResult(success=True)
 
-        return self.__reposition_cards(sorted_cards_ids, target_cards, repositioning_starting_from, event_logger)
+        return self.__reposition_cards(sorted_cards_ids, target_cards, repositioning_starting_from, event_logger, schedule_cards_as_new)
 
-    def __reposition_cards(self, sorted_cards_ids: list[CardId], target_cards: TargetCards, repositioning_starting_from: int, event_logger: EventLogger) -> TargetReorderResult:
+    def __reposition_cards(self, sorted_cards_ids: list[CardId], target_cards: TargetCards, repositioning_starting_from: int,
+                           event_logger: EventLogger, schedule_cards_as_new: bool) -> TargetReorderResult:
+
+        if schedule_cards_as_new: # may be needed in some cases, such as older anki version (?)
+            event_logger.add_entry("Scheduling cards as new before repositioning.")
+            self.col.sched.schedule_cards_as_new(sorted_cards_ids)
 
         event_logger.add_entry("Repositioning {:n} cards for this target.".format(len(sorted_cards_ids)))
-
-        self.col.sched.schedule_cards_as_new(sorted_cards_ids)
 
         repositioning_anki_op_changes = self.col.sched.reposition_new_cards(
             card_ids=sorted_cards_ids,

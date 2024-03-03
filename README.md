@@ -186,6 +186,12 @@ The following fields will be automatically populated when you reorder your cards
 - `fm_unseen_words`: A list of unseen words (words not found in reviewed cards) for each field.
 - `fm_seen_words`: A list of seen words (words found in reviewed cards) for each field.
 
+Dynamic field names (the number at the end can be replaced with the index number of any field defined in the target):
+
+- `fm_lowest_fr_word_0`: The word with the lowest word frequency for field 0.
+- `fm_lowest_familiarity_word_0`: The word with the lowest familiarity for field 0.
+- `fm_lowest_familiarity_word_static_0`: The word with the lowest familiarity for field 0. This field will not be updated once set.
+
 For debug purposes:
 
 - `fm_debug_info`: Different metrics and data points for each field.
@@ -196,6 +202,6 @@ For debug purposes:
 
 ```html
 {{#fm_focus_words}}
-<p> <span style="opacity:0.65;">Focus:</span> {{fm_focus_words}} </p>
+  <p> <span style="opacity:0.65;">Focus:</span> {{fm_focus_words}} </p>
 {{/fm_focus_words}}
 ```

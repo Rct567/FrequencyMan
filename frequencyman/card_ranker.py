@@ -383,6 +383,8 @@ class CardRanker:
                 if word_fr < field_metrics.lowest_fr_least_familiar_word[1]:
                     field_metrics.lowest_fr_least_familiar_word = (word, word_fr, word_familiarity_score)
 
+        field_metrics.focus_words = dict(sorted(field_metrics.focus_words.items(), key=lambda item: item[1]))
+
         return field_metrics
 
     def __get_notes_ranking_factors(self, notes_from_new_cards: dict[NoteId, Note], notes_metrics: dict[NoteId, AggregatedFieldsMetrics]) -> dict[str, dict[NoteId, float]]:
@@ -496,7 +498,6 @@ class CardRanker:
                 focus_words_per_field: list[str] = []
                 for field_index, focus_words in enumerate(note_metrics.focus_words):
                     if focus_words:
-                        focus_words = dict(sorted(focus_words.items(), key=lambda item: item[1]))
                         focus_words_str = '<span data-field-index="'+str(field_index)+'">'+", ".join([word for word in focus_words.keys()])+'</span>'
                         focus_words_per_field.append(focus_words_str)
                 if focus_words_per_field:
@@ -517,6 +518,20 @@ class CardRanker:
                     new_note_vals[field_name] = field_lowest_familiarity_word[0]
                 if field_name_static in note and note[field_name_static] == '':
                     new_note_vals[field_name_static] = field_lowest_familiarity_word[0]
+            # set fm_main_focus_word_[n]
+            for index, focus_words in enumerate(note_metrics.focus_words):
+                field_name = 'fm_main_focus_word_'+str(index)
+                field_name_static = 'fm_main_focus_word_static_'+str(index)
+                if field_name in note:
+                    if focus_words:
+                        new_note_vals[field_name] = list(focus_words.keys())[0]
+                    else:
+                        new_note_vals[field_name] = ''
+                if field_name_static in note and note[field_name_static] == '':
+                    if focus_words:
+                        new_note_vals[field_name_static] = list(focus_words.keys())[0]
+                    else:
+                        new_note_vals[field_name_static] = ' '
 
             # check if update is needed, else lock to prevent other targets from overwriting
             update_note_data = False

@@ -1,7 +1,7 @@
 import sys
 import pytest
 
-from frequencyman.lib.utilities import normalize_dict_floats_values
+from frequencyman.lib.utilities import get_float, is_numeric_value, normalize_dict_floats_values
 
 def test_normalize_dict_floats_values():
 
@@ -41,4 +41,33 @@ def test_normalize_dict_floats_values_negative_value():
 
     with pytest.raises(Exception, match="Unexpected below zero value found."):
         normalize_dict_floats_values(input_dict)
+
+def test_get_float_none():
+
+    assert get_float(None) is None
+
+def test_get_float_float():
+
+    assert get_float(3.14) == 3.14
+    assert get_float(0.0) == 0.0
+
+def test_get_float_int():
+
+    assert get_float(42) == 42.0
+    assert get_float(0) == 0.0
+
+def test_get_float_string_numeric():
+
+    assert get_float("3.14") == 3.14
+    assert get_float("42") == 42.0
+    assert get_float("0.0") == 0.0
+
+def test_get_float_string_non_numeric():
+
+    assert get_float("") is None
+    assert get_float("hello") is None
+    assert get_float("3.14.15") is None
+    assert get_float("3.14a") is None
+    assert get_float("a3.14") is None
+
 

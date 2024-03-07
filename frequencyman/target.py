@@ -304,7 +304,7 @@ class Target:
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():
-                if target_setting_val := get_float(self.config_target.get('ranking_'+attribute)):
+                if (target_setting_val := get_float(self.config_target.get('ranking_'+attribute))) is not None:
                     card_ranker.ranking_factors_span[attribute] = target_setting_val
 
             # Use custom ranking weight object

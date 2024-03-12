@@ -212,7 +212,7 @@ class Target:
 
         self.target_corpus_data = TargetCorpusData()
 
-        if familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point')):
+        if (familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point'))) is not None:
             self.target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
         self.target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(), language_data)
@@ -323,7 +323,7 @@ class Target:
                         card_ranker.ideal_word_count_max = self.config_target['ideal_word_count'][1]
 
             # use custom focus_words_endpoint
-            if focus_words_endpoint := get_float(self.config_target.get('focus_words_endpoint')):
+            if (focus_words_endpoint := get_float(self.config_target.get('focus_words_endpoint'))) is not None:
                 card_ranker.focus_words_endpoint = focus_words_endpoint
 
             # Calculate ranking and sort cards

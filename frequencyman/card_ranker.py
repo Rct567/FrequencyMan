@@ -208,6 +208,7 @@ class CardRanker:
             if attribute not in notes_ranking_scores_normalized:
                 raise Exception("Span set for unknown ranking factor '{}'.".format(attribute))
             vals = notes_ranking_scores_normalized[attribute]
+            self.ranking_factors_stats[attribute]['weight'] = self.ranking_factors_span[attribute]
             self.ranking_factors_stats[attribute]['avg'] = fmean(vals)
             self.ranking_factors_stats[attribute]['median'] = median(vals)
 
@@ -252,7 +253,7 @@ class CardRanker:
                     raise Exception("Card note type id is not matching!?")
 
                 # get metrics for field
-                field_metrics = self.__get_field_metrics_from_data(field_data, field_data.corpus_id)
+                field_metrics = self.__get_field_metrics_from_field_data(field_data, field_data.corpus_id)
 
                 # append existing field metrics (additional metrics created and added below)
                 note_metrics.seen_words.append(field_metrics.seen_words)
@@ -317,7 +318,7 @@ class CardRanker:
 
         return notes_metrics
 
-    def __get_field_metrics_from_data(self, field_data: TargetNoteFieldContentData, corpus_key: CorpusId) -> FieldMetrics:
+    def __get_field_metrics_from_field_data(self, field_data: TargetNoteFieldContentData, corpus_key: CorpusId) -> FieldMetrics:
 
         field_metrics = FieldMetrics()
         content_metrics = self.corpus_data.content_metrics[corpus_key]

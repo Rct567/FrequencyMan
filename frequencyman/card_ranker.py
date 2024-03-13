@@ -87,6 +87,7 @@ class CardRanker:
     ideal_word_count_min: int
     ideal_word_count_max: int
     focus_words_endpoint: float
+    field_all_empty: dict[str, bool]
 
     def __init__(self, target_corpus_data: TargetCorpusData, language_data: LanguageData,
                  col: Collection, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> None:
@@ -101,6 +102,7 @@ class CardRanker:
         self.ideal_word_count_min = 2
         self.ideal_word_count_max = 5
         self.focus_words_endpoint = 0.9
+        self.field_all_empty = {}
 
     @staticmethod
     def get_default_ranking_factors_span() -> dict[str, float]:
@@ -416,6 +418,19 @@ class CardRanker:
 
         return notes_ranking_factors
 
+    def __field_is_empty_for_all_notes(self, field_name: str, notes_all_card: dict[NoteId, Note]) -> bool:
+
+        if field_name in self.field_all_empty:
+            return self.field_all_empty[field_name]
+
+        for note in notes_all_card.values():
+            if note[field_name] != '':
+                self.field_all_empty[field_name] = False
+                return False
+
+        self.field_all_empty[field_name] = True
+        return True
+
     def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_new_card: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]],
                                          notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
 
@@ -517,7 +532,7 @@ class CardRanker:
                 field_name_static = 'fm_lowest_familiarity_word_static_'+str(index)
                 if field_name in note:
                     new_note_vals[field_name] = field_lowest_familiarity_word[0]
-                if field_name_static in note and note[field_name_static] == '':
+                if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
                     new_note_vals[field_name_static] = field_lowest_familiarity_word[0]
             # set fm_main_focus_word_[n]
             for index, focus_words in enumerate(note_metrics.focus_words):
@@ -528,11 +543,11 @@ class CardRanker:
                         new_note_vals[field_name] = list(focus_words.keys())[0]
                     else:
                         new_note_vals[field_name] = ''
-                if field_name_static in note and note[field_name_static] == '':
+                if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
                     if focus_words:
                         new_note_vals[field_name_static] = list(focus_words.keys())[0]
                     else:
-                        new_note_vals[field_name_static] = ' '
+                        new_note_vals[field_name_static] = ''
 
             # check if update is needed, else lock to prevent other targets from overwriting
             update_note_data = False

@@ -2,9 +2,7 @@
 
 ## Overview
 
-As an Anki plugin, __FrequencyMan__ goal is to optimize your Anki learning journey by allowing you to intelligently __sort your new cards__ in a personalized way.
-
-Please note: this plugin is a __WORK IN PROGRESS__. Don't use it on your main profile!
+FrequencyMan allows you to intelligently __sort your new cards__ in a personalized way.
 
 Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 
@@ -16,9 +14,9 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 - Use multiple fields (such as 'front' *and* 'back') to influence the ranking.
 - Multiple 'word frequency' lists can be used per language.
 
-## Installation
+## Manual installation
 
-1. Go to the Anki plugin folder, such as __C:\Users\%USERNAME%\AppData\Roaming\Anki2\addons21__
+1. Go to the Anki plugin folder, such as `C:\Users\%USERNAME%\AppData\Roaming\Anki2\addons21`
 2. Create a new folder for the plugin, such as __addons21\FrequencyMan__
 3. Clone the project in the new folder: `git clone https://github.com/Rct567/FrequencyMan.git`
 4. Place your word frequency lists (*.txt files) in a subfolder in FrequencyMan/user_files/, such as __\FrequencyMan\user_files\lang_data\en__. If multiple lists exist for a language, they will be combined (based on the highest score/position).
@@ -32,8 +30,8 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 ## Basic usage
 
 1. Open the "FrequencyMan" menu option in the __"Tools" menu__ of the main Anki window.
-2. This will open the "FrequencyMan Main Window" where you can define your __sorting targets__.
-3. Define the targets using a JSON list of objects. Each object represents a target to sort (a target can be a deck or a defined selection of cards).
+2. This will open FrequencyMan's main window where you can define your __sorting targets__.
+3. Define the targets using a __JSON list of objects__. Each object represents a target to sort (a target can be a deck or a defined selection of cards).
 4. Click the __"Reorder Cards" button__ to apply the sorting.
 
 ## Configuration examples
@@ -200,7 +198,7 @@ For debug purposes:
 - `fm_debug_ranking_info`: The resulting score per ranking factor for the note.
 - `fm_debug_words_info` The score's for each word for 'word frequency', 'lexical underexposure' and 'familiarity sweetspot'.
 
-### Add focus words to the back of your cards:
+### Display focus words on the back of your cards (html example)
 
 ```html
 {{#fm_focus_words}}

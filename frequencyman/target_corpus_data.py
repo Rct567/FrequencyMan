@@ -61,12 +61,14 @@ class TargetCorpusData:
     field_data_per_card_note: dict[NoteId, list[TargetNoteFieldContentData]]
     content_metrics: dict[CorpusId, TargetContentMetrics]
     familiarity_sweetspot_point: float
+    suspended_card_value: float
 
     def __init__(self):
 
         self.field_data_per_card_note = {}
         self.content_metrics = defaultdict(TargetContentMetrics)
         self.familiarity_sweetspot_point = 0.45
+        self.suspended_card_value = 0.5
 
     def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData) -> None:
         """
@@ -155,8 +157,6 @@ class TargetCorpusData:
 
         for card in cards:
             card_score = ((card.ivl/cards_interval_max) + ((card.reps/cards_reps_max)/4) + (card.factor/cards_ease_max)) / 2.25
-            if card.queue == -1: # suspended card
-                card_score = card_score*0.5
             cards_familiarity[card.id] = card_score
 
         # done
@@ -164,12 +164,17 @@ class TargetCorpusData:
         return cards_familiarity
 
     @staticmethod
-    def __get_cards_familiarity_factors(cards: list[TargetCard]) -> dict[CardId, float]:
+    def __get_cards_familiarity_factors(cards: list[TargetCard], suspended_card_value) -> dict[CardId, float]:
 
         cards_familiarity_value = TargetCorpusData.__get_cards_familiarity_score(cards)
-        cards_familiarity_value = sort_dict_floats_values(cards_familiarity_value)
+
+        for card in cards:
+            if card.queue == -1: # suspended card
+                cards_familiarity_value[card.id] = cards_familiarity_value[card.id]*suspended_card_value
 
         # devalue cards from same note (devalue subsequently more as more cards from same note are found)
+
+        cards_familiarity_value = sort_dict_floats_values(cards_familiarity_value)
 
         note_count:dict[NoteId, int] = {}
         cards_note_ids: dict[CardId, NoteId] = {card.id: card.nid for card in cards}
@@ -215,7 +220,7 @@ class TargetCorpusData:
 
     def __set_notes_reviewed_words_presence(self) -> None:
 
-        cards_familiarity_factor = self.__get_cards_familiarity_factors(self.target_cards.reviewed_cards)
+        cards_familiarity_factor = self.__get_cards_familiarity_factors(self.target_cards.reviewed_cards, self.suspended_card_value)
 
         for card in self.target_cards.reviewed_cards:
 

@@ -468,8 +468,10 @@ class CardRanker:
             if 'fm_debug_ranking_info' in note:
                 if note_id in notes_new_card:
                     new_note_vals['fm_debug_ranking_info'] = 'Target '+self.target_name+'<br />'
-                    for info_name, info_val in notes_ranking_scores.items():
-                        new_note_vals['fm_debug_ranking_info'] += "{}: {:.3f}<br />\n".format(info_name, info_val[note_id])
+                    used_ranking_factors = {factor_name: v for k, v in notes_ranking_scores.items() if k in self.ranking_factors_span and self.ranking_factors_span[k] > 0}
+                    ranking_scores = dict(sorted(used_ranking_factors.items(), key=lambda item: self.ranking_factors_span[item[0]], reverse=True))
+                    for factor_name, factor_val in ranking_scores.items():
+                        new_note_vals['fm_debug_ranking_info'] += "{}: {:.3f}<br />\n".format(factor_name, factor_val[note_id])
                 else:
                     new_note_vals['fm_debug_ranking_info'] = ''
             # set fm_debug_words_info

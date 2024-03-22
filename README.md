@@ -31,7 +31,7 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 
 1. Open the "FrequencyMan" menu option in the __"Tools" menu__ of the main Anki window.
 2. This will open FrequencyMan's main window where you can define your __sorting targets__.
-3. Define the targets using a __JSON list of objects__. Each object represents a target to sort (a target can be a deck or a defined selection of cards).
+3. Define the targets using a __JSON array of objects__. Each object represents a target to sort (a target can be a deck or a defined selection of cards).
 4. Click the __"Reorder Cards" button__ to apply the sorting.
 
 ## Configuration examples
@@ -205,3 +205,20 @@ For debug purposes:
   <p> <span style="opacity:0.65;">Focus:</span> {{fm_focus_words}} </p>
 {{/fm_focus_words}}
 ```
+
+# Target settings
+
+For each defined target, the following setting are available:
+
+| Setting | Type | Description | Default value      |
+|---------|------|-------------|-------|
+| `deck`    | string | Name of a single deck. | -      |
+| `decks`   | string | Names of decks separated by a comma.  | -      |
+| `scope_query`   | string | Search query.  | -      |
+| `notes`   | array of objects |  | -      |
+| `reorder_scope_query`   | string |  | defined by main scope       |
+| `ranking_factors`   | object |  | see '[Ranking factors](#default-ranking-factors)'      |
+| `familiarity_sweetspot_point`   | float |  |   `0.45`  |
+| `suspended_card_value`   | float |  |   `0.5`  |
+| `ideal_word_count`   | array with two int's |  |  `[2, 5]`   |
+| `focus_words_endpoint`   | float |  |  `0.9`   |

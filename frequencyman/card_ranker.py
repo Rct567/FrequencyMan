@@ -209,7 +209,7 @@ class CardRanker:
         for attribute in self.ranking_factors_span.keys():
             if attribute not in notes_ranking_scores_normalized:
                 raise Exception("Span set for unknown ranking factor '{}'.".format(attribute))
-            vals = notes_ranking_scores_normalized[attribute]
+            vals = notes_ranking_scores_normalized[attribute].values()
             self.ranking_factors_stats[attribute]['weight'] = self.ranking_factors_span[attribute]
             self.ranking_factors_stats[attribute]['avg'] = fmean(vals)
             self.ranking_factors_stats[attribute]['median'] = median(vals)

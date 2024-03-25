@@ -67,6 +67,7 @@ class ConfiguredTarget(TypedDict, total=False):
     reorder_scope_query: str
     familiarity_sweetspot_point: Union[float, str, int]
     suspended_card_value: Union[float, str, int]
+    suspended_leech_card_value: Union[float, str, int]
     ideal_word_count: list[int]
     ranking_factors: dict[str, Union[float, str, int]]
     notes: list[ConfiguredTargetNote]
@@ -219,6 +220,9 @@ class Target:
         if (suspended_card_value := get_float(self.config_target.get('suspended_card_value'))) is not None:
             self.target_corpus_data.suspended_card_value = suspended_card_value
 
+        if (suspended_leech_card_value := get_float(self.config_target.get('suspended_leech_card_value'))) is not None:
+            self.target_corpus_data.suspended_leech_card_value = suspended_leech_card_value
+
         self.target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(), language_data)
 
         return self.target_corpus_data
@@ -229,8 +233,9 @@ class Target:
             self.cache_data['corpus'] = {}
 
         cache_key = (str(target_cards.all_cards_ids), str(self.get_config_fields_per_note_type()), self.col, language_data,
-                     self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'))
-        
+                     self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'),
+                     self.config_target.get('suspended_leech_card_value'))
+
         if cache_key in self.cache_data['corpus']:
             return self.cache_data['corpus'][cache_key]
 
@@ -331,8 +336,6 @@ class Target:
             # use custom focus_words_endpoint
             if (focus_words_endpoint := get_float(self.config_target.get('focus_words_endpoint'))) is not None:
                 card_ranker.focus_words_endpoint = focus_words_endpoint
-
-
 
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards)

@@ -21,6 +21,7 @@ class TargetCard:
     ivl: int
     reps: int
     factor: int
+    is_leech: bool
 
 
 class TargetCards:
@@ -60,8 +61,11 @@ class TargetCards:
         card_ids_str = ",".join(map(str, self.all_cards_ids))
         cards = self.col.db.execute("SELECT id, nid, type, queue, ivl, reps, factor FROM cards WHERE id IN ({}) ORDER BY due ASC".format(card_ids_str))
 
+        leech_card_ids = self.col.find_cards('tag:leech')
+
         for card_row in cards:
-            card = TargetCard(*card_row)
+            card = TargetCard(*card_row, is_leech=False)
+            card.is_leech = card.id in leech_card_ids
             self.all_cards.append(card)
             if card.queue == 0:
                 self.new_cards.append(card)

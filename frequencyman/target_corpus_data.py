@@ -62,6 +62,7 @@ class TargetCorpusData:
     content_metrics: dict[CorpusId, TargetContentMetrics]
     familiarity_sweetspot_point: float
     suspended_card_value: float
+    suspended_leech_card_value: float
 
     def __init__(self):
 
@@ -69,6 +70,7 @@ class TargetCorpusData:
         self.content_metrics = defaultdict(TargetContentMetrics)
         self.familiarity_sweetspot_point = 0.45
         self.suspended_card_value = 0.5
+        self.suspended_leech_card_value = 0.0
 
     def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData) -> None:
         """
@@ -164,19 +166,22 @@ class TargetCorpusData:
         return cards_familiarity
 
     @staticmethod
-    def __get_cards_familiarity_factors(cards: list[TargetCard], suspended_card_value) -> dict[CardId, float]:
+    def __get_cards_familiarity_factors(cards: list[TargetCard], suspended_card_value: float, suspended_leech_card_value: float) -> dict[CardId, float]:
 
         cards_familiarity_value = TargetCorpusData.__get_cards_familiarity_score(cards)
 
         for card in cards:
-            if card.queue == -1: # suspended card
-                cards_familiarity_value[card.id] = cards_familiarity_value[card.id]*suspended_card_value
+            if card.queue == -1:  # suspended card
+                if card.is_leech:
+                    cards_familiarity_value[card.id] = cards_familiarity_value[card.id]*suspended_leech_card_value
+                else:
+                    cards_familiarity_value[card.id] = cards_familiarity_value[card.id]*suspended_card_value
 
         # devalue cards from same note (devalue subsequently more as more cards from same note are found)
 
         cards_familiarity_value = sort_dict_floats_values(cards_familiarity_value)
 
-        note_count:dict[NoteId, int] = {}
+        note_count: dict[NoteId, int] = {}
         cards_note_ids: dict[CardId, NoteId] = {card.id: card.nid for card in cards}
 
         for card_id in cards_familiarity_value.keys():
@@ -195,7 +200,6 @@ class TargetCorpusData:
         cards_familiarity_value = normalize_dict_floats_values(cards_familiarity_value)
 
         return cards_familiarity_value
-
 
     def __set_notes_reviewed_words(self) -> None:
 
@@ -220,7 +224,7 @@ class TargetCorpusData:
 
     def __set_notes_reviewed_words_presence(self) -> None:
 
-        cards_familiarity_factor = self.__get_cards_familiarity_factors(self.target_cards.reviewed_cards, self.suspended_card_value)
+        cards_familiarity_factor = self.__get_cards_familiarity_factors(self.target_cards.reviewed_cards, self.suspended_card_value, self.suspended_leech_card_value)
 
         for card in self.target_cards.reviewed_cards:
 
@@ -304,7 +308,7 @@ class TargetCorpusData:
             self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = sort_dict_floats_values(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot)
 
             # cut of bottom 10%
-            num_to_keep = int(len(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot ) * 0.9)
+            num_to_keep = int(len(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot) * 0.9)
             if num_to_keep > 100:
                 self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot = dict(list(self.content_metrics[corpus_key].reviewed.words_familiarity_sweetspot.items())[:num_to_keep])
 
@@ -331,7 +335,7 @@ class TargetCorpusData:
                     word_underexposure_rating = (word_fr - word_familiarity)
 
                     if (word_underexposure_rating > 0):
-                        word_underexposure_rating = word_underexposure_rating * ( (1 + word_familiarity) ** 1.5 )
+                        word_underexposure_rating = word_underexposure_rating * ((1 + word_familiarity) ** 1.5)
                         if word_familiarity == 0:
                             word_underexposure_rating = word_underexposure_rating*0.75
                         self.content_metrics[corpus_key].words_underexposure[word_token] = word_underexposure_rating
@@ -342,10 +346,9 @@ class TargetCorpusData:
             self.content_metrics[corpus_key].words_underexposure = sort_dict_floats_values(self.content_metrics[corpus_key].words_underexposure)
 
             # cut of bottom 10%
-            num_to_keep = int(len(self.content_metrics[corpus_key].words_underexposure ) * 0.9)
+            num_to_keep = int(len(self.content_metrics[corpus_key].words_underexposure) * 0.9)
             if num_to_keep > 100:
                 self.content_metrics[corpus_key].words_underexposure = dict(list(self.content_metrics[corpus_key].words_underexposure.items())[:num_to_keep])
 
             # normalize
             self.content_metrics[corpus_key].words_underexposure = normalize_dict_floats_values(self.content_metrics[corpus_key].words_underexposure)
-

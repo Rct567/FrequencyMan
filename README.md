@@ -220,5 +220,6 @@ For each defined target, the following setting are available:
 | `ranking_factors`   | object |  | see '[Ranking factors](#default-ranking-factors)'      |
 | `familiarity_sweetspot_point`   | float |  |   `0.45`  |
 | `suspended_card_value`   | float |  |   `0.5`  |
+| `suspended_leech_card_value`   | float |  |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[2, 5]`   |
 | `focus_words_endpoint`   | float |  |  `0.9`   |

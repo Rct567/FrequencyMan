@@ -5,6 +5,7 @@ from frequencyman.text_processing import USER_PROVIDED_TOKENIZERS_LOADED, LangId
 def test_acceptable_word():
 
     assert TextProcessing.acceptable_word("app-le") == True
+    assert TextProcessing.acceptable_word("app---le") == True
     assert TextProcessing.acceptable_word("won't") == True
     assert TextProcessing.acceptable_word("iñtërnâtiônàlizætiøn") == True
     assert TextProcessing.acceptable_word("你", LangId("zh")) == True
@@ -14,7 +15,9 @@ def test_acceptable_word():
     assert TextProcessing.acceptable_word("s!!!") == False
     assert TextProcessing.acceptable_word("_s_") == False
     assert TextProcessing.acceptable_word("1234") == False
+    assert TextProcessing.acceptable_word("1.123") == False
     assert TextProcessing.acceptable_word("$$$$$$$") == False
+    assert TextProcessing.acceptable_word("___") == False
 
 
 def test_get_plain_text():

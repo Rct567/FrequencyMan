@@ -106,7 +106,7 @@ class TextProcessing:
     KOREAN_PATTERN = re.compile(r'[\uac00-\ud7a3]{1,}', re.UNICODE)
     ARABIC_PATTERN = re.compile(r'[\u0600-\u06FF]{1,}', re.UNICODE)
     ETHIOPIC_PATTERN = re.compile(r'[\u1200-\u137F]{1,}', re.UNICODE)
-    DEFAULT_PATTERN = re.compile(r'[\w]{2,}', re.UNICODE)
+    DEFAULT_PATTERN = re.compile(r'[^\W\d_]{2,}', re.UNICODE)
 
     @staticmethod
     def acceptable_word(word: str, lang_id: Optional[LangId] = None) -> bool:
@@ -131,7 +131,7 @@ class TextProcessing:
         if stripped_word_len < min_length or stripped_word_len > 300:
             return False
 
-        return bool(re.search(word_pattern, stripped_word)) and not stripped_word.isdigit()
+        return re.search(word_pattern, stripped_word) is not None
 
     @staticmethod
     def get_plain_text(val: str) -> str:

@@ -223,3 +223,50 @@ For each defined target, the following setting are available:
 | `suspended_leech_card_value`   | float |  |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[2, 5]`   |
 | `focus_words_endpoint`   | float |  |  `0.9`   |
+
+# Language data id
+
+For each field a **language data id** must be defined. In most cases this should just be a two letter (ISO 639) language code, such as `EN` or `ES`:
+
+```json
+[
+    {
+        "deck": "Spanish::Essential Spanish Vocabulary Top 5000",
+        "notes": [
+            {
+                "name": "Basic-f4e28",
+                "fields": {
+                    "Spanish": "ES",
+                    "English": "EN"
+                }
+            }
+        ]
+    }
+]
+```
+Alternatively, a **language data id** could be an 'extended two letter language code':
+
+```json
+[
+    {
+        "deck": "Medical",
+        "notes": [
+            {
+                "name": "Basic-f4e28",
+                "fields": {
+                    "Front": "EN_MEDICAL",
+                    "Back": "EN_MEDICAL"
+                }
+            }
+        ]
+    }
+]
+```
+
+For every **language data id** defined, a directory should exist (although it could be empty). In the example above, `\user_files\lang_data\en_medical` should exist.
+
+The `user_files` directory can be found inside Frequencyman's plugin directory, which can be accessed via: **Tools > Add-ons > Select Frequencyman > View Files**. Any files placed in this folder will be preserved when the add-on is upgraded. All other files in the add-on folder are removed on upgrade.
+
+
+
+

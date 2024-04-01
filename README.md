@@ -150,7 +150,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
     "familiarity": 1.0,
     "familiarity_sweetspot": 0.8,
     "lexical_underexposure": 0.4,
-    "ideal_focus_word_count": 1.5,
+    "ideal_focus_word_count": 1.0,
     "ideal_word_count": 1.0,
     "most_obscure_word": 1.0,
     "lowest_fr_least_familiar_word": 1.0,

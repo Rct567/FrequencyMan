@@ -131,7 +131,9 @@ Reorder only based on word frequency (using word frequency from both front and b
 
 Custom tokenizers can be defined in `user_files\tokenizers`.
 
-To use, or to see how a custom tokenizer is defined, you can download [here](https://github.com/Rct567/FrequencyMan_tokenizer_jieba) a working copy of Jieba (ZH), and [here](https://github.com/Rct567/FrequencyMan_tokenizer_janome) a version of Janome (JA).
+To use a custom tokenizer, or to see how one is defined, you can download [here](https://github.com/Rct567/FrequencyMan_tokenizer_jieba) a working copy of Jieba (ZH), and [here](https://github.com/Rct567/FrequencyMan_tokenizer_janome) a version of Janome (JA).
+
+If you download Janome (JA), it should be placed in the directory `user_files\tokenizers\janome`, which should contain the file `fm_init_janome.py`.
 
 ### Automatic support
 
@@ -166,9 +168,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `familiarity_sweetspot`: Promotes cards with words close to a specific 'sweetspot' of familiarity. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These can be new words, or words that are 'hidden' (non-prominent) in older cards. The 'sweetspot' is 0.45 of the _median familiarity_ score by default. Use target setting `familiarity_sweetspot_point` to customize this value.
 - `lexical_underexposure`: Promotes cards with high-frequency words that you are not yet proportionally familiar with. Basically, _lexical_underexposure = (word_frequency-word_familiarity)_. Increasing this value means you will be 'pushed' forward more in your language learning journey (and the word frequency list). Increase the value slightly if you experience too much overlap and not enough new words.
 - `ideal_focus_word_count`: Promotes cards with only a single '_focus word_'. See also _N+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis. A _focus word_ is a word you are not yet appropriately familiar with. By default this is assumed when a word has a familiarity below 0.9 of the median value. Use target setting `focus_words_endpoint` to customize this value.
-
 - `ideal_word_count`: Represents how close the _word count_ of the content is to the defined ideal range. By default this is 2 to 5, but you can customize it per target with:
-
   ```json
   "ideal_word_count": [1, 8]
   ```

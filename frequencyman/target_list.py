@@ -11,6 +11,7 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
+from .target_cards import TargetCards
 from .lib.utilities import is_numeric_value
 from .card_ranker import CardRanker
 from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote as ConfiguredTargetNote
@@ -195,6 +196,9 @@ class TargetList:
 
         if num_cards_repositioned == 0:
             event_logger.add_entry("Order of cards from targets was already up-to-date!")
+
+        # Clear cache
+        TargetCards.notes_from_cards_cached = {}
 
         # Update notes that have been modifies (field values for example)
         update_notes_anki_op_changes: Optional[OpChanges] = None

@@ -64,7 +64,7 @@ Note: For both languages, a directory should exist (although it could be empty),
 ### Example 2
 Reorder the same deck twice, but the first target excludes the sorting of cards whose name matches "Speaking", while the second target only sorts those excluded cards.
 
-The first target only modifies a single ranking factor (giving familiar cards a boost), while the second target reduces the ranking factors used to only 2 factors (with the aim to order by 'as easy as possible').
+The first target only modifies a single ranking factor (giving familiar cards a boost), while the second target reduces the ranking factors used to only 2 factors.
 
 Note: Both targets use the same 'main scope', which is the selection of cards used to create the data to calculate the ranking. This scope is reduced for each target by `reorder_scope_query` to limit which cards get repositioned.
 
@@ -244,7 +244,7 @@ For each field a **language data id** must be defined. In most cases this should
     }
 ]
 ```
-Alternatively, a **language data id** could be an 'extended two letter language code':
+Alternatively, a **language data id** can also be an 'extended two letter language code':
 
 ```json
 [
@@ -257,15 +257,24 @@ Alternatively, a **language data id** could be an 'extended two letter language 
                     "Front": "EN_MEDICAL",
                     "Back": "EN_MEDICAL"
                 }
-            }
+            },
+
         ]
-    }
+    },
 ]
 ```
 
 For every **language data id** defined, a directory should exist (although it could be empty). In the example above, `\user_files\lang_data\en_medical` should exist.
 
-The `user_files` directory can be found inside Frequencyman's plugin directory, which can be accessed via: **Tools > Add-ons > Select Frequencyman > View Files**. Any files placed in this folder will be preserved when the add-on is upgraded. All other files in the add-on folder are removed on upgrade.
+Two different types of files can be placed in a **language data id** directory:
+- __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore".
+- __word frequency lists__: A text file with words sorted to reflect the word frequency (in descending order). Only the position is used, not the (optional) word frequency value.
+
+## The `user_files` directory
+
+The `user_files` directory can be found inside Frequencyman's plugin directory, which can be accessed via: **Tools > Add-ons > Select Frequencyman > View Files**.
+
+Any files placed in this folder will be preserved when the add-on is upgraded. All other files in the add-on folder are removed on upgrade.
 
 
 

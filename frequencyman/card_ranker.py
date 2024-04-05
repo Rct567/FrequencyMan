@@ -17,7 +17,7 @@ from .target import TargetCards
 
 from .text_processing import WordToken
 from .lib.utilities import *
-from .target_corpus_data import CorpusId, TargetCorpusData, TargetNoteFieldContentData
+from .target_corpus_data import CorpusSegmentId, TargetCorpusData, TargetNoteFieldContentData
 from .language_data import LanguageData
 
 
@@ -251,11 +251,11 @@ class CardRanker:
 
             for field_data in note_fields_defined_in_target:
 
-                if not field_data.corpus_id.startswith(str(note.mid)):
+                if not field_data.corpus_segment_id.startswith(str(note.mid)):
                     raise Exception("Card note type id is not matching!?")
 
                 # get metrics for field
-                field_metrics = self.__get_field_metrics_from_field_data(field_data, field_data.corpus_id)
+                field_metrics = self.__get_field_metrics_from_field_data(field_data, field_data.corpus_segment_id)
 
                 # append existing field metrics (additional metrics created and added below)
                 note_metrics.seen_words.append(field_metrics.seen_words)
@@ -320,10 +320,10 @@ class CardRanker:
 
         return notes_metrics
 
-    def __get_field_metrics_from_field_data(self, field_data: TargetNoteFieldContentData, corpus_key: CorpusId) -> FieldMetrics:
+    def __get_field_metrics_from_field_data(self, field_data: TargetNoteFieldContentData, corpus_segment_id: CorpusSegmentId) -> FieldMetrics:
 
         field_metrics = FieldMetrics()
-        content_metrics = self.corpus_data.content_metrics[corpus_key]
+        content_metrics = self.corpus_data.content_metrics[corpus_segment_id]
 
         for word in field_data.field_value_tokenized:
 
@@ -564,4 +564,3 @@ class CardRanker:
                 self.modified_dirty_notes[note_id] = note
             elif lock_note_data:  # lock to keep it as it is
                 self.modified_dirty_notes[note_id] = None
-

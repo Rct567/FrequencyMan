@@ -251,9 +251,6 @@ class CardRanker:
 
             for field_data in note_fields_defined_in_target:
 
-                if not field_data.corpus_segment_id.startswith(str(note.mid)):
-                    raise Exception("Card note type id is not matching!?")
-
                 # get metrics for field
                 field_metrics = self.__get_field_metrics_from_field_data(field_data, field_data.corpus_segment_id)
 

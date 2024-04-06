@@ -39,7 +39,7 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 ### Example 1
 Reorders a single deck. This will only match cards with note type `-- My spanish --` located in deck `Spanish`. It will also use the default ranking factors.
 
-The content of your cards and all the ranking metrics will be analyzed per field. The result of this will be combined to determine the final ranking of all new cards. Each field is effectively its own little "universe".
+The content of the cards and all the ranking metrics will be analyzed per '[language](#language-data-id)'. The result of this will be combined to determine the final ranking of all new cards.
 
 Note: For both languages, a directory should exist (although it could be empty), such as `\user_files\lang_data\en`.
 

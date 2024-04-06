@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from math import fsum
 from statistics import fmean, median
 from typing import NewType
+from enum import Enum
 
 from anki.cards import CardId, Card
 from anki.notes import NoteId
@@ -18,10 +19,11 @@ from .lib.utilities import *
 from .text_processing import TextProcessing, WordToken
 
 
-# This is used to make the corpus data per field.
-# It is created by using model.id and note field name.
-# It could be changed to make it per LangId (thus merging multiple note field
-# when they have to same LangId)
+class CorpusSegmentationStrategy(Enum):
+    BY_NOTE_MODEL_ID_AND_FIELD_NAME = 1
+    BY_LANG_DATA_ID = 2
+    BY_LANG_ID = 3
+
 CorpusSegmentId = NewType('CorpusSegmentId', str)
 
 
@@ -63,6 +65,7 @@ class TargetCorpusData:
     familiarity_sweetspot_point: float
     suspended_card_value: float
     suspended_leech_card_value: float
+    segmentation_strategy: CorpusSegmentationStrategy
 
     def __init__(self):
 
@@ -71,6 +74,7 @@ class TargetCorpusData:
         self.familiarity_sweetspot_point = 0.45
         self.suspended_card_value = 0.5
         self.suspended_leech_card_value = 0.0
+        self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
 
     def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData) -> None:
         """
@@ -103,10 +107,17 @@ class TargetCorpusData:
                 for field_name, field_val in card_note.items():
                     if field_name in target_note_fields.keys():
 
-                        corpus_segment_id = str(card_note_type['id'])+" => "+field_name
-
                         lang_data_id = target_note_fields[field_name]
                         lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
+
+                        if self.segmentation_strategy == CorpusSegmentationStrategy.BY_LANG_DATA_ID:
+                            corpus_segment_id = str(lang_data_id)
+                        elif self.segmentation_strategy == CorpusSegmentationStrategy.BY_LANG_ID:
+                            corpus_segment_id = str(lang_id)
+                        elif self.segmentation_strategy == CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME:
+                            corpus_segment_id = str(card_note_type['id'])+" => "+field_name
+                        else:
+                            raise Exception("Invalid segmentation_strategy set!")
 
                         plain_text = TextProcessing.get_plain_text(field_val)
                         field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)

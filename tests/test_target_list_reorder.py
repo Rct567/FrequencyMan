@@ -200,7 +200,7 @@ class TestTargetListReorder:
                     "name": "Basic",
                     "fields": {
                         "Front": "EN",
-                        "Back": "EN"
+                        "Back": "ES"
                     },
                 }]
             },
@@ -210,7 +210,7 @@ class TestTargetListReorder:
                     "name": "Basic",
                     "fields": {
                         "Front": "EN",
-                        "Back": "EN"
+                        "Back": "ES"
                     },
                 }]
             }
@@ -265,7 +265,7 @@ class TestTargetListReorder:
                     "name": "Basic",
                     "fields": {
                         "Front": "EN_with_ignore",
-                        "Back": "EN_with_ignore"
+                        "Back": "ES_with_ignore"
                     },
                 }]
             }
@@ -304,7 +304,7 @@ class TestTargetListReorder:
                     "name": "Basic",
                     "fields": {
                         "Front": "EN",
-                        "Back": "EN"
+                        "Back": "ES"
                     },
                 }],
                 'reorder_scope_query': 'deck:decka'
@@ -315,7 +315,7 @@ class TestTargetListReorder:
                     "name": "Basic",
                     "fields": {
                         "Front": "EN",
-                        "Back": "EN"
+                        "Back": "ES"
                     },
                 }],
                 'reorder_scope_query': 'deck:deckb'

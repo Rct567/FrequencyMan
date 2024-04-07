@@ -133,6 +133,22 @@ def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
     return new_dict
 
 
+def normalize_positional_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
+
+    new_dict = input_dict.copy()
+
+    if len(input_dict) == 0:
+        return new_dict
+
+    max_rank = len(new_dict)
+
+    for index, key in enumerate(new_dict.keys()):
+        positional_val = (max_rank-(index))/max_rank
+        new_dict[key] = positional_val
+
+    return new_dict
+
+
 def sort_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
     return dict(sorted(input_dict.items(), key=lambda x: x[1], reverse=True))

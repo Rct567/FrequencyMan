@@ -329,7 +329,7 @@ class CardRanker:
                 continue
 
             # word frequency
-            word_fr = self.language_data.get_word_frequency(field_data.target_language_data_id, word, 0)
+            word_fr = content_metrics.word_frequency.get(word, 0)
             word_ue = content_metrics.words_underexposure.get(word, 0)
 
             field_metrics.fr_scores.append(word_fr)

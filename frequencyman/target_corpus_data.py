@@ -50,6 +50,7 @@ class TargetReviewedContentMetrics:
 
 @dataclass
 class TargetContentMetrics:
+    word_frequency: dict[WordToken, float] = field(default_factory=dict)
     words_underexposure: dict[WordToken, float] = field(default_factory=dict)
     reviewed: TargetReviewedContentMetrics = field(default_factory=TargetReviewedContentMetrics)
 
@@ -132,11 +133,31 @@ class TargetCorpusData:
 
                 self.field_data_per_card_note[card.nid] = card_note_fields_in_target
 
+        self.__set_word_frequency(language_data)
         self.__set_notes_reviewed_words()
         self.__set_notes_reviewed_words_presence()
         self.__set_notes_reviewed_words_familiarity()
         self.__set_notes_reviewed_words_familiarity_sweetspot()
-        self.__set_notes_words_underexposure(language_data)
+        self.__set_notes_words_underexposure()
+
+    def __set_word_frequency(self, language_data: LanguageData):
+
+        for card in self.target_cards.all_cards:
+
+            for field_data in self.field_data_per_card_note[card.nid]:
+
+                corpus_segment_id = field_data.corpus_segment_id
+                lang_data_id = field_data.target_language_data_id
+
+                for word_token in field_data.field_value_tokenized:
+                    word_frequency = language_data.get_word_frequency(lang_data_id, word_token, 0)
+                    if word_frequency > 0:
+                        self.content_metrics[corpus_segment_id].word_frequency[word_token] = word_frequency
+
+        for corpus_segment_id in self.content_metrics.keys():
+            if self.content_metrics[corpus_segment_id].word_frequency:
+                self.content_metrics[corpus_segment_id].word_frequency = sort_dict_floats_values(self.content_metrics[corpus_segment_id].word_frequency)
+                self.content_metrics[corpus_segment_id].word_frequency = normalize_positional_dict_floats_values(self.content_metrics[corpus_segment_id].word_frequency)
 
     @staticmethod
     def __get_cards_familiarity_score(cards: list[TargetCard]) -> dict[CardId, float]:
@@ -267,6 +288,9 @@ class TargetCorpusData:
 
             # smooth out top values
 
+            if not self.content_metrics[corpus_segment_id].reviewed.words_familiarity:
+                continue
+
             field_avg_word_familiarity_score = fmean(self.content_metrics[corpus_segment_id].reviewed.words_familiarity.values())
 
             for word_token, words_familiarity in self.content_metrics[corpus_segment_id].reviewed.words_familiarity.items():
@@ -292,13 +316,9 @@ class TargetCorpusData:
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_mean = fmean(self.content_metrics[corpus_segment_id].reviewed.words_familiarity.values())
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_median = median(self.content_metrics[corpus_segment_id].reviewed.words_familiarity.values())
 
-            # also relative, but based on (sorted) position, just like value received from WordFrequencyList.get_word_frequency
+            # also relative, but based on (sorted) position, just like word_frequency
 
-            max_rank = len(self.content_metrics[corpus_segment_id].reviewed.words_familiarity)
-
-            for index, word_token in enumerate(self.content_metrics[corpus_segment_id].reviewed.words_familiarity.keys()):
-                familiarity_positional = (max_rank-(index))/max_rank
-                self.content_metrics[corpus_segment_id].reviewed.words_familiarity_positional[word_token] = familiarity_positional
+            self.content_metrics[corpus_segment_id].reviewed.words_familiarity_positional = normalize_positional_dict_floats_values(self.content_metrics[corpus_segment_id].reviewed.words_familiarity)
 
     def __set_notes_reviewed_words_familiarity_sweetspot(self) -> None:
 
@@ -327,18 +347,17 @@ class TargetCorpusData:
             # normalize
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot = normalize_dict_floats_values(self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot)
 
-    def __set_notes_words_underexposure(self, language_data: LanguageData) -> None:
+    def __set_notes_words_underexposure(self) -> None:
 
         for note_fields in self.field_data_per_card_note.values():
 
             for field in note_fields:
 
                 corpus_segment_id = field.corpus_segment_id
-                lang_data_id = field.target_language_data_id
 
                 for word_token in field.field_value_tokenized:
 
-                    word_fr = language_data.get_word_frequency(lang_data_id, word_token, 0)
+                    word_fr = self.content_metrics[corpus_segment_id].word_frequency.get(word_token, 0)
 
                     if word_fr == 0:
                         continue

@@ -142,9 +142,9 @@ class TargetCorpusData:
 
     def __set_word_frequency(self, language_data: LanguageData):
 
-        for card in self.target_cards.all_cards:
+        for note_id in self.target_cards.get_notes().keys():
 
-            for field_data in self.field_data_per_card_note[card.nid]:
+            for field_data in self.field_data_per_card_note[note_id]:
 
                 corpus_segment_id = field_data.corpus_segment_id
                 lang_data_id = field_data.target_language_data_id

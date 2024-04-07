@@ -140,6 +140,8 @@ def normalize_positional_dict_floats_values(input_dict: dict[K, float]) -> dict[
     if len(input_dict) == 0:
         return new_dict
 
+    assert repr(input_dict) == repr(sort_dict_floats_values(input_dict)), "Input dictionary must be in descending order."
+
     max_rank = len(new_dict)
 
     for index, key in enumerate(new_dict.keys()):

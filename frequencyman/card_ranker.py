@@ -362,7 +362,7 @@ class CardRanker:
             field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
 
             # most obscure word (lowest ubiquity)
-            word_ubiquity_score = (word_fr+word_familiarity_score)/2
+            word_ubiquity_score = max(word_fr, words_familiarity_positional)
             if field_metrics.most_obscure_word[0] == "" or word_ubiquity_score < field_metrics.most_obscure_word[1]:
                 field_metrics.most_obscure_word = (word, word_ubiquity_score)
 

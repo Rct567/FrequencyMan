@@ -172,7 +172,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
   ```json
   "ideal_word_count": [1, 8]
   ```
-- `most_obscure_word`: Represents the lowest value that can be found when combining both _word_frequency_ and _word_familiarity_.
+- `most_obscure_word`: Represents the lowest value for either _word_frequency_ or _word_familiarity_, depending on which is higher.
 - `lowest_fr_least_familiar_word`: Represents the lowest word frequency among the least familiar words.
 - `ideal_unseen_word_count`: Like _ideal_focus_word_count_, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
 

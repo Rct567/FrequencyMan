@@ -25,7 +25,8 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 ## Download word frequency lists
 
 - Based on Open Subtitles: https://github.com/hermitdave/FrequencyWords/tree/master
-- Based on Wikipedia: https://github.com/IlyaSemenov/wikipedia-word-frequency
+- Google Books n-gram: https://github.com/orgtre/google-books-ngram-frequency
+- Wikipedia: https://github.com/IlyaSemenov/wikipedia-word-frequency (might not be suitable for language learning)
 
 ## Basic usage
 

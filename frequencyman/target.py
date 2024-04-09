@@ -303,7 +303,7 @@ class Target:
                 num_new_cards_main_scope = len(target_cards.new_cards_ids)
                 num_new_card_reorder_scope = len(new_target_cards.new_cards_ids)
                 if num_new_card_reorder_scope < num_new_cards_main_scope:
-                    event_logger.add_entry("Reorder scope query reduced new cards in target from {:n} to {:n}.".format(num_new_cards_main_scope, num_new_card_reorder_scope))
+                    event_logger.add_entry("Reorder scope query reduced new cards from {:n} to {:n}.".format(num_new_cards_main_scope, num_new_card_reorder_scope))
                 else:
                     event_logger.add_entry("Using reorder scope query, but it did not reduce the amount of new cards in target.")
 

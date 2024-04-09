@@ -174,7 +174,7 @@ class TestTargetListReorder:
         assert len(target_result.sorted_cards_ids) == 4223
         assert target_result.sorted_cards_ids != pre_sort_cards.new_cards_ids
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
-        assert "Reorder scope query reduced new cards in target from 6566 to 4223" in str(event_logger)
+        assert "Reorder scope query reduced new cards from 6566 to 4223" in str(event_logger)
         assert "Repositioning 4223 cards" in str(event_logger)
         assert "Updating 5612 modified notes" in str(event_logger)
 
@@ -339,10 +339,10 @@ class TestTargetListReorder:
         assert len(result.modified_dirty_notes) == 0
 
         assert "Reordering target #0" in str(event_logger)
-        assert "Reorder scope query reduced new cards in target from 11 to 7." in str(event_logger)
+        assert "Reorder scope query reduced new cards from 11 to 7." in str(event_logger)
 
         assert "Reordering target #1" in str(event_logger)
-        assert "Reorder scope query reduced new cards in target from 11 to 4." in str(event_logger)
+        assert "Reorder scope query reduced new cards from 11 to 4." in str(event_logger)
 
         assert "Found 11 new cards in a target collection of 16 cards." in str(event_logger)
 
@@ -401,7 +401,7 @@ class TestTargetListReorder:
 
         assert "Reordering target #0" in str(event_logger)
         assert "Found 16 new cards in a target collection of 16 cards." in str(event_logger)
-        assert "Reorder scope query reduced new cards in target from 16 to 10." in str(event_logger)
+        assert "Reorder scope query reduced new cards from 16 to 10." in str(event_logger)
 
         assert result.reorder_result_list[0].num_cards_repositioned == 10
 

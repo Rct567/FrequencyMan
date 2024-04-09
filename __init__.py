@@ -23,7 +23,7 @@ def get_mw():
     return mw
 
 
-mw: AnkiQt = get_mw()
+mw: Optional[AnkiQt] = get_mw()
 
 
 # Open 'FrequencyMan main window' and create tabs

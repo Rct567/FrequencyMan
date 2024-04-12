@@ -73,6 +73,23 @@ def test_id_has_frequency_list_file(lang_data: LanguageData):
         assert not lang_data.word_frequency_lists.id_has_list_file(lang_data_id)
 
 
+def test_frequency_list_csv_file(lang_data: LanguageData):
+
+    lang_data.load_data({LangDataId('ru')})
+
+    assert lang_data.word_frequency_lists.word_frequency_lists is not None
+    assert len(lang_data.word_frequency_lists.get_files_by_id(LangDataId('ru'))) == 1
+
+    frequency = lang_data.get_word_frequency(LangDataId('ru'), 'иии', default=-1.0)
+    assert frequency == 1
+
+    frequency = lang_data.get_word_frequency(LangDataId('ru'), 'ввв', default=-1.0)
+    assert frequency == 4/5
+
+    frequency = lang_data.get_word_frequency(LangDataId('ru'), 'чточто', default=-1.0)
+    assert frequency == 1/5
+
+
 def test_id_has_ignore_file(lang_data: LanguageData):
 
     ids_with_files = {LangDataId('jp')}

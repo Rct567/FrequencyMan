@@ -269,7 +269,7 @@ For every **language data id** defined, a directory should exist (although it co
 
 Two different types of files can be placed in a **language data id** directory:
 - __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore".
-- __word frequency lists__: A text file with words sorted to reflect the word frequency (in descending order). Only the position is used, not the (optional) word frequency value.
+- __word frequency lists__: A text or csv file with words sorted to reflect the word frequency (in descending order). Only the position is used, not the (optional) word frequency value.
 
 ## The `user_files` directory
 

@@ -3,6 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+import re
 from typing import Iterator, NewType, Optional
 
 from .lib.utilities import *
@@ -30,7 +31,7 @@ class WordFrequencyLists:
 
         if os.path.isdir(possible_lang_dir):
             for file_name in os.listdir(possible_lang_dir):
-                if not file_name.endswith('.txt'):
+                if not file_name.endswith('.txt') and not file_name.endswith('.csv'):
                     continue
                 if file_name.startswith('ignore'):
                     continue
@@ -62,14 +63,15 @@ class WordFrequencyLists:
         if self.word_frequency_lists is None:
             self.word_frequency_lists = {}
 
-        self.word_frequency_lists[lang_data_id] = self.__produce_combined_list(files)
+        self.word_frequency_lists[lang_data_id] = self.__produce_combined_list(files, lang_data_id)
 
-    def __produce_combined_list(self, files: set[str]) -> dict[str, float]:
+    def __produce_combined_list(self, files: set[str], lang_data_id: LangDataId) -> dict[str, float]:
 
         word_rankings_combined: dict[str, int] = {}
+        lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
 
         for file_path in files:
-            for word, line_number in self.__get_words_from_file(file_path):
+            for word, line_number in self.__get_words_from_file(file_path, lang_id):
                 if word not in word_rankings_combined or line_number < word_rankings_combined[word]:  # highest ranking among lists (lowest line number)
                     word_rankings_combined[word] = line_number
 
@@ -80,20 +82,32 @@ class WordFrequencyLists:
         return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in word_rankings_combined.items()}
 
     @staticmethod
-    def __get_words_from_file(file_path: str) -> Iterator[tuple[str, int]]:
+    def __get_words_from_file(file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:
 
         line_number = 1
+        is_csv_file = file_path.endswith('.csv')
+        csv_patters = re.compile(r'(?:^|,)(?=[^"]|(")?)"?([^",]*)"?(")?,(?:.|$)')
 
         with open(file_path, encoding='utf-8') as text_file:
             for line in text_file:
-                line = line.rstrip()
-                last_space_index = line.rfind(' ')
-                if last_space_index != -1 and last_space_index < len(line) - 1 and line[last_space_index + 1:].isdigit():
-                    word = line[:last_space_index]
+                if is_csv_file:
+                    if line_number == 1 and 'freq' in line:
+                        continue
+                    first_column = re.match(csv_patters, line)
+                    if first_column:
+                        word = first_column.group(2)
+                    else:
+                        continue
                 else:
-                    word = line
+                    line = line.rstrip()
+                    last_space_index = line.rfind(' ')
+                    if last_space_index != -1 and last_space_index < len(line) - 1 and line[last_space_index + 1:].isdigit():
+                        word = line[:last_space_index]
+                    else:
+                        word = line
+
                 word = word.strip().lower()
-                if TextProcessing.acceptable_word(word):
+                if TextProcessing.acceptable_word(word, lang_id):
                     yield word, line_number
                     line_number += 1
 

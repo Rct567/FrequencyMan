@@ -338,7 +338,7 @@ class Target:
                 card_ranker.focus_words_endpoint = focus_words_endpoint
 
             # Calculate ranking and sort cards
-            card_rankings = card_ranker.calc_cards_ranking(target_cards)
+            card_rankings = card_ranker.calc_cards_ranking(target_cards, reorder_scope_target_cards)
             sorted_cards = sorted(reorder_scope_target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
             sorted_cards_ids = [card.id for card in sorted_cards]
 

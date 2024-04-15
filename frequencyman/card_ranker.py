@@ -137,7 +137,7 @@ class CardRanker:
         score = min(1, abs(0-(1.4*1/min(num_unseen_words, 10))))
         return score
 
-    def calc_cards_ranking(self, target_cards: TargetCards) -> dict[CardId, float]:
+    def calc_cards_ranking(self, target_cards: TargetCards, reorder_scope_target_cards: TargetCards) -> dict[CardId, float]:
 
         # card ranking is calculates per note (which may have different card, but same ranking)
 
@@ -149,23 +149,29 @@ class CardRanker:
         notes_metrics = self.__get_notes_field_metrics(notes_all_card, notes_from_new_cards)
         notes_ranking_factors = self.__get_notes_ranking_factors(notes_from_new_cards, notes_metrics)
 
-        # final ranking of cards from notes
+        # normalize ranking of notes in reorder scope
 
-        notes_ranking_scores_normalized, notes_rankings = self.__calc_notes_ranking(notes_ranking_factors)
+        notes_ranking_scores_normalized, notes_rankings = self.__calc_notes_ranking(notes_ranking_factors, reorder_scope_target_cards)
 
-        # Set meta data that will be saved in note fields
+        # set meta data that will be saved in note fields
         self.__set_fields_meta_data_for_notes(notes_all_card, notes_from_new_cards, notes_ranking_scores_normalized, notes_metrics)
 
-        #
+        # cards ranking based on note ranking
         card_rankings: dict[CardId, float] = {}
-        for card in target_cards.new_cards:
+        for card in reorder_scope_target_cards.new_cards:
             card_rankings[card.id] = notes_rankings[card.nid]
 
+        # done
         return card_rankings
 
-    def __calc_notes_ranking(self, notes_ranking_scores: dict[str, dict[NoteId, float]]) -> tuple[dict[str, dict[NoteId, float]], dict[NoteId, float]]:
+    def __calc_notes_ranking(self, notes_ranking_scores: dict[str, dict[NoteId, float]], reorder_scope_target_cards: TargetCards) -> tuple[dict[str, dict[NoteId, float]], dict[NoteId, float]]:
 
-        notes_ranking_scores_normalized = notes_ranking_scores.copy()
+        notes_ranking_scores_normalized: dict[str, dict[NoteId, float]] = {}
+
+        notes_ids = reorder_scope_target_cards.get_notes_from_new_cards().keys()
+
+        for ranking_factor in notes_ranking_scores.keys():
+            notes_ranking_scores_normalized[ranking_factor] = {note_id: ranking_val for (note_id, ranking_val) in notes_ranking_scores[ranking_factor].items() if note_id in notes_ids}
 
         useable_factors: set[str] = set()
 
@@ -431,6 +437,8 @@ class CardRanker:
     def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_new_card: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]],
                                          notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
 
+        reorder_scope_note_ids = list(notes_ranking_scores.values())[0].keys()
+
         for note_id, note in notes_all_card.items():
 
             if note_id in self.modified_dirty_notes:
@@ -464,14 +472,17 @@ class CardRanker:
             # set fm_debug_ranking_info
             if 'fm_debug_ranking_info' in note:
                 if note_id in notes_new_card:
-                    new_note_vals['fm_debug_ranking_info'] = 'Target '+self.target_name+'<br />'
-                    used_ranking_factors = {k: v for k, v in notes_ranking_scores.items() if k in self.ranking_factors_span and self.ranking_factors_span[k] > 0}
-                    ranking_scores = dict(sorted(used_ranking_factors.items(), key=lambda item: (item[1][note_id]*self.ranking_factors_span[item[0]]), reverse=True))
-                    for factor_name, factor_values in ranking_scores.items():
-                        factor_value = factor_values[note_id]
-                        factor_span = self.ranking_factors_span[factor_name]
-                        factor_score = factor_value*factor_span
-                        new_note_vals['fm_debug_ranking_info'] += "{}: {:.2f} <span style=\"opacity:0.5;\">x {:.1f} = {:.2f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score)
+                    if not note_id in reorder_scope_note_ids:
+                        new_note_vals['fm_debug_ranking_info'] = '<< Not in reorder scope of '+self.target_name+' >>'
+                    else:
+                        new_note_vals['fm_debug_ranking_info'] = 'Target '+self.target_name+'<br />'
+                        used_ranking_factors = {k: v for k, v in notes_ranking_scores.items() if k in self.ranking_factors_span and self.ranking_factors_span[k] > 0}
+                        ranking_scores = dict(sorted(used_ranking_factors.items(), key=lambda item: (item[1][note_id]*self.ranking_factors_span[item[0]]), reverse=True))
+                        for factor_name, factor_values in ranking_scores.items():
+                            factor_value = factor_values[note_id]
+                            factor_span = self.ranking_factors_span[factor_name]
+                            factor_score = factor_value*factor_span
+                            new_note_vals['fm_debug_ranking_info'] += "{}: {:.2f} <span style=\"opacity:0.5;\">x {:.1f} = {:.2f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score)
                 else:
                     new_note_vals['fm_debug_ranking_info'] = ''
             # set fm_debug_words_info

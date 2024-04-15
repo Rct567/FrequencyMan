@@ -358,19 +358,19 @@ class Target:
             event_logger.add_entry("Scheduling cards as new before repositioning.")
             self.col.sched.schedule_cards_as_new(sorted_cards_ids)
 
-        event_logger.add_entry("Repositioning {:n} cards for this target.".format(len(sorted_cards_ids)))
+        with event_logger.add_benchmarked_entry("Repositioning {:n} cards for this target.".format(len(sorted_cards_ids))):
 
-        repositioning_anki_op_changes = self.col.sched.reposition_new_cards(
-            card_ids=sorted_cards_ids,
-            starting_from=repositioning_starting_from,
-            step_size=1,
-            randomize=False,
-            shift_existing=True
-        )
+            repositioning_anki_op_changes = self.col.sched.reposition_new_cards(
+                card_ids=sorted_cards_ids,
+                starting_from=repositioning_starting_from,
+                step_size=1,
+                randomize=False,
+                shift_existing=True
+            )
 
-        return TargetReorderResult(success=True).with_repositioning_data(
-            sorted_cards_ids=sorted_cards_ids,
-            target_cards=target_cards,
-            num_cards_repositioned=len(sorted_cards_ids),
-            repositioning_anki_op_changes=repositioning_anki_op_changes
-        )
+            return TargetReorderResult(success=True).with_repositioning_data(
+                sorted_cards_ids=sorted_cards_ids,
+                target_cards=target_cards,
+                num_cards_repositioned=len(sorted_cards_ids),
+                repositioning_anki_op_changes=repositioning_anki_op_changes
+            )

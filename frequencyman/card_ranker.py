@@ -473,7 +473,7 @@ class CardRanker:
             if 'fm_debug_ranking_info' in note:
                 if note_id in notes_new_card:
                     if not note_id in reorder_scope_note_ids:
-                        new_note_vals['fm_debug_ranking_info'] = '<< Not in reorder scope of '+self.target_name+' >>'
+                        new_note_vals['fm_debug_ranking_info'] = '<< Not in reorder scope of target '+self.target_name+' >>'
                     else:
                         new_note_vals['fm_debug_ranking_info'] = 'Target '+self.target_name+'<br />'
                         used_ranking_factors = {k: v for k, v in notes_ranking_scores.items() if k in self.ranking_factors_span and self.ranking_factors_span[k] > 0}
@@ -482,7 +482,7 @@ class CardRanker:
                             factor_value = factor_values[note_id]
                             factor_span = self.ranking_factors_span[factor_name]
                             factor_score = factor_value*factor_span
-                            new_note_vals['fm_debug_ranking_info'] += "{}: {:.2f} <span style=\"opacity:0.5;\">x {:.1f} = {:.2f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score)
+                            new_note_vals['fm_debug_ranking_info'] += "{}: {:.2f} <span style=\"opacity:0.5;\">x {} = {:.2f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score)
                 else:
                     new_note_vals['fm_debug_ranking_info'] = ''
             # set fm_debug_words_info

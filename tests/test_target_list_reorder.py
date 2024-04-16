@@ -149,7 +149,7 @@ class TestTargetListReorder:
                 "reorder_scope_query": "card:2",
                 "ranking_factors": {
                     "familiarity": 1,
-                    "word_frequency_lowest": 1
+                    "lowest_word_frequency": 1
                 }
             }
         ])

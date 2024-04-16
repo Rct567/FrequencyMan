@@ -150,15 +150,16 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 ```json
 "ranking_factors" : {
     "word_frequency": 1.0,
-    "familiarity": 1.0,
-    "familiarity_sweetspot": 0.8,
-    "lexical_underexposure": 0.4,
+    "familiarity": 3.0,
+    "familiarity_sweetspot": 1.0,
+    "lexical_underexposure": 0.25,
     "ideal_focus_word_count": 1.0,
     "ideal_word_count": 1.0,
-    "most_obscure_word": 1.0,
-    "lowest_fr_least_familiar_word": 1.0,
+    "reinforce_focus_words": 0.25,
+    "most_obscure_word": 0.5,
+    "lowest_fr_least_familiar_word": 0.5,
+    "lowest_word_frequency": 0.25,
     "ideal_unseen_word_count": 0.0,
-    "word_frequency_lowest": 0.0
 }
 ```
 
@@ -173,8 +174,10 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
   ```json
   "ideal_word_count": [1, 8]
   ```
-- `most_obscure_word`: Represents the lowest value for either _word_frequency_ or _word_familiarity_, depending on which is higher.
-- `lowest_fr_least_familiar_word`: Represents the lowest word frequency among the least familiar words.
+- `reinforce_focus_words`: Promotes cards with one or more already seen '_focus word_', but only if there are no new words.
+- `most_obscure_word`: Represents the most obscure word. The non-obscurity of a word is defined by either _word_frequency_ or _word_familiarity_ (depending on which is higher, and thus less 'obscure').
+- `lowest_fr_least_familiar_word`: Represents the lowest _word frequency_ among the words with the lowest familiarity score.
+- `lowest_word_frequency`: Represents the lowest _word frequency_ found in the content.
 - `ideal_unseen_word_count`: Like _ideal_focus_word_count_, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
 
 ## Custom fields

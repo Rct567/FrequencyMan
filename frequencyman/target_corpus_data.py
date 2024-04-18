@@ -176,10 +176,13 @@ class TargetCorpusData:
 
         # smooth out top values
 
-        for metric_list, turnover_val in ((cards_interval, 30*7), (cards_reps, 14)):
+        def smooth_top_values(metric_list: list[float], turnover_val: float):
             for index in range(len(metric_list)):
                 if metric_list[index] > turnover_val:
                     metric_list[index] = (turnover_val + metric_list[index]) / 2
+
+        smooth_top_values(cards_interval, 30*7)
+        smooth_top_values(cards_reps, 14)
 
         # get scores
 

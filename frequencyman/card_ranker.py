@@ -494,7 +494,7 @@ class CardRanker:
                             factor_value = factor_values[note_id]
                             factor_span = self.ranking_factors_span[factor_name]
                             factor_score = factor_value*factor_span
-                            new_note_vals['fm_debug_ranking_info'] += "{}: {:.2f} <span style=\"opacity:0.5;\">x {} = {:.2f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score)
+                            new_note_vals['fm_debug_ranking_info'] += "{}: {:.3f} <span style=\"opacity:0.5;\">x {} = {:.3f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score)
                 else:
                     new_note_vals['fm_debug_ranking_info'] = ''
             # set fm_debug_words_info

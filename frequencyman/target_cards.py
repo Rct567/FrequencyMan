@@ -92,6 +92,8 @@ class TargetCards:
             if card.nid not in notes_from_all_cards:
                 notes_from_all_cards[card.nid] = self.get_note(card.nid)
 
+        notes_from_all_cards = {k: v for k, v in sorted(notes_from_all_cards.items(), key=lambda item: item[0])}
+
         return notes_from_all_cards
 
     def get_notes_from_new_cards(self) -> dict[NoteId, Note]:
@@ -100,6 +102,8 @@ class TargetCards:
         for card in self.new_cards:
             if card.nid not in notes_from_new_cards:
                 notes_from_new_cards[card.nid] = self.get_note(card.nid)
+
+        notes_from_new_cards = {k: v for k, v in sorted(notes_from_new_cards.items(), key=lambda item: item[0])}
 
         return notes_from_new_cards
 

@@ -24,6 +24,7 @@ class CorpusSegmentationStrategy(Enum):
     BY_LANG_DATA_ID = 2
     BY_LANG_ID = 3
 
+
 CorpusSegmentId = NewType('CorpusSegmentId', str)
 
 
@@ -61,7 +62,7 @@ class TargetCorpusData:
     """
 
     target_cards: TargetCards
-    field_data_per_card_note: dict[NoteId, list[TargetNoteFieldContentData]]
+    targeted_fields_per_note: dict[NoteId, list[TargetNoteFieldContentData]]
     content_metrics: dict[CorpusSegmentId, TargetContentMetrics]
     familiarity_sweetspot_point: float
     suspended_card_value: float
@@ -70,7 +71,7 @@ class TargetCorpusData:
 
     def __init__(self):
 
-        self.field_data_per_card_note = {}
+        self.targeted_fields_per_note = {}
         self.content_metrics = defaultdict(TargetContentMetrics)
         self.familiarity_sweetspot_point = 0.45
         self.suspended_card_value = 0.5
@@ -92,7 +93,7 @@ class TargetCorpusData:
 
         for card in target_cards.all_cards:
 
-            if card.nid not in self.field_data_per_card_note:
+            if card.nid not in self.targeted_fields_per_note:
 
                 card_note = target_cards.get_note(card.nid)
                 card_note_type = target_cards.get_model(card_note.mid)
@@ -131,7 +132,7 @@ class TargetCorpusData:
                             target_language_id=lang_id
                         ))
 
-                self.field_data_per_card_note[card.nid] = card_note_fields_in_target
+                self.targeted_fields_per_note[card.nid] = card_note_fields_in_target
 
         self.__set_word_frequency(language_data)
         self.__set_notes_reviewed_words()
@@ -144,7 +145,7 @@ class TargetCorpusData:
 
         for note_id in self.target_cards.get_notes().keys():
 
-            for field_data in self.field_data_per_card_note[note_id]:
+            for field_data in self.targeted_fields_per_note[note_id]:
 
                 corpus_segment_id = field_data.corpus_segment_id
                 lang_data_id = field_data.target_language_data_id
@@ -201,7 +202,7 @@ class TargetCorpusData:
         return cards_familiarity
 
     @staticmethod
-    def __get_cards_familiarity_factors(cards: list[TargetCard], suspended_card_value: float, suspended_leech_card_value: float) -> dict[CardId, float]:
+    def __get_cards_familiarity_factor(cards: list[TargetCard], suspended_card_value: float, suspended_leech_card_value: float) -> dict[CardId, float]:
 
         cards_familiarity_value = TargetCorpusData.__get_cards_familiarity_score(cards)
 
@@ -240,7 +241,7 @@ class TargetCorpusData:
 
         for card in self.target_cards.reviewed_cards:
 
-            for field_data in self.field_data_per_card_note[card.nid]:
+            for field_data in self.targeted_fields_per_note[card.nid]:
 
                 corpus_segment_id = field_data.corpus_segment_id
 
@@ -259,11 +260,11 @@ class TargetCorpusData:
 
     def __set_notes_reviewed_words_presence(self) -> None:
 
-        cards_familiarity_factor = self.__get_cards_familiarity_factors(self.target_cards.reviewed_cards, self.suspended_card_value, self.suspended_leech_card_value)
+        cards_familiarity_factor = self.__get_cards_familiarity_factor(self.target_cards.reviewed_cards, self.suspended_card_value, self.suspended_leech_card_value)
 
         for card in self.target_cards.reviewed_cards:
 
-            for field_data in self.field_data_per_card_note[card.nid]:
+            for field_data in self.targeted_fields_per_note[card.nid]:
 
                 corpus_segment_id = field_data.corpus_segment_id
                 field_num_tokens = len(field_data.field_value_tokenized)
@@ -352,7 +353,7 @@ class TargetCorpusData:
 
     def __set_notes_words_underexposure(self) -> None:
 
-        for note_fields in self.field_data_per_card_note.values():
+        for note_fields in self.targeted_fields_per_note.values():
 
             for field in note_fields:
 

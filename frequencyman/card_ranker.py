@@ -254,7 +254,7 @@ class CardRanker:
 
             # get scores per note field and append to note metrics
 
-            note_fields_defined_in_target = self.corpus_data.field_data_per_card_note[note.id]
+            note_fields_defined_in_target = self.corpus_data.targeted_fields_per_note[note.id]
             note_metrics = notes_metrics[note_id]
 
             for field_data in note_fields_defined_in_target:

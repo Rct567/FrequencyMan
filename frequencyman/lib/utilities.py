@@ -154,3 +154,15 @@ def normalize_positional_dict_floats_values(input_dict: dict[K, float]) -> dict[
 def sort_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
     return dict(sorted(input_dict.items(), key=lambda x: x[1], reverse=True))
+
+
+def remove_bottom_percent_dict(input_dict: dict[K, float], percent_remove: float, min_num_preserve: int) -> dict[K, float]:
+
+    assert repr(input_dict) == repr(sort_dict_floats_values(input_dict)), "Input dictionary must be in descending order."
+
+    keep_offset_end = int(len(input_dict) * (1-percent_remove))
+
+    if keep_offset_end < min_num_preserve:
+        keep_offset_end = min_num_preserve
+
+    return dict(list(input_dict.items())[0:keep_offset_end])

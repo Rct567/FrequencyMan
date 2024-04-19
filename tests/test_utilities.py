@@ -1,7 +1,7 @@
 import sys
 import pytest
 
-from frequencyman.lib.utilities import get_float, normalize_dict_floats_values, normalize_positional_dict_floats_values
+from frequencyman.lib.utilities import get_float, normalize_dict_floats_values, normalize_positional_dict_floats_values, remove_bottom_percent_dict
 
 def test_normalize_dict_floats_values():
 
@@ -83,3 +83,26 @@ def test_normalize_positional_dict_floats_values_input_dict_not_desc_sorted():
 
     with pytest.raises(AssertionError):
         normalize_positional_dict_floats_values({'a': 1.0, 'b': 2.0, 'c': 3.0})
+
+def test_remove_bottom_percent_dict():
+
+    result = remove_bottom_percent_dict({"a": 4, "b": 3, "c": 2, "d": 1}, 0.5, 0)
+    assert result == {"a": 4, "b": 3}
+
+    result = remove_bottom_percent_dict({"a": 4, "b": 3, "c": 2, "d": 1}, 0.5, 3)
+    assert result == {"a": 4, "b": 3, "c": 2}
+
+    result = remove_bottom_percent_dict({"a": 4, "b": 3, "c": 2, "d": 1}, 1.0, 1)
+    assert result == {"a": 4}
+
+    result = remove_bottom_percent_dict({"a": 4, "b": 3, "c": 2, "d": 1}, 0.9, 0)
+    assert result == {}
+
+    result = remove_bottom_percent_dict({"a": 4, "b": 3, "c": 2, "d": 1}, 0.5, 9999)
+    assert result == {"a": 4, "b": 3, "c": 2, "d": 1}
+
+    result = remove_bottom_percent_dict({"a": 4, "b": 3, "c": 2, "d": 1}, 0.0, 9999)
+    assert result == {"a": 4, "b": 3, "c": 2, "d": 1}
+
+    result = remove_bottom_percent_dict({"a": 4, "b": 3, "c": 2, "d": 1}, 0.25, 0)
+    assert result == {"a": 4, "b": 3, "c": 2}

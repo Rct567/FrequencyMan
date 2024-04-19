@@ -343,10 +343,7 @@ class TargetCorpusData:
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot = sort_dict_floats_values(self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot)
 
             # cut of bottom 10%
-            num_to_keep = int(len(self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot) * 0.9)
-            if num_to_keep > 100:
-                self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot = dict(
-                    list(self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot.items())[:num_to_keep])
+            self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot = remove_bottom_percent_dict(self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot, 0.1, 100)
 
             # normalize
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot = normalize_dict_floats_values(self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot)
@@ -381,9 +378,7 @@ class TargetCorpusData:
             self.content_metrics[corpus_segment_id].words_underexposure = sort_dict_floats_values(self.content_metrics[corpus_segment_id].words_underexposure)
 
             # cut of bottom 10%
-            num_to_keep = int(len(self.content_metrics[corpus_segment_id].words_underexposure) * 0.9)
-            if num_to_keep > 100:
-                self.content_metrics[corpus_segment_id].words_underexposure = dict(list(self.content_metrics[corpus_segment_id].words_underexposure.items())[:num_to_keep])
+            self.content_metrics[corpus_segment_id].words_underexposure = remove_bottom_percent_dict(self.content_metrics[corpus_segment_id].words_underexposure, 0.1, 100)
 
             # normalize
             self.content_metrics[corpus_segment_id].words_underexposure = normalize_dict_floats_values(self.content_metrics[corpus_segment_id].words_underexposure)

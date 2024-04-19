@@ -236,7 +236,7 @@ class CardRanker:
 
         # final ranking value for notes
 
-        notes_rankings: dict[NoteId, float] = {}
+        notes_rankings: dict[NoteId, float] = {note_id: 0.0 for note_id in notes_ids}
 
         for note_id in notes_spanned_ranking_factors.keys():
             total_value = fsum(notes_spanned_ranking_factors[note_id].values())

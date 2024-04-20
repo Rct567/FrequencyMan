@@ -34,8 +34,9 @@ class TestTargetListReorder:
     def __get_test_collection(self, test_collection_name: str, collection_test_seq_num: int):
 
         collection_dir = os.path.join(self.TEST_COLLECTIONS_DIR, test_collection_name)
+        lang_data_dir = os.path.join(collection_dir, 'lang_data')
 
-        lang_data = LanguageData(collection_dir)
+        lang_data = LanguageData(lang_data_dir)
 
         # create temporary collection
         collection_file = os.path.join(collection_dir, test_collection_name+".anki2")

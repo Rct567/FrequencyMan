@@ -105,11 +105,14 @@ class ReorderCardsTab:
         self.fm_window = fm_window
         self.col = col
 
-        # word frequency lists can be used for all targets
-        user_files_dir = os.path.join(self.fm_window.root_dir, 'user_files')
-        language_data = LanguageData(user_files_dir)
+        # language data
+        lang_data_dir = os.path.join(fm_window.user_files_dir, 'lang_data')
+        if not os.path.isdir(lang_data_dir):
+            os.makedirs(lang_data_dir)
 
-        #target data (list of targets for reordering)
+        language_data = LanguageData(lang_data_dir)
+
+        # target data (list of targets for reordering)
         self.target_list = TargetList(language_data, col)
 
         # textarea (user can input json to define targets)

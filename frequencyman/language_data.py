@@ -191,9 +191,7 @@ class LanguageData:
     word_frequency_lists: WordFrequencyLists
     ignore_lists: IgnoreLists
 
-    def __init__(self, lang_data_parent_dir) -> None:
-
-        lang_data_dir = os.path.join(lang_data_parent_dir, 'lang_data')
+    def __init__(self, lang_data_dir) -> None:
 
         if not os.path.isdir(lang_data_dir):
             raise ValueError("Invalid 'language data' directory. Directory not found: "+lang_data_dir)

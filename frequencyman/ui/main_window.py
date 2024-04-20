@@ -15,6 +15,8 @@ from aqt.main import AnkiQt
 class FrequencyManMainWindow(QDialog):
 
     root_dir: str
+    user_files_dir: str
+
     mw: AnkiQt
     is_dark_mode: bool
 
@@ -23,7 +25,7 @@ class FrequencyManMainWindow(QDialog):
     addon_config: dict[str, Any]
     addon_config_write: Callable[[dict[str, Any]], None]
 
-    def __init__(self, mw: AnkiQt):
+    def __init__(self, mw: AnkiQt, root_dir: str, user_files_dir: str):
 
         super().__init__(mw)
         self.mw = mw
@@ -52,6 +54,11 @@ class FrequencyManMainWindow(QDialog):
             self.addon_config = addon_config
 
         self.addon_config_write = lambda config: mw.addonManager.writeConfig(__name__, config)
+
+        # dirs
+        self.root_dir = root_dir
+        self.user_files_dir = user_files_dir
+
 
     def create_new_tab(self, tab_id: str, tab_name: str) -> Tuple[QVBoxLayout, QWidget]:
 

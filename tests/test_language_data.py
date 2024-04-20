@@ -3,7 +3,7 @@ import pytest
 from frequencyman.language_data import LangDataId, LanguageData
 
 
-LIST_DIR = os.path.join(os.path.dirname(__file__), 'data', 'lang_data_test')
+LIST_DIR = os.path.join(os.path.dirname(__file__), 'data', 'lang_data_test', 'lang_data')
 
 
 @pytest.fixture

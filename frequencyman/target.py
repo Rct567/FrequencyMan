@@ -257,7 +257,7 @@ class Target:
         # Check defined target lang keys and then load frequency lists for target
         for lang_data_id in self.__get_all_language_data_keys():
             if not language_data.id_has_directory(lang_data_id):
-                error_msg = "No directory found for key '{}' in '{}'!".format(lang_data_id, language_data.root_dir)
+                error_msg = "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, language_data.data_dir)
                 event_logger.add_entry(error_msg)
                 return TargetReorderResult(success=False, error=error_msg)
 

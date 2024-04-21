@@ -15,17 +15,17 @@ LangDataId = NewType('LangDataId', str)  # full lowercased string of specified l
 
 class WordFrequencyLists:
 
-    root_dir: str
+    data_dir: str
     word_frequency_lists: Optional[dict[LangDataId, dict[str, float]]]
 
     def __init__(self, root_dir: str) -> None:
 
-        self.root_dir = root_dir
+        self.data_dir = root_dir
         self.word_frequency_lists = None
 
     def get_files_by_id(self, lang_data_id: LangDataId) -> set[str]:
 
-        possible_lang_dir = os.path.join(self.root_dir, lang_data_id)
+        possible_lang_dir = os.path.join(self.data_dir, lang_data_id)
 
         files = set()
 
@@ -51,7 +51,6 @@ class WordFrequencyLists:
 
         for lang_data_id in lang_data_ids:
             self.__load_list(lang_data_id)
-
 
     def __load_list(self, lang_data_id: LangDataId) -> None:
 
@@ -114,12 +113,12 @@ class WordFrequencyLists:
 
 class IgnoreLists:
 
-    root_dir: str
+    data_dir: str
     ignore_lists: Optional[dict[LangDataId, set[str]]]
 
-    def __init__(self, root_dir: str) -> None:
+    def __init__(self, lang_data_dir: str) -> None:
 
-        self.root_dir = root_dir
+        self.data_dir = lang_data_dir
         self.ignore_lists = None
 
     def load_lists(self, lang_data_ids: set[LangDataId]) -> None:
@@ -145,7 +144,7 @@ class IgnoreLists:
 
     def get_files_by_id(self, lang_data_id: LangDataId) -> set[str]:
 
-        possible_lang_dir = os.path.join(self.root_dir, lang_data_id)
+        possible_lang_dir = os.path.join(self.data_dir, lang_data_id)
 
         files = set()
 
@@ -187,7 +186,7 @@ class IgnoreLists:
 
 class LanguageData:
 
-    root_dir: str
+    data_dir: str
     word_frequency_lists: WordFrequencyLists
     ignore_lists: IgnoreLists
 
@@ -196,16 +195,16 @@ class LanguageData:
         if not os.path.isdir(lang_data_dir):
             raise ValueError("Invalid 'language data' directory. Directory not found: "+lang_data_dir)
 
-        self.root_dir = lang_data_dir
-        self.word_frequency_lists = WordFrequencyLists(self.root_dir)
-        self.ignore_lists = IgnoreLists(self.root_dir)
+        self.data_dir = lang_data_dir
+        self.word_frequency_lists = WordFrequencyLists(self.data_dir)
+        self.ignore_lists = IgnoreLists(self.data_dir)
 
     def id_has_directory(self, lang_data_id: LangDataId) -> bool:
 
         if lang_data_id == "":
             return False
 
-        possible_lang_dir = os.path.join(self.root_dir, lang_data_id)
+        possible_lang_dir = os.path.join(self.data_dir, lang_data_id)
         return os.path.isdir(possible_lang_dir)
 
     def load_data(self, lang_data_ids: set[LangDataId]) -> None:

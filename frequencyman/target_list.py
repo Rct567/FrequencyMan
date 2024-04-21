@@ -110,7 +110,7 @@ class TargetList:
                 if not any(field['name'] == field_name for field in note_model['flds']):
                     return (0, "Field name '{}' in fields object specified in target[{}].notes[{}] does not exist.".format(field_name, index, note_index))
                 if not self.language_data.id_has_directory(lang_data_id):
-                    return (0, "No directory found for key '{}' in '{}'!".format(lang_data_id, self.language_data.root_dir))
+                    return (0, "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, self.language_data.data_dir))
 
         # check custom ranking factors object and its weights values
         if 'ranking_factors' in target:

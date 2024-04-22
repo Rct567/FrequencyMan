@@ -70,7 +70,7 @@ class WordFrequencyLists:
         lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
 
         for file_path in files:
-            for word, line_number in self.__get_words_from_file(file_path, lang_id):
+            for word, line_number in self.get_words_from_file(file_path, lang_id):
                 if word not in word_rankings_combined or line_number < word_rankings_combined[word]:  # highest ranking among lists (lowest line number)
                     word_rankings_combined[word] = line_number
 
@@ -81,7 +81,7 @@ class WordFrequencyLists:
         return {word: (max_rank-(ranking-1))/max_rank for (word, ranking) in word_rankings_combined.items()}
 
     @staticmethod
-    def __get_words_from_file(file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:
+    def get_words_from_file(file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:
 
         line_number = 1
         is_csv_file = file_path.endswith('.csv')
@@ -164,13 +164,13 @@ class IgnoreLists:
         ignore_list_combined: set[str] = set()
 
         for file_path in files:
-            for word in self.__get_words_from_file(file_path):
+            for word in self.get_words_from_file(file_path):
                 ignore_list_combined.add(word)
 
         return ignore_list_combined
 
     @staticmethod
-    def __get_words_from_file(file_path: str) -> Iterator[str]:
+    def get_words_from_file(file_path: str) -> Iterator[str]:
 
         with open(file_path, encoding='utf-8') as text_file:
 

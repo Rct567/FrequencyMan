@@ -4,6 +4,8 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import json
+import re
+import shutil
 from typing import Optional, Tuple, Callable
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
@@ -13,6 +15,8 @@ from aqt.utils import askUser, showWarning, showInfo
 from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
 from aqt.qt import *
 from aqt.main import AnkiQt
+
+from ..default_wf_lists import DefaultWordFrequencyLists
 
 from .main_window import FrequencyManMainWindow
 
@@ -31,9 +35,11 @@ class TargetsDefiningTextArea(QTextEdit):
     validity_change_callbacks: list[Callable[[int, 'TargetsDefiningTextArea'], None]]
     change_callbacks: list[Callable[[int, 'TargetsDefiningTextArea'], None]]
     valid_targets_defined: Optional[list[ConfiguredTarget]]
+    error_interceptors: list[Callable[[str], bool]]
+    first_paint_callbacks: list[Callable[['TargetsDefiningTextArea'], None]]
 
     def __init__(self, fm_window: FrequencyManMainWindow):
-        super().__init__(None)
+        super().__init__(fm_window)
         self.fm_window = fm_window
         self.setMinimumHeight(330)
         self.setAcceptRichText(False)
@@ -41,17 +47,39 @@ class TargetsDefiningTextArea(QTextEdit):
         self.textChanged.connect(self.__handle_content_change)
         self.validity_change_callbacks = []
         self.change_callbacks = []
+        self.first_paint_callbacks = []
+        self.error_interceptors = []
         self.json_validity_state = 0
         self.valid_targets_defined = None
         self.err_desc = ""
+        self.first_paint_done = False
 
     @pyqtSlot()
     def __handle_content_change(self):
         self.handle_current_content()
 
-    def handle_current_content(self):
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if not self.first_paint_done:
+            self.first_paint_done = True
+            self.__call_first_paint_listeners()
 
-        (new_json_validity_state, new_targets_defined, new_err_desc) = self.json_validator(self.toPlainText())
+    def handle_current_content(self, allow_error_interception=5):
+
+        current_content = self.toPlainText()
+
+        if "** name of main deck **"  in current_content:
+            example_target_explanation = "This is just an example target. Please modify the JSON target list to suit your needs!"
+            (new_json_validity_state, new_targets_defined, new_err_desc) = (1, [], example_target_explanation)
+        else:
+            (new_json_validity_state, new_targets_defined, new_err_desc) = self.json_validator(current_content)
+
+        if new_err_desc != "" and allow_error_interception > 0:
+            for error_interceptor in self.error_interceptors:
+                reload_content = error_interceptor(new_err_desc)
+                if reload_content:
+                    self.handle_current_content(allow_error_interception-1)
+                    return
 
         json_validity_state_has_changed = new_json_validity_state != self.json_validity_state
         self.json_validity_state = new_json_validity_state
@@ -70,6 +98,10 @@ class TargetsDefiningTextArea(QTextEdit):
         for callback in self.change_callbacks:
             callback(json_validity_state, self)
 
+    def __call_first_paint_listeners(self):
+        for callback in self.first_paint_callbacks:
+            callback(self)
+
     def set_validator(self, callback: Callable):
         self.json_validator = callback
 
@@ -79,11 +111,18 @@ class TargetsDefiningTextArea(QTextEdit):
     def on_change(self, callback: Callable[[int, 'TargetsDefiningTextArea'], None]):
         self.change_callbacks.append(callback)
 
+    def on_first_paint(self, callback: Callable[['TargetsDefiningTextArea'], None]):
+        self.first_paint_callbacks.append(callback)
+
     def set_content(self, target_list:Union[list, TargetList]):
         if isinstance(target_list, TargetList):
             self.setText(target_list.dump_json())
         else:
             self.setText(json.dumps(target_list, indent=4))
+
+    def add_error_interceptor(self, interceptor: Callable[[str], bool]):
+        self.error_interceptors.append(interceptor)
+
 
 
 class ReorderCardsTab:
@@ -140,25 +179,63 @@ class ReorderCardsTab:
         # row below textarea
         self.__create_targets_input_options_row_widget()
 
-        # use stored target list (might not be valid, so set as text)
-        if self.fm_window.addon_config and "reorder_target_list" in self.fm_window.addon_config:
-            stored_reorder_target_list = self.fm_window.addon_config.get("reorder_target_list")
-            if isinstance(stored_reorder_target_list, list):
-                self.targets_input_textarea.set_content(stored_reorder_target_list)
+
 
     def create_new_tab(self):
 
         # Create a new tab and its layout
         (tab_layout, tab) = self.fm_window.create_new_tab('reorder_cards', "Reorder cards")
 
-        # Textarea widget
-        if (self.target_list.has_targets()):
-            self.targets_input_textarea.set_content(self.target_list)
-        elif self.targets_input_textarea.toPlainText() == "":  # when does this even happen?
-            example_data_notes_item: ConfiguredTargetNote = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
-            example_target: ConfiguredTarget = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
-            example_target_list = [example_target]
-            self.targets_input_textarea.set_content(example_target_list)
+        # check errors
+        default_wf_lists_dir = os.path.join(self.fm_window.root_dir, 'default_wf_lists')
+        language_data_dir = self.target_list.language_data.data_dir
+
+        def check_lang_data_id_error(new_err_desc: str) -> bool:
+
+            match = re.search(r"lang_data_id '([a-zA-Z_]{2,5})'", new_err_desc)
+            if not match:
+                return False
+            defined_lang_data_id = str(match.group(1)).lower()
+            if not defined_lang_data_id in DefaultWordFrequencyLists.default_wf_lists:
+                return False
+
+            src_file = os.path.join(default_wf_lists_dir, defined_lang_data_id+'.txt')
+            dst_dir = os.path.join(language_data_dir, defined_lang_data_id)
+            dst_fille = os.path.join(dst_dir, defined_lang_data_id+'-default.txt')
+            if not os.path.isfile(src_file):
+                return False
+            create_default_lang_data_dir = askUser("Language data directory doesn't yet exist for \"{}\".\n\nCreate one, with a default word frequency list?".format(defined_lang_data_id))
+            if not create_default_lang_data_dir:
+                return False
+
+            if not os.path.exists(dst_dir):
+                os.makedirs(dst_dir)
+
+            shutil.copyfile(src_file, dst_fille)
+            return True
+
+        self.targets_input_textarea.add_error_interceptor(check_lang_data_id_error)
+
+        # set content
+
+        def set_content(_):
+
+            # use stored target list (might not be valid, so set as text)
+            if self.fm_window.addon_config and "reorder_target_list" in self.fm_window.addon_config:
+                stored_reorder_target_list = self.fm_window.addon_config.get("reorder_target_list")
+                if isinstance(stored_reorder_target_list, list):
+                    self.targets_input_textarea.set_content(stored_reorder_target_list)
+
+            # Textarea widget
+            if (self.target_list.has_targets()):
+                self.targets_input_textarea.set_content(self.target_list)
+            elif self.targets_input_textarea.toPlainText() == "":  # when does this even happen?
+                example_data_notes_item: ConfiguredTargetNote = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
+                example_target: ConfiguredTarget = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
+                example_target_list = [example_target]
+                self.targets_input_textarea.set_content(example_target_list)
+
+        self.targets_input_textarea.on_first_paint(set_content)
 
         # user clicked reorder... ask to save to config if new targets have been defined
 
@@ -196,6 +273,7 @@ class ReorderCardsTab:
         self.exec_reorder_button.clicked.connect(user_clicked_reorder_button)
         self.targets_input_textarea.on_validity_change(update_reorder_button_state)
 
+        #
         tab_layout.setSpacing(0)
         tab_layout.addWidget(self.targets_input_textarea)
         tab_layout.addWidget(self.targets_input_options_line)

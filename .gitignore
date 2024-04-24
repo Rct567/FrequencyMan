@@ -3,6 +3,8 @@ user_files/
 .pytest_cache/
 meta.json
 dump.log
+releases/
+release-*.zip
 reorder_events.log
 profiling_results.txt
 events.log

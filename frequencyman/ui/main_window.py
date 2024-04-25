@@ -9,6 +9,11 @@ from aqt import QAction
 from aqt.qt import *
 from aqt.main import AnkiQt
 
+try:
+    from ..version import FREQUENCYMAN_VERSION
+except ImportError:
+    FREQUENCYMAN_VERSION = ""
+
 # FrequencyMan Main Window class
 
 
@@ -30,7 +35,11 @@ class FrequencyManMainWindow(QDialog):
         super().__init__(mw)
         self.mw = mw
         self.is_dark_mode = mw.app.styleSheet().lower().find("dark") != -1
-        self.setWindowTitle("FrequencyMan")
+
+        if FREQUENCYMAN_VERSION != "":
+            self.setWindowTitle("FrequencyMan v"+FREQUENCYMAN_VERSION)
+        else:
+            self.setWindowTitle("FrequencyMan")
 
         self.setMinimumSize(650, 600)
 

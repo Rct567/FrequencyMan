@@ -31,14 +31,13 @@ def open_frequencyman_main_window(mw: AnkiQt):
     if not isinstance(mw.col, Collection):
         return
 
-    root_dir = os.path.dirname(__file__)
-    user_files_dir = os.path.join(root_dir, 'user_files')
+    fm_root_dir = os.path.dirname(__file__)
+    user_files_dir = os.path.join(fm_root_dir, 'user_files')
 
     if not os.path.isdir(user_files_dir):
-        showWarning("Directory 'user_files' not found in {}.".format(root_dir))
-        return
+        os.mkdir(user_files_dir)
 
-    fm_window = FrequencyManMainWindow(mw, root_dir, user_files_dir)
+    fm_window = FrequencyManMainWindow(mw, fm_root_dir, user_files_dir)
 
     ReorderCardsTab(fm_window, mw.col).create_new_tab()
     #OverviewTab(fm_window).create_new_tab()

@@ -2,31 +2,17 @@
 
 ## Overview
 
-FrequencyMan allows you to intelligently __sort your new cards__ in a personalized way.
+FrequencyMan allows you to __sort your new cards__ by word frequency and other useful factors.
 
 Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 
 ## Features
-- Sort cards based on 'word frequency' and other useful factors.
+- More than 50 default word frequency lists.
 - Define multiple sorting targets for different decks or selection of cards.
 - Customize the ranking factors for each target.
 - Define a language for each field.
 - Use multiple fields (such as 'front' *and* 'back') to influence the ranking.
 - Multiple 'word frequency' lists can be used per language.
-
-## Manual installation
-
-1. Go to the Anki plugin folder, such as `C:\Users\%USERNAME%\AppData\Roaming\Anki2\addons21`
-2. Create a new folder for the plugin, such as __addons21\FrequencyMan__
-3. Clone the project in the new folder: `git clone https://github.com/Rct567/FrequencyMan.git`
-4. Place your word frequency lists (*.txt files) in a subfolder in FrequencyMan/user_files/, such as __\FrequencyMan\user_files\lang_data\en__. If multiple lists exist for a language, they will be combined (based on the highest score/position).
-5. Start Anki.
-
-## Download word frequency lists
-
-- Based on Open Subtitles: https://github.com/hermitdave/FrequencyWords/tree/master
-- Google Books n-gram: https://github.com/orgtre/google-books-ngram-frequency
-- Wikipedia: https://github.com/IlyaSemenov/wikipedia-word-frequency (might not be suitable for language learning)
 
 ## Basic usage
 
@@ -38,11 +24,9 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 ## Configuration examples
 
 ### Example 1
-Reorders a single deck. This will only match cards with note type `-- My spanish --` located in deck `Spanish`. It will also use the default ranking factors.
+Reorders a single deck. This will only match cards with note type `My custom note type` located in deck `Spanish`. It will also use the default ranking factors.
 
 The content of the cards and all the ranking metrics will be analyzed per '[language](#language-data-id)'. The result of this will be combined to determine the final ranking of all new cards.
-
-Note: For both languages, a directory should exist (although it could be empty), such as `\user_files\lang_data\en`.
 
 ```json
 [
@@ -51,10 +35,10 @@ Note: For both languages, a directory should exist (although it could be empty),
         "notes": [
             {
                 "fields": {
-                    "Meaning": "EN",
-                    "Sentence": "ES"
+                    "Front": "EN",
+                    "Back": "ES"
                 },
-                "name": "-- My spanish --"
+                "name": "Basic"
             }
         ]
     }
@@ -65,7 +49,7 @@ Note: For both languages, a directory should exist (although it could be empty),
 ### Example 2
 Reorder the same deck twice, but the first target excludes the sorting of cards whose name matches "Speaking", while the second target only sorts those excluded cards.
 
-The first target only modifies a single ranking factor (giving familiar cards a boost), while the second target reduces the ranking factors used to only 2 factors.
+The first target only modifies a single ranking factor, while the second target reduces the ranking factors used to only 2 factors.
 
 Note: Both targets use the same 'main scope', which is the selection of cards used to create the data to calculate the ranking. This scope is reduced for each target by `reorder_scope_query` to limit which cards get repositioned.
 
@@ -79,11 +63,11 @@ Note: Both targets use the same 'main scope', which is the selection of cards us
                     "Meaning": "EN",
                     "Sentence": "ES"
                 },
-                "name": "-- My spanish --"
+                "name": "Basic (customized note type)"
             }
         ],
         "reorder_scope_query": "-card:*Speaking*",
-        "ranking_familiarity": 2
+        "ranking_familiarity": 8
     },
     {
         "deck": "Spanish",
@@ -93,7 +77,7 @@ Note: Both targets use the same 'main scope', which is the selection of cards us
                     "Meaning": "EN",
                     "Sentence": "ES"
                 },
-                "name": "-- My spanish --"
+                "name": "Basic (customized note type)"
             }
         ],
         "reorder_scope_query": "card:*Speaking*",
@@ -268,17 +252,33 @@ Alternatively, a **language data id** can also be an 'extended two letter langua
 ]
 ```
 
-For every **language data id** defined, a directory should exist (although it could be empty). In the example above, `\user_files\lang_data\en_medical` should exist.
+For every **language data id** defined, a directory should exist (although it could be empty). In the example above, `\user_files\lang_data\en_medical` should exist. If it does not exist, you will be prompted to automatically create one with a default word frequency file shipped with FrequencyMan.
 
 Two different types of files can be placed in a **language data id** directory:
-- __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore".
 - __word frequency lists__: A text or csv file with words sorted to reflect the word frequency (in descending order). Only the position is used, not the (optional) word frequency value.
+- __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore".
+
+## Word frequency lists
+
+FrequencyMan comes with 50+ default word frequency lists. These are generated using one of the following sources:
+
+- Google Books n-gram: https://github.com/orgtre/google-books-ngram-frequency
+- Based on Open Subtitles: https://github.com/hermitdave/FrequencyWords/tree/master
+
+The default word frequency lists can be found in the `\default_wf_lists`. When prompted to create a new _language data directory_ with a default word frequency list, the relevant file will be copied to the relevant _language data directory_, such as `\user_files\lang_data\en`.
 
 ## The `user_files` directory
 
-The `user_files` directory can be found inside Frequencyman's plugin directory, which can be accessed via: **Tools > Add-ons > Select Frequencyman > View Files**.
+The `user_files` directory can be found inside Frequencyman's plugin directory, which can be accessed via: **Tools > Add-ons > (Select Frequencyman) > View Files**.
 
 Any files placed in this folder will be preserved when the add-on is upgraded. All other files in the add-on folder are removed on upgrade.
+
+## Manual installation
+
+1. Go to the Anki plugin folder, such as `C:\Users\%USERNAME%\AppData\Roaming\Anki2\addons21`
+2. Create a new folder for the plugin, such as __addons21\FrequencyMan__
+3. Clone the project in the new folder: `git clone https://github.com/Rct567/FrequencyMan.git`
+5. Start Anki.
 
 
 

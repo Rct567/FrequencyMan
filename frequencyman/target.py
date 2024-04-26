@@ -3,6 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+import re
 from typing import Any, Optional, TypedDict, Union
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
@@ -117,23 +118,21 @@ class Target:
 
         scope_queries: list[str] = []
 
-        # defined deck
+        # defined decks
 
-        target_decks: list[str] = []
+        defined_decks: list[str] = []
 
         if "deck" in self.config_target:
             if isinstance(self.config_target["deck"], str) and len(self.config_target["deck"]) > 0:
-                target_decks.append(self.config_target["deck"])
-            elif isinstance(self.config_target["deck"], list):
-                target_decks.extend([deck_name for deck_name in self.config_target["deck"] if isinstance(deck_name, str) and len(deck_name) > 0])
+                defined_decks.append(self.config_target["deck"])
         if "decks" in self.config_target:
             if isinstance(self.config_target["decks"], str) and len(self.config_target["decks"]) > 1:
-                target_decks.extend([deck_name.strip(" ,") for deck_name in self.config_target["decks"].split(",") if len(deck_name.strip(" ,")) > 0])
+                defined_decks.extend([deck_name.replace('\\,', ',').strip() for deck_name in re.split(r'(?<!\\),', self.config_target["decks"]) if isinstance(deck_name, str)])
             elif isinstance(self.config_target["decks"], list):
-                target_decks.extend([deck_name for deck_name in self.config_target["decks"] if isinstance(deck_name, str) and len(deck_name) > 0])
+                defined_decks.extend([deck_name for deck_name in self.config_target["decks"] if isinstance(deck_name, str) and len(deck_name) > 0])
 
-        if len(target_decks) > 0:
-            for deck_name in target_decks:
+        if len(defined_decks) > 0:
+            for deck_name in defined_decks:
                 if len(deck_name) > 0:
                     scope_queries.append('"deck:' + deck_name + '"')
 

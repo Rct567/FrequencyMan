@@ -201,7 +201,7 @@ For each defined target, the following setting are available:
 | Setting | Type | Description | Default value      |
 |---------|------|-------------|-------|
 | `deck`    | string | Name of a single deck. | -      |
-| `decks`   | string | Names of decks separated by a comma.  | -      |
+| `decks`   | string or array of strings | Names of decks separated by a comma, or an array of deck names.  | -      |
 | `scope_query`   | string | Search query.  | -      |
 | `notes`   | array of objects |  | -      |
 | `reorder_scope_query`   | string |  | defined by main scope       |

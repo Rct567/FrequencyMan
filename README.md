@@ -200,11 +200,11 @@ For each defined target, the following setting are available:
 
 | Setting | Type | Description | Default value      |
 |---------|------|-------------|-------|
-| `deck`    | string | Name of a single deck. | -      |
-| `decks`   | string or array of strings | Names of decks separated by a comma, or an array of deck names.  | -      |
-| `scope_query`   | string | Search query.  | -      |
+| `deck`    | string | Name of a single deck as main scope. | -      |
+| `decks`   | array of strings | An array of deck names as main scope.  | -      |
+| `scope_query`   | string | Search query as main scope.  | -      |
 | `notes`   | array of objects |  | -      |
-| `reorder_scope_query`   | string |  | defined by main scope       |
+| `reorder_scope_query`   | string | Search query to reduce which cards get repositioned.  | Main scope as defined by `deck`, `decks` or  `scope_query`.       |
 | `ranking_factors`   | object |  | see '[Ranking factors](#default-ranking-factors)'      |
 | `familiarity_sweetspot_point`   | float |  |   `0.45`  |
 | `suspended_card_value`   | float |  |   `0.5`  |

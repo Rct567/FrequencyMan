@@ -80,6 +80,11 @@ class TargetList:
             if key not in known_keys:
                 return (0, "Target #{} has unknown key '{}'.".format(index, key))
 
+        # check deck names
+        for deck_name in Target.get_deck_names_from_config_target(target):
+            if self.col.decks.id_for_name(deck_name) is None:
+                return (0, "Deck '{}' defined in target #{} not found.".format(deck_name, index))
+
         # check field value for notes
         if 'notes' not in target:
             return (0, "Target object #{} is missing key 'notes'.".format(index))

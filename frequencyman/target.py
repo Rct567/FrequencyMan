@@ -114,22 +114,29 @@ class Target:
                 keys.add(LangDataId(lang_data_id.lower()))
         return keys
 
+    @staticmethod
+    def get_deck_names_from_config_target(config_target: ConfiguredTarget) -> list[str]:
+
+        defined_decks: list[str] = []
+
+        if "deck" in config_target:
+            if isinstance(config_target["deck"], str) and len(config_target["deck"]) > 0:
+                defined_decks.append(config_target["deck"])
+        if "decks" in config_target:
+            if isinstance(config_target["decks"], str) and len(config_target["decks"]) > 1:
+                defined_decks.extend([deck_name.replace('\\,', ',').strip() for deck_name in re.split(r'(?<!\\),', config_target["decks"]) if isinstance(deck_name, str)])
+            elif isinstance(config_target["decks"], list):
+                defined_decks.extend([deck_name for deck_name in config_target["decks"] if isinstance(deck_name, str) and len(deck_name) > 0])
+
+        return defined_decks
+
     def __get_query_from_defined_scope(self) -> Optional[str]:
 
         scope_queries: list[str] = []
 
         # defined decks
 
-        defined_decks: list[str] = []
-
-        if "deck" in self.config_target:
-            if isinstance(self.config_target["deck"], str) and len(self.config_target["deck"]) > 0:
-                defined_decks.append(self.config_target["deck"])
-        if "decks" in self.config_target:
-            if isinstance(self.config_target["decks"], str) and len(self.config_target["decks"]) > 1:
-                defined_decks.extend([deck_name.replace('\\,', ',').strip() for deck_name in re.split(r'(?<!\\),', self.config_target["decks"]) if isinstance(deck_name, str)])
-            elif isinstance(self.config_target["decks"], list):
-                defined_decks.extend([deck_name for deck_name in self.config_target["decks"] if isinstance(deck_name, str) and len(deck_name) > 0])
+        defined_decks = self.get_deck_names_from_config_target(self.config_target)
 
         if len(defined_decks) > 0:
             for deck_name in defined_decks:

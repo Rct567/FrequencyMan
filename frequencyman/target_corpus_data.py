@@ -250,14 +250,6 @@ class TargetCorpusData:
                         self.content_metrics[corpus_segment_id].reviewed.words[word_token] = []
                     self.content_metrics[corpus_segment_id].reviewed.words[word_token].append(card)
 
-    @staticmethod
-    def __calc_word_presence_score(word_token: str, context_num_chars: int, context_num_tokens: int, position_index: int) -> float:
-
-        presence_num_chars = len(word_token)/context_num_chars
-        presence_num_tokens = 1/context_num_tokens
-        position_value = 1/(position_index+1)
-        return (presence_num_chars+presence_num_tokens+position_value)/3
-
     def __set_notes_reviewed_words_presence(self) -> None:
 
         cards_familiarity_factor = self.__get_cards_familiarity_factor(self.target_cards.reviewed_cards, self.suspended_card_value, self.suspended_leech_card_value)
@@ -267,8 +259,6 @@ class TargetCorpusData:
             for field_data in self.targeted_fields_per_note[card.nid]:
 
                 corpus_segment_id = field_data.corpus_segment_id
-                field_num_tokens = len(field_data.field_value_tokenized)
-                field_num_chars_tokens = len(''.join(field_data.field_value_tokenized))
 
                 for index, word_token in enumerate(field_data.field_value_tokenized):
 
@@ -276,7 +266,7 @@ class TargetCorpusData:
                         self.content_metrics[corpus_segment_id].reviewed.words_presence[word_token] = []
                         self.content_metrics[corpus_segment_id].reviewed.words_cards_familiarity_factor[word_token] = []
 
-                    word_presence_score = self.__calc_word_presence_score(word_token, field_num_chars_tokens, field_num_tokens, index)
+                    word_presence_score = TextProcessing.calc_word_presence_score(word_token, field_data.field_value_tokenized, index)
                     self.content_metrics[corpus_segment_id].reviewed.words_presence[word_token].append(word_presence_score)
                     self.content_metrics[corpus_segment_id].reviewed.words_cards_familiarity_factor[word_token].append(cards_familiarity_factor[card.id])
                     assert word_presence_score <= 1 and cards_familiarity_factor[card.id] <= 1

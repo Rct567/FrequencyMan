@@ -171,3 +171,19 @@ class TextProcessing:
         word_tokens = (TextProcessing.create_word_token(token, lang_id) for token in tokenizer(text))
         accepted_word_tokens = [token for token in word_tokens if TextProcessing.acceptable_word(token, lang_id)]
         return accepted_word_tokens
+
+    @staticmethod
+    def calc_word_presence_score(word: WordToken, context: list[WordToken], position_index: int) -> float:
+
+        assert word in context
+        assert word == context[position_index]
+
+        word_count = context.count(word)
+        context_num_words = len(context)
+        context_num_chars = len(''.join(context))
+
+        presence_score_by_words = word_count/context_num_words
+        presence_score_by_chars = (len(word)*word_count)/context_num_chars
+        position_value = 1/(position_index+1)
+
+        return (presence_score_by_words+presence_score_by_chars+position_value)/3

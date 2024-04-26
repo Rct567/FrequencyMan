@@ -77,3 +77,18 @@ def test_create_word_token():
     assert TextProcessing.create_word_token("$$hellO") == "hello"
     assert TextProcessing.create_word_token("hello!") == "hello"
     assert TextProcessing.create_word_token("Iñtërnâtiônàlizætiøn") == "iñtërnâtiônàlizætiøn"
+
+
+def test_calc_word_presence_score():
+
+    token_context = TextProcessing.get_word_tokens_from_text("test")
+    assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 0) == 1.0
+
+    token_context = TextProcessing.get_word_tokens_from_text("test abcd")
+    assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 0) == (0.5+0.5+1)/3
+
+    token_context = TextProcessing.get_word_tokens_from_text("test abcdabcd")
+    assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 0) == (0.5+(1/3)+1)/3
+
+    token_context = TextProcessing.get_word_tokens_from_text("test test abcd")
+    assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 1) == ((2/3)+(2/3)+0.5)/3

@@ -91,8 +91,10 @@ def profile_context(amount=40):
         with open(dump_file, 'w') as f:
             f.write(profiling_results)
 
+T = TypeVar('T')
 
-def chunked_list(input_list: list, chunk_size: int) -> list[list]:
+
+def chunked_list(input_list: list[T], chunk_size: int) -> list[list[T]]:
     """
     Split a list into smaller lists of a specified chunk size.
 

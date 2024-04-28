@@ -12,7 +12,7 @@ from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
 from .target_cards import TargetCards
-from .lib.utilities import is_numeric_value
+from .lib.utilities import chunked_list, is_numeric_value
 from .card_ranker import CardRanker
 from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote as ConfiguredTargetNote
 from .language_data import LangDataId, LanguageData
@@ -22,7 +22,7 @@ from .lib.event_logger import EventLogger
 @dataclass(frozen=True)
 class TargetListReorderResult():
     reorder_result_list: list[TargetReorderResult]
-    update_notes_anki_op_changes: Optional[OpChanges]
+    update_notes_anki_op_changes: list[OpChanges]
     modified_dirty_notes: dict[NoteId, Optional[Note]]
     num_cards_repositioned: int
     num_targets_repositioned: int
@@ -209,12 +209,14 @@ class TargetList:
         TargetCards.notes_from_cards_cached = {}
 
         # Update notes that have been modifies (field values for example)
-        update_notes_anki_op_changes: Optional[OpChanges] = None
+        update_notes_anki_op_changes: list[OpChanges] = []
         num_modified_dirty_notes = len(modified_dirty_notes)
         if (num_modified_dirty_notes > 0):
             notes_to_update = [note for note in modified_dirty_notes.values() if note is not None]
             with event_logger.add_benchmarked_entry("Updating {:n} modified notes from targets.".format(len(notes_to_update))):
-                update_notes_anki_op_changes = col.update_notes(notes_to_update)
+                for notes in chunked_list(notes_to_update, 4_000):
+                    op_changes = col.update_notes(notes, skip_undo_entry=True)
+                    update_notes_anki_op_changes.append(op_changes)
 
         # Done
         event_logger.add_entry("Done with reordering of all targets! {:n} cards repositioned.".format(num_cards_repositioned))

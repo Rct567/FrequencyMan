@@ -220,7 +220,11 @@ class Target:
 
         self.target_corpus_data = TargetCorpusData()
 
-        if (familiarity_sweetspot_point := get_float(self.config_target.get('familiarity_sweetspot_point'))) is not None:
+        configured_familiarity_sweetspot_point = self.config_target.get('familiarity_sweetspot_point')
+
+        if isinstance(configured_familiarity_sweetspot_point, str) and configured_familiarity_sweetspot_point[0] == '~':
+            self.target_corpus_data.familiarity_sweetspot_point = configured_familiarity_sweetspot_point
+        elif (familiarity_sweetspot_point := get_float(configured_familiarity_sweetspot_point)) is not None:
             self.target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
         if (suspended_card_value := get_float(self.config_target.get('suspended_card_value'))) is not None:
@@ -339,9 +343,9 @@ class Target:
                         card_ranker.ideal_word_count_min = self.config_target['ideal_word_count'][0]
                         card_ranker.ideal_word_count_max = self.config_target['ideal_word_count'][1]
 
-            # use custom focus_words_endpoint
-            if (focus_words_endpoint := get_float(self.config_target.get('focus_words_endpoint'))) is not None:
-                card_ranker.focus_words_endpoint = focus_words_endpoint
+            # use custom focus_words endpoint
+            if (focus_words_max_familiarity := get_float(self.config_target.get('focus_words_max_familiarity'))) is not None:
+                card_ranker.focus_words_max_familiarity = focus_words_max_familiarity
 
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards, reorder_scope_target_cards)

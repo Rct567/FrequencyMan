@@ -7,7 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from math import fsum
 from statistics import fmean, median
-from typing import NewType
+from typing import NewType, Union
 from enum import Enum
 
 from anki.cards import CardId, Card
@@ -45,6 +45,7 @@ class TargetReviewedContentMetrics:
     words_familiarity: dict[WordToken, float] = field(default_factory=dict)
     words_familiarity_mean: float = field(default=0.0)
     words_familiarity_median: float = field(default=0.0)
+    words_familiarity_max: float = field(default=0.0)
     words_familiarity_positional: dict[WordToken, float] = field(default_factory=dict)
     words_familiarity_sweetspot: dict[WordToken, float] = field(default_factory=dict)
 
@@ -64,7 +65,7 @@ class TargetCorpusData:
     target_cards: TargetCards
     targeted_fields_per_note: dict[NoteId, list[TargetNoteFieldContentData]]
     content_metrics: dict[CorpusSegmentId, TargetContentMetrics]
-    familiarity_sweetspot_point: float
+    familiarity_sweetspot_point: Union[float, str]
     suspended_card_value: float
     suspended_leech_card_value: float
     segmentation_strategy: CorpusSegmentationStrategy
@@ -73,8 +74,8 @@ class TargetCorpusData:
 
         self.targeted_fields_per_note = {}
         self.content_metrics = defaultdict(TargetContentMetrics)
-        self.familiarity_sweetspot_point = 0.45
-        self.suspended_card_value = 0.5
+        self.familiarity_sweetspot_point = 0.7
+        self.suspended_card_value = 0.1
         self.suspended_leech_card_value = 0.0
         self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
 
@@ -166,39 +167,32 @@ class TargetCorpusData:
         if not cards:
             return {}
 
-        cards_interval: list[float] = []
-        cards_reps: list[float] = []
-        cards_ease: list[float] = []
+        cards_interval: dict[CardId, float] = {}
+        cards_reps: dict[CardId, float] = {}
+        cards_ease: dict[CardId, float] = {}
 
         for card in cards:
-            cards_interval.append(card.ivl)
-            cards_reps.append(card.reps)
-            cards_ease.append(card.factor)
-
-        # smooth out top values
-
-        def smooth_top_values(metric_list: list[float], turnover_val: float):
-            for index in range(len(metric_list)):
-                if metric_list[index] > turnover_val:
-                    metric_list[index] = (turnover_val + metric_list[index]) / 2
-
-        smooth_top_values(cards_interval, 30*7)
-        smooth_top_values(cards_reps, 14)
+            cards_interval[card.id] = card.ivl
+            cards_reps[card.id] = card.reps
+            cards_ease[card.id] = card.factor
 
         # get scores
 
         cards_familiarity: dict[CardId, float] = {}
 
-        cards_interval_max = max(cards_interval)
-        cards_reps_max = max(cards_reps)
-        cards_ease_max = max(cards_ease)
+        def fall_of_value(val: float) -> float:
+            if val > 1:
+                val = 1+(val/10)
+            return val
 
         for card in cards:
-            card_score = ((card.ivl/cards_interval_max) + ((card.reps/cards_reps_max)/4) + (card.factor/cards_ease_max)) / 2.25
+            card_interval = fall_of_value(cards_interval[card.id] / 300)
+            card_reps = fall_of_value(cards_reps[card.id] / 12)
+            card_ease = fall_of_value(cards_ease[card.id] / 2500)
+            card_score = ( card_interval + (card_ease/4) + (card_reps/4) ) / 1.5
             cards_familiarity[card.id] = card_score
 
         # done
-
         return cards_familiarity
 
     @staticmethod
@@ -230,10 +224,6 @@ class TargetCorpusData:
                 note_count[note_id] += 1
                 devalue_factor = (1+note_count[note_id])/2
                 cards_familiarity_value[card_id] = cards_familiarity_value[card_id]/devalue_factor
-
-        # normalize
-
-        cards_familiarity_value = normalize_dict_floats_values(cards_familiarity_value)
 
         return cards_familiarity_value
 
@@ -269,7 +259,6 @@ class TargetCorpusData:
                     word_presence_score = TextProcessing.calc_word_presence_score(word_token, field_data.field_value_tokenized, index)
                     self.content_metrics[corpus_segment_id].reviewed.words_presence[word_token].append(word_presence_score)
                     self.content_metrics[corpus_segment_id].reviewed.words_cards_familiarity_factor[word_token].append(cards_familiarity_factor[card.id])
-                    assert word_presence_score <= 1 and cards_familiarity_factor[card.id] <= 1
 
     def __set_notes_reviewed_words_familiarity(self) -> None:
 
@@ -277,40 +266,23 @@ class TargetCorpusData:
 
             for word_token, word_presence_scores in self.content_metrics[corpus_segment_id].reviewed.words_presence.items():
                 cards_familiarity_factor = self.content_metrics[corpus_segment_id].reviewed.words_cards_familiarity_factor[word_token]
-                words_familiarity = fsum(word_presence*((1+card_familiarity_factor)**2.5) for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor))
+                words_familiarity = fsum( (card_familiarity_factor * (1+word_presence)) for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor) )
                 self.content_metrics[corpus_segment_id].reviewed.words_familiarity[word_token] = words_familiarity
 
-            # smooth out top values
+            # sort
 
             if not self.content_metrics[corpus_segment_id].reviewed.words_familiarity:
                 continue
 
-            field_avg_word_familiarity_score = fmean(self.content_metrics[corpus_segment_id].reviewed.words_familiarity.values())
-
-            for word_token, words_familiarity in self.content_metrics[corpus_segment_id].reviewed.words_familiarity.items():
-
-                word_familiarity_smooth_score = words_familiarity
-
-                if (word_familiarity_smooth_score > field_avg_word_familiarity_score*16):
-                    word_familiarity_smooth_score = (word_familiarity_smooth_score + (field_avg_word_familiarity_score*4)) / 5
-                if (word_familiarity_smooth_score > field_avg_word_familiarity_score*8):
-                    word_familiarity_smooth_score = (word_familiarity_smooth_score + (field_avg_word_familiarity_score*2)) / 3
-                if (word_familiarity_smooth_score > field_avg_word_familiarity_score):
-                    word_familiarity_smooth_score = (word_familiarity_smooth_score + field_avg_word_familiarity_score) / 2
-
-                self.content_metrics[corpus_segment_id].reviewed.words_familiarity[word_token] = word_familiarity_smooth_score
-
-            # make scores values relative
-
-            self.content_metrics[corpus_segment_id].reviewed.words_familiarity = normalize_dict_floats_values(self.content_metrics[corpus_segment_id].reviewed.words_familiarity)
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity = sort_dict_floats_values(self.content_metrics[corpus_segment_id].reviewed.words_familiarity)
 
             # set avg and median
 
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_mean = fmean(self.content_metrics[corpus_segment_id].reviewed.words_familiarity.values())
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_median = median(self.content_metrics[corpus_segment_id].reviewed.words_familiarity.values())
+            self.content_metrics[corpus_segment_id].reviewed.words_familiarity_max = max(self.content_metrics[corpus_segment_id].reviewed.words_familiarity.values())
 
-            # also relative, but based on (sorted) position, just like word_frequency
+            # relative, based on (sorted) position, just like word_frequency
 
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_positional = normalize_positional_dict_floats_values(self.content_metrics[corpus_segment_id].reviewed.words_familiarity)
 
@@ -318,14 +290,20 @@ class TargetCorpusData:
 
         for corpus_segment_id in self.content_metrics.keys():
 
-            median_familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity_median
+            max_familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity_max
+
+            if isinstance(self.familiarity_sweetspot_point, str):
+                if self.familiarity_sweetspot_point[0] != '~':
+                    raise ValueError("Invalid value for familiarity_sweetspot_point!")
+                median_familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity_median
+                familiarity_sweetspot_value = median_familiarity*float(self.familiarity_sweetspot_point[1:])
+            else:
+                familiarity_sweetspot_value = self.familiarity_sweetspot_point
 
             for word_token in self.content_metrics[corpus_segment_id].reviewed.words_familiarity:
 
                 familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity[word_token]
-                familiarity_sweetspot_value = median_familiarity*self.familiarity_sweetspot_point
-
-                familiarity_sweetspot_rating = (1-abs(familiarity-familiarity_sweetspot_value))
+                familiarity_sweetspot_rating = (max_familiarity-abs(familiarity-familiarity_sweetspot_value))
 
                 self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot[word_token] = familiarity_sweetspot_rating
 

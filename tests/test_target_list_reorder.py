@@ -223,16 +223,19 @@ class TestTargetListReorder:
         assert len(result.reorder_result_list) == len(target_list)
 
         # check result
-        reorder_result = result.reorder_result_list[0]
-        assert reorder_result.success
-        assert reorder_result.cards_repositioned
-        assert reorder_result.error is None
+        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 2
+        assert target_list[1].target_corpus_data is not None and len(target_list[1].target_corpus_data.data_segments) == 2
+
+
+        assert result.reorder_result_list[0].success and result.reorder_result_list[0].cards_repositioned
+        assert result.reorder_result_list[0].error is None
         assert len(result.modified_dirty_notes) == 0
         assert "Reordering target #0" in str(event_logger)
         assert "Found 7 new cards in a target collection of 10 cards" in str(event_logger)
         assert "Reordering target #1" in str(event_logger)
         assert "Found 4 new cards in a target collection of 6 cards" in str(event_logger)
 
+        assert result.num_cards_repositioned == 11
         assert result.reorder_result_list[0].num_cards_repositioned == 7
         assert result.reorder_result_list[1].num_cards_repositioned == 4
 
@@ -276,9 +279,11 @@ class TestTargetListReorder:
         result = target_list.reorder_cards(col, event_logger)
 
         # check result
+        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 2
+
+        assert result.num_cards_repositioned == 11
         reorder_result = result.reorder_result_list[0]
-        assert reorder_result.success
-        assert reorder_result.cards_repositioned
+        assert reorder_result.success and reorder_result.cards_repositioned
         assert reorder_result.error is None
         assert len(result.modified_dirty_notes) == 0
         assert "Reordering target #0" in str(event_logger)
@@ -329,9 +334,11 @@ class TestTargetListReorder:
         assert len(result.reorder_result_list) == len(target_list)
 
         # check result
+        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 2
+        assert target_list[1].target_corpus_data is None # was cached
+
         reorder_result = result.reorder_result_list[0]
-        assert reorder_result.success
-        assert reorder_result.cards_repositioned
+        assert reorder_result.success and reorder_result.cards_repositioned
         assert reorder_result.error is None
         assert len(result.modified_dirty_notes) == 0
 
@@ -345,6 +352,7 @@ class TestTargetListReorder:
 
         assert result.reorder_result_list[0].num_cards_repositioned == 7
         assert result.reorder_result_list[1].num_cards_repositioned == 4
+        assert result.num_cards_repositioned == 11
 
         # check acquired cards for each target
         assert len(target_list[0].get_cards().all_cards_ids) == 16
@@ -390,9 +398,10 @@ class TestTargetListReorder:
         result = target_list.reorder_cards(col, event_logger)
 
         # check result
+        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 1
+
         reorder_result = result.reorder_result_list[0]
-        assert reorder_result.success
-        assert reorder_result.cards_repositioned
+        assert reorder_result.success and reorder_result.cards_repositioned
         assert reorder_result.error is None
         assert len(result.modified_dirty_notes) == 0
 
@@ -401,11 +410,56 @@ class TestTargetListReorder:
         assert "Reorder scope query reduced new cards from 16 to 10." in str(event_logger)
 
         assert result.reorder_result_list[0].num_cards_repositioned == 10
+        assert result.num_cards_repositioned == 10
 
         assert len(target_list[0].get_cards().all_cards_ids) == 16
         assert len(target_list[0].get_cards().get_notes()) == 16
         assert len(target_list[0].get_cards().new_cards_ids) == 16
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 16
+
+        # check order
+        assert_locked_order(result.reorder_result_list[0].sorted_cards_ids)
+
+    def test_two_deck_collection_corpus_segmentation_by_note_field(self):
+
+        col, language_data, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=4)
+
+        target_list = TargetList(language_data, col)
+
+        validity_state = target_list.set_targets([
+            {
+                'decks': ['decka', 'deckb'],
+                'notes': [{
+                    "name": "Basic",
+                    "fields": {
+                        "Front": "EN",
+                        "Back": "EN"
+                    },
+                }],
+                "corpus_segmentation_strategy": "by_note_model_id_and_field_name"
+            }
+        ])
+
+        assert validity_state == (1, "")
+        assert len(target_list) == 1
+
+        # reorder cards
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+
+        # check result
+        assert target_list[0].target_corpus_data is not None
+        assert len(target_list[0].target_corpus_data.data_segments) == 2
+        assert len(target_list[0].target_corpus_data.content_metrics.keys()) == 2
+
+        reorder_result = result.reorder_result_list[0]
+        assert reorder_result.success and reorder_result.cards_repositioned
+        assert reorder_result.error is None
+        assert len(result.modified_dirty_notes) == 0
+        assert "Found 11 new cards in a target collection of 16 cards" in str(event_logger)
+
+        assert result.reorder_result_list[0].num_cards_repositioned == 11
+        assert result.num_cards_repositioned == 11
 
         # check order
         assert_locked_order(result.reorder_result_list[0].sorted_cards_ids)

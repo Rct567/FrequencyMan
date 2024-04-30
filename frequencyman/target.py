@@ -14,7 +14,7 @@ from anki.notes import Note, NoteId
 from .lib.utilities import get_float, profile_context, var_dump_log
 from .lib.event_logger import EventLogger
 from .language_data import LanguageData, LangDataId
-from .target_corpus_data import TargetCorpusData
+from .target_corpus_data import CorpusSegmentationStrategy, TargetCorpusData
 from .target_cards import TargetCards
 
 
@@ -63,7 +63,7 @@ class ConfiguredTargetNote(TypedDict):
 
 class ConfiguredTarget(TypedDict, total=False):
     deck: str
-    decks: str
+    decks: Union[str, list[str]]
     scope_query: str
     reorder_scope_query: str
     familiarity_sweetspot_point: Union[float, str, int]
@@ -71,6 +71,7 @@ class ConfiguredTarget(TypedDict, total=False):
     suspended_leech_card_value: Union[float, str, int]
     ideal_word_count: list[int]
     ranking_factors: dict[str, Union[float, str, int]]
+    corpus_segmentation_strategy: str
     notes: list[ConfiguredTargetNote]
 
 
@@ -233,6 +234,12 @@ class Target:
         if (suspended_leech_card_value := get_float(self.config_target.get('suspended_leech_card_value'))) is not None:
             self.target_corpus_data.suspended_leech_card_value = suspended_leech_card_value
 
+        if (corpus_segmentation_strategy := self.config_target.get('corpus_segmentation_strategy', '').lower()) != '':
+            if corpus_segmentation_strategy == 'by_lang_data_id':
+                self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
+            elif corpus_segmentation_strategy == 'by_note_model_id_and_field_name':
+                self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME
+
         self.target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(), language_data)
 
         return self.target_corpus_data
@@ -244,7 +251,7 @@ class Target:
 
         cache_key = (str(target_cards.all_cards_ids), str(self.get_config_fields_per_note_type()), self.col, language_data,
                      self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'),
-                     self.config_target.get('suspended_leech_card_value'))
+                     self.config_target.get('suspended_leech_card_value'), self.config_target.get('corpus_segmentation_strategy'))
 
         if cache_key in self.cache_data['corpus']:
             return self.cache_data['corpus'][cache_key]

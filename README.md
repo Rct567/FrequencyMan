@@ -211,6 +211,7 @@ For each defined target, the following setting are available:
 | `suspended_leech_card_value`   | float |  |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[2, 5]`   |
 | `focus_words_max_familiarity`   | float |  |  `0.28`   |
+| `corpus_segmentation_strategy`   | string | Corpus data is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`  |  `"by_lang_data_id"`   |
 
 __Notes__:
  - `familiarity_sweetspot_point` also accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the median familiarity value.
@@ -268,7 +269,7 @@ FrequencyMan comes with 50+ default word frequency lists. These are generated us
 - Google Books n-gram: https://github.com/orgtre/google-books-ngram-frequency
 - Based on Open Subtitles: https://github.com/hermitdave/FrequencyWords/tree/master
 
-The default word frequency lists can be found in the `\default_wf_lists`. When prompted to create a new _language data directory_ with a default word frequency list, the relevant file will be copied to the relevant _language data directory_, such as `\user_files\lang_data\en`.
+The default word frequency lists can be found in the `\default_wf_lists`. When prompted to create a new _language data directory_ with a default word frequency list, the relevant file will be copied to the new _language data directory_, such as `\user_files\lang_data\en`.
 
 ## The `user_files` directory
 

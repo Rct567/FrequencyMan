@@ -102,7 +102,7 @@ class CardRanker:
         self.target_name = 'undefined'
         self.ideal_word_count_min = 2
         self.ideal_word_count_max = 5
-        self.focus_words_max_familiarity = 1.4
+        self.focus_words_max_familiarity = 0.28
         self.field_all_empty = {}
 
     @staticmethod

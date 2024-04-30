@@ -74,7 +74,7 @@ class TargetCorpusData:
 
         self.targeted_fields_per_note = {}
         self.content_metrics = defaultdict(TargetContentMetrics)
-        self.familiarity_sweetspot_point = 0.7
+        self.familiarity_sweetspot_point = 0.14
         self.suspended_card_value = 0.1
         self.suspended_leech_card_value = 0.0
         self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
@@ -207,7 +207,7 @@ class TargetCorpusData:
                 else:
                     cards_familiarity_value[card.id] = cards_familiarity_value[card.id]*suspended_card_value
 
-        # devalue cards from same note (devalue subsequently more as more cards from same note are found)
+        # devalue cards from same note (devalue exponentially more as more cards from same note are found)
 
         cards_familiarity_value = sort_dict_floats_values(cards_familiarity_value)
 
@@ -222,7 +222,7 @@ class TargetCorpusData:
                 note_count[note_id] = 1
             else:
                 note_count[note_id] += 1
-                devalue_factor = (1+note_count[note_id])/2
+                devalue_factor = 2**(note_count[note_id]-1)
                 cards_familiarity_value[card_id] = cards_familiarity_value[card_id]/devalue_factor
 
         return cards_familiarity_value
@@ -266,7 +266,7 @@ class TargetCorpusData:
 
             for word_token, word_presence_scores in self.content_metrics[corpus_segment_id].reviewed.words_presence.items():
                 cards_familiarity_factor = self.content_metrics[corpus_segment_id].reviewed.words_cards_familiarity_factor[word_token]
-                words_familiarity = fsum( (card_familiarity_factor * (1+word_presence)) for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor) )
+                words_familiarity = fsum( (card_familiarity_factor * word_presence) for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor) )
                 self.content_metrics[corpus_segment_id].reviewed.words_familiarity[word_token] = words_familiarity
 
             # sort

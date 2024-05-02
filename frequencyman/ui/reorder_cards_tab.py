@@ -201,17 +201,17 @@ class ReorderCardsTab:
 
             src_file = os.path.join(default_wf_lists_dir, defined_lang_data_id+'.txt')
             dst_dir = os.path.join(language_data_dir, defined_lang_data_id)
-            dst_fille = os.path.join(dst_dir, defined_lang_data_id+'-default.txt')
+            dst_file = os.path.join(dst_dir, defined_lang_data_id+'-default.txt')
             if not os.path.isfile(src_file):
                 return False
-            create_default_lang_data_dir = askUser("Language data directory doesn't yet exist for \"{}\".\n\nCreate one, with a default word frequency list?".format(defined_lang_data_id))
+            create_default_lang_data_dir = askUser("Language data directory doesn't yet exist for \"{}\".\n\nCreate one and use a default word frequency list?".format(defined_lang_data_id))
             if not create_default_lang_data_dir:
                 return False
 
             if not os.path.exists(dst_dir):
                 os.makedirs(dst_dir)
 
-            shutil.copyfile(src_file, dst_fille)
+            shutil.copyfile(src_file, dst_file)
             return True
 
         self.targets_input_textarea.add_error_interceptor(check_lang_data_id_error)

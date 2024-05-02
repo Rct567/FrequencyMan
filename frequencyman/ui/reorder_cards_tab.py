@@ -230,7 +230,7 @@ class ReorderCardsTab:
             if (self.target_list.has_targets()):
                 self.targets_input_textarea.set_content(self.target_list)
             elif self.targets_input_textarea.toPlainText() == "":  # when does this even happen?
-                example_data_notes_item: ConfiguredTargetNote = {'name': '** name of notes type **', 'fields': {"Front": "JP", "Back": "EN"}}
+                example_data_notes_item: ConfiguredTargetNote = {'name': '** name of notes type **', 'fields': {"Front": "JA", "Back": "EN"}}
                 example_target: ConfiguredTarget = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
                 example_target_list = [example_target]
                 self.targets_input_textarea.set_content(example_target_list)

@@ -4,7 +4,7 @@
             "deck": "** name of main deck **",
             "notes": [{
                 "name": "** name of notes type **",
-                "fields": {"Front": "JP", "Back": "EN"}
+                "fields": {"Front": "JA", "Back": "EN"}
             }]
         }
     ],

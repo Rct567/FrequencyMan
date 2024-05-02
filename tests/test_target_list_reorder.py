@@ -99,7 +99,7 @@ class TestTargetListReorder:
         assert target_result.sorted_cards_ids == target_list[0].get_cards().new_cards_ids
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Repositioning 6566 cards" in str(event_logger)
-        assert "Updating 6414 modified notes" in str(event_logger)
+        assert "Updating 7895 modified notes" in str(event_logger)
 
         # check value of focus words
         assert col.get_note(NoteId(1548089874907))['fm_focus_words'] == '<span id="fm_focus_words"><span data-field-index="0">ajedrez, jugamos</span> <span class="separator">/</span> <span data-field-index="1">chess</span></span>'
@@ -173,7 +173,7 @@ class TestTargetListReorder:
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Reorder scope query reduced new cards from 6566 to 4223" in str(event_logger)
         assert "Repositioning 4223 cards" in str(event_logger)
-        assert "Updating 6414 modified notes" in str(event_logger)
+        assert "Updating 7895 modified notes" in str(event_logger)
 
         # check acquired cards
         assert len(target_list[0].get_cards().all_cards_ids) == 15790

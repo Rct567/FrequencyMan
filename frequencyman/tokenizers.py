@@ -7,7 +7,8 @@ from collections import UserString, defaultdict
 import importlib
 import os
 import sys
-from typing import Callable
+from typing import Callable, Optional
+
 
 class LangId(UserString):
 
@@ -17,7 +18,9 @@ class LangId(UserString):
         assert lang_id.islower(), "Lowercase only for LangId!"
         super().__init__(lang_id)
 
+
 Tokenizer = Callable[[str], list[str]]
+
 
 class Tokenizers:
 
@@ -44,7 +47,7 @@ class Tokenizers:
 
         return self.tokenizers[lang_id]
 
-    def has_tokenizer(self, lang_id: LangId) -> bool:
+    def lang_has_tokenizer(self, lang_id: LangId) -> bool:
 
         if lang_id not in self.tokenizers:
             return False
@@ -52,76 +55,85 @@ class Tokenizers:
         return len(self.tokenizers[lang_id]) > 0
 
 
-USER_PROVIDED_TOKENIZERS_LOADED = Tokenizers()
-
-fm_plugin_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-tokenizers_user_dir = os.path.join(fm_plugin_root, 'user_files', 'tokenizers')
+LOADED_USER_PROVIDED_TOKENIZERS: Optional[Tokenizers] = None
 
 
-# load custom defined tokenizers from user_files directory
+def load_user_provided_tokenizers() -> Tokenizers:
 
-if os.path.exists(tokenizers_user_dir):
+    global LOADED_USER_PROVIDED_TOKENIZERS
 
-    for sub_dir in os.listdir(tokenizers_user_dir):
+    if LOADED_USER_PROVIDED_TOKENIZERS is not None:
+        return LOADED_USER_PROVIDED_TOKENIZERS
 
-        sub_dir_path = os.path.join(tokenizers_user_dir, sub_dir)
-        init_module_name = 'fm_init_'+sub_dir
-        fm_init_file = os.path.join(sub_dir_path, init_module_name+'.py')
+    fm_plugin_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    tokenizers_user_dir = os.path.join(fm_plugin_root, 'user_files', 'tokenizers')
 
-        if not os.path.isdir(sub_dir_path):
-            continue
-        if not os.path.isfile(fm_init_file):
-            continue
+    LOADED_USER_PROVIDED_TOKENIZERS = Tokenizers()
 
-        sys.path.append(sub_dir_path)
-        module = importlib.import_module(init_module_name, sub_dir_path)
-        tokenizers_provider: Callable[[], list[tuple[str, Tokenizer]]] = getattr(module, sub_dir+'_tokenizers_provider')
+    # load custom defined tokenizers from user_files directory
 
-        for lang_id, tokenizer in tokenizers_provider():
-            
-            if not isinstance(lang_id, str) or len(lang_id) != 2:
-                raise Exception("Invalid lang_id given by provide_tokenizer in tokenizer {} in {}.".format(sub_dir, sub_dir_path))
+    if os.path.exists(tokenizers_user_dir):
 
-            USER_PROVIDED_TOKENIZERS_LOADED.register(LangId(lang_id), tokenizer)
+        for sub_dir in os.listdir(tokenizers_user_dir):
 
+            sub_dir_path = os.path.join(tokenizers_user_dir, sub_dir)
+            init_module_name = 'fm_init_'+sub_dir
+            fm_init_file = os.path.join(sub_dir_path, init_module_name+'.py')
 
-# mecab tokenizer from ajt japanese plugin
+            if not os.path.isdir(sub_dir_path):
+                continue
+            if not os.path.isfile(fm_init_file):
+                continue
 
-ajt_japanese_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '1344485230'))
+            sys.path.append(sub_dir_path)
+            module = importlib.import_module(init_module_name, sub_dir_path)
+            tokenizers_provider: Callable[[], list[tuple[str, Tokenizer]]] = getattr(module, sub_dir+'_tokenizers_provider')
 
-if os.path.exists(ajt_japanese_plugin_path):
+            for lang_id, tokenizer in tokenizers_provider():
 
-    sys.path.append(ajt_japanese_plugin_path)
-    ajt_japanese_module = importlib.import_module('mecab_controller.mecab_controller')
+                if not isinstance(lang_id, str) or len(lang_id) != 2:
+                    raise Exception("Invalid lang_id given by provide_tokenizer in tokenizer {} in {}.".format(sub_dir, sub_dir_path))
 
-    mecab = ajt_japanese_module.MecabController(verbose=False)
+                LOADED_USER_PROVIDED_TOKENIZERS.register(LangId(lang_id), tokenizer)
 
-    def ajt_japanese_mecab_tokenizer(txt: str) -> list[str]:
-        return [token.word for token in mecab.translate(txt)]
+    # mecab tokenizer from ajt japanese plugin
 
-    USER_PROVIDED_TOKENIZERS_LOADED.register(LangId('ja'), ajt_japanese_mecab_tokenizer)
+    ajt_japanese_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '1344485230'))
 
+    if os.path.exists(ajt_japanese_plugin_path):
 
-#  mecab and jieba tokenizer from morphman plugin
+        sys.path.append(ajt_japanese_plugin_path)
+        ajt_japanese_module = importlib.import_module('mecab_controller.mecab_controller')
 
-morphman_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '900801631'))
+        mecab = ajt_japanese_module.MecabController(verbose=False)
 
-if os.path.exists(morphman_plugin_path):
+        def ajt_japanese_mecab_tokenizer(txt: str) -> list[str]:
+            return [token.word for token in mecab.translate(txt)]
 
-    sys.path.append(morphman_plugin_path)
-    morphemizer_module = importlib.import_module('morph.morphemizer')
+        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('ja'), ajt_japanese_mecab_tokenizer)
 
-    morphemizer_mecab = morphemizer_module.getMorphemizerByName("MecabMorphemizer")
+    #  mecab and jieba tokenizer from morphman plugin
 
-    def morphman_mecab_tokenizer(txt: str) -> list[str]:
-        return [token.base for token in morphemizer_mecab.getMorphemesFromExpr(txt)]
+    morphman_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '900801631'))
 
-    USER_PROVIDED_TOKENIZERS_LOADED.register(LangId('ja'), morphman_mecab_tokenizer)
+    if os.path.exists(morphman_plugin_path):
 
-    morphemizer_jieba = morphemizer_module.getMorphemizerByName("JiebaMorphemizer")
+        sys.path.append(morphman_plugin_path)
+        morphemizer_module = importlib.import_module('morph.morphemizer')
 
-    def morphman_jieba_tokenizer(txt: str) -> list[str]:
-        return [token.base for token in morphemizer_jieba.getMorphemesFromExpr(txt)]
+        morphemizer_mecab = morphemizer_module.getMorphemizerByName("MecabMorphemizer")
 
-    USER_PROVIDED_TOKENIZERS_LOADED.register(LangId('zh'), morphman_jieba_tokenizer)
+        def morphman_mecab_tokenizer(txt: str) -> list[str]:
+            return [token.base for token in morphemizer_mecab.getMorphemesFromExpr(txt)]
 
+        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('ja'), morphman_mecab_tokenizer)
+
+        morphemizer_jieba = morphemizer_module.getMorphemizerByName("JiebaMorphemizer")
+
+        def morphman_jieba_tokenizer(txt: str) -> list[str]:
+            return [token.base for token in morphemizer_jieba.getMorphemesFromExpr(txt)]
+
+        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('zh'), morphman_jieba_tokenizer)
+
+    # done
+    return LOADED_USER_PROVIDED_TOKENIZERS

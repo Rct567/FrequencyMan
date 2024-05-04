@@ -3,11 +3,12 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+import os
 import re
 import html
 from typing import NewType, Optional
 
-from .tokenizers import USER_PROVIDED_TOKENIZERS_LOADED, Tokenizer, LangId
+from .tokenizers import Tokenizers, load_user_provided_tokenizers, Tokenizer, LangId
 
 
 WordToken = NewType('WordToken', str)
@@ -20,6 +21,8 @@ class TextProcessing:
     ARABIC_PATTERN = re.compile(r'[\u0600-\u06FF]{1,}', re.UNICODE)
     ETHIOPIC_PATTERN = re.compile(r'[\u1200-\u137F]{1,}', re.UNICODE)
     DEFAULT_PATTERN = re.compile(r'[^\W\d_]{2,}', re.UNICODE)
+
+    user_provided_tokenizers: Optional[Tokenizers] = None
 
     @staticmethod
     def acceptable_word(word: str, lang_id: Optional[LangId] = None) -> bool:
@@ -70,10 +73,20 @@ class TextProcessing:
         return re.split(r"[^\w\-\_\'\’\.]{1,}", text)
 
     @staticmethod
+    def get_user_provided_tokenizers() -> Tokenizers:
+
+        if TextProcessing.user_provided_tokenizers is None:
+            TextProcessing.user_provided_tokenizers = load_user_provided_tokenizers()
+
+        return TextProcessing.user_provided_tokenizers
+
+    @staticmethod
     def get_tokenizer(lang_id: Optional[LangId] = None) -> Tokenizer:
 
-        if not lang_id is None and USER_PROVIDED_TOKENIZERS_LOADED.has_tokenizer(lang_id):
-            return USER_PROVIDED_TOKENIZERS_LOADED.get_tokenizer(lang_id)
+        user_provided_tokenizers = TextProcessing.get_user_provided_tokenizers()
+
+        if not lang_id is None and user_provided_tokenizers.lang_has_tokenizer(lang_id):
+            return user_provided_tokenizers.get_tokenizer(lang_id)
 
         return TextProcessing.default_tokenizer
 
@@ -84,8 +97,10 @@ class TextProcessing:
             tokenizer = TextProcessing.get_tokenizer(lang_id)
         elif lang_id is None:
             raise ValueError("Lang_id required when tokenizer is provided!")
-        elif not tokenizer in USER_PROVIDED_TOKENIZERS_LOADED.get_all_tokenizers(lang_id):
-            raise ValueError("Tokenizer '{}' is not a valid tokenizer for language {}!".format(tokenizer.__name__, lang_id))
+        else:  # tokenizer is provided, should only be used for testing
+            user_provided_tokenizers = TextProcessing.get_user_provided_tokenizers()
+            if not tokenizer in user_provided_tokenizers.get_all_tokenizers(lang_id):
+                raise ValueError("Tokenizer '{}' is not a valid tokenizer for language {}!".format(tokenizer.__name__, lang_id))
 
         word_tokens = (TextProcessing.create_word_token(token, lang_id) for token in tokenizer(text))
         accepted_word_tokens = [token for token in word_tokens if TextProcessing.acceptable_word(token, lang_id)]

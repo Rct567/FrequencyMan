@@ -3,101 +3,14 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-import importlib
-import os
 import re
 import html
-import sys
-from typing import Any, Callable, NewType, Optional
-from typing import TYPE_CHECKING
+from typing import NewType, Optional
 
-from .lib.utilities import var_dump, var_dump_log
+from .tokenizers import USER_PROVIDED_TOKENIZERS_LOADED, Tokenizer, LangId
+
 
 WordToken = NewType('WordToken', str)
-LangId = NewType('LangId', str)
-Tokenizer = Callable[[str], list[str]]
-
-USER_PROVIDED_TOKENIZERS_LOADED: dict[LangId, Tokenizer] = {}
-
-fm_plugin_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-tokenizers_user_dir = os.path.join(fm_plugin_root, 'user_files', 'tokenizers')
-
-
-# load custom defined tokenizers from user_files directory
-
-if os.path.exists(tokenizers_user_dir):
-
-    for sub_dir in os.listdir(tokenizers_user_dir):
-
-        sub_dir_path = os.path.join(tokenizers_user_dir, sub_dir)
-        init_module_name = 'fm_init_'+sub_dir
-        fm_init_file = os.path.join(sub_dir_path, init_module_name+'.py')
-
-        if not os.path.isdir(sub_dir_path):
-            continue
-        if not os.path.isfile(fm_init_file):
-            continue
-
-        sys.path.append(sub_dir_path)
-        module = importlib.import_module(init_module_name, sub_dir_path)
-        tokenizers_provider: Callable[[], list[tuple[str, Tokenizer]]] = getattr(module, sub_dir+'_tokenizers_provider')
-
-        for lang_id, tokenizer in tokenizers_provider():
-            if not isinstance(lang_id, str) or len(lang_id) != 2:
-                raise Exception("Invalid lang_id given by provide_tokenizer in tokenizer {} in {}.".format(sub_dir, sub_dir_path))
-            if LangId(lang_id) not in USER_PROVIDED_TOKENIZERS_LOADED:
-                USER_PROVIDED_TOKENIZERS_LOADED[LangId(lang_id)] = tokenizer
-
-
-# mecab tokenizer from ajt japanese plugin
-
-ajt_japanese_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '1344485230'))
-
-if os.path.exists(ajt_japanese_plugin_path) and not LangId('ja') in USER_PROVIDED_TOKENIZERS_LOADED:
-
-    sys.path.append(ajt_japanese_plugin_path)
-    ajt_japanese_module = importlib.import_module('mecab_controller.mecab_controller')
-
-    if not LangId('ja') in USER_PROVIDED_TOKENIZERS_LOADED:
-
-        mecab = ajt_japanese_module.MecabController(verbose=False)
-
-        def ajt_japanese_mecab_tokenizer(txt: str) -> list[str]:
-            return [token.word for token in mecab.translate(txt)]
-
-        USER_PROVIDED_TOKENIZERS_LOADED[LangId('ja')] = ajt_japanese_mecab_tokenizer
-
-
-#  mecab and jieba tokenizer from morphman plugin
-
-morphman_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '900801631'))
-morphman_is_useful = not LangId('ja') in USER_PROVIDED_TOKENIZERS_LOADED or not LangId('zh') in USER_PROVIDED_TOKENIZERS_LOADED
-
-if os.path.exists(morphman_plugin_path) and morphman_is_useful:
-
-    sys.path.append(morphman_plugin_path)
-    morphemizer_module = importlib.import_module('morph.morphemizer')
-
-    if not LangId('ja') in USER_PROVIDED_TOKENIZERS_LOADED:
-
-        morphemizer_mecab = morphemizer_module.getMorphemizerByName("MecabMorphemizer")
-
-        def morphman_mecab_tokenizer(txt: str) -> list[str]:
-            return [token.base for token in morphemizer_mecab.getMorphemesFromExpr(txt)]
-
-        USER_PROVIDED_TOKENIZERS_LOADED[LangId('ja')] = morphman_mecab_tokenizer
-
-    if not LangId('zh') in USER_PROVIDED_TOKENIZERS_LOADED:
-
-        morphemizer_jieba = morphemizer_module.getMorphemizerByName("JiebaMorphemizer")
-
-        def morphman_jieba_tokenizer(txt: str) -> list[str]:
-            return [token.base for token in morphemizer_jieba.getMorphemesFromExpr(txt)]
-
-        USER_PROVIDED_TOKENIZERS_LOADED[LangId('zh')] = morphman_jieba_tokenizer
-
-
-# text processing class
 
 class TextProcessing:
 
@@ -159,15 +72,21 @@ class TextProcessing:
     @staticmethod
     def get_tokenizer(lang_id: Optional[LangId] = None) -> Tokenizer:
 
-        if not lang_id is None and lang_id in USER_PROVIDED_TOKENIZERS_LOADED:
-            return USER_PROVIDED_TOKENIZERS_LOADED[lang_id]
-        else:
-            return TextProcessing.default_tokenizer
+        if not lang_id is None and USER_PROVIDED_TOKENIZERS_LOADED.has_tokenizer(lang_id):
+            return USER_PROVIDED_TOKENIZERS_LOADED.get_tokenizer(lang_id)
+
+        return TextProcessing.default_tokenizer
 
     @staticmethod
-    def get_word_tokens_from_text(text: str, lang_id: Optional[LangId] = None) -> list[WordToken]:
+    def get_word_tokens_from_text(text: str, lang_id: Optional[LangId] = None, tokenizer: Optional[Tokenizer] = None) -> list[WordToken]:
 
-        tokenizer = TextProcessing.get_tokenizer(lang_id)
+        if tokenizer is None:
+            tokenizer = TextProcessing.get_tokenizer(lang_id)
+        elif lang_id is None:
+            raise ValueError("Lang_id required when tokenizer is provided!")
+        elif not tokenizer in USER_PROVIDED_TOKENIZERS_LOADED.get_all_tokenizers(lang_id):
+            raise ValueError("Tokenizer '{}' is not a valid tokenizer for language {}!".format(tokenizer.__name__, lang_id))
+
         word_tokens = (TextProcessing.create_word_token(token, lang_id) for token in tokenizer(text))
         accepted_word_tokens = [token for token in word_tokens if TextProcessing.acceptable_word(token, lang_id)]
         return accepted_word_tokens

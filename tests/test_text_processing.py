@@ -1,3 +1,5 @@
+import inspect
+import os
 import re
 from frequencyman.text_processing import USER_PROVIDED_TOKENIZERS_LOADED, LangId, TextProcessing
 
@@ -49,27 +51,28 @@ def test_get_word_tokens_from_text():
 
 def test_get_word_tokens_from_text_user_tokenizer_ja():
 
-    if not LangId('ja') in USER_PROVIDED_TOKENIZERS_LOADED:
+    if not USER_PROVIDED_TOKENIZERS_LOADED.has_tokenizer(LangId('ja')):
         print("User tokenizer for JA test skipped!!!")
         return
-    else:
-        print("User tokenizer for JA tested: "+USER_PROVIDED_TOKENIZERS_LOADED[LangId('ja')].__name__)
 
-    assert TextProcessing.get_word_tokens_from_text("すもももももももものうち", LangId('ja')) == ['すもも', 'も', 'もも', 'も', 'もも', 'の', 'うち']
-    assert TextProcessing.get_word_tokens_from_text("こんにちは。私の名前はシャンです。", LangId('ja')) == ["こんにちは", "私", "の", "名前", "は", "シャン", "です"]
+    for tokenizer in USER_PROVIDED_TOKENIZERS_LOADED.get_all_tokenizers(LangId('ja')):
+        print("User tokenizer for JA tested: "+tokenizer.__name__)
+        assert TextProcessing.get_word_tokens_from_text("すもももももももものうち", LangId('ja'), tokenizer) == ['すもも', 'も', 'もも', 'も', 'もも', 'の', 'うち'], tokenizer.__name__
+        assert TextProcessing.get_word_tokens_from_text("こんにちは。私の名前はシャンです。", LangId('ja'), tokenizer) == ["こんにちは", "私", "の", "名前", "は", "シャン", "です"], tokenizer.__name__
+
 
 
 def test_get_word_tokens_from_text_user_tokenizer_zh():
 
-    if not LangId('zh') in USER_PROVIDED_TOKENIZERS_LOADED:
+    if not USER_PROVIDED_TOKENIZERS_LOADED.has_tokenizer(LangId('zh')):
         print("User tokenizer for ZH test skipped!!!")
         return
-    else:
-        print("User tokenizer for ZH tested: "+USER_PROVIDED_TOKENIZERS_LOADED[LangId('zh')].__name__)
 
-    assert TextProcessing.get_word_tokens_from_text("你跟我", LangId('zh')) == ['你', '跟', '我']
-    assert TextProcessing.get_word_tokens_from_text("hello 吃饭了吗😊? ", LangId('zh')) == ["吃饭", "了", "吗"]
-    assert TextProcessing.get_word_tokens_from_text("我爱自然语言处理。", LangId('zh')) == ['我', '爱', '自然语言', '处理']
+    for tokenizer in USER_PROVIDED_TOKENIZERS_LOADED.get_all_tokenizers(LangId('zh')):
+        print("User tokenizer for ZH tested: "+tokenizer.__name__)
+        assert TextProcessing.get_word_tokens_from_text("你跟我", LangId('zh'), tokenizer) == ['你', '跟', '我'], tokenizer.__name__
+        assert TextProcessing.get_word_tokens_from_text("hello 吃饭了吗😊? ", LangId('zh'), tokenizer) == ["吃饭", "了", "吗"], tokenizer.__name__
+        assert TextProcessing.get_word_tokens_from_text("我爱自然语言处理。", LangId('zh'), tokenizer) == ['我', '爱', '自然语言', '处理'], tokenizer.__name__
 
 
 def test_create_word_token():

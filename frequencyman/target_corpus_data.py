@@ -65,17 +65,20 @@ class TargetCorpusData:
     target_cards: TargetCards
     targeted_fields_per_note: dict[NoteId, list[TargetNoteFieldContentData]]
     content_metrics: dict[CorpusSegmentId, TargetContentMetrics]
+    focus_words_max_familiarity: float
     familiarity_sweetspot_point: Union[float, str]
     suspended_card_value: float
     suspended_leech_card_value: float
     segmentation_strategy: CorpusSegmentationStrategy
     data_segments: set[str]
 
+
     def __init__(self):
 
         self.targeted_fields_per_note = {}
         self.content_metrics = defaultdict(TargetContentMetrics)
-        self.familiarity_sweetspot_point = 0.14
+        self.focus_words_max_familiarity = 0.28
+        self.familiarity_sweetspot_point = "~0.5"
         self.suspended_card_value = 0.1
         self.suspended_leech_card_value = 0.0
         self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
@@ -294,20 +297,23 @@ class TargetCorpusData:
 
         for corpus_segment_id in self.content_metrics.keys():
 
-            max_familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity_max
+            familiarity_max = self.content_metrics[corpus_segment_id].reviewed.words_familiarity_max
 
             if isinstance(self.familiarity_sweetspot_point, str):
-                if self.familiarity_sweetspot_point[0] != '~':
+                if self.familiarity_sweetspot_point[0] == '^':
+                    median_familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity_median
+                    familiarity_sweetspot_point = median_familiarity*float(self.familiarity_sweetspot_point[1:])
+                elif self.familiarity_sweetspot_point[0] == '~':
+                    familiarity_sweetspot_point = self.focus_words_max_familiarity*float(self.familiarity_sweetspot_point[1:])
+                else:
                     raise ValueError("Invalid value for familiarity_sweetspot_point!")
-                median_familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity_median
-                familiarity_sweetspot_value = median_familiarity*float(self.familiarity_sweetspot_point[1:])
             else:
-                familiarity_sweetspot_value = self.familiarity_sweetspot_point
+                familiarity_sweetspot_point = self.familiarity_sweetspot_point
 
             for word_token in self.content_metrics[corpus_segment_id].reviewed.words_familiarity:
 
                 familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity[word_token]
-                familiarity_sweetspot_rating = (max_familiarity-abs(familiarity-familiarity_sweetspot_value))
+                familiarity_sweetspot_rating = (familiarity_max-abs(familiarity-familiarity_sweetspot_point))
 
                 self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot[word_token] = familiarity_sweetspot_rating
 

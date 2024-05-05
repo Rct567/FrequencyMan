@@ -87,7 +87,7 @@ class CardRanker:
     ranking_factors_stats: Optional[dict[str, dict[str, float]]]
     ideal_word_count_min: int
     ideal_word_count_max: int
-    focus_words_max_familiarity: float
+
     field_all_empty: dict[str, bool]
 
     def __init__(self, target_corpus_data: TargetCorpusData, language_data: LanguageData,
@@ -102,7 +102,6 @@ class CardRanker:
         self.target_name = 'undefined'
         self.ideal_word_count_min = 2
         self.ideal_word_count_max = 5
-        self.focus_words_max_familiarity = 0.28
         self.field_all_empty = {}
 
     @staticmethod
@@ -382,7 +381,7 @@ class CardRanker:
                 field_metrics.most_obscure_word = (word, word_ubiquity_score)
 
             # focus words
-            if word_familiarity_score < self.focus_words_max_familiarity:
+            if word_familiarity_score < self.corpus_data.focus_words_max_familiarity:
                 field_metrics.focus_words[word] = word_familiarity_score
 
             # set seen and unseen

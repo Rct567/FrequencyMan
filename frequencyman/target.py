@@ -221,27 +221,36 @@ class Target:
 
         self.target_corpus_data = TargetCorpusData()
 
+        # familiarity_sweetspot_point
         configured_familiarity_sweetspot_point = self.config_target.get('familiarity_sweetspot_point')
-
-        if isinstance(configured_familiarity_sweetspot_point, str) and configured_familiarity_sweetspot_point[0] == '~':
+        if isinstance(configured_familiarity_sweetspot_point, str) and configured_familiarity_sweetspot_point[0] in ['~', '^']:
             self.target_corpus_data.familiarity_sweetspot_point = configured_familiarity_sweetspot_point
         elif (familiarity_sweetspot_point := get_float(configured_familiarity_sweetspot_point)) is not None:
             self.target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
+        # focus_words_max_familiarity
+        if (focus_words_max_familiarity := get_float(self.config_target.get('focus_words_max_familiarity'))) is not None:
+            self.target_corpus_data.focus_words_max_familiarity = focus_words_max_familiarity
+
+        # suspended_card_value
         if (suspended_card_value := get_float(self.config_target.get('suspended_card_value'))) is not None:
             self.target_corpus_data.suspended_card_value = suspended_card_value
 
+        # suspended_leech_card_value
         if (suspended_leech_card_value := get_float(self.config_target.get('suspended_leech_card_value'))) is not None:
             self.target_corpus_data.suspended_leech_card_value = suspended_leech_card_value
 
+        #corpus_segmentation_strategy
         if (corpus_segmentation_strategy := self.config_target.get('corpus_segmentation_strategy', '').lower()) != '':
             if corpus_segmentation_strategy == 'by_lang_data_id':
                 self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
             elif corpus_segmentation_strategy == 'by_note_model_id_and_field_name':
                 self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME
 
+        # create corpus data
         self.target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(), language_data)
 
+        # done
         return self.target_corpus_data
 
     def __get_corpus_data_cached(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
@@ -251,7 +260,8 @@ class Target:
 
         cache_key = (str(target_cards.all_cards_ids), str(self.get_config_fields_per_note_type()), self.col, language_data,
                      self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'),
-                     self.config_target.get('suspended_leech_card_value'), self.config_target.get('corpus_segmentation_strategy'))
+                     self.config_target.get('suspended_leech_card_value'), self.config_target.get('corpus_segmentation_strategy'),
+                     self.config_target.get('focus_words_max_familiarity'))
 
         if cache_key in self.cache_data['corpus']:
             return self.cache_data['corpus'][cache_key]
@@ -349,10 +359,6 @@ class Target:
                     if all(isinstance(val, int) for val in self.config_target['ideal_word_count']):
                         card_ranker.ideal_word_count_min = self.config_target['ideal_word_count'][0]
                         card_ranker.ideal_word_count_max = self.config_target['ideal_word_count'][1]
-
-            # use custom focus_words endpoint
-            if (focus_words_max_familiarity := get_float(self.config_target.get('focus_words_max_familiarity'))) is not None:
-                card_ranker.focus_words_max_familiarity = focus_words_max_familiarity
 
             # Calculate ranking and sort cards
             card_rankings = card_ranker.calc_cards_ranking(target_cards, reorder_scope_target_cards)

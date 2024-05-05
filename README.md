@@ -206,7 +206,7 @@ For each defined target, the following setting are available:
 | `notes`   | array of objects |  | -      |
 | `reorder_scope_query`   | string | Search query to reduce which cards get repositioned.  | Main scope as defined by `deck`, `decks` or  `scope_query`.       |
 | `ranking_factors`   | object |  | see '[Ranking factors](#default-ranking-factors)'      |
-| `familiarity_sweetspot_point`   | float |   |   `0.14`  |
+| `familiarity_sweetspot_point`   | string \| float | Defines a specific 'sweetspot' of familiarity for  ranking factor `familiarity_sweetspot`.  |   `~0.5` (=50% of focus_words_max_familiarity)  |
 | `suspended_card_value`   | float |  |   `0.5`  |
 | `suspended_leech_card_value`   | float |  |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[2, 5]`   |
@@ -214,7 +214,7 @@ For each defined target, the following setting are available:
 | `corpus_segmentation_strategy`   | string | Corpus data is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`  |  `"by_lang_data_id"`   |
 
 __Notes__:
- - `familiarity_sweetspot_point` also accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the median familiarity value.
+ - `familiarity_sweetspot_point` accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the value of `focus_words_max_familiarity` value. In this case `"~0.5"` would result in a value of `0.14`. A string starting with `^` will make the number relative to the median word familiarity value.
 
 # Language data id
 

@@ -66,7 +66,11 @@ def load_user_provided_tokenizers() -> Tokenizers:
         return LOADED_USER_PROVIDED_TOKENIZERS
 
     fm_plugin_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    anki_plugins_dir = os.path.abspath(os.path.join(fm_plugin_root, '..'))
     tokenizers_user_dir = os.path.join(fm_plugin_root, 'user_files', 'tokenizers')
+
+    if not os.path.exists(anki_plugins_dir):
+        raise Exception("Could not find anki plugin directory!")
 
     LOADED_USER_PROVIDED_TOKENIZERS = Tokenizers()
 
@@ -96,9 +100,41 @@ def load_user_provided_tokenizers() -> Tokenizers:
 
                 LOADED_USER_PROVIDED_TOKENIZERS.register(LangId(lang_id), tokenizer)
 
-    # mecab tokenizer from ajt japanese plugin
+    # ankimorphs-chinese-jieba plugin (companion add-on for AnkiMorphs)
 
-    ajt_japanese_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '1344485230'))
+    jieba_anki_morphs_plugin_path = os.path.join(anki_plugins_dir, '1857311956')
+
+    if os.path.exists(jieba_anki_morphs_plugin_path):
+
+        sys.path.append(jieba_anki_morphs_plugin_path)
+        jieba_anki_morphs_module = importlib.import_module("jieba.posseg")
+
+        def anki_morphs_jieba_tokenizer(txt: str) -> list[str]:
+            return list(token for (token, _) in jieba_anki_morphs_module.lcut(txt) if token is not None)
+
+        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('zh'), anki_morphs_jieba_tokenizer)
+
+    # ankimorphs-japanese-mecab plugin (companion add-on for AnkiMorphs)
+
+    mecab_anki_morphs_plugin_path = os.path.join(anki_plugins_dir, '1974309724')
+
+    if os.path.exists(mecab_anki_morphs_plugin_path):
+
+        sys.path.append(anki_plugins_dir)
+        mecab_anki_morphs_module = importlib.import_module("1974309724.reading")
+
+        from .anki_morphs_mecab_wrapper import setup_mecab, get_morphemes_mecab
+
+        setup_mecab(mecab_anki_morphs_module)
+
+        def anki_morphs_mecab_tokenizer(expression: str) -> list[str]:
+            return get_morphemes_mecab(expression)
+
+        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('ja'), anki_morphs_mecab_tokenizer)
+
+    # mecab tokenizer from 'ajt japanese' plugin
+
+    ajt_japanese_plugin_path = os.path.join(anki_plugins_dir, '1344485230')
 
     if os.path.exists(ajt_japanese_plugin_path):
 
@@ -112,9 +148,9 @@ def load_user_provided_tokenizers() -> Tokenizers:
 
         LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('ja'), ajt_japanese_mecab_tokenizer)
 
-    #  mecab and jieba tokenizer from morphman plugin
+    #  mecab and jieba tokenizer from 'morphman' plugin
 
-    morphman_plugin_path = os.path.abspath(os.path.join(fm_plugin_root, '..', '900801631'))
+    morphman_plugin_path = os.path.join(anki_plugins_dir, '900801631')
 
     if os.path.exists(morphman_plugin_path):
 

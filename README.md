@@ -124,6 +124,8 @@ If you download Janome (JA), it should be placed in the directory `user_files\to
 
 FrequencyMan will use tokenizers from other plugins, if there is no custom tokenizer for a given language:
 
+- If [ankimorphs-chinese-jieba](https://ankiweb.net/shared/info/1857311956) is installed, Jieba can be used.
+- If [ankimorphs-japanese-mecab](https://ankiweb.net/shared/info/1974309724) is installed, Mecab can be used.
 - If [AJT Japanese](https://ankiweb.net/shared/info/1344485230) is installed, Mecab can be used.
 - If [Morphman](https://ankiweb.net/shared/info/900801631) is installed, Mecab and Jieba can be used (assuming those also work in Morphman itself).
 

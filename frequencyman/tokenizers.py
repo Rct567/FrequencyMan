@@ -80,23 +80,34 @@ def load_user_provided_tokenizers() -> Tokenizers:
 
         for sub_dir in os.listdir(tokenizers_user_dir):
 
-            sub_dir_path = os.path.join(tokenizers_user_dir, sub_dir)
-            init_module_name = 'fm_init_'+sub_dir
-            fm_init_file = os.path.join(sub_dir_path, init_module_name+'.py')
+            tokenizer_dir = os.path.join(tokenizers_user_dir, sub_dir)
 
-            if not os.path.isdir(sub_dir_path):
-                continue
-            if not os.path.isfile(fm_init_file):
+            if not os.path.isdir(tokenizer_dir):
                 continue
 
-            sys.path.append(sub_dir_path)
-            module = importlib.import_module(init_module_name, sub_dir_path)
-            tokenizers_provider: Callable[[], list[tuple[str, Tokenizer]]] = getattr(module, sub_dir+'_tokenizers_provider')
+            tokenizer_id = None
+
+            for filename in os.listdir(tokenizer_dir):
+                if filename.startswith('fm_init_') and filename.endswith('.py'):
+                    tokenizer_id = filename.replace('fm_init_', '').replace('.py', '')
+                    break
+
+            if tokenizer_id is None:
+                continue
+
+            if not os.path.isdir(os.path.join(tokenizer_dir, tokenizer_id)):
+                raise Exception("Tokenizer subdirectory '{}' does not exist in '{}'.".format(tokenizer_id, tokenizer_dir))
+
+            tokenizer_init_module_name = 'fm_init_'+tokenizer_id
+
+            sys.path.append(tokenizer_dir)
+            module = importlib.import_module(tokenizer_init_module_name, tokenizer_dir)
+            tokenizers_provider: Callable[[], list[tuple[str, Tokenizer]]] = getattr(module, tokenizer_id+'_tokenizers_provider')
 
             for lang_id, tokenizer in tokenizers_provider():
 
                 if not isinstance(lang_id, str) or len(lang_id) != 2:
-                    raise Exception("Invalid lang_id given by provide_tokenizer in tokenizer {} in {}.".format(sub_dir, sub_dir_path))
+                    raise Exception("Invalid lang_id given by '{}' in '{}'.".format(tokenizers_provider.__name__, tokenizer_dir))
 
                 LOADED_USER_PROVIDED_TOKENIZERS.register(LangId(lang_id), tokenizer)
 

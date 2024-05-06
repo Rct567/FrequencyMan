@@ -10,7 +10,7 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
-
+from .text_processing import TextProcessing
 from .lib.utilities import get_float, profile_context, var_dump_log
 from .lib.event_logger import EventLogger
 from .language_data import LanguageData, LangDataId
@@ -308,6 +308,11 @@ class Target:
             event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.all_cards_ids)))
 
         # Get corpus data
+
+        for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.__get_all_language_data_keys()]:
+            tokenizer = TextProcessing.get_tokenizer(lang_id)
+            if tokenizer != TextProcessing.default_tokenizer:
+                event_logger.add_entry("Using tokenizer '{}' for '{}'.".format(tokenizer.__name__, lang_id.upper()))
 
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
             target_corpus_data = self.__get_corpus_data_cached(target_cards, language_data)

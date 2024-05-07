@@ -7,12 +7,13 @@ from hmac import new
 import io
 import cProfile
 from contextlib import contextmanager
+import itertools
 import os
 import pprint
 import pstats
 import sys
 import threading
-from typing import IO, Any, Optional, TypeVar
+from typing import IO, Any, Iterable, Iterator, Optional, TypeVar
 from aqt.utils import showInfo
 
 var_dump_count = 0
@@ -93,20 +94,24 @@ def profile_context(amount=40):
 
 T = TypeVar('T')
 
-
-def chunked_list(input_list: list[T], chunk_size: int) -> list[list[T]]:
+def batched(iterable: Iterable[T], n: int) -> Iterator[tuple[T, ...]]:
     """
-    Split a list into smaller lists of a specified chunk size.
+    Batch an iterable into smaller batches of a specified size.
 
     Parameters:
-        input_list (list): The list to be split.
-        chunk_size (int): The size of each chunk.
+        iterable (Iterable): The iterable to be batched.
+        n (int): The size of each batch.
 
-    Returns:
-        list[list]: A list of smaller lists, each containing chunk_size elements.
+    Yields:
+        tuple[T, ...]: A tuple of the batched elements.
     """
-    return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
 
+    it = iter(iterable)
+    while True:
+        batch = tuple(itertools.islice(it, n))
+        if not batch:
+            return
+        yield batch
 
 K = TypeVar('K')
 

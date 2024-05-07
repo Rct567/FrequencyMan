@@ -12,7 +12,7 @@ from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
 from .target_cards import TargetCards
-from .lib.utilities import chunked_list, is_numeric_value
+from .lib.utilities import batched, is_numeric_value
 from .card_ranker import CardRanker
 from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote as ConfiguredTargetNote
 from .language_data import LangDataId, LanguageData
@@ -214,7 +214,7 @@ class TargetList:
         if (num_modified_dirty_notes > 0):
             notes_to_update = [note for note in modified_dirty_notes.values() if note is not None]
             with event_logger.add_benchmarked_entry("Updating {:n} modified notes from targets.".format(len(notes_to_update))):
-                for notes in chunked_list(notes_to_update, 4_000):
+                for notes in batched(notes_to_update, 4_000):
                     op_changes = col.update_notes(notes, skip_undo_entry=True)
                     update_notes_anki_op_changes.append(op_changes)
 

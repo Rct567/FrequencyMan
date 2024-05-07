@@ -328,29 +328,19 @@ class TargetCorpusData:
 
     def __set_notes_words_underexposure(self) -> None:
 
-        for note_fields in self.targeted_fields_per_note.values():
-
-            for field in note_fields:
-
-                corpus_segment_id = field.corpus_segment_id
-
-                for word_token in field.field_value_tokenized:
-
-                    word_fr = self.content_metrics[corpus_segment_id].word_frequency.get(word_token, 0)
-
-                    if word_fr == 0:
-                        continue
-
-                    word_familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity_positional.get(word_token, 0)
-                    word_underexposure_rating = (word_fr - word_familiarity)
-
-                    if (word_underexposure_rating > 0):
-                        word_underexposure_rating = word_underexposure_rating * ((1 + word_familiarity) ** 1.5)
-                        if word_familiarity == 0:
-                            word_underexposure_rating = word_underexposure_rating*0.75
-                        self.content_metrics[corpus_segment_id].words_underexposure[word_token] = word_underexposure_rating
-
         for corpus_segment_id in self.content_metrics.keys():
+
+            for word_token, word_fr in self.content_metrics[corpus_segment_id].word_frequency.items():
+
+                assert word_fr > 0
+                word_familiarity = self.content_metrics[corpus_segment_id].reviewed.words_familiarity_positional.get(word_token, 0)
+                word_underexposure_rating = (word_fr - word_familiarity)
+
+                if (word_underexposure_rating > 0):
+                    word_underexposure_rating = word_underexposure_rating * ((1 + word_familiarity) ** 1.5)
+                    if word_familiarity == 0:
+                        word_underexposure_rating = word_underexposure_rating*0.75
+                    self.content_metrics[corpus_segment_id].words_underexposure[word_token] = word_underexposure_rating
 
             # sort
             self.content_metrics[corpus_segment_id].words_underexposure = sort_dict_floats_values(self.content_metrics[corpus_segment_id].words_underexposure)

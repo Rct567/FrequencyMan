@@ -24,7 +24,7 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 ## Configuration examples
 
 ### Example 1
-Reorders a single deck. This will only match cards with note type `My custom note type` located in deck `Spanish`. It will also use the default ranking factors.
+Reorders a single deck. This will only match cards with note type `Basic` located in deck `Spanish`. It will also use the [default ranking factors](#default-ranking-factors).
 
 The content of the cards and all the ranking metrics will be analyzed per '[language](#language-data-id)'. The result of this will be combined to determine the final ranking of all new cards.
 
@@ -118,7 +118,7 @@ Custom tokenizers can be defined in `user_files\tokenizers`.
 
 To use a custom tokenizer, or to see how one is defined, you can download [here](https://github.com/Rct567/FrequencyMan_tokenizer_jieba) a working copy of Jieba (ZH), and [here](https://github.com/Rct567/FrequencyMan_tokenizer_janome) a version of Janome (JA).
 
-If you download Janome (JA), it should be placed in the directory `user_files\tokenizers\janome`, which should contain the file `fm_init_janome.py`.
+If you download Janome (JA), you can place it in a directory like `user_files\tokenizers\janome`, which then should contain the file `fm_init_janome.py` and the subdirectory `janome`.
 
 ### Automatic support
 

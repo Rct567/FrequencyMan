@@ -39,8 +39,8 @@ def open_frequencyman_main_window(mw: AnkiQt):
 
     fm_window = FrequencyManMainWindow(mw, fm_root_dir, user_files_dir)
 
-    ReorderCardsTab(fm_window, mw.col).create_new_tab()
-    #OverviewTab(fm_window).create_new_tab()
+    fm_window.add_tab(ReorderCardsTab(fm_window, mw.col))
+    #fm_window.add_tab(OverviewTab(fm_window))
 
     fm_window.exec()
 

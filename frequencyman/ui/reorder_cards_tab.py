@@ -18,7 +18,7 @@ from aqt.main import AnkiQt
 
 from ..default_wf_lists import DefaultWordFrequencyLists
 
-from .main_window import FrequencyManMainWindow
+from .main_window import FrequencyManMainWindow, FrequencyManTab
 
 from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log
@@ -125,7 +125,7 @@ class TargetsDefiningTextArea(QTextEdit):
 
 
 
-class ReorderCardsTab:
+class ReorderCardsTab(FrequencyManTab):
 
     fm_window: FrequencyManMainWindow
     col: Collection
@@ -140,6 +140,11 @@ class ReorderCardsTab:
     exec_reorder_button: QPushButton
 
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
+
+        super().__init__()
+
+        self.id = 'reorder_cards'
+        self.name = 'Reorder cards'
 
         self.fm_window = fm_window
         self.col = col
@@ -178,13 +183,6 @@ class ReorderCardsTab:
 
         # row below textarea
         self.__create_targets_input_options_row_widget()
-
-
-
-    def create_new_tab(self):
-
-        # Create a new tab and its layout
-        (tab_layout, tab) = self.fm_window.create_new_tab('reorder_cards', "Reorder cards")
 
         # check errors
         default_wf_lists_dir = os.path.join(self.fm_window.root_dir, 'default_wf_lists')
@@ -273,12 +271,6 @@ class ReorderCardsTab:
         self.exec_reorder_button.clicked.connect(user_clicked_reorder_button)
         self.targets_input_textarea.on_validity_change(update_reorder_button_state)
 
-        #
-        tab_layout.setSpacing(0)
-        tab_layout.addWidget(self.targets_input_textarea)
-        tab_layout.addWidget(self.targets_input_options_line)
-        tab_layout.addWidget(self.exec_reorder_button)
-        tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))  # Add an empty spacer row to compress the rows above
 
     # Validation line below textarea, with line of text on the left and buttons on the right
 
@@ -440,3 +432,12 @@ class ReorderCardsTab:
                 op=reorder_operation,
                 success=reorder_show_results
             ).with_progress(label="Reordering new cards...").run_in_background()
+
+
+    def on_tab_created(self, tab_layout: QVBoxLayout):
+
+        tab_layout.setSpacing(0)
+        tab_layout.addWidget(self.targets_input_textarea)
+        tab_layout.addWidget(self.targets_input_options_line)
+        tab_layout.addWidget(self.exec_reorder_button)
+        tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))  # Add an empty spacer row to compress the rows above

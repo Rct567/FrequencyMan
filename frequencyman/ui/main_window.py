@@ -14,8 +14,32 @@ try:
 except ImportError:
     FREQUENCYMAN_VERSION = ""
 
-# FrequencyMan Main Window class
 
+class FrequencyManTab(QWidget):
+
+    id: str
+    name: str
+    first_paint_done: bool
+
+    def __init__(self):
+        super().__init__()
+        self.first_paint_done = False
+
+    def on_tab_created(self, tab_layout: QVBoxLayout):
+        pass
+
+    def on_first_paint(self):
+        pass
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if not self.first_paint_done:
+            self.first_paint_done = True
+            self.on_first_paint()
+
+
+
+# FrequencyMan Main Window class
 
 class FrequencyManMainWindow(QDialog):
 
@@ -69,16 +93,13 @@ class FrequencyManMainWindow(QDialog):
         self.user_files_dir = user_files_dir
 
 
-    def create_new_tab(self, tab_id: str, tab_name: str) -> Tuple[QVBoxLayout, QWidget]:
+    def add_tab(self, new_tab: FrequencyManTab):
 
-        tab = QWidget()
-        self.tab_menu_options[tab_id] = tab
+        self.tab_menu_options[new_tab.id] = new_tab
 
-        # layout for the new tab
         tab_layout = QVBoxLayout()
-        tab.setLayout(tab_layout)
+        new_tab.setLayout(tab_layout)
 
-        # Add new tab to the main tab widget
-        self.tab_widget.addTab(tab, tab_name)
+        self.tab_widget.addTab(new_tab, new_tab.name)
 
-        return (tab_layout, tab)
+        new_tab.on_tab_created(tab_layout)

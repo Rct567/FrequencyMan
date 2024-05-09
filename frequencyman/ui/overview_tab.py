@@ -28,7 +28,7 @@ class OverviewTab(FrequencyManTab):
     fm_window: FrequencyManMainWindow
 
     def __init__(self, fm_window: FrequencyManMainWindow) -> None:
-        super().__init__()
+        super().__init__(fm_window)
         self.id = 'word_overview'
         self.name = 'Word overview'
         self.fm_window = fm_window

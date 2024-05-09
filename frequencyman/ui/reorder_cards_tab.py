@@ -137,7 +137,7 @@ class ReorderCardsTab(FrequencyManTab):
 
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
 
-        super().__init__()
+        super().__init__(fm_window)
 
         self.id = 'reorder_cards'
         self.name = 'Reorder cards'

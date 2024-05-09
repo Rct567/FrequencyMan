@@ -21,8 +21,8 @@ class FrequencyManTab(QWidget):
     name: str
     first_paint_done: bool
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
         self.first_paint_done = False
 
     def on_tab_created(self, tab_layout: QVBoxLayout):
@@ -31,8 +31,7 @@ class FrequencyManTab(QWidget):
     def on_tab_painted(self, tab_layout: QLayout):
         pass
 
-    def paintEvent(self, event):
-        super().paintEvent(event)
+    def paintEvent(self, _):
 
         if not self.first_paint_done and (layout := self.layout()) is not None:
             self.first_paint_done = True

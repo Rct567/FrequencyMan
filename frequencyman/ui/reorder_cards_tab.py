@@ -280,7 +280,7 @@ class ReorderCardsTab(FrequencyManTab):
 
         @pyqtSlot()
         def user_clicked_restore_button():
-            if askUser("Restore previously defined targets?"):
+            if askUser("Restore to last validly defined targets?"):
                 self.targets_input_textarea.set_content(self.target_list)
 
         def update_restore_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
@@ -290,6 +290,7 @@ class ReorderCardsTab(FrequencyManTab):
             restore_button.setVisible(False)
 
         restore_button = QPushButton("Restore")
+        restore_button.setToolTip("Restore to last validly defined targets.")
         restore_button.clicked.connect(user_clicked_restore_button)
         self.targets_input_textarea.on_change(update_restore_button_state)
 
@@ -300,10 +301,10 @@ class ReorderCardsTab(FrequencyManTab):
             (_, targets_defined, _) = self.target_list.get_targets_from_json(self.targets_input_textarea.toPlainText())
 
             if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
-                showInfo("Defined targets are the same as those stored in the configuration!")
+                showInfo("Defined targets are already the same as those stored in the config!")
                 return
 
-            if askUser("Restore targets as they are stored in the configuration?"):
+            if askUser("Reset targets to those stored in the config?"):
                 stored_target_list = self.fm_window.addon_config['reorder_target_list']
                 self.targets_input_textarea.set_content(stored_target_list)
 
@@ -314,6 +315,7 @@ class ReorderCardsTab(FrequencyManTab):
                 reset_button.setDisabled(False)
 
         reset_button = QPushButton("Reset")
+        reset_button.setToolTip("Reset to targets stored in the config.")
         reset_button.setDisabled(True)
         reset_button.clicked.connect(user_clicked_reset_button)
         self.targets_input_textarea.on_change(update_reset_button_state)
@@ -340,6 +342,7 @@ class ReorderCardsTab(FrequencyManTab):
             save_button.setDisabled(True)
 
         save_button = QPushButton("Save")
+        save_button.setToolTip("Save targets to config.")
         save_button.setDisabled(True)
         save_button.clicked.connect(user_clicked_save_button)
         self.targets_input_textarea.on_change(update_save_button_state)

@@ -31,21 +31,20 @@ def test_get_plain_text():
     assert TextProcessing.get_plain_text("Use of [brackets] <b>[inside HTML]</b> tags.") == "Use of [brackets] [inside HTML] tags."
 
 
-def test_get_word_tokens_from_text():
+def test_get_word_tokens_from_text_default_tokenizer_en():
 
     text_with_special_chars = "I can't \"believe\" it's here (wow) 1-character! 'amazinG'"
-    assert TextProcessing.get_word_tokens_from_text(text_with_special_chars) == ["can't", "believe", "it's", "here", "wow", "1-character", "amazing"]
+    assert TextProcessing.get_word_tokens_from_text(text_with_special_chars, LangId("en")) == ["can't", "believe", "it", "here", "wow", "1-character", "amazing"]
 
-    # Test with an empty string
-    assert TextProcessing.get_word_tokens_from_text("") == []
-    assert TextProcessing.get_word_tokens_from_text("12345") == []
+    assert TextProcessing.get_word_tokens_from_text("", LangId("en")) == []
+    assert TextProcessing.get_word_tokens_from_text("12345", LangId("en")) == []
 
-    assert TextProcessing.get_word_tokens_from_text("Simple sente-nce. EE.UU.") == ['simple', 'sente-nce', 'ee.uu']
-    assert TextProcessing.get_word_tokens_from_text("This is a\ttest.\t") == ['this', 'is', 'test']
-    assert TextProcessing.get_word_tokens_from_text("Hello, world!") == ['hello', 'world']
+    assert TextProcessing.get_word_tokens_from_text("Simple sente-nce. EE.UU. Anna's visit. john's. o'clock", LangId("en")) == ['simple', 'sente-nce', 'ee.uu', 'anna', 'visit', 'john', 'o\'clock']
+    assert TextProcessing.get_word_tokens_from_text("This is a\ttest.\t", LangId("en")) == ['this', 'is', 'test']
+    assert TextProcessing.get_word_tokens_from_text("Hello, world!", LangId("en")) == ['hello', 'world']
 
-    assert TextProcessing.get_word_tokens_from_text("Мне … лет.") == ['мне', 'лет']
-    assert TextProcessing.get_word_tokens_from_text("你跟我") == ['你跟我']
+    assert TextProcessing.get_word_tokens_from_text("Мне … лет.", LangId("en")) == ['мне', 'лет']
+    assert TextProcessing.get_word_tokens_from_text("你跟我", LangId("en")) == ['你跟我']
 
 
 def test_get_word_tokens_from_text_user_tokenizer_ja():
@@ -87,14 +86,14 @@ def test_create_word_token():
 
 def test_calc_word_presence_score():
 
-    token_context = TextProcessing.get_word_tokens_from_text("test")
+    token_context = TextProcessing.get_word_tokens_from_text("test", LangId("en"))
     assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 0) == 1.0
 
-    token_context = TextProcessing.get_word_tokens_from_text("test abcd")
+    token_context = TextProcessing.get_word_tokens_from_text("test abcd", LangId("en"))
     assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 0) == (0.5+0.5+1)/3
 
-    token_context = TextProcessing.get_word_tokens_from_text("test abcdabcd")
+    token_context = TextProcessing.get_word_tokens_from_text("test abcdabcd", LangId("en"))
     assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 0) == (0.5+(1/3)+1)/3
 
-    token_context = TextProcessing.get_word_tokens_from_text("test test abcd")
+    token_context = TextProcessing.get_word_tokens_from_text("test test abcd", LangId("en"))
     assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 1) == ((2/3)+(2/3)+0.5)/3

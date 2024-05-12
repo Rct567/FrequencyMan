@@ -311,7 +311,7 @@ class Target:
 
         for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.__get_all_language_data_keys()]:
             tokenizer = TextProcessing.get_tokenizer(lang_id)
-            if tokenizer != TextProcessing.default_tokenizer:
+            if hasattr(tokenizer, "__name__") and "default_tokenizer" not in tokenizer.__name__:
                 event_logger.add_entry("Using tokenizer '{}' for '{}'.".format(tokenizer.__name__, lang_id.upper()))
 
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):

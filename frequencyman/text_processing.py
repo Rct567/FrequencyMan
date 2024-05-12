@@ -70,7 +70,22 @@ class TextProcessing:
     @staticmethod
     def default_tokenizer(text: str) -> list[str]:
 
+        text = str(text+" ").replace(". ", " ")
         return re.split(r"[^\w\-\_\'\’\.]{1,}", text)
+
+
+    @staticmethod
+    def default_tokenizer_removing_possessives(text: str) -> list[str]:
+
+        tokens =  TextProcessing.default_tokenizer(text)
+
+        for i, token in enumerate(tokens):
+            if len(token) <= 3:
+                continue
+            if token[-1] == "s" and token[-2] in {"'", "’"}:
+                tokens[i] = token[:-2]
+
+        return tokens
 
     @staticmethod
     def get_user_provided_tokenizers() -> Tokenizers:
@@ -81,22 +96,26 @@ class TextProcessing:
         return TextProcessing.user_provided_tokenizers
 
     @staticmethod
-    def get_tokenizer(lang_id: Optional[LangId] = None) -> Tokenizer:
+    def get_tokenizer(lang_id: LangId) -> Tokenizer:
 
         user_provided_tokenizers = TextProcessing.get_user_provided_tokenizers()
 
-        if not lang_id is None and user_provided_tokenizers.lang_has_tokenizer(lang_id):
+        if user_provided_tokenizers.lang_has_tokenizer(lang_id):
             return user_provided_tokenizers.get_tokenizer(lang_id)
+
+        # or default tokenizer
+
+        if lang_id in {LangId('en'), LangId('nl'), LangId('af')}:
+            return TextProcessing.default_tokenizer_removing_possessives
 
         return TextProcessing.default_tokenizer
 
+
     @staticmethod
-    def get_word_tokens_from_text(text: str, lang_id: Optional[LangId] = None, tokenizer: Optional[Tokenizer] = None) -> list[WordToken]:
+    def get_word_tokens_from_text(text: str, lang_id: LangId, tokenizer: Optional[Tokenizer] = None) -> list[WordToken]:
 
         if tokenizer is None:
             tokenizer = TextProcessing.get_tokenizer(lang_id)
-        elif lang_id is None:
-            raise ValueError("Lang_id required when tokenizer is provided!")
         else:  # tokenizer is provided, should only be used for testing
             user_provided_tokenizers = TextProcessing.get_user_provided_tokenizers()
             if not tokenizer in user_provided_tokenizers.get_all_tokenizers(lang_id):

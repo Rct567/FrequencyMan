@@ -154,7 +154,7 @@ class Target:
             scope_query = " OR ".join(scope_queries)
             return "("+scope_query+")"
 
-        return ""
+        return None
 
     def __construct_main_scope_query(self) -> str:
 
@@ -164,14 +164,15 @@ class Target:
         if len(note_queries) < 1:
             return ''
 
-        search_query = "(" + " OR ".join(note_queries) + ")"
+        notes_query = "(" + " OR ".join(note_queries) + ")"
 
         scope_query = self.__get_query_from_defined_scope()
 
-        if (scope_query is not None):
-            search_query = scope_query+" AND "+search_query
+        if scope_query is None:
+            return notes_query
 
-        return search_query
+        return scope_query+" AND "+notes_query
+
 
     def __get_main_scope_query(self) -> str:
 

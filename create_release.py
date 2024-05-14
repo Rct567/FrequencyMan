@@ -136,7 +136,7 @@ ignore_patterns = ignore_patterns_from_gitignore_file(new_release_src_dir)
 ignore_patterns.extend(['tests/', 'pytest.ini', 'create_release.py', 'create_default_wf_lists.py', 'pyproject.toml'])
 copy_directory(new_release_src_dir, new_release_dst_dir, ignore_patterns)
 
-release_zip_file = os.path.join(releases_dir, new_release_obj_name+'.zip')
+release_zip_file = os.path.join(releases_dir, new_release_obj_name+'.ankiaddon')
 create_zip(new_release_dst_dir, release_zip_file)
 
 print("Done!")
@@ -145,5 +145,6 @@ commit_tag_push = input("Use GIT to commit, tag and push to v{}? (Y/N) ".format(
 if commit_tag_push.lower() == "y":
     commit_and_tag(new_release_version)
     print("New version committed!")
+    print("\nNext step:\nCreate a new release on Github: https://github.com/Rct567/FrequencyMan/releases/new")
 else:
     print("Skipped commit, tag and push...")

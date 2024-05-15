@@ -68,7 +68,7 @@ class TargetsDefiningTextArea(QTextEdit):
 
         current_content = self.toPlainText()
 
-        if "** name of main deck **"  in current_content:
+        if "** name of main deck **"  in current_content and "** name of notes type **" in current_content:
             example_target_explanation = "This is just an example target. Please modify the JSON target list to suit your needs!"
             (new_json_validity_state, new_targets_defined, new_err_desc) = (1, [], example_target_explanation)
         else:

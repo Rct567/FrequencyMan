@@ -132,7 +132,6 @@ class ReorderCardsTab(FrequencyManTab):
     target_list: TargetList
 
     targets_input_textarea: TargetsDefiningTextArea
-    targets_input_options_row: QWidget
     reorder_button: QPushButton
 
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
@@ -160,9 +159,6 @@ class ReorderCardsTab(FrequencyManTab):
 
         # textarea (user can input json to define targets)
         self.targets_input_textarea = self.__create_targets_input_textarea()
-
-        # row below textarea
-        self.targets_input_options_row = self.__create_targets_input_options_row_widget()
 
         # check errors
         default_wf_lists_dir = os.path.join(self.fm_window.root_dir, 'default_wf_lists')
@@ -219,11 +215,12 @@ class ReorderCardsTab(FrequencyManTab):
 
         self.reorder_button = self.__create_reorder_button()
 
-        # set tab layout
+        # set tab layout and add widgets
 
         tab_layout.setSpacing(0)
         tab_layout.addWidget(self.targets_input_textarea)
-        tab_layout.addWidget(self.targets_input_options_row)
+        tab_layout.addWidget(self.__create_targets_input_options_row_widget())
+        tab_layout.addWidget(self.__create_targets_input_validation_info_row_widget())
         tab_layout.addWidget(self.reorder_button)
         tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))  # Add an empty spacer row to compress the rows above
 
@@ -254,27 +251,7 @@ class ReorderCardsTab(FrequencyManTab):
         return targets_input_textarea
 
 
-    # Validation line below textarea, with line of text on the left and buttons on the right
-
     def __create_targets_input_options_row_widget(self) -> QWidget:
-
-        # informational text on the left
-
-        validation_info_text_line = QLabel()
-        validation_info_text_line.setTextFormat(Qt.TextFormat.RichText)
-        validation_info_text_line.setStyleSheet("font-weight: bolder; font-size: 13px; margin-top:8px;")
-        validation_info_text_line.setWordWrap(True)
-
-        def update_validation_info_txt_line(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
-            if (targets_input_textarea.err_desc != ""):
-                validation_info_text_line.setVisible(True)
-                new_txt = "<style>.alt { font-style: italic; color: gray; }</style>"
-                new_txt += targets_input_textarea.err_desc.replace('\n', '<br>')
-                validation_info_text_line.setText(new_txt)
-            else:
-                validation_info_text_line.setVisible(False)
-
-        self.targets_input_textarea.on_change(update_validation_info_txt_line)
 
         # restore button
 
@@ -350,7 +327,6 @@ class ReorderCardsTab(FrequencyManTab):
         # set layout
 
         grid_layout = QGridLayout()
-        grid_layout.addWidget(validation_info_text_line, 1, 0, 1, 4)
         grid_layout.setColumnStretch(0, 1)
         spacer_item = QSpacerItem(12, 12, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         grid_layout.addItem(spacer_item, 0, 1, 1, 1)
@@ -363,6 +339,27 @@ class ReorderCardsTab(FrequencyManTab):
         targets_input_options_line = QWidget()
         targets_input_options_line.setLayout(grid_layout)
         return targets_input_options_line
+
+
+    def __create_targets_input_validation_info_row_widget(self) -> QWidget:
+
+        validation_info_text_line = QLabel()
+        validation_info_text_line.setTextFormat(Qt.TextFormat.RichText)
+        validation_info_text_line.setStyleSheet("font-weight: bolder; font-size: 13px; margin-top:8px;")
+        validation_info_text_line.setWordWrap(True)
+
+        def update_validation_info_txt_line(_, targets_input_textarea: TargetsDefiningTextArea):
+            if (targets_input_textarea.err_desc != ""):
+                validation_info_text_line.setVisible(True)
+                new_txt = "<style>.alt { font-style: italic; color: gray; }</style>"
+                new_txt += targets_input_textarea.err_desc.replace('\n', '<br>')
+                validation_info_text_line.setText(new_txt)
+            else:
+                validation_info_text_line.setVisible(False)
+
+        self.targets_input_textarea.on_change(update_validation_info_txt_line)
+
+        return validation_info_text_line
 
 
     def __create_reorder_button(self) -> QPushButton:

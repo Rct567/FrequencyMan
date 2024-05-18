@@ -19,6 +19,7 @@ from aqt.main import AnkiQt
 from ..default_wf_lists import DefaultWordFrequencyLists
 
 from .main_window import FrequencyManMainWindow, FrequencyManTab
+from .select_new_target_window import SelectNewTargetWindow
 
 from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log
@@ -253,6 +254,29 @@ class ReorderCardsTab(FrequencyManTab):
 
     def __create_targets_input_options_row_widget(self) -> QWidget:
 
+        # add target button
+
+        @pyqtSlot()
+        def user_clicked_add_target_button():
+            (validity_state, currently_defined_targets, err_desc) = self.target_list.get_targets_from_json(self.targets_input_textarea.toPlainText())
+            if validity_state == -1:
+                showWarning(err_desc)
+                return
+
+            dialog = SelectNewTargetWindow(self.fm_window, self.col)
+            if dialog.exec():
+                new_targets = currently_defined_targets + [dialog.get_selected_target()]
+                self.targets_input_textarea.set_content(new_targets)
+
+        def update_add_target_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
+            add_target_button.setDisabled(self.target_list.has_targets() and json_validity_state == -1)
+
+        add_target_button = QPushButton("Add target")
+        add_target_button.setToolTip("Add a new target to the list.")
+        add_target_button.setDisabled(True)
+        add_target_button.clicked.connect(user_clicked_add_target_button)
+        self.targets_input_textarea.on_change(update_add_target_button_state)
+
         # restore button
 
         @pyqtSlot()
@@ -327,7 +351,9 @@ class ReorderCardsTab(FrequencyManTab):
         # set layout
 
         grid_layout = QGridLayout()
-        grid_layout.setColumnStretch(0, 1)
+
+        grid_layout.addWidget(add_target_button, 0, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignTop)
+        grid_layout.setColumnStretch(1, 1)
         spacer_item = QSpacerItem(12, 12, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         grid_layout.addItem(spacer_item, 0, 1, 1, 1)
 

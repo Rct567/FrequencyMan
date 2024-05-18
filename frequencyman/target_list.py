@@ -108,12 +108,19 @@ class TargetList:
             if not note_model:
                 return (0, "Name '{}' for note object specified in target[{}].notes does not exist.".format(note['name'], index))
 
+            if len(note.get('fields', {})) == 0:
+                return (0, "Fields object specified in target[{}].notes[{}] is empty.".format(index, note_index))
+
             for field_name, lang_key in note.get('fields', {}).items():
-                if not isinstance(lang_key, str):
-                    return (0, "Value for field '{}' in fields object specified in target[{}].notes[{}] is not a valid type (string expected).".format(field_name, index, note_index))
-                lang_data_id = LangDataId(lang_key.lower())
+                if field_name == "":
+                    return (0, "Field name in fields object specified in target[{}].notes[{}] is empty.".format(index, note_index))
                 if not any(field['name'] == field_name for field in note_model['flds']):
                     return (0, "Field name '{}' in fields object specified in target[{}].notes[{}] does not exist.".format(field_name, index, note_index))
+                if not isinstance(lang_key, str):
+                    return (0, "Value for field '{}' in fields object specified in target[{}].notes[{}] is not a valid type (string expected).".format(field_name, index, note_index))
+                if lang_key == "":
+                    return (0, "Value for field '{}' in fields object specified in target[{}].notes[{}] is empty (lang_data_id expected).".format(field_name, index, note_index))
+                lang_data_id = LangDataId(lang_key.lower())
                 if not self.language_data.id_has_directory(lang_data_id):
                     return (0, "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, self.language_data.data_dir))
 

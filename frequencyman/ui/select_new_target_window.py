@@ -48,8 +48,10 @@ class SelectNewTargetWindow(QDialog):
         self.deck_filter = QLineEdit()
         self.deck_filter.setPlaceholderText("Filter decks...")
         self.deck_list_view = QListView()
-        #self.deck_list_view.setMinimumHeight(200)
-        self.deck_list_model = QStringListModel([deck.name for deck in self.get_sorted_decks()])
+        deck_names = [deck.name for deck in self.get_sorted_decks()]
+        self.deck_list_model = QStringListModel(deck_names)
+        if len(deck_names) > 10:
+            self.deck_list_view.setMinimumHeight(185)
         self.deck_list_view.setModel(self.deck_list_model)
         if (selection_model := self.deck_list_view.selectionModel()) is not None:
             selection_model.selectionChanged.connect(self.on_deck_selection_change)
@@ -112,13 +114,12 @@ class SelectNewTargetWindow(QDialog):
 
     def get_note_types_counts_by_deck(self, deck_name: str) -> dict[str, int]:
 
-        # Find the deck ID from the deck name
-        deck_id = self.col.decks.id(deck_name)
-        if deck_id is None:
-            raise ValueError("Deck {} not found".format(deck_name))
+        card_ids = list(self.col.find_cards("deck:\"{}\"".format(deck_name)))
+        if len(card_ids) == 0:
+            return {}
 
         # Get random subset of cards in the deck
-        card_ids = list(self.col.find_cards("deck:\"{}\"".format(deck_name)))
+
         random.shuffle(card_ids)
         card_ids = card_ids[:2000]
 
@@ -164,7 +165,9 @@ class SelectNewTargetWindow(QDialog):
 
         # update note types list based on selected deck
         if self.selected_deck:
-            self.set_note_types_list(list(self.get_note_types_counts_by_deck(self.selected_deck).keys()))
+            note_typed_counted_by_deck = list(self.get_note_types_counts_by_deck(self.selected_deck).keys())
+            if note_typed_counted_by_deck:
+                self.set_note_types_list(note_typed_counted_by_deck)
 
         self.on_selection_change()
 

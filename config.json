@@ -1,12 +1,4 @@
 {
-    "reorder_target_list": [
-        {
-            "deck": "** name of main deck **",
-            "notes": [{
-                "name": "** name of notes type **",
-                "fields": {"Front": "JA", "Back": "EN"}
-            }]
-        }
-    ],
+    "reorder_target_list": [],
     "log_reorder_events": false
 }

@@ -69,11 +69,10 @@ class TargetsDefiningTextArea(QTextEdit):
 
         current_content = self.toPlainText()
 
-        if "** name of main deck **"  in current_content and "** name of notes type **" in current_content:
-            example_target_explanation = "This is just an example target. Please modify the JSON target list to suit your needs!"
-            (new_json_validity_state, new_targets_defined, new_err_desc) = (1, [], example_target_explanation)
-        else:
-            (new_json_validity_state, new_targets_defined, new_err_desc) = self.json_validator(current_content)
+        (new_json_validity_state, new_targets_defined, new_err_desc) = self.json_validator(current_content)
+
+        if new_json_validity_state == 0 and len(new_targets_defined) == 0:
+            new_err_desc = "Targets not yet defined. Which cards do you want to reorder? Press the 'Add target' button and define a new target."
 
         if new_err_desc != "" and allow_error_interception > 0:
             for error_interceptor in self.error_interceptors:
@@ -206,10 +205,7 @@ class ReorderCardsTab(FrequencyManTab):
             if (self.target_list.has_targets()):
                 self.targets_input_textarea.set_content(self.target_list)
             elif self.targets_input_textarea.toPlainText() == "":  # when does this even happen?
-                example_data_notes_item: ConfiguredTargetNote = {'name': '** name of notes type **', 'fields': {"Front": "JA", "Back": "EN"}}
-                example_target: ConfiguredTarget = {'deck': '** name of main deck **', 'notes': [example_data_notes_item]}
-                example_target_list = [example_target]
-                self.targets_input_textarea.set_content(example_target_list)
+                self.targets_input_textarea.set_content([])
 
         self.targets_input_textarea.on_first_paint(set_content_on_first_paint)
 

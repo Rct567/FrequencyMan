@@ -11,7 +11,7 @@ from typing import Optional, Tuple, Callable
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from aqt.operations import QueryOp, CollectionOp
 
-from aqt.utils import askUser, showWarning, showInfo
+from aqt.utils import askUser, showWarning, showInfo, askUserDialog
 from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
 from aqt.qt import *
 from aqt.main import AnkiQt
@@ -296,6 +296,13 @@ class ReorderCardsTab(FrequencyManTab):
 
         @pyqtSlot()
         def user_clicked_reset_button():
+
+            if len(self.fm_window.addon_config['reorder_target_list']) == 0:
+                if askUser("Target list in config is empty. Resetting will result in an empty target list. Continue?"):
+                    if askUserDialog("Currently defined targets will be lost!", buttons=["Ok", "Cancel"]).exec() == 0:
+                        self.targets_input_textarea.set_content([])
+                return
+
             (_, targets_defined, _) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
 
             if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
@@ -303,14 +310,19 @@ class ReorderCardsTab(FrequencyManTab):
                 return
 
             if askUser("Reset targets to those stored in the config?"):
-                stored_target_list = self.fm_window.addon_config['reorder_target_list']
-                self.targets_input_textarea.set_content(stored_target_list)
+                if askUserDialog("Currently defined targets may be lost.", buttons=["Ok", "Cancel"]).exec() == 0:
+                    stored_target_list = self.fm_window.addon_config['reorder_target_list']
+                    self.targets_input_textarea.set_content(stored_target_list)
 
         def update_reset_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
-            if json_validity_state == 1 and self.fm_window.addon_config['reorder_target_list'] == targets_input_textarea.valid_targets_defined:
+
+            if "reorder_target_list" not in self.fm_window.addon_config or not isinstance(self.fm_window.addon_config['reorder_target_list'], list):
                 reset_button.setDisabled(True)
-            else:
-                reset_button.setDisabled(False)
+                return
+
+            (_, targets_defined, _) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
+            targets_defined_same_as_stored = self.fm_window.addon_config['reorder_target_list'] == targets_defined
+            reset_button.setDisabled(targets_defined_same_as_stored)
 
         reset_button = QPushButton("Reset")
         reset_button.setToolTip("Reset to targets stored in the config.")

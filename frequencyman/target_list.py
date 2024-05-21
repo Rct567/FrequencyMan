@@ -50,7 +50,7 @@ class TargetList:
 
     def set_targets(self, target_list: list[ConfiguredTarget]) -> tuple[int, str]:
 
-        (validity_state, err_desc) = self.validate_target_list(target_list)
+        (validity_state, err_desc) = TargetList.validate_target_list(target_list, self.col, self.language_data)
         if (validity_state == 1):
             self.target_list = [Target(target, target_num, self.col) for target_num, target in enumerate(target_list)]
         return (validity_state, err_desc)
@@ -62,7 +62,8 @@ class TargetList:
         target_list = [target.config_target for target in self.target_list]
         return json.dumps(target_list, indent=4)
 
-    def __validate_target(self, target: ConfiguredTarget, index: int) -> tuple[int, str]:
+    @staticmethod
+    def __validate_target(target: ConfiguredTarget, index: int, col: Collection, language_data: LanguageData) -> tuple[int, str]:
 
         if not isinstance(target, dict):
             return (0, "Target #{} is not a valid type (object expected). ".format(index))
@@ -82,7 +83,7 @@ class TargetList:
 
         # check deck names
         for deck_name in Target.get_deck_names_from_config_target(target):
-            if self.col.decks.id_for_name(deck_name) is None:
+            if col.decks.id_for_name(deck_name) is None:
                 return (0, "Deck '{}' defined in target #{} not found.".format(deck_name, index))
 
         # check field value for notes
@@ -103,7 +104,7 @@ class TargetList:
             if not isinstance(note.get('fields'), dict):
                 return (0, "Fields for note object specified in target[{}].notes[{}] is not a valid type (object expected).".format(index, note_index))
 
-            note_model = self.col.models.by_name(note['name'])
+            note_model = col.models.by_name(note['name'])
 
             if not note_model:
                 return (0, "Name '{}' for note object specified in target[{}].notes does not exist.".format(note['name'], index))
@@ -121,8 +122,8 @@ class TargetList:
                 if lang_key == "":
                     return (0, "Value for field '{}' in fields object specified in target[{}].notes[{}] is empty (lang_data_id expected).".format(field_name, index, note_index))
                 lang_data_id = LangDataId(lang_key.lower())
-                if not self.language_data.id_has_directory(lang_data_id):
-                    return (0, "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, self.language_data.data_dir))
+                if not language_data.id_has_directory(lang_data_id):
+                    return (0, "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, language_data.data_dir))
 
         # check custom ranking factors object and its weights values
         if 'ranking_factors' in target:
@@ -159,19 +160,21 @@ class TargetList:
         # defined target seems valid
         return (1, "")
 
-    def validate_target_list(self, target_data: list[ConfiguredTarget]) -> tuple[int, str]:
+    @staticmethod
+    def validate_target_list(target_data: list[ConfiguredTarget], col: Collection, language_data: LanguageData) -> tuple[int, str]:
 
         if not isinstance(target_data, list):
             return (0, "Reorder target is not a list (array expected).")
         elif len(target_data) < 1:
             return (0, "Reorder target list is empty.")
         for index, target in enumerate(target_data):
-            (validity_state, err_desc) = self.__validate_target(target, index)
+            (validity_state, err_desc) = TargetList.__validate_target(target, index, col, language_data)
             if validity_state == 0:
                 return (0, err_desc)
         return (1, "")
 
-    def get_targets_from_json(self, json_data: str) -> tuple[int, list[ConfiguredTarget], str]:
+    @staticmethod
+    def get_targets_from_json(json_data: str, col: Collection, language_data: LanguageData) -> tuple[int, list[ConfiguredTarget], str]:
 
         if json_data == "":
             return (0, [], "")
@@ -179,7 +182,7 @@ class TargetList:
             data: TargetList = json.loads(json_data)
             if not isinstance(data, list):
                 return (0, [], "JSON does not contain a list!")
-            (validity_state, err_desc) = self.validate_target_list(data)
+            (validity_state, err_desc) = TargetList.validate_target_list(data, col, language_data)
             return (validity_state, data, err_desc)
         except json.JSONDecodeError as e:
             error_message = "Invalid JSON at line " + str(e.lineno) + "! "+e.msg+"."

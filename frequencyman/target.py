@@ -56,12 +56,12 @@ class TargetReorderResult():
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 
 
-class ConfiguredTargetNote(TypedDict):
+class ConfiguredTargetDataNote(TypedDict):
     name: str
     fields: dict[str, str]
 
 
-class ConfiguredTarget(TypedDict, total=False):
+class ConfiguredTargetData(TypedDict, total=False):
     deck: str
     decks: Union[str, list[str]]
     scope_query: str
@@ -72,12 +72,48 @@ class ConfiguredTarget(TypedDict, total=False):
     ideal_word_count: list[int]
     ranking_factors: dict[str, Union[float, str, int]]
     corpus_segmentation_strategy: str
-    notes: list[ConfiguredTargetNote]
+    notes: list[ConfiguredTargetDataNote]
+
+class ConfiguredTarget:
+
+    data: ConfiguredTargetData
+
+    def __init__(self, data: ConfiguredTargetData) -> None:
+        self.data = data
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.data.get(key, default)
+
+    def __getitem__(self, key: str) -> Any:
+        if key in self.data:
+            return self.data[key]
+        else:
+            raise KeyError(key)
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.data
+
+    def keys(self):
+        return self.data.keys()
+
+    def __len__(self) -> int:
+        return len(self.data.keys())
+
+    def __eq__(self, value: object) -> bool:
+        return self.data == value
+
+    def __ne__(self, value: object) -> bool:
+        return self.data != value
+
+
+class ValidConfiguredTarget(ConfiguredTarget):
+    pass
+
 
 
 class Target:
 
-    config_target: ConfiguredTarget
+    config_target: ValidConfiguredTarget
     index_num: int
     col: Collection
 
@@ -87,7 +123,7 @@ class Target:
 
     cache_data: dict[str, dict[tuple, Any]]
 
-    def __init__(self, target: ConfiguredTarget, index_num: int, col: Collection) -> None:
+    def __init__(self, target: ValidConfiguredTarget, index_num: int, col: Collection) -> None:
 
         self.config_target = target
         self.index_num = index_num
@@ -241,7 +277,7 @@ class Target:
         if (suspended_leech_card_value := get_float(self.config_target.get('suspended_leech_card_value'))) is not None:
             self.target_corpus_data.suspended_leech_card_value = suspended_leech_card_value
 
-        #corpus_segmentation_strategy
+        # corpus_segmentation_strategy
         if (corpus_segmentation_strategy := self.config_target.get('corpus_segmentation_strategy', '').lower()) != '':
             if corpus_segmentation_strategy == 'by_lang_data_id':
                 self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID

@@ -6,7 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 import json
 import re
 import shutil
-from typing import Optional, Tuple, Callable
+from typing import Any, Optional, Tuple, Callable
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from aqt.operations import QueryOp, CollectionOp
@@ -25,17 +25,18 @@ from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log
 
 from ..language_data import LanguageData
-from ..target_list import ConfiguredTarget, TargetList, TargetListReorderResult, ConfiguredTargetNote
+from ..target import ConfiguredTarget, ValidConfiguredTarget
+from ..target_list import TargetList, TargetListReorderResult
 
 
 class TargetsDefiningTextArea(QTextEdit):
 
     json_validity_state: int
-    json_validator: Callable[[str], Tuple[int, list[ConfiguredTarget], str]]
+    json_validator: Callable[[str], Tuple[int, list[ConfiguredTarget], str, Optional[list[ValidConfiguredTarget]]]]
     err_desc: str
     validity_change_callbacks: list[Callable[[int, 'TargetsDefiningTextArea'], None]]
     change_callbacks: list[Callable[[int, 'TargetsDefiningTextArea'], None]]
-    valid_targets_defined: Optional[list[ConfiguredTarget]]
+    valid_targets_defined: Optional[list[ValidConfiguredTarget]]
     error_interceptors: list[Callable[[str], bool]]
     first_paint_callbacks: list[Callable[['TargetsDefiningTextArea'], None]]
 
@@ -69,7 +70,7 @@ class TargetsDefiningTextArea(QTextEdit):
 
         current_content = self.toPlainText()
 
-        (new_json_validity_state, new_targets_defined, new_err_desc) = self.json_validator(current_content)
+        (new_json_validity_state, new_targets_defined, new_err_desc, valid_targets_defined) = self.json_validator(current_content)
 
         if new_json_validity_state == 0 and len(new_targets_defined) == 0:
             new_err_desc = "Targets not yet defined. Which cards do you want to reorder? Press the 'Add target' button and define a new target."
@@ -85,7 +86,7 @@ class TargetsDefiningTextArea(QTextEdit):
         self.json_validity_state = new_json_validity_state
         self.err_desc = new_err_desc
         if (new_json_validity_state == 1):
-            self.valid_targets_defined = new_targets_defined
+            self.valid_targets_defined = valid_targets_defined
         self.__call_change_listeners(new_json_validity_state)
         if json_validity_state_has_changed:
             self.__call_validity_change_listeners(new_json_validity_state)
@@ -102,7 +103,7 @@ class TargetsDefiningTextArea(QTextEdit):
         for callback in self.first_paint_callbacks:
             callback(self)
 
-    def set_validator(self, callback: Callable[[str], Tuple[int, list[ConfiguredTarget], str]]):
+    def set_validator(self, callback: Callable[[str], Tuple[int, list[ConfiguredTarget], str, Optional[list[ValidConfiguredTarget]]]]):
         self.json_validator = callback
 
     def on_validity_change(self, callback: Callable[[int, 'TargetsDefiningTextArea'], None]):
@@ -114,11 +115,21 @@ class TargetsDefiningTextArea(QTextEdit):
     def on_first_paint(self, callback: Callable[['TargetsDefiningTextArea'], None]):
         self.first_paint_callbacks.append(callback)
 
-    def set_content(self, target_list:Union[list, TargetList]):
+    def set_content(self, target_list: Union[list[ConfiguredTarget], list[dict[str, Any]], TargetList]):
         if isinstance(target_list, TargetList):
             self.setText(target_list.dump_json())
+        elif isinstance(target_list, list):
+            dict_target_list: list[dict] = []
+            for target in target_list:
+                if isinstance(target, ConfiguredTarget):
+                    dict_target_list.append(dict(target.data))
+                elif isinstance(target, dict):
+                    dict_target_list.append(target)
+                else:
+                    raise ValueError("Invalid type in target_list!")
+            self.setText(json.dumps(dict_target_list, indent=4))
         else:
-            self.setText(json.dumps(target_list, indent=4))
+            raise ValueError("Invalid target_list type!")
 
     def add_error_interceptor(self, interceptor: Callable[[str], bool]):
         self.error_interceptors.append(interceptor)
@@ -241,7 +252,7 @@ class ReorderCardsTab(FrequencyManTab):
 
         def update_target_list_if_input_is_valid(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
             if (json_validity_state == 1 and targets_input_textarea.valid_targets_defined):
-                self.target_list.set_targets(targets_input_textarea.valid_targets_defined)
+                self.target_list.set_valid_targets(targets_input_textarea.valid_targets_defined)
 
         targets_input_textarea.on_validity_change(update_textarea_text_color_by_validity)
         targets_input_textarea.on_change(update_target_list_if_input_is_valid)
@@ -255,14 +266,14 @@ class ReorderCardsTab(FrequencyManTab):
 
         @pyqtSlot()
         def user_clicked_add_target_button():
-            (validity_state, currently_defined_targets, err_desc) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
+            (validity_state, targets_defined, err_desc, _) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
             if validity_state == -1:
                 showWarning(err_desc)
                 return
 
             dialog = SelectNewTargetWindow(self.fm_window, self.col)
             if dialog.exec():
-                new_targets = currently_defined_targets + [dialog.get_selected_target()]
+                new_targets = targets_defined + [dialog.get_selected_target()]
                 self.targets_input_textarea.set_content(new_targets)
 
         def update_add_target_button_state(json_validity_state, targets_input_textarea: TargetsDefiningTextArea):
@@ -303,7 +314,7 @@ class ReorderCardsTab(FrequencyManTab):
                         self.targets_input_textarea.set_content([])
                 return
 
-            (_, targets_defined, _) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
+            (_, targets_defined, _, _) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
 
             if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
                 showInfo("Defined targets are already the same as those stored in the config!")
@@ -320,7 +331,7 @@ class ReorderCardsTab(FrequencyManTab):
                 reset_button.setDisabled(True)
                 return
 
-            (_, targets_defined, _) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
+            (_, targets_defined, _, _) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
             targets_defined_same_as_stored = self.fm_window.addon_config['reorder_target_list'] == targets_defined
             reset_button.setDisabled(targets_defined_same_as_stored)
 
@@ -334,10 +345,10 @@ class ReorderCardsTab(FrequencyManTab):
 
         @pyqtSlot()
         def user_clicked_save_button():
-            (json_validity_state, targets_defined, _) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
+            (json_validity_state, _, _, valid_targets_defined) = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
 
-            if (json_validity_state == 1 and self.fm_window.addon_config['reorder_target_list'] != targets_defined):
-                self.fm_window.addon_config['reorder_target_list'] = targets_defined
+            if (valid_targets_defined is not None and json_validity_state == 1 and self.fm_window.addon_config['reorder_target_list'] != valid_targets_defined):
+                self.fm_window.addon_config['reorder_target_list'] = [target.data for target in valid_targets_defined]
                 self.fm_window.addon_config_write(self.fm_window.addon_config)
                 reset_button.setDisabled(True)
 
@@ -375,7 +386,6 @@ class ReorderCardsTab(FrequencyManTab):
         targets_input_options_line.setLayout(grid_layout)
         return targets_input_options_line
 
-
     def __create_targets_input_validation_info_row_widget(self) -> QWidget:
 
         validation_info_text_line = QLabel()
@@ -403,13 +413,13 @@ class ReorderCardsTab(FrequencyManTab):
 
         # user clicked reorder... ask to save to config if new targets have been defined
 
-        def ask_to_save_new_targets_to_config(targets_defined: list[ConfiguredTarget]):
+        def ask_to_save_new_targets_to_config(targets_defined: list[ValidConfiguredTarget]):
             if self.fm_window.addon_config is None or "reorder_target_list" not in self.fm_window.addon_config:
                 return
             if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
                 return
             if askUser("Defined targets have changed. Save them to config?"):
-                self.fm_window.addon_config['reorder_target_list'] = targets_defined
+                self.fm_window.addon_config['reorder_target_list'] = [target.data for target in targets_defined]
                 self.fm_window.addon_config_write(self.fm_window.addon_config)
                 self.targets_input_textarea.handle_current_content()
 
@@ -489,6 +499,3 @@ class ReorderCardsTab(FrequencyManTab):
                 op=reorder_operation,
                 success=reorder_show_results
             ).with_progress(label="Reordering new cards...").run_in_background()
-
-
-

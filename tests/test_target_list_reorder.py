@@ -190,7 +190,7 @@ class TestTargetListReorder:
 
         target_list = TargetList(language_data, col)
 
-        validity_state = target_list.set_targets([
+        target_list.set_targets([
             {
                 'deck': 'decka',
                 'notes': [{
@@ -213,7 +213,6 @@ class TestTargetListReorder:
             }
         ])
 
-        assert validity_state == (1, "")
         assert len(target_list) == 2
 
         # reorder cards
@@ -258,7 +257,7 @@ class TestTargetListReorder:
 
         target_list = TargetList(language_data, col)
 
-        validity_state = target_list.set_targets([
+        target_list.set_targets([
             {
                 'decks': 'decka, deckb',
                 'notes': [{
@@ -271,7 +270,6 @@ class TestTargetListReorder:
             }
         ])
 
-        assert validity_state == (1, "")
         assert len(target_list) == 1
 
         # reorder cards
@@ -299,7 +297,7 @@ class TestTargetListReorder:
 
         target_list = TargetList(language_data, col)
 
-        validity_state = target_list.set_targets([
+        target_list.set_targets([
             {
                 'decks': 'decka, deckb',
                 'notes': [{
@@ -324,7 +322,6 @@ class TestTargetListReorder:
             }
         ])
 
-        assert validity_state == (1, "")
         assert len(target_list) == 2
 
         # reorder cards
@@ -377,7 +374,7 @@ class TestTargetListReorder:
 
         target_list = TargetList(language_data, col)
 
-        validity_state = target_list.set_targets([
+        target_list.set_targets([
             {
                 'decks': 'decka, deckb',
                 'notes': [{
@@ -390,8 +387,6 @@ class TestTargetListReorder:
                 'reorder_scope_query': 'deck:decka'
             }
         ])
-
-        assert validity_state == (1, "")
 
         # reorder cards
         event_logger = EventLogger()
@@ -426,7 +421,7 @@ class TestTargetListReorder:
 
         target_list = TargetList(language_data, col)
 
-        validity_state = target_list.set_targets([
+        target_list.set_targets([
             {
                 'decks': ['decka', 'deckb'],
                 'notes': [{
@@ -440,7 +435,6 @@ class TestTargetListReorder:
             }
         ])
 
-        assert validity_state == (1, "")
         assert len(target_list) == 1
 
         # reorder cards

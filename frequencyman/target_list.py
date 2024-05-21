@@ -14,7 +14,7 @@ from anki.notes import Note, NoteId
 from .target_cards import TargetCards
 from .lib.utilities import batched, is_numeric_value
 from .card_ranker import CardRanker
-from .target import ConfiguredTarget, TargetReorderResult, Target, ConfiguredTargetNote as ConfiguredTargetNote
+from .target import ConfiguredTarget, ConfiguredTargetData, TargetReorderResult, Target, ConfiguredTargetDataNote as ConfiguredTargetDataNote, ValidConfiguredTarget
 from .language_data import LangDataId, LanguageData
 from .lib.event_logger import EventLogger
 
@@ -48,24 +48,31 @@ class TargetList:
     def __getitem__(self, index: int) -> Target:
         return self.target_list[index]
 
-    def set_targets(self, target_list: list[ConfiguredTarget]) -> tuple[int, str]:
+    def set_valid_targets(self, valid_target_list: list[ValidConfiguredTarget]) -> None:
 
-        (validity_state, err_desc) = TargetList.validate_target_list(target_list, self.col, self.language_data)
-        if (validity_state == 1):
-            self.target_list = [Target(target, target_num, self.col) for target_num, target in enumerate(target_list)]
-        return (validity_state, err_desc)
+        self.target_list = [Target(target, target_num, self.col) for target_num, target in enumerate(valid_target_list)]
+
+    def set_targets(self, target_list_data: list[ConfiguredTargetData]):
+
+        target_list = [ConfiguredTarget(target) for target in target_list_data]
+        (validity_state, err_desc, valid_target_list) = TargetList.validate_target_list(target_list, self.col, self.language_data)
+
+        if validity_state != 1 or valid_target_list is None:
+            raise Exception(err_desc)
+
+        self.set_valid_targets(valid_target_list)
 
     def has_targets(self) -> bool:
         return len(self.target_list) > 0
 
     def dump_json(self) -> str:
-        target_list = [target.config_target for target in self.target_list]
+        target_list = [target.config_target.data for target in self.target_list]
         return json.dumps(target_list, indent=4)
 
     @staticmethod
     def __validate_target(target: ConfiguredTarget, index: int, col: Collection, language_data: LanguageData) -> tuple[int, str]:
 
-        if not isinstance(target, dict):
+        if not isinstance(target, ConfiguredTarget):
             return (0, "Target #{} is not a valid type (object expected). ".format(index))
         if len(target.keys()) == 0:
             return (0, "Target #{} does not have any keys.".format(index))
@@ -161,29 +168,32 @@ class TargetList:
         return (1, "")
 
     @staticmethod
-    def validate_target_list(target_data: list[ConfiguredTarget], col: Collection, language_data: LanguageData) -> tuple[int, str]:
+    def validate_target_list(target_data: list[ConfiguredTarget], col: Collection, language_data: LanguageData) -> tuple[int, str, Optional[list[ValidConfiguredTarget]]]:
 
         if not isinstance(target_data, list):
-            return (0, "Reorder target is not a list (array expected).")
+            return (0, "Reorder target is not a list (array expected).", None)
         elif len(target_data) < 1:
-            return (0, "Reorder target list is empty.")
+            return (0, "Reorder target list is empty.", None)
+
         for index, target in enumerate(target_data):
             (validity_state, err_desc) = TargetList.__validate_target(target, index, col, language_data)
             if validity_state == 0:
-                return (0, err_desc)
-        return (1, "")
+                return (0, err_desc, None)
+
+        return (1, "", [ValidConfiguredTarget(target.data) for target in target_data])
+
 
     @staticmethod
-    def get_targets_from_json(json_data: str, col: Collection, language_data: LanguageData) -> tuple[int, list[ConfiguredTarget], str]:
+    def get_targets_from_json(json_data: str, col: Collection, language_data: LanguageData) -> tuple[int, list[ConfiguredTarget], str, Optional[list[ValidConfiguredTarget]]]:
 
         if json_data == "":
-            return (0, [], "")
+            return (0, [], "", None)
         try:
-            data: TargetList = json.loads(json_data)
+            data = json.loads(json_data)
             if not isinstance(data, list):
-                return (0, [], "JSON does not contain a list!")
-            (validity_state, err_desc) = TargetList.validate_target_list(data, col, language_data)
-            return (validity_state, data, err_desc)
+                return (0, [], "Reorder target is not a list (array expected).", [])
+            (validity_state, err_desc, valid_target_list) = TargetList.validate_target_list([ConfiguredTarget(target) for target in data], col, language_data)
+            return (validity_state, [ConfiguredTarget(target) for target in data], err_desc, valid_target_list)
         except json.JSONDecodeError as e:
             error_message = "Invalid JSON at line " + str(e.lineno) + "! "+e.msg+"."
             line_number = e.lineno
@@ -192,7 +202,7 @@ class TargetList:
                 invalid_line = content_lines[line_number-1].lstrip()
                 if invalid_line.strip() != "":
                     error_message += "\n\nInvalid JSON: <span class=\"alt\">" + invalid_line + "</span>"
-            return (-1, [], error_message)
+            return (-1, [], error_message, None)
 
     def reorder_cards(self, col: Collection, event_logger: EventLogger, schedule_cards_as_new: bool = False) -> TargetListReorderResult:
 

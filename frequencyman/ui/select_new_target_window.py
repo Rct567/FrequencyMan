@@ -18,7 +18,7 @@ from ..lib.utilities import var_dump, var_dump_log
 
 from .main_window import FrequencyManMainWindow
 
-from ..target_list import ConfiguredTarget, ConfiguredTargetNote
+from ..target_list import ConfiguredTarget, ConfiguredTargetDataNote
 
 
 class SelectNewTargetWindow(QDialog):
@@ -217,6 +217,5 @@ class SelectNewTargetWindow(QDialog):
         self.accept()
 
     def get_selected_target(self) -> ConfiguredTarget:
-        new_target_note: ConfiguredTargetNote = {'name': self.selected_note_type, 'fields': self.selected_fields}
-        new_target: ConfiguredTarget = {'deck': self.selected_deck, 'notes': [new_target_note]}
-        return new_target
+        new_target_note: ConfiguredTargetDataNote = {'name': self.selected_note_type, 'fields': self.selected_fields}
+        return ConfiguredTarget({'deck': self.selected_deck, 'notes': [new_target_note]})

@@ -26,7 +26,7 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 ### Example 1
 Reorders a single deck. This will only match cards with note type `Basic` located in deck `Spanish`. It will also use the [default ranking factors](#default-ranking-factors).
 
-The content of the cards and all the ranking metrics will be analyzed per '[language](#language-data-id)'. The result of this will be combined to determine the final ranking of all new cards.
+The content of the cards and all the ranking metrics will be analyzed per '[language](#language-data-id)'. The result of this will be combined to determine the final ranking of all new cards in the defined target.
 
 ```json
 [

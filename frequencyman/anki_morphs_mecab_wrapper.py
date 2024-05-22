@@ -23,27 +23,24 @@ _MECAB_SUB_POS_BLACKLIST = [
     "数詞",  # Numbers
 ]
 
-_control_chars_re = re.compile("[\x00-\x1f\x7f-\x9f]")
-_wide_alpha_num_rx = re.compile(r"[０-９Ａ-Ｚａ-ｚ]")
-
-_mecab_encoding: str | None = None
-_mecab_complete_cmd: str | None = None
-_mecab_base_cmd: list[str] | None = None
-_mecab_windows_startup_info: Any | None = None
-_mecab_args = [
+_MECAB_ARGS = [
     "--node-format={}\r".format("\t".join(_MECAB_NODE_IPADIC_PARTS)),
     "--eos-format=\n",
     "--unk-format=",
 ]
 
+_mecab_encoding: str | None = None
+_mecab_base_cmd: list[str] | None = None
+_mecab_windows_startup_info: Any | None = None
 successful_startup: bool = False
 
 
 def setup_mecab(reading: ModuleType) -> None:
-    global successful_startup
+
     global _mecab_windows_startup_info
     global _mecab_encoding
     global _mecab_base_cmd
+    global successful_startup
 
     # startup_info has the type: subprocess.STARTUPINFO, but that type
     # is only available on Windows, so we can't use type annotations here
@@ -80,7 +77,7 @@ def _spawn_mecab() -> subprocess.Popen[bytes]:
     MeCab reads expressions from stdin at runtime, so only one instance is needed, hence the functools.cache.
     """
     assert _mecab_base_cmd is not None
-    return _spawn_cmd(_mecab_base_cmd + _mecab_args, _mecab_windows_startup_info)
+    return _spawn_cmd(_mecab_base_cmd + _MECAB_ARGS, _mecab_windows_startup_info)
 
 
 def _get_subprocess_dump(sub_cmd: list[str]) -> bytes:
@@ -107,20 +104,21 @@ def _spawn_cmd(cmd: list[str], _startupinfo: Any) -> subprocess.Popen[bytes]:
     )
 
 
-space_char_regex = re.compile(" ")
+_CONTROL_CHARS_RE = re.compile("[\x00-\x1f\x7f-\x9f]")
+_SPACE_CHAR_REGEX = re.compile(" ")
 
 def get_morphemes_mecab(expression: str) -> list[str]:
 
     # Remove simple spaces that could be added by other add-ons and break the parsing.
-    if space_char_regex.search(expression):
-        expression = space_char_regex.sub("", expression)
+    if _SPACE_CHAR_REGEX.search(expression):
+        expression = _SPACE_CHAR_REGEX.sub("", expression)
 
     # HACK: mecab sometimes does not produce the right morphs if there are no extra characters in the expression,
     # so we just add a whitespace and a japanese punctuation mark "。" at the end to prevent the problem.
     expression += " 。"
 
     # Remove Unicode control codes before sending to MeCab.
-    expression = _control_chars_re.sub("", expression)
+    expression = _CONTROL_CHARS_RE.sub("", expression)
 
     mecab_morphs: list[str] = _interact(expression).split("\r")
     actual_morphs: list[str] = []

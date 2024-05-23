@@ -82,7 +82,7 @@ class TargetCards:
             raise Exception("Could not get cards from database!")
 
 
-    def get_note(self, note_id) -> Note:
+    def get_note(self, note_id: NoteId) -> Note:
 
         if note_id not in self.notes_from_cards_cached:
             self.notes_from_cards_cached[note_id] = self.col.get_note(note_id)
@@ -116,6 +116,6 @@ class TargetCards:
 
         return self.col.models.get(model_id)
 
-    def __len__(self):
+    def __len__(self) -> int:
 
         return len(self.all_cards_ids)

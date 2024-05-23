@@ -21,7 +21,7 @@ from .target_corpus_data import CorpusSegmentId, TargetCorpusData, TargetNoteFie
 from .language_data import LanguageData
 
 
-def sigmoid(x: float):
+def sigmoid(x: float) -> float:
     return 1 / (1 + exp(-x))
 
 
@@ -446,7 +446,7 @@ class CardRanker:
         return True
 
     def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_new_card: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]],
-                                         notes_metrics: dict[NoteId, AggregatedFieldsMetrics]):
+                                         notes_metrics: dict[NoteId, AggregatedFieldsMetrics]) -> None:
 
         try:
             reorder_scope_note_ids = list(notes_ranking_scores.values())[0].keys()

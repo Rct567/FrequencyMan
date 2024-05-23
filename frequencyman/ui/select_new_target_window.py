@@ -138,23 +138,23 @@ class SelectNewTargetWindow(QDialog):
 
         return sorted_note_type_counts
 
-    def set_decks_list(self, strings: Sequence[str]):
+    def set_decks_list(self, strings: Sequence[str]) -> None:
         self.deck_list_model.setStringList(strings)
         self.on_deck_selection_change() # deselected
 
-    def set_note_types_list(self, strings: Sequence[str]):
+    def set_note_types_list(self, strings: Sequence[str]) -> None:
         self.note_list_model.setStringList(strings)
         self.on_note_selection_change() # deselected
 
-    def filter_decks(self, text: str):
+    def filter_decks(self, text: str) -> None:
         filtered_decks = [deck.name for deck in self.get_sorted_decks() if text.lower() in deck.name.lower()]
         self.set_decks_list(filtered_decks)
 
-    def filter_notes(self, text: str):
+    def filter_notes(self, text: str) -> None:
         filtered_notes = [model.name for model in self.get_sorted_note_types() if text.lower() in model.name.lower()]
         self.set_note_types_list(filtered_notes)
 
-    def on_deck_selection_change(self):
+    def on_deck_selection_change(self) -> None:
         if (selection_model := self.deck_list_view.selectionModel()) is None:
             return
         selected_indexes = selection_model.selectedIndexes()
@@ -171,7 +171,7 @@ class SelectNewTargetWindow(QDialog):
 
         self.on_selection_change()
 
-    def on_note_selection_change(self):
+    def on_note_selection_change(self) -> None:
         if (selection_model := self.note_list_view.selectionModel()) is None:
             return
         selected_indexes = selection_model.selectedIndexes()
@@ -182,19 +182,20 @@ class SelectNewTargetWindow(QDialog):
             self.selected_note_type = ""
         self.on_selection_change()
 
-    def on_selection_change(self):
+    def on_selection_change(self) -> None:
         self.fields_label.setVisible(self.selected_note_type != "")
         self.fields_list_view.setVisible(self.selected_note_type != "")
         self.submit_button.setEnabled(self.selected_deck != "" and self.selected_note_type != "")
 
         if self.selected_deck != "" and self.selected_note_type != "":
             target_result = self.col.find_cards("\"deck:{}\" AND note:\"{}\"".format(self.selected_deck, self.selected_note_type))
-            self.pre_submit_info_label.setText("Found {:n} cards for selected deck and note type.".format(len(target_result)))
+            num_cards_text  = ("{} card" if len(target_result) == 1 else "{:n} cards").format(len(target_result))
+            self.pre_submit_info_label.setText("Found {} for selected deck and note type.".format(num_cards_text))
             self.pre_submit_info_label.setVisible(True)
         else:
             self.pre_submit_info_label.setVisible(False)
 
-    def update_fields_list(self):
+    def update_fields_list(self) -> None:
         selected_note_type_name = self.selected_note_type
         if not selected_note_type_name:
             return
@@ -206,7 +207,7 @@ class SelectNewTargetWindow(QDialog):
         note_field_names = [str(field['name']) for field in note_model['flds']]
         self.fields_list_model.setStringList(note_field_names)
 
-    def submit_button_clicked(self):
+    def submit_button_clicked(self) -> None:
         selected_indexes = self.fields_list_view.selectedIndexes()
         selected_fields = [self.fields_list_model.data(index) for index in selected_indexes]
         self.selected_fields = {field_name: '' for field_name in selected_fields}

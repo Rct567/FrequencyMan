@@ -56,5 +56,5 @@ class SQLiteDB:
         self.cursor.execute(query, params)
         self.conn.commit()
 
-    def close(self):
+    def close(self) -> None:
         self.conn.close()

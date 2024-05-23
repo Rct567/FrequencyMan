@@ -33,7 +33,7 @@ class OverviewTab(FrequencyManTab):
         self.name = 'Word overview'
         self.fm_window = fm_window
 
-    def on_tab_created(self, tab_layout: QVBoxLayout):
+    def on_tab_created(self, tab_layout: QVBoxLayout) -> None:
 
         label = QLabel("Overview of:\n\n1. familiar words not in word frequency lists.\n2. words with most lexical_discrepancy.")
         tab_layout.addWidget(label)

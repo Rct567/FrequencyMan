@@ -60,7 +60,7 @@ class TargetsDefiningTextArea(QTextEdit):
     def __handle_content_change(self):
         self.handle_current_content()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: Optional[QPaintEvent]):
         super().paintEvent(event)
         if not self.first_paint_done:
             self.first_paint_done = True
@@ -152,7 +152,7 @@ class ReorderCardsTab(FrequencyManTab):
         self.fm_window = fm_window
         self.col = col
 
-    def on_tab_painted(self, tab_layout: QLayout):
+    def on_tab_painted(self, tab_layout: QLayout) -> None:
 
         # language data
         lang_data_dir = os.path.join(self.fm_window.user_files_dir, 'lang_data')
@@ -396,7 +396,7 @@ class ReorderCardsTab(FrequencyManTab):
         validation_info_text_line.setStyleSheet("font-weight: bolder; font-size: 13px; margin-top:8px;")
         validation_info_text_line.setWordWrap(True)
 
-        def update_validation_info_txt_line(_, targets_input_textarea: TargetsDefiningTextArea):
+        def update_validation_info_txt_line(_, targets_input_textarea: TargetsDefiningTextArea) -> None:
             if (targets_input_textarea.err_desc != ""):
                 validation_info_text_line.setVisible(True)
                 new_txt = "<style>.alt { font-style: italic; color: gray; }</style>"
@@ -426,7 +426,8 @@ class ReorderCardsTab(FrequencyManTab):
                 self.fm_window.addon_config_write(self.fm_window.addon_config)
                 self.targets_input_textarea.handle_current_content()
 
-        def user_clicked_reorder_button():
+        @pyqtSlot()
+        def user_clicked_reorder_button() -> None:
             if self.targets_input_textarea.json_validity_state == JsonTargetsValidity.VALID_TARGETS and self.targets_input_textarea.valid_targets_defined:
                 ask_to_save_new_targets_to_config(self.targets_input_textarea.valid_targets_defined)
                 self.__execute_reorder_request()
@@ -448,7 +449,7 @@ class ReorderCardsTab(FrequencyManTab):
 
         return reorder_button
 
-    def __execute_reorder_request(self):
+    def __execute_reorder_request(self) -> None:
 
         if not isinstance(self.col, Collection):
             showWarning("Collection not found!")
@@ -469,7 +470,7 @@ class ReorderCardsTab(FrequencyManTab):
 
             return self.target_list.reorder_cards(col, event_logger, schedule_cards_as_new)
 
-        def reorder_show_results(reorder_cards_results: TargetListReorderResult):
+        def reorder_show_results(reorder_cards_results: TargetListReorderResult) -> None:
 
             self.reorder_button.setDisabled(False)
 

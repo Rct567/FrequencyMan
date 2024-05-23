@@ -3,7 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Any, Tuple, Callable
+from typing import Any, Optional, Tuple, Callable
 
 from aqt import QAction
 from aqt.qt import *
@@ -31,8 +31,7 @@ class FrequencyManTab(QWidget):
     def on_tab_painted(self, tab_layout: QLayout):
         pass
 
-    def paintEvent(self, _):
-
+    def paintEvent(self, _: Optional[QPaintEvent]):
         if not self.first_paint_done and (layout := self.layout()) is not None:
             self.first_paint_done = True
             self.on_tab_painted(layout)
@@ -93,7 +92,7 @@ class FrequencyManMainWindow(QDialog):
         self.user_files_dir = user_files_dir
 
 
-    def add_tab(self, new_tab: FrequencyManTab):
+    def add_tab(self, new_tab: FrequencyManTab) -> None:
 
         self.tab_menu_options[new_tab.id] = new_tab
 

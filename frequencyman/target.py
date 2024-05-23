@@ -42,7 +42,7 @@ class TargetReorderResult():
         self.repositioning_anki_op_changes = None
 
     def with_repositioning_data(self, sorted_cards_ids: list[CardId], num_cards_repositioned: int,
-                                target_cards: TargetCards, repositioning_anki_op_changes: OpChangesWithCount):
+                                target_cards: TargetCards, repositioning_anki_op_changes: OpChangesWithCount) -> 'TargetReorderResult':
 
         self.sorted_cards_ids = sorted_cards_ids
         self.num_cards_repositioned = num_cards_repositioned
@@ -94,8 +94,8 @@ class ConfiguredTarget:
     def __contains__(self, key: str) -> bool:
         return key in self.data
 
-    def keys(self):
-        return self.data.keys()
+    def keys(self) -> list[str]:
+        return list(self.data.keys())
 
     def __len__(self) -> int:
         return len(self.data.keys())

@@ -6,7 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from dataclasses import dataclass
 from enum import Enum
 import json
-from typing import Optional, Tuple
+from typing import Iterator, Optional, Optional
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -54,10 +54,10 @@ class TargetList:
         self.language_data = language_data
         self.col = col
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Target]:
         return iter(self.target_list)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.target_list)
 
     def __getitem__(self, index: int) -> Target:
@@ -67,7 +67,7 @@ class TargetList:
 
         self.target_list = [Target(target, target_num, self.col) for target_num, target in enumerate(valid_target_list)]
 
-    def set_targets(self, target_list_data: list[ConfiguredTargetData]):
+    def set_targets(self, target_list_data: list[ConfiguredTargetData]) -> None:
 
         target_list = [ConfiguredTarget(target) for target in target_list_data]
         (validity_state, err_desc, valid_target_list) = TargetList.validate_target_list(target_list, self.col, self.language_data)

@@ -67,7 +67,7 @@ def get_float(val: Any) -> Optional[float]:
 
 
 @contextmanager
-def profile_context(amount=40):
+def profile_context(amount:int=40) -> Iterator[cProfile.Profile]:
 
     profiler = cProfile.Profile()
     profiler.enable()
@@ -76,7 +76,7 @@ def profile_context(amount=40):
     finally:
         profiler.disable()
 
-        def print_results(output: IO[Any], sort_key: pstats.SortKey):
+        def print_results(output: IO[Any], sort_key: pstats.SortKey) -> None:
             ps = pstats.Stats(profiler, stream=output).sort_stats(sort_key)
             ps.print_callers(amount)
             output.write("\n\n-------------------------------------------------\n\n\n")

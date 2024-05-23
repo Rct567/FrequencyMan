@@ -43,7 +43,7 @@ class EventLogger:
         elapsed_time = time.time() - start_time
         self.event_log[index] += " (took {:.2f} seconds)".format(elapsed_time)
 
-    def append_to_file(self, target_file) -> None:
+    def append_to_file(self, target_file: str) -> None:
         if os.path.exists(target_file) and os.path.getsize(target_file) > 0.5 * 1024 * 1024:
             six_hours_ago = time.time() - 6 * 60 * 60
             if os.path.getmtime(target_file) < six_hours_ago:
@@ -52,5 +52,5 @@ class EventLogger:
         with open(target_file, 'a', encoding='utf-8') as file:
             file.write(str(self)+"\n\n=================================================================\n\n")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "\n".join(self.event_log)

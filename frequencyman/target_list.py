@@ -4,8 +4,9 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from dataclasses import dataclass
+from enum import Enum
 import json
-from typing import Optional
+from typing import Optional, Tuple
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -26,6 +27,20 @@ class TargetListReorderResult():
     modified_dirty_notes: dict[NoteId, Optional[Note]]
     num_cards_repositioned: int
     num_targets_repositioned: int
+
+
+class JsonTargetsValidity(Enum):
+    INVALID_JSON = -1
+    INVALID_TARGETS = 0
+    VALID_TARGETS = 1
+
+
+@dataclass
+class JsonTargetsResult():
+    validity_state: JsonTargetsValidity
+    targets_defined: list[ConfiguredTarget]
+    err_desc: str
+    valid_targets_defined: Optional[list[ValidConfiguredTarget]]
 
 
 class TargetList:
@@ -57,7 +72,7 @@ class TargetList:
         target_list = [ConfiguredTarget(target) for target in target_list_data]
         (validity_state, err_desc, valid_target_list) = TargetList.validate_target_list(target_list, self.col, self.language_data)
 
-        if validity_state != 1 or valid_target_list is None:
+        if validity_state != JsonTargetsValidity.VALID_TARGETS or valid_target_list is None:
             raise Exception(err_desc)
 
         self.set_valid_targets(valid_target_list)
@@ -70,130 +85,129 @@ class TargetList:
         return json.dumps(target_list, indent=4)
 
     @staticmethod
-    def __validate_target(target: ConfiguredTarget, index: int, col: Collection, language_data: LanguageData) -> tuple[int, str]:
+    def __validate_target(target: ConfiguredTarget, index: int, col: Collection, language_data: LanguageData) -> tuple[bool, str]:
 
         if not isinstance(target, ConfiguredTarget):
-            return (0, "Target #{} is not a valid type (object expected). ".format(index))
+            return (False, "Target #{} is not a valid type (object expected). ".format(index))
         if len(target.keys()) == 0:
-            return (0, "Target #{} does not have any keys.".format(index))
+            return (False, "Target #{} does not have any keys.".format(index))
         if "deck" not in target and "decks" not in target and "scope_query" not in target:
-            return (0, "Target #{} is missing key 'deck', 'decks' or 'scope_query'.".format(index))
+            return (False, "Target #{} is missing key 'deck', 'decks' or 'scope_query'.".format(index))
         for key in target.keys():
             if key == "":
-                return (0, "Target #{} has an empty key.".format(index))
+                return (False, "Target #{} has an empty key.".format(index))
             known_keys = {"deck", "decks", "notes", "scope_query", "reorder_scope_query", "ranking_factors",
                           "familiarity_sweetspot_point", "suspended_card_value", "suspended_leech_card_value",
                           "ideal_word_count", "focus_words_endpoint", "corpus_segmentation_strategy"}
             known_keys.update(map(lambda s: "ranking_"+s, CardRanker.get_default_ranking_factors_span().keys()))
             if key not in known_keys:
-                return (0, "Target #{} has unknown key '{}'.".format(index, key))
+                return (False, "Target #{} has unknown key '{}'.".format(index, key))
 
         # check deck names
         for deck_name in Target.get_deck_names_from_config_target(target):
             if col.decks.id_for_name(deck_name) is None:
-                return (0, "Deck '{}' defined in target #{} not found.".format(deck_name, index))
+                return (False, "Deck '{}' defined in target #{} not found.".format(deck_name, index))
 
         # check field value for notes
         if 'notes' not in target:
-            return (0, "Target object #{} is missing key 'notes'.".format(index))
+            return (False, "Target object #{} is missing key 'notes'.".format(index))
         elif not isinstance(target.get('notes'), list):
-            return (0, "Target object #{} value for 'notes' is not a valid type (array expected).".format(index))
+            return (False, "Target object #{} value for 'notes' is not a valid type (array expected).".format(index))
         elif len(target.get('notes', [])) == 0:
-            return (0, "Target object #{} value for 'notes' is empty.".format(index))
+            return (False, "Target object #{} value for 'notes' is empty.".format(index))
 
         for note_index, note in enumerate(target.get('notes', [])):
             if not isinstance(note, dict):
-                return (0, "Note specified in target[{}].notes is not a valid type (object expected).".format(index))
+                return (False, "Note specified in target[{}].notes is not a valid type (object expected).".format(index))
             if "name" not in note:
-                return (0, "Note object specified in target[{}].notes is missing key 'name'.".format(index))
+                return (False, "Note object specified in target[{}].notes is missing key 'name'.".format(index))
             if "fields" not in note:
-                return (0, "Note object specified in target[{}].notes is is missing key 'fields'.".format(index))
+                return (False, "Note object specified in target[{}].notes is is missing key 'fields'.".format(index))
             if not isinstance(note.get('fields'), dict):
-                return (0, "Fields for note object specified in target[{}].notes[{}] is not a valid type (object expected).".format(index, note_index))
+                return (False, "Fields for note object specified in target[{}].notes[{}] is not a valid type (object expected).".format(index, note_index))
 
             note_model = col.models.by_name(note['name'])
 
             if not note_model:
-                return (0, "Name '{}' for note object specified in target[{}].notes does not exist.".format(note['name'], index))
+                return (False, "Name '{}' for note object specified in target[{}].notes does not exist.".format(note['name'], index))
 
             if len(note.get('fields', {})) == 0:
-                return (0, "Fields object specified in target[{}].notes[{}] is empty.".format(index, note_index))
+                return (False, "Fields object specified in target[{}].notes[{}] is empty.".format(index, note_index))
 
             for field_name, lang_key in note.get('fields', {}).items():
                 if field_name == "":
-                    return (0, "Field name in fields object specified in target[{}].notes[{}] is empty.".format(index, note_index))
+                    return (False, "Field name in fields object specified in target[{}].notes[{}] is empty.".format(index, note_index))
                 if not any(field['name'] == field_name for field in note_model['flds']):
-                    return (0, "Field name '{}' in fields object specified in target[{}].notes[{}] does not exist.".format(field_name, index, note_index))
+                    return (False, "Field name '{}' in fields object specified in target[{}].notes[{}] does not exist.".format(field_name, index, note_index))
                 if not isinstance(lang_key, str):
-                    return (0, "Value for field '{}' in fields object specified in target[{}].notes[{}] is not a valid type (string expected).".format(field_name, index, note_index))
+                    return (False, "Value for field '{}' in fields object specified in target[{}].notes[{}] is not a valid type (string expected).".format(field_name, index, note_index))
                 if lang_key == "":
-                    return (0, "Value for field '{}' in fields object specified in target[{}].notes[{}] is empty (lang_data_id expected).".format(field_name, index, note_index))
+                    return (False, "Value for field '{}' in fields object specified in target[{}].notes[{}] is empty (lang_data_id expected).".format(field_name, index, note_index))
                 lang_data_id = LangDataId(lang_key.lower())
                 if not language_data.id_has_directory(lang_data_id):
-                    return (0, "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, language_data.data_dir))
+                    return (False, "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, language_data.data_dir))
 
         # check custom ranking factors object and its weights values
         if 'ranking_factors' in target:
             if not isinstance(target['ranking_factors'], dict):
-                return (0, "Ranking factors specified in target #{} is not a valid type (object expected).".format(index))
+                return (False, "Ranking factors specified in target #{} is not a valid type (object expected).".format(index))
             if len(target['ranking_factors']) < 0:
-                return (0, "Ranking factors specified in target #{} is empty.".format(index))
+                return (False, "Ranking factors specified in target #{} is empty.".format(index))
             allowed_keys = CardRanker.get_default_ranking_factors_span().keys()
             for key, value in target['ranking_factors'].items():
                 if key not in allowed_keys:
-                    return (0, "Ranking factor '{}' specified in target[{}].ranking_factors is unknown.".format(key, index))
+                    return (False, "Ranking factor '{}' specified in target[{}].ranking_factors is unknown.".format(key, index))
                 if not is_numeric_value(value):
-                    return (0, "Value for ranking factors '{}' specified in target[{}].ranking_factors is not numeric.".format(key, index))
+                    return (False, "Value for ranking factors '{}' specified in target[{}].ranking_factors is not numeric.".format(key, index))
 
         # check ideal_word_count
         if 'ideal_word_count' in target:
             if not isinstance(target['ideal_word_count'], list):
-                return (0, "Ideal word count specified in target #{} is not a valid type (array expected).".format(index))
+                return (False, "Ideal word count specified in target #{} is not a valid type (array expected).".format(index))
             if len(target['ideal_word_count']) == 0:
-                return (0, "Ideal word count specified in target #{} is empty.".format(index))
+                return (False, "Ideal word count specified in target #{} is empty.".format(index))
             if len(target['ideal_word_count']) != 2:
-                return (0, "Ideal word count specified in target #{} should contain only two values (min and max).".format(index))
+                return (False, "Ideal word count specified in target #{} should contain only two values (min and max).".format(index))
             if not all(isinstance(val, int) for val in target['ideal_word_count']):
-                return (0, "Values specified for target[{}].ideal_word_count should all be a number (integer).".format(index))
+                return (False, "Values specified for target[{}].ideal_word_count should all be a number (integer).".format(index))
             if target['ideal_word_count'][0] > target['ideal_word_count'][1]:
-                return (0, "Ideal word count specified in target #{} should has a min value that is higher or equal to the max value.".format(index))
+                return (False, "Ideal word count specified in target #{} should has a min value that is higher or equal to the max value.".format(index))
 
         # check custom ranking weights defined
         for key in CardRanker.get_default_ranking_factors_span().keys():
             ranking_key = 'ranking_'+key
             if ranking_key in target and not is_numeric_value(target[ranking_key]):
-                return (0, "Custom ranking factors '{}' specified in target #{} has a non-numeric value.".format(ranking_key, index))
+                return (False, "Custom ranking factors '{}' specified in target #{} has a non-numeric value.".format(ranking_key, index))
 
         # defined target seems valid
-        return (1, "")
+        return (True, "")
 
     @staticmethod
-    def validate_target_list(target_data: list[ConfiguredTarget], col: Collection, language_data: LanguageData) -> tuple[int, str, Optional[list[ValidConfiguredTarget]]]:
+    def validate_target_list(target_data: list[ConfiguredTarget], col: Collection, language_data: LanguageData) -> tuple[JsonTargetsValidity, str, Optional[list[ValidConfiguredTarget]]]:
 
         if not isinstance(target_data, list):
-            return (0, "Reorder target is not a list (array expected).", None)
+            return (JsonTargetsValidity.INVALID_TARGETS, "Reorder target is not a list (array expected).", None)
         elif len(target_data) < 1:
-            return (0, "Reorder target list is empty.", None)
+            return (JsonTargetsValidity.INVALID_TARGETS, "Reorder target list is empty.", None)
 
         for index, target in enumerate(target_data):
-            (validity_state, err_desc) = TargetList.__validate_target(target, index, col, language_data)
-            if validity_state == 0:
-                return (0, err_desc, None)
+            (target_is_valid, err_desc) = TargetList.__validate_target(target, index, col, language_data)
+            if not target_is_valid:
+                return (JsonTargetsValidity.INVALID_TARGETS, err_desc, None)
 
-        return (1, "", [ValidConfiguredTarget(target.data) for target in target_data])
-
+        return (JsonTargetsValidity.VALID_TARGETS, "", [ValidConfiguredTarget(target.data) for target in target_data])
 
     @staticmethod
-    def get_targets_from_json(json_data: str, col: Collection, language_data: LanguageData) -> tuple[int, list[ConfiguredTarget], str, Optional[list[ValidConfiguredTarget]]]:
+    def get_targets_from_json(json_data: str, col: Collection, language_data: LanguageData) -> JsonTargetsResult:
 
         if json_data == "":
-            return (0, [], "", None)
+            return JsonTargetsResult(JsonTargetsValidity.INVALID_TARGETS, [], "", None)
         try:
             data = json.loads(json_data)
             if not isinstance(data, list):
-                return (0, [], "Reorder target is not a list (array expected).", [])
+                return JsonTargetsResult(JsonTargetsValidity.INVALID_TARGETS, [], "Reorder target is not a list (array expected).", [])
             (validity_state, err_desc, valid_target_list) = TargetList.validate_target_list([ConfiguredTarget(target) for target in data], col, language_data)
-            return (validity_state, [ConfiguredTarget(target) for target in data], err_desc, valid_target_list)
+            return JsonTargetsResult(validity_state, [ConfiguredTarget(target) for target in data], err_desc, valid_target_list)
         except json.JSONDecodeError as e:
             error_message = "Invalid JSON at line " + str(e.lineno) + "! "+e.msg+"."
             line_number = e.lineno
@@ -202,7 +216,7 @@ class TargetList:
                 invalid_line = content_lines[line_number-1].lstrip()
                 if invalid_line.strip() != "":
                     error_message += "\n\nInvalid JSON: <span class=\"alt\">" + invalid_line + "</span>"
-            return (-1, [], error_message, None)
+            return JsonTargetsResult(JsonTargetsValidity.INVALID_JSON, [], error_message, None)
 
     def reorder_cards(self, col: Collection, event_logger: EventLogger, schedule_cards_as_new: bool = False) -> TargetListReorderResult:
 

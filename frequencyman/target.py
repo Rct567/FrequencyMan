@@ -74,6 +74,7 @@ class ConfiguredTargetData(TypedDict, total=False):
     corpus_segmentation_strategy: str
     notes: list[ConfiguredTargetDataNote]
 
+
 class ConfiguredTarget:
 
     data: ConfiguredTargetData
@@ -108,7 +109,6 @@ class ConfiguredTarget:
 
 class ValidConfiguredTarget(ConfiguredTarget):
     pass
-
 
 
 class Target:
@@ -167,23 +167,23 @@ class Target:
 
         return defined_decks
 
-    def __get_query_from_defined_scope(self) -> Optional[str]:
+    @staticmethod
+    def get_query_from_defined_main_scope(config_target: ConfiguredTarget) -> Optional[str]:
 
         scope_queries: list[str] = []
 
         # defined decks
 
-        defined_decks = self.get_deck_names_from_config_target(self.config_target)
+        defined_decks = Target.get_deck_names_from_config_target(config_target)
 
-        if len(defined_decks) > 0:
-            for deck_name in defined_decks:
-                if len(deck_name) > 0:
-                    scope_queries.append('"deck:' + deck_name + '"')
+        for deck_name in defined_decks:
+            if len(deck_name.strip()) > 0:
+                scope_queries.append('"deck:' + deck_name + '"')
 
-        # scope query
+        # defined scope query
 
-        if "scope_query" in self.config_target and isinstance(self.config_target["scope_query"], str) and len(self.config_target["scope_query"]) > 0:
-            scope_queries.append(self.config_target["scope_query"])
+        if "scope_query" in config_target and isinstance(config_target["scope_query"], str) and len(config_target["scope_query"].strip()) > 0:
+            scope_queries.append(config_target["scope_query"])
 
         # result
         if len(scope_queries) > 0:
@@ -202,13 +202,12 @@ class Target:
 
         notes_query = "(" + " OR ".join(note_queries) + ")"
 
-        scope_query = self.__get_query_from_defined_scope()
+        defined_scope_query = self.get_query_from_defined_main_scope(self.config_target)
 
-        if scope_query is None:
-            return notes_query
+        if defined_scope_query is None:
+            return notes_query  # main scope is just the notes
 
-        return scope_query+" AND "+notes_query
-
+        return defined_scope_query+" AND "+notes_query
 
     def __get_main_scope_query(self) -> str:
 

@@ -93,6 +93,8 @@ class TargetList:
             return (False, "Target #{} does not have any keys.".format(index))
         if "deck" not in target and "decks" not in target and "scope_query" not in target:
             return (False, "Target #{} is missing key 'deck', 'decks' or 'scope_query'.".format(index))
+        if Target.get_query_from_defined_main_scope(target) is None:
+            return (False, "Target #{} has an invalid scope defined using deck, decks or scope_query.".format(index))
         for key in target.keys():
             if key == "":
                 return (False, "Target #{} has an empty key.".format(index))

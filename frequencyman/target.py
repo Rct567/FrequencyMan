@@ -4,7 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import re
-from typing import Any, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Tuple, TypedDict, Union, overload
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -56,42 +56,54 @@ class TargetReorderResult():
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 
 
+if TYPE_CHECKING:
+    from typing import TypeAlias
+    JSON_TYPE: TypeAlias = dict[str, "JSON_TYPE"] | list["JSON_TYPE"] | str | int | float | bool | None
+else:
+    JSON_TYPE = Any
+
+
 class ConfiguredTargetDataNote(TypedDict):
     name: str
     fields: dict[str, str]
 
 
-class ConfiguredTargetData(TypedDict, total=False):
-    deck: str
-    decks: Union[str, list[str]]
-    scope_query: str
-    reorder_scope_query: str
-    familiarity_sweetspot_point: Union[float, str, int]
-    suspended_card_value: Union[float, str, int]
-    suspended_leech_card_value: Union[float, str, int]
-    ideal_word_count: list[int]
-    ranking_factors: dict[str, Union[float, str, int]]
-    corpus_segmentation_strategy: str
-    notes: list[ConfiguredTargetDataNote]
+ConfiguredTargetKeys = Literal['deck', 'decks', 'scope_query', 'reorder_scope_query', 'familiarity_sweetspot_point',
+                               'focus_words_max_familiarity', 'suspended_card_value', 'suspended_leech_card_value',
+                               'ideal_word_count', 'ranking_factors', 'corpus_segmentation_strategy', 'notes']
 
 
 class ConfiguredTarget:
 
-    data: ConfiguredTargetData
+    data: dict[str, JSON_TYPE]
+    locked: Optional[Literal[True]]
 
-    def __init__(self, data: ConfiguredTargetData) -> None:
+    def __init__(self, data: dict[str, JSON_TYPE]) -> None:
         self.data = data
+        self.locked = True
 
-    def get(self, key: str, default: Any = None) -> Any:
-        return self.data.get(key, default)
+    def getRankinFactor(self, factor_name: str) -> Optional[float]:
 
-    def __getitem__(self, key: str) -> Any:
+        if 'CardRanker' not in globals():
+            from .card_ranker import CardRanker
+
+        if factor_name not in CardRanker.get_default_ranking_factors_span().keys():
+            raise ValueError("Unknown ranking factor '{}' given.".format(factor_name))
+
+        key = 'ranking_'+factor_name
+        if hasattr(self.data, key):
+            return get_float(self.data[key])
+
+    def __getitem__(self, key: ConfiguredTargetKeys) -> Any:
         if key in self.data:
             return self.data[key]
         else:
             raise KeyError(key)
 
-    def __contains__(self, key: str) -> bool:
+    def get(self, key: ConfiguredTargetKeys, default: Any = None) -> Any:
+         return self.data.get(key, default)
+
+    def __contains__(self, key: ConfiguredTargetKeys) -> bool:
         return key in self.data
 
     def keys(self) -> list[str]:
@@ -100,15 +112,44 @@ class ConfiguredTarget:
     def __len__(self) -> int:
         return len(self.data.keys())
 
-    def __eq__(self, value: object) -> bool:
+    def __eq__(self, value: 'ConfiguredTarget') -> bool:
         return self.data == value
 
-    def __ne__(self, value: object) -> bool:
+    def __ne__(self, value: 'ConfiguredTarget') -> bool:
         return self.data != value
+
+    def __setattr__(self, name: str, value: Any) -> None:
+
+        if name != "is_valid" and hasattr(self, 'locked') and self.locked:
+            raise AttributeError("ConfiguredTarget is immutable.")
+
+        self.__dict__[name] = value
 
 
 class ValidConfiguredTarget(ConfiguredTarget):
-    pass
+
+    def __init__(self, data: dict[str, JSON_TYPE]) -> None:
+        assert isinstance(data, dict) and 'is_valid' in data and data['is_valid'], "Invalid target given to ValidConfiguredTarget!"
+        super().__init__(data)
+
+    @overload
+    def __getitem__(self, key: Literal['notes']) -> list[ConfiguredTargetDataNote]:
+        ...
+
+    @overload
+    def __getitem__(self, key: Literal['ideal_word_count']) -> Optional[list[int]]:
+        ...
+
+    @overload
+    def __getitem__(self, key: Literal['ranking_factors']) -> Optional[dict[str, dict[str, float]]]:
+        ...
+
+    @overload
+    def __getitem__(self, key: ConfiguredTargetKeys) -> Any:
+        ...
+
+    def __getitem__(self, key: ConfiguredTargetKeys) -> Any:
+        return super().__getitem__(key)
 
 
 class ReorderCacheData(TypedDict):
@@ -141,7 +182,7 @@ class Target:
 
         config_notes = {}
 
-        for note in self.config_target.get('notes', []):
+        for note in self.config_target['notes']:
             note_fields = {field_name: LangDataId(lang_data_id.lower()) for field_name, lang_data_id in note['fields'].items()}
             config_notes[note['name']] = note_fields
 
@@ -150,7 +191,7 @@ class Target:
     def __get_all_language_data_keys(self) -> set[LangDataId]:
 
         keys = set()
-        for note in self.config_target.get('notes', []):
+        for note in self.config_target['notes']:
             for lang_data_id in note['fields'].values():
                 keys.add(LangDataId(lang_data_id.lower()))
         return keys
@@ -198,7 +239,7 @@ class Target:
 
     def __construct_main_scope_query(self) -> str:
 
-        target_notes = self.config_target.get("notes", []) if isinstance(self.config_target.get("notes"), list) else []
+        target_notes = self.config_target["notes"] if isinstance(self.config_target["notes"], list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
 
         if len(note_queries) < 1:
@@ -388,11 +429,11 @@ class Target:
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():
-                if (target_setting_val := get_float(self.config_target.get('ranking_'+attribute))) is not None:
+                if (target_setting_val := self.config_target.getRankinFactor(attribute)) is not None:
                     card_ranker.ranking_factors_span[attribute] = target_setting_val
 
             # Use custom ranking weight object
-            if 'ranking_factors' in self.config_target:
+            if 'ranking_factors' in self.config_target and self.config_target['ranking_factors'] is not None:
                 if isinstance(self.config_target['ranking_factors'], dict) and len(self.config_target['ranking_factors']) > 0:
                     card_ranker.ranking_factors_span = {}
                     for factor in CardRanker.get_default_ranking_factors_span().keys():
@@ -400,7 +441,7 @@ class Target:
                             card_ranker.ranking_factors_span[factor] = float(self.config_target['ranking_factors'][factor])
 
             # use custom ideal_word_count
-            if 'ideal_word_count' in self.config_target:
+            if 'ideal_word_count' in self.config_target and self.config_target['ideal_word_count'] is not None:
                 if isinstance(self.config_target['ideal_word_count'], list) and len(self.config_target['ideal_word_count']) == 2:
                     if all(isinstance(val, int) for val in self.config_target['ideal_word_count']):
                         card_ranker.ideal_word_count_min = self.config_target['ideal_word_count'][0]
@@ -423,7 +464,7 @@ class Target:
     def __reposition_cards(self, sorted_cards_ids: list[CardId], target_cards: TargetCards, repositioning_starting_from: int,
                            event_logger: EventLogger, schedule_cards_as_new: bool) -> TargetReorderResult:
 
-        if schedule_cards_as_new: # may be needed in some cases, such as older anki version (?)
+        if schedule_cards_as_new:  # may be needed in some cases, such as older anki version (?)
             event_logger.add_entry("Scheduling cards as new before repositioning.")
             self.col.sched.schedule_cards_as_new(sorted_cards_ids)
 

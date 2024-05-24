@@ -15,7 +15,7 @@ from anki.notes import Note, NoteId
 from .target_cards import TargetCards
 from .lib.utilities import batched, is_numeric_value
 from .card_ranker import CardRanker
-from .target import ConfiguredTarget, ConfiguredTargetData, TargetReorderResult, Target, ConfiguredTargetDataNote as ConfiguredTargetDataNote, ValidConfiguredTarget
+from .target import ConfiguredTarget, ConfiguredTargetData, ReorderCacheData, TargetReorderResult, Target, ConfiguredTargetDataNote as ConfiguredTargetDataNote, ValidConfiguredTarget
 from .language_data import LangDataId, LanguageData
 from .lib.event_logger import EventLogger
 
@@ -226,7 +226,7 @@ class TargetList:
         modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
         num_cards_repositioned = 0
         num_targets_repositioned = 0
-        cache_data = {}
+        cache_data: ReorderCacheData = {'corpus': {}, 'target_cards': {}}
 
         # Reposition cards for each target
         for target in self.target_list:

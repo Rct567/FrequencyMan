@@ -21,7 +21,7 @@ class EventLogger:
     def addEventLogListener(self, listener: Callable[[str], None]) -> None:
         self.event_log_listeners.append(listener)
 
-    def add_entry(self, log_msg: str, propagate_fn: Optional[Callable] = None) -> int:
+    def add_entry(self, log_msg: str) -> int:
         index = len(self.event_log)
         if self.timed_entries_open > 0:
             self.event_log.append(("  "*self.timed_entries_open)+" "+log_msg)
@@ -29,8 +29,6 @@ class EventLogger:
             self.event_log.append(log_msg)
         for listener in self.event_log_listeners:
             listener(log_msg)
-        if propagate_fn is not None:
-            propagate_fn(log_msg)
         return index
 
     @contextmanager

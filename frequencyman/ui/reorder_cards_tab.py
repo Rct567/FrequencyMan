@@ -25,7 +25,7 @@ from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log
 
 from ..language_data import LanguageData
-from ..target import ConfiguredTarget, ValidConfiguredTarget
+from ..target import ValidConfiguredTarget
 from ..target_list import JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult
 
 
@@ -115,15 +115,13 @@ class TargetsDefiningTextArea(QTextEdit):
     def on_first_paint(self, callback: Callable[['TargetsDefiningTextArea'], None]):
         self.first_paint_callbacks.append(callback)
 
-    def set_content(self, target_list: Union[list[ConfiguredTarget], list[dict[str, Any]], TargetList]):
+    def set_content(self, target_list: Union[list[ValidConfiguredTarget], list[ValidConfiguredTarget], list[dict[str, Any]], TargetList]):
         if isinstance(target_list, TargetList):
             self.setText(target_list.dump_json())
         elif isinstance(target_list, list):
-            dict_target_list: list[dict] = []
+            dict_target_list: list = []
             for target in target_list:
-                if isinstance(target, ConfiguredTarget):
-                    dict_target_list.append(dict(target.data))
-                elif isinstance(target, dict):
+                if isinstance(target, dict):
                     dict_target_list.append(target)
                 else:
                     raise ValueError("Invalid type in target_list!")
@@ -357,7 +355,7 @@ class ReorderCardsTab(FrequencyManTab):
             json_result = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
 
             if (json_result.valid_targets_defined is not None and json_result.validity_state == JsonTargetsValidity.VALID_TARGETS and self.fm_window.addon_config['reorder_target_list'] != json_result.valid_targets_defined):
-                self.fm_window.addon_config['reorder_target_list'] = [target.data for target in json_result.valid_targets_defined]
+                self.fm_window.addon_config['reorder_target_list'] = [target for target in json_result.valid_targets_defined]
                 self.fm_window.addon_config_write(self.fm_window.addon_config)
                 reset_button.setDisabled(True)
 
@@ -428,7 +426,7 @@ class ReorderCardsTab(FrequencyManTab):
             if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
                 return
             if askUser("Defined targets have changed. Save them to config?"):
-                self.fm_window.addon_config['reorder_target_list'] = [target.data for target in targets_defined]
+                self.fm_window.addon_config['reorder_target_list'] = [target for target in targets_defined]
                 self.fm_window.addon_config_write(self.fm_window.addon_config)
                 self.targets_input_textarea.handle_current_content()
 

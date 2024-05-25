@@ -217,6 +217,18 @@ class SelectNewTargetWindow(QDialog):
             self.selected_fields[field_name] = field_lang_data_id
         self.accept()
 
-    def get_selected_target(self) -> ConfiguredTarget:
-        new_target_note = {'name': self.selected_note_type, 'fields': self.selected_fields}
-        return ConfiguredTarget({'deck': self.selected_deck, 'notes': [new_target_note]})
+    def get_selected_target(self) -> ValidConfiguredTarget:
+        new_target_note: ConfiguredTargetNote = {'name': self.selected_note_type, 'fields': self.selected_fields}
+        return ValidConfiguredTarget({
+            'decks': [self.selected_deck],
+            'notes': [new_target_note],
+            'decks': None,
+            'scope_query': None,
+            'reorder_scope_query': None,
+            'familiarity_sweetspot_point': None,
+            'suspended_card_value': None,
+            'suspended_leech_card_value': None,
+            'ideal_word_count': None,
+            'ranking_factors': None,
+            'corpus_segmentation_strategy': None
+        })

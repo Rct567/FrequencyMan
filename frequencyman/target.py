@@ -63,94 +63,25 @@ else:
     JSON_TYPE = Any
 
 
-class ConfiguredTargetDataNote(TypedDict):
+class ConfiguredTargetNote(TypedDict):
     name: str
     fields: dict[str, str]
 
 
-ConfiguredTargetKeys = Literal['deck', 'decks', 'scope_query', 'reorder_scope_query', 'familiarity_sweetspot_point',
-                               'focus_words_max_familiarity', 'suspended_card_value', 'suspended_leech_card_value',
-                               'ideal_word_count', 'ranking_factors', 'corpus_segmentation_strategy', 'notes']
+class ValidConfiguredTargetBase(TypedDict, total=False):
+    deck: Optional[str]
+    decks: Optional[Union[str, list[str]]]
+    scope_query: Optional[str]
+    reorder_scope_query: Optional[str]
+    familiarity_sweetspot_point: Optional[Union[float, str]]
+    suspended_card_value: Optional[float]
+    suspended_leech_card_value: Optional[float]
+    ideal_word_count: Optional[list[int]]
+    ranking_factors: Optional[dict[str, float]]
+    corpus_segmentation_strategy: Optional[str]
 
-
-class ConfiguredTarget:
-
-    data: dict[str, JSON_TYPE]
-    locked: Optional[Literal[True]]
-
-    def __init__(self, data: dict[str, JSON_TYPE]) -> None:
-        self.data = data
-        self.locked = True
-
-    def getRankinFactor(self, factor_name: str) -> Optional[float]:
-
-        if 'CardRanker' not in globals():
-            from .card_ranker import CardRanker
-
-        if factor_name not in CardRanker.get_default_ranking_factors_span().keys():
-            raise ValueError("Unknown ranking factor '{}' given.".format(factor_name))
-
-        key = 'ranking_'+factor_name
-        if hasattr(self.data, key):
-            return get_float(self.data[key])
-
-    def __getitem__(self, key: ConfiguredTargetKeys) -> Any:
-        if key in self.data:
-            return self.data[key]
-        else:
-            raise KeyError(key)
-
-    def get(self, key: ConfiguredTargetKeys, default: Any = None) -> Any:
-         return self.data.get(key, default)
-
-    def __contains__(self, key: ConfiguredTargetKeys) -> bool:
-        return key in self.data
-
-    def keys(self) -> list[str]:
-        return list(self.data.keys())
-
-    def __len__(self) -> int:
-        return len(self.data.keys())
-
-    def __eq__(self, value: 'ConfiguredTarget') -> bool:
-        return self.data == value
-
-    def __ne__(self, value: 'ConfiguredTarget') -> bool:
-        return self.data != value
-
-    def __setattr__(self, name: str, value: Any) -> None:
-
-        if name != "is_valid" and hasattr(self, 'locked') and self.locked:
-            raise AttributeError("ConfiguredTarget is immutable.")
-
-        self.__dict__[name] = value
-
-
-class ValidConfiguredTarget(ConfiguredTarget):
-
-    def __init__(self, data: dict[str, JSON_TYPE]) -> None:
-        assert isinstance(data, dict) and 'is_valid' in data and data['is_valid'], "Invalid target given to ValidConfiguredTarget!"
-        super().__init__(data)
-
-    @overload
-    def __getitem__(self, key: Literal['notes']) -> list[ConfiguredTargetDataNote]:
-        ...
-
-    @overload
-    def __getitem__(self, key: Literal['ideal_word_count']) -> Optional[list[int]]:
-        ...
-
-    @overload
-    def __getitem__(self, key: Literal['ranking_factors']) -> Optional[dict[str, dict[str, float]]]:
-        ...
-
-    @overload
-    def __getitem__(self, key: ConfiguredTargetKeys) -> Any:
-        ...
-
-    def __getitem__(self, key: ConfiguredTargetKeys) -> Any:
-        return super().__getitem__(key)
-
+class ValidConfiguredTarget(ValidConfiguredTargetBase):
+    notes: list[ConfiguredTargetNote]
 
 class ReorderCacheData(TypedDict):
     target_cards: dict[Tuple, TargetCards]
@@ -197,49 +128,49 @@ class Target:
         return keys
 
     @staticmethod
-    def get_deck_names_from_config_target(config_target: ConfiguredTarget) -> list[str]:
+    def get_deck_names_from_config_target(defined_deck: Any, defined_decks: Any) -> list[str]:
 
-        defined_decks: list[str] = []
+        decks: list[str] = []
 
-        if "deck" in config_target:
-            if isinstance(config_target["deck"], str) and len(config_target["deck"]) > 0:
-                defined_decks.append(config_target["deck"])
-        if "decks" in config_target:
-            if isinstance(config_target["decks"], str) and len(config_target["decks"]) > 1:
-                defined_decks.extend([deck_name.replace('\\,', ',').strip() for deck_name in re.split(r'(?<!\\),', config_target["decks"]) if isinstance(deck_name, str)])
-            elif isinstance(config_target["decks"], list):
-                defined_decks.extend([deck_name for deck_name in config_target["decks"] if isinstance(deck_name, str) and len(deck_name) > 0])
+        if defined_deck is not None and isinstance(defined_deck, str) and len(defined_deck) > 0:
+            decks.append(defined_deck)
 
-        return defined_decks
+        if defined_decks is not None and isinstance(defined_decks, list) and len(defined_decks) > 0:
+            decks.extend([deck_name for deck_name in defined_decks if isinstance(deck_name, str) and len(deck_name) > 0])
+        if defined_decks is not None and isinstance(defined_decks, str) and len(defined_decks) > 0:
+            decks.extend([deck_name.replace('\\,', ',').strip() for deck_name in re.split(r'(?<!\\),', defined_decks) if isinstance(deck_name, str)])
+
+        return decks
 
     @staticmethod
-    def get_query_from_defined_main_scope(config_target: ConfiguredTarget) -> Optional[str]:
+    def get_query_from_defined_main_scope(defined_deck: Optional[Any], defined_decks: Optional[Any], scope_query: Optional[Any]) -> Optional[str]:
 
         scope_queries: list[str] = []
 
         # defined decks
 
-        defined_decks = Target.get_deck_names_from_config_target(config_target)
+        decks = Target.get_deck_names_from_config_target(defined_deck, defined_decks)
 
-        for deck_name in defined_decks:
+        for deck_name in decks:
             if len(deck_name.strip()) > 0:
                 scope_queries.append('"deck:' + deck_name + '"')
 
         # defined scope query
 
-        if "scope_query" in config_target and isinstance(config_target["scope_query"], str) and len(config_target["scope_query"].strip()) > 0:
-            scope_queries.append(config_target["scope_query"])
+        if scope_query is not None and isinstance(scope_query, str) and len(scope_query.strip()) > 0:
+            scope_queries.append(scope_query)
 
         # result
         if len(scope_queries) > 0:
-            scope_query = " OR ".join(scope_queries)
-            return "("+scope_query+")"
+            scope_query_result = " OR ".join(scope_queries)
+            return "("+scope_query_result+")"
 
         return None
 
-    def __construct_main_scope_query(self) -> str:
+    @staticmethod
+    def construct_main_scope_query(config_target: ValidConfiguredTarget) -> str:
 
-        target_notes = self.config_target["notes"] if isinstance(self.config_target["notes"], list) else []
+        target_notes = config_target["notes"] if isinstance(config_target["notes"], list) else []
         note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
 
         if len(note_queries) < 1:
@@ -247,7 +178,7 @@ class Target:
 
         notes_query = "(" + " OR ".join(note_queries) + ")"
 
-        defined_scope_query = self.get_query_from_defined_main_scope(self.config_target)
+        defined_scope_query = Target.get_query_from_defined_main_scope(config_target.get('deck'), config_target.get('decks'), config_target.get('scope_query'))
 
         if defined_scope_query is None:
             return notes_query  # main scope is just the notes
@@ -257,14 +188,14 @@ class Target:
     def __get_main_scope_query(self) -> str:
 
         if self.main_scope_query is None:
-            self.main_scope_query = self.__construct_main_scope_query()
+            self.main_scope_query = self.construct_main_scope_query(self.config_target)
         return self.main_scope_query
 
     def __get_reorder_scope_query(self) -> Optional[str]:
 
         if self.reorder_scope_query is None:
-            if isinstance(self.config_target.get("reorder_scope_query"), str) and len(self.config_target.get("reorder_scope_query", "")) > 0:
-                self.reorder_scope_query = self.__construct_main_scope_query()+" AND ("+self.config_target.get("reorder_scope_query", "")+")"
+            if 'reorder_scope_query' in self.config_target and self.config_target['reorder_scope_query'] is not None and len(self.config_target['reorder_scope_query']) > 0:
+                self.reorder_scope_query = self.construct_main_scope_query(self.config_target)+" AND ("+self.config_target['reorder_scope_query']+")"
         return self.reorder_scope_query
 
     def get_cards(self, search_query: Optional[str] = None) -> TargetCards:
@@ -321,7 +252,8 @@ class Target:
             self.target_corpus_data.suspended_leech_card_value = suspended_leech_card_value
 
         # corpus_segmentation_strategy
-        if (corpus_segmentation_strategy := self.config_target.get('corpus_segmentation_strategy', '').lower()) != '':
+        if 'corpus_segmentation_strategy' in self.config_target and not self.config_target['corpus_segmentation_strategy'] is None:
+            corpus_segmentation_strategy = self.config_target['corpus_segmentation_strategy'].lower()
             if corpus_segmentation_strategy == 'by_lang_data_id':
                 self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
             elif corpus_segmentation_strategy == 'by_note_model_id_and_field_name':
@@ -429,7 +361,7 @@ class Target:
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():
-                if (target_setting_val := self.config_target.getRankinFactor(attribute)) is not None:
+                if (target_setting_val := get_float(self.config_target.get('ranking_'+attribute))) is not None:
                     card_ranker.ranking_factors_span[attribute] = target_setting_val
 
             # Use custom ranking weight object

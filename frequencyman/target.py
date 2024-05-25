@@ -4,7 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import re
-from typing import TYPE_CHECKING, Any, Literal, Optional, Tuple, TypedDict, Union, overload
+from typing import Any, Optional, Tuple, TypedDict, Union
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -56,11 +56,6 @@ class TargetReorderResult():
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-    JSON_TYPE: TypeAlias = dict[str, "JSON_TYPE"] | list["JSON_TYPE"] | str | int | float | bool | None
-else:
-    JSON_TYPE = Any
 
 
 class ConfiguredTargetNote(TypedDict):
@@ -109,20 +104,22 @@ class Target:
         self.target_corpus_data = None
         self.col = col
 
-    def get_config_fields_per_note_type(self) -> dict[str, dict[str, LangDataId]]:
+    @staticmethod
+    def get_config_fields_per_note_type(config_target: ValidConfiguredTarget) -> dict[str, dict[str, LangDataId]]:
 
         config_notes = {}
 
-        for note in self.config_target['notes']:
+        for note in config_target['notes']:
             note_fields = {field_name: LangDataId(lang_data_id.lower()) for field_name, lang_data_id in note['fields'].items()}
             config_notes[note['name']] = note_fields
 
         return config_notes
 
-    def __get_all_language_data_keys(self) -> set[LangDataId]:
+    @staticmethod
+    def get_language_data_ids_from_config_target(config_target: ValidConfiguredTarget) -> set[LangDataId]:
 
         keys = set()
-        for note in self.config_target['notes']:
+        for note in config_target['notes']:
             for lang_data_id in note['fields'].values():
                 keys.add(LangDataId(lang_data_id.lower()))
         return keys
@@ -260,14 +257,14 @@ class Target:
                 self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME
 
         # create corpus data
-        self.target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(), language_data)
+        self.target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(self.config_target), language_data)
 
         # done
         return self.target_corpus_data
 
     def __get_corpus_data_cached(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
 
-        cache_key = (str(target_cards.all_cards_ids), str(self.get_config_fields_per_note_type()), self.col, language_data,
+        cache_key = (str(target_cards.all_cards_ids), str(self.get_config_fields_per_note_type(self.config_target)), self.col, language_data,
                      self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'),
                      self.config_target.get('suspended_leech_card_value'), self.config_target.get('corpus_segmentation_strategy'),
                      self.config_target.get('focus_words_max_familiarity'))
@@ -296,16 +293,16 @@ class Target:
             return TargetReorderResult(success=False, error=error_msg)
 
         # Check defined target lang keys and then load frequency lists for target
-        for lang_data_id in self.__get_all_language_data_keys():
+        for lang_data_id in self.get_language_data_ids_from_config_target(self.config_target):
             if not language_data.id_has_directory(lang_data_id):
                 error_msg = "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, language_data.data_dir)
                 event_logger.add_entry(error_msg)
                 return TargetReorderResult(success=False, error=error_msg)
 
         with event_logger.add_benchmarked_entry("Loading word frequency lists."):
-            language_data.load_data(self.__get_all_language_data_keys())
+            language_data.load_data(self.get_language_data_ids_from_config_target(self.config_target))
 
-            for lang_key in self.__get_all_language_data_keys():
+            for lang_key in self.get_language_data_ids_from_config_target(self.config_target):
                 if not language_data.word_frequency_lists.id_has_list_file(lang_key):
                     event_logger.add_entry("No word frequency list file found for language '{}'!".format(lang_key))
 
@@ -323,7 +320,7 @@ class Target:
 
         # Get corpus data
 
-        for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.__get_all_language_data_keys()]:
+        for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.get_language_data_ids_from_config_target(self.config_target)]:
             tokenizer = TextProcessing.get_tokenizer(lang_id)
             if hasattr(tokenizer, "__name__") and "default_tokenizer" not in tokenizer.__name__:
                 event_logger.add_entry("Using tokenizer '{}' for '{}'.".format(tokenizer.__name__, lang_id.upper()))

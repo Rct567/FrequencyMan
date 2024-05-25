@@ -6,7 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from dataclasses import dataclass
 from enum import Enum
 import json
-from typing import Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, Any
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -16,7 +16,7 @@ from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
 from .lib.utilities import batched, get_float, var_dump_log
 from .card_ranker import CardRanker
-from .target import JSON_TYPE, ConfiguredTargetNote, ReorderCacheData, TargetReorderResult, Target, ValidConfiguredTarget
+from .target import ConfiguredTargetNote, ReorderCacheData, TargetReorderResult, Target, ValidConfiguredTarget
 from .language_data import LangDataId, LanguageData
 from .lib.event_logger import EventLogger
 
@@ -28,6 +28,13 @@ class TargetListReorderResult():
     modified_dirty_notes: dict[NoteId, Optional[Note]]
     num_cards_repositioned: int
     num_targets_repositioned: int
+
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
+    JSON_TYPE: TypeAlias = dict[str, "JSON_TYPE"] | list["JSON_TYPE"] | str | int | float | bool | None
+else:
+    JSON_TYPE = Any
 
 
 class JsonTargetsValidity(Enum):
@@ -267,6 +274,17 @@ class TargetList:
                     return (False, "Value for ranking factors '{}' specified in target[{}].ranking_factors is not numeric.".format(key, index), None)
                 result['ranking_factors'][key] = float_val
 
+        # check custom ranking weights defined
+
+        for key in CardRanker.get_default_ranking_factors_span().keys():
+            ranking_key = 'ranking_'+key
+            if ranking_key in target_data:
+                float_val = get_float(target_data[ranking_key])
+                if float_val is None:
+                    return (False, "Custom ranking factors '{}' specified in target #{} has a non-numeric value.".format(ranking_key, index), None)
+                else:
+                    result[ranking_key] = get_float(target_data[ranking_key])
+
         # check notes
 
         if 'notes' not in target_data:
@@ -312,17 +330,6 @@ class TargetList:
 
             note_fields = {field_name: str(lang_data_id) for field_name, lang_data_id in note['fields'].items()}
             result['notes'].append(ConfiguredTargetNote(name=note['name'], fields=note_fields))
-
-        # check custom ranking weights defined
-
-        for key in CardRanker.get_default_ranking_factors_span().keys():
-            ranking_key = 'ranking_'+key
-            if ranking_key in target_data:
-                float_val = get_float(target_data[ranking_key])
-                if float_val is None:
-                    return (False, "Custom ranking factors '{}' specified in target #{} has a non-numeric value.".format(ranking_key, index), None)
-                else:
-                    result[ranking_key] = get_float(target_data[ranking_key])
 
         # defined target seems valid
 

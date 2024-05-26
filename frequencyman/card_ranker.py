@@ -13,12 +13,11 @@ from anki.cards import Card, CardId
 from anki.notes import Note, NoteId
 from anki.collection import Collection
 
-from .target import TargetCards
-
 from .text_processing import WordToken
 from .lib.utilities import *
 from .target_corpus_data import CorpusSegmentId, TargetCorpusData, TargetNoteFieldContentData
 from .language_data import LanguageData
+from .target_cards import TargetCards
 
 
 def sigmoid(x: float) -> float:

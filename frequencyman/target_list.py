@@ -12,11 +12,12 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
+from .configured_target import ConfiguredTarget
+
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
 from .lib.utilities import batched, get_float, var_dump_log
-from .card_ranker import CardRanker
-from .target import ConfiguredTargetNote, ReorderCacheData, TargetReorderResult, Target, ValidConfiguredTarget
+from .target import ConfiguredTargetNote, ReorderCacheData, TargetReorderResult, Target, ValidConfiguredTarget, CardRanker
 from .language_data import LangDataId, LanguageData
 from .lib.event_logger import EventLogger
 
@@ -113,17 +114,17 @@ class TargetList:
             return JsonTargetsResult(JsonTargetsValidity.INVALID_JSON, [], error_message, None)
 
     @staticmethod
-    def validate_target_list(target_data: JSON_TYPE, col: Collection, language_data: LanguageData) -> tuple[JsonTargetsValidity, str, Optional[list[ValidConfiguredTarget]]]:
+    def validate_target_list(targets_data: JSON_TYPE, col: Collection, language_data: LanguageData) -> tuple[JsonTargetsValidity, str, Optional[list[ValidConfiguredTarget]]]:
 
-        if not isinstance(target_data, list):
+        if not isinstance(targets_data, list):
             return (JsonTargetsValidity.INVALID_TARGETS, "Reorder target is not a list (array expected).", None)
-        elif len(target_data) < 1:
+        elif len(targets_data) < 1:
             return (JsonTargetsValidity.INVALID_TARGETS, "Reorder target list is empty.", None)
 
         valid_target_list: list[ValidConfiguredTarget] = []
 
-        for index, target in enumerate(target_data):
-            (target_is_valid, err_desc, valid_target) = TargetList.__validate_target(target, index, col, language_data)
+        for index, target_data in enumerate(targets_data):
+            (target_is_valid, err_desc, valid_target) = TargetList.__validate_target_data(target_data, index, col, language_data)
             if not target_is_valid:
                 return (JsonTargetsValidity.INVALID_TARGETS, err_desc, None)
             elif valid_target is not None:
@@ -132,7 +133,7 @@ class TargetList:
         return (JsonTargetsValidity.VALID_TARGETS, "", valid_target_list)
 
     @staticmethod
-    def __validate_target(target_data: JSON_TYPE, index: int, col: Collection, language_data: LanguageData) -> tuple[bool, str, Optional[ValidConfiguredTarget]]:
+    def __validate_target_data(target_data: JSON_TYPE, index: int, col: Collection, language_data: LanguageData) -> tuple[bool, str, Optional[ValidConfiguredTarget]]:
 
         if not isinstance(target_data, dict):
             return (False, "Target #{} is not a valid type (object expected). ".format(index), None)
@@ -172,7 +173,7 @@ class TargetList:
                 return (False, "Scope query defined in target #{} is not a string (string expected).".format(index), None)
             result['scope_query'] = target_data['scope_query']
 
-        defined_decks = Target.get_deck_names_from_config_target(target_data.get('deck'), target_data.get('decks'))
+        defined_decks = ConfiguredTarget.get_deck_names_from_config_target(target_data.get('deck'), target_data.get('decks'))
 
         if 'scope_query' not in result and len(defined_decks) == 0:
             return (False, "Target #{} has an invalid deck defined using deck, decks or scope_query.".format(index), None)
@@ -189,9 +190,7 @@ class TargetList:
 
         # check all keys
 
-        known_keys = set(ValidConfiguredTarget.__annotations__.keys())
-        known_keys.add('deck')
-        known_keys.update(map(lambda s: "ranking_"+s, CardRanker.get_default_ranking_factors_span().keys()))
+        known_keys = ValidConfiguredTarget.getValidKeys()
 
         for key in target_data.keys():
             if key == "":
@@ -247,7 +246,7 @@ class TargetList:
                 return (False, "Corpus segmentation strategy '{}' defined in target #{} is unknown.".format(target_data['corpus_segmentation_strategy'], index), None)
             result['corpus_segmentation_strategy'] = target_data['corpus_segmentation_strategy'].lower()
 
-        if Target.get_query_from_defined_main_scope(target_data.get('deck'), target_data.get('decks'), target_data.get('scope_query')) is None:
+        if ConfiguredTarget.get_query_from_defined_main_scope(target_data.get('deck'), target_data.get('decks'), target_data.get('scope_query')) is None:
             return (False, "Target #{} has an invalid scope defined using deck, decks or scope_query.".format(index), None)
 
         # custom ranking factors object
@@ -279,7 +278,7 @@ class TargetList:
                 if float_val is None:
                     return (False, "Custom ranking factors '{}' specified in target #{} has a non-numeric value.".format(ranking_key, index), None)
                 else:
-                    result[ranking_key] = get_float(target_data[ranking_key])
+                    result.set_custom_ranking_weight(ranking_key, float_val)
 
         # check notes
 
@@ -332,7 +331,7 @@ class TargetList:
 
         for key in target_data.keys():
             if key in result:
-                ordered_result[key] = result[key]
+                ordered_result[key] = result.get(key)
 
         return (True, "", ValidConfiguredTarget(**ordered_result))
 

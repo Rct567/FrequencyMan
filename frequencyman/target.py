@@ -4,18 +4,18 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import re
-from typing import Any, Optional, Tuple, TypedDict, Union
+from typing import Optional, Tuple, TypedDict, Union, overload
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
+from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
 from .text_processing import TextProcessing
 from .lib.utilities import get_float, profile_context, var_dump_log
 from .lib.event_logger import EventLogger
 from .language_data import LanguageData, LangDataId
 from .target_corpus_data import CorpusSegmentationStrategy, TargetCorpusData
-from .target_cards import TargetCards
 
 
 class TargetReorderResult():
@@ -56,31 +56,9 @@ class TargetReorderResult():
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 
 
-class ConfiguredTargetNote(TypedDict):
-    name: str
-    fields: dict[str, str]
-
-
-class ValidConfiguredTargetBase(TypedDict, total=False):
-    deck: Optional[str]
-    decks: Optional[Union[str, list[str]]]
-    scope_query: Optional[str]
-    reorder_scope_query: Optional[str]
-    familiarity_sweetspot_point: Optional[Union[float, str]]
-    suspended_card_value: Optional[float]
-    suspended_leech_card_value: Optional[float]
-    ideal_word_count: Optional[list[int]]
-    ranking_factors: Optional[dict[str, float]]
-    corpus_segmentation_strategy: Optional[str]
-
-
-class ValidConfiguredTarget(ValidConfiguredTargetBase):
-    notes: list[ConfiguredTargetNote]
-
-
 class ReorderCacheData(TypedDict):
-    target_cards: dict[Tuple, TargetCards] # type: ignore
-    corpus: dict[Tuple, TargetCorpusData] # type: ignore
+    target_cards: dict[Tuple, TargetCards]  # type: ignore
+    corpus: dict[Tuple, TargetCorpusData]  # type: ignore
 
 
 class Target:
@@ -104,95 +82,18 @@ class Target:
         self.target_corpus_data = None
         self.col = col
 
-    @staticmethod
-    def get_config_fields_per_note_type(config_target: ValidConfiguredTarget) -> dict[str, dict[str, LangDataId]]:
-
-        config_notes = {}
-
-        for note in config_target['notes']:
-            note_fields = {field_name: LangDataId(lang_data_id.lower()) for field_name, lang_data_id in note['fields'].items()}
-            config_notes[note['name']] = note_fields
-
-        return config_notes
-
-    @staticmethod
-    def get_language_data_ids_from_config_target(config_target: ValidConfiguredTarget) -> set[LangDataId]:
-
-        keys = set()
-        for note in config_target['notes']:
-            for lang_data_id in note['fields'].values():
-                keys.add(LangDataId(lang_data_id.lower()))
-        return keys
-
-    @staticmethod
-    def get_deck_names_from_config_target(defined_deck: Any, defined_decks: Any) -> list[str]:
-
-        decks: list[str] = []
-
-        if defined_deck is not None and isinstance(defined_deck, str) and len(defined_deck) > 0:
-            decks.append(defined_deck)
-
-        if defined_decks is not None and isinstance(defined_decks, list) and len(defined_decks) > 0:
-            decks.extend([deck_name for deck_name in defined_decks if isinstance(deck_name, str) and len(deck_name) > 0])
-        if defined_decks is not None and isinstance(defined_decks, str) and len(defined_decks) > 0:
-            decks.extend([deck_name.replace('\\,', ',').strip() for deck_name in re.split(r'(?<!\\),', defined_decks) if isinstance(deck_name, str)])
-
-        return decks
-
-    @staticmethod
-    def get_query_from_defined_main_scope(defined_deck: Optional[Any], defined_decks: Optional[Any], scope_query: Optional[Any]) -> Optional[str]:
-
-        scope_queries: list[str] = []
-
-        # defined decks
-
-        decks = Target.get_deck_names_from_config_target(defined_deck, defined_decks)
-
-        for deck_name in decks:
-            if len(deck_name.strip()) > 0:
-                scope_queries.append('"deck:' + deck_name + '"')
-
-        # defined scope query
-
-        if scope_query is not None and isinstance(scope_query, str) and len(scope_query.strip()) > 0:
-            scope_queries.append(scope_query)
-
-        # result
-        if len(scope_queries) > 0:
-            scope_query_result = " OR ".join(scope_queries)
-            return "("+scope_query_result+")"
-
-        return None
-
-    @staticmethod
-    def construct_main_scope_query(config_target: ValidConfiguredTarget) -> str:
-
-        target_notes = config_target["notes"] if isinstance(config_target["notes"], list) else []
-        note_queries = ['"note:'+note_type['name']+'"' for note_type in target_notes if isinstance(note_type['name'], str)]
-
-        if len(note_queries) < 1:
-            return ''
-
-        notes_query = "(" + " OR ".join(note_queries) + ")"
-
-        defined_scope_query = Target.get_query_from_defined_main_scope(config_target.get('deck'), config_target.get('decks'), config_target.get('scope_query'))
-
-        if defined_scope_query is None:
-            return notes_query  # main scope is just the notes
-
-        return defined_scope_query+" AND "+notes_query
 
     def __get_main_scope_query(self) -> str:
 
         if self.main_scope_query is None:
-            self.main_scope_query = self.construct_main_scope_query(self.config_target)
+            self.main_scope_query = self.config_target.construct_main_scope_query()
         return self.main_scope_query
 
     def __get_reorder_scope_query(self) -> Optional[str]:
 
         if self.reorder_scope_query is None:
-            if 'reorder_scope_query' in self.config_target and self.config_target['reorder_scope_query'] is not None and len(self.config_target['reorder_scope_query']) > 0:
-                self.reorder_scope_query = self.construct_main_scope_query(self.config_target)+" AND ("+self.config_target['reorder_scope_query']+")"
+            if 'reorder_scope_query' in self.config_target and len(self.config_target['reorder_scope_query']) > 0:
+                self.reorder_scope_query = self.config_target.construct_main_scope_query()+" AND ("+self.config_target['reorder_scope_query']+")"
         return self.reorder_scope_query
 
     def get_cards(self, search_query: Optional[str] = None) -> TargetCards:
@@ -249,7 +150,7 @@ class Target:
             self.target_corpus_data.suspended_leech_card_value = suspended_leech_card_value
 
         # corpus_segmentation_strategy
-        if 'corpus_segmentation_strategy' in self.config_target and not self.config_target['corpus_segmentation_strategy'] is None:
+        if 'corpus_segmentation_strategy' in self.config_target:
             corpus_segmentation_strategy = self.config_target['corpus_segmentation_strategy'].lower()
             if corpus_segmentation_strategy == 'by_lang_data_id':
                 self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
@@ -257,14 +158,14 @@ class Target:
                 self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME
 
         # create corpus data
-        self.target_corpus_data.create_data(target_cards, self.get_config_fields_per_note_type(self.config_target), language_data)
+        self.target_corpus_data.create_data(target_cards, self.config_target.get_config_fields_per_note_type(), language_data)
 
         # done
         return self.target_corpus_data
 
     def __get_corpus_data_cached(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
 
-        cache_key = (str(target_cards.all_cards_ids), str(self.get_config_fields_per_note_type(self.config_target)), self.col, language_data,
+        cache_key = (str(target_cards.all_cards_ids), str(self.config_target.get_config_fields_per_note_type()), self.col, language_data,
                      self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'),
                      self.config_target.get('suspended_leech_card_value'), self.config_target.get('corpus_segmentation_strategy'),
                      self.config_target.get('focus_words_max_familiarity'))
@@ -285,24 +186,22 @@ class Target:
         if self.cache_data is None:
             raise ValueError("Cache data object required for reordering!")
 
-        from .card_ranker import CardRanker
-
         if "note:" not in self.__get_main_scope_query():
             error_msg = "No valid note type defined. At least one note is required for reordering!"
             event_logger.add_entry(error_msg)
             return TargetReorderResult(success=False, error=error_msg)
 
         # Check defined target lang keys and then load frequency lists for target
-        for lang_data_id in self.get_language_data_ids_from_config_target(self.config_target):
+        for lang_data_id in self.config_target.get_language_data_ids():
             if not language_data.id_has_directory(lang_data_id):
                 error_msg = "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, language_data.data_dir)
                 event_logger.add_entry(error_msg)
                 return TargetReorderResult(success=False, error=error_msg)
 
         with event_logger.add_benchmarked_entry("Loading word frequency lists."):
-            language_data.load_data(self.get_language_data_ids_from_config_target(self.config_target))
+            language_data.load_data(self.config_target.get_language_data_ids())
 
-            for lang_key in self.get_language_data_ids_from_config_target(self.config_target):
+            for lang_key in self.config_target.get_language_data_ids():
                 if not language_data.word_frequency_lists.id_has_list_file(lang_key):
                     event_logger.add_entry("No word frequency list file found for language '{}'!".format(lang_key))
 
@@ -320,7 +219,7 @@ class Target:
 
         # Get corpus data
 
-        for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.get_language_data_ids_from_config_target(self.config_target)]:
+        for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.config_target.get_language_data_ids()]:
             tokenizer = TextProcessing.get_tokenizer(lang_id)
             if hasattr(tokenizer, "__name__") and "default_tokenizer" not in tokenizer.__name__:
                 event_logger.add_entry("Using tokenizer '{}' for '{}'.".format(tokenizer.__name__, lang_id.upper()))
@@ -362,7 +261,7 @@ class Target:
                     card_ranker.ranking_factors_span[attribute] = target_setting_val
 
             # Use custom ranking weight object
-            if 'ranking_factors' in self.config_target and self.config_target['ranking_factors'] is not None:
+            if 'ranking_factors' in self.config_target:
                 if isinstance(self.config_target['ranking_factors'], dict) and len(self.config_target['ranking_factors']) > 0:
                     card_ranker.ranking_factors_span = {}
                     for factor in CardRanker.get_default_ranking_factors_span().keys():
@@ -370,7 +269,7 @@ class Target:
                             card_ranker.ranking_factors_span[factor] = float(self.config_target['ranking_factors'][factor])
 
             # use custom ideal_word_count
-            if 'ideal_word_count' in self.config_target and self.config_target['ideal_word_count'] is not None:
+            if 'ideal_word_count' in self.config_target:
                 if isinstance(self.config_target['ideal_word_count'], list) and len(self.config_target['ideal_word_count']) == 2:
                     if all(isinstance(val, int) for val in self.config_target['ideal_word_count']):
                         card_ranker.ideal_word_count_min = self.config_target['ideal_word_count'][0]

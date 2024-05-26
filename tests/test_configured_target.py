@@ -1,17 +1,11 @@
-from frequencyman.target import Target, ValidConfiguredTarget
 
-from frequencyman.target import Target
+
+from frequencyman.configured_target import ConfiguredTarget, ValidConfiguredTarget
 from frequencyman.target_list import TargetList, TargetListReorderResult
-from frequencyman.lib.event_logger import EventLogger
 from frequencyman.language_data import LangDataId, LanguageData
 
-from anki.collection import Collection, OpChanges, OpChangesWithCount
 
-from anki.cards import CardId, Card
-from anki.notes import Note, NoteId
-
-class TestTarget:
-
+class TestConfiguredTarget:
 
     def test_construct_main_scope_query_deck(self):
 
@@ -26,7 +20,7 @@ class TestTarget:
             }]
         })
 
-        assert Target.construct_main_scope_query(defined_target) == '("deck:big_collection_es") AND ("note:basic")'
+        assert defined_target.construct_main_scope_query() == '("deck:big_collection_es") AND ("note:basic")'
 
     def test_construct_main_scope_query_no_deck(self):
 
@@ -40,7 +34,7 @@ class TestTarget:
             }]
         })
 
-        assert Target.construct_main_scope_query(defined_target) == '("note:basic")'
+        assert defined_target.construct_main_scope_query() == '("note:basic")'
 
     def test_construct_main_scope_query_decks_string(self):
 
@@ -55,7 +49,7 @@ class TestTarget:
             }]
         })
 
-        assert Target.construct_main_scope_query(defined_target) == '("deck:big_collection_es") AND ("note:basic")'
+        assert defined_target.construct_main_scope_query() == '("deck:big_collection_es") AND ("note:basic")'
 
     def test_construct_main_scope_query_decks_list(self):
 
@@ -70,7 +64,7 @@ class TestTarget:
             }]
         })
 
-        assert Target.construct_main_scope_query(defined_target) == '("deck:big_collection_es" OR "deck:big_collection_it") AND ("note:basic")'
+        assert defined_target.construct_main_scope_query() == '("deck:big_collection_es" OR "deck:big_collection_it") AND ("note:basic")'
 
     def test_get_language_data_ids_from_config_target(self):
 
@@ -84,7 +78,7 @@ class TestTarget:
             }]
         })
 
-        assert Target.get_language_data_ids_from_config_target(defined_target) == {LangDataId('en'), LangDataId('es')}
+        assert defined_target.get_language_data_ids() == {LangDataId('en'), LangDataId('es')}
 
     def test_get_language_data_ids_from_config_target_same_languages(self):
 
@@ -98,7 +92,7 @@ class TestTarget:
             }]
         })
 
-        assert Target.get_language_data_ids_from_config_target(defined_target) == {LangDataId('es')}
+        assert defined_target.get_language_data_ids() == {LangDataId('es')}
 
     def test_get_config_fields_per_note_type(self):
 
@@ -113,7 +107,7 @@ class TestTarget:
             }]
         })
 
-        assert Target.get_config_fields_per_note_type(defined_target) == {
+        assert defined_target.get_config_fields_per_note_type() == {
             "basic": {
                 "Front": LangDataId("en"),
                 "Back": LangDataId("es")

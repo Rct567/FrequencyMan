@@ -60,13 +60,13 @@ class TargetsDefiningTextArea(QTextEdit):
     def __handle_content_change(self):
         self.handle_current_content()
 
-    def paintEvent(self, event: Optional[QPaintEvent]):
-        super().paintEvent(event)
+    def paintEvent(self, e: Optional[QPaintEvent]):
+        super().paintEvent(e)
         if not self.first_paint_done:
             self.first_paint_done = True
             self.__call_first_paint_listeners()
 
-    def handle_current_content(self, allow_error_interception=5):
+    def handle_current_content(self, allow_error_interception:int = 5):
 
         current_content = self.toPlainText()
 
@@ -421,7 +421,7 @@ class ReorderCardsTab(FrequencyManTab):
         # user clicked reorder... ask to save to config if new targets have been defined
 
         def ask_to_save_new_targets_to_config(targets_defined: list[ValidConfiguredTarget]):
-            if self.fm_window.addon_config is None or "reorder_target_list" not in self.fm_window.addon_config:
+            if "reorder_target_list" not in self.fm_window.addon_config:
                 return
             if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
                 return
@@ -439,7 +439,6 @@ class ReorderCardsTab(FrequencyManTab):
             else:
                 ask_to_save_new_targets_to_config(self.targets_input_textarea.last_valid_targets_defined)
                 self.__execute_reorder_request()
-
 
         normal_style = "QPushButton { font-size: 16px; font-weight: bold; margin-top:15px; }"
         disabled_style = 'QPushButton:enabled { background-color:#23b442; border:2px solid #23a03e; color:white; }'

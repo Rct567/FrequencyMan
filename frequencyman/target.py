@@ -56,8 +56,6 @@ class TargetReorderResult():
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 
 
-
-
 class ConfiguredTargetNote(TypedDict):
     name: str
     fields: dict[str, str]
@@ -75,12 +73,14 @@ class ValidConfiguredTargetBase(TypedDict, total=False):
     ranking_factors: Optional[dict[str, float]]
     corpus_segmentation_strategy: Optional[str]
 
+
 class ValidConfiguredTarget(ValidConfiguredTargetBase):
     notes: list[ConfiguredTargetNote]
 
+
 class ReorderCacheData(TypedDict):
-    target_cards: dict[Tuple, TargetCards]
-    corpus: dict[Tuple, TargetCorpusData]
+    target_cards: dict[Tuple, TargetCards] # type: ignore
+    corpus: dict[Tuple, TargetCorpusData] # type: ignore
 
 
 class Target:

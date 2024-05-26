@@ -17,7 +17,6 @@ from .main_window import FrequencyManMainWindow, FrequencyManTab
 from ..card_ranker import CardRanker
 from ..target_corpus_data import TargetCorpusData
 from ..language_data import LanguageData
-from ..target_list import ConfiguredTarget, Target, TargetList
 
 from ..lib.utilities import var_dump_log
 from ..lib.event_logger import EventLogger

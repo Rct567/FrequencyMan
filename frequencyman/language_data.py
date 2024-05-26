@@ -27,7 +27,7 @@ class WordFrequencyLists:
 
         possible_lang_dir = os.path.join(self.data_dir, lang_data_id)
 
-        files = set()
+        files: set[str] = set()
 
         if os.path.isdir(possible_lang_dir):
             for file_name in os.listdir(possible_lang_dir):
@@ -146,7 +146,7 @@ class IgnoreLists:
 
         possible_lang_dir = os.path.join(self.data_dir, lang_data_id)
 
-        files = set()
+        files: set[str] = set()
 
         if os.path.isdir(possible_lang_dir):
             for file_name in os.listdir(possible_lang_dir):

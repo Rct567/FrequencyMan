@@ -55,15 +55,15 @@ class Tokenizers:
         return len(self.tokenizers[lang_id]) > 0
 
 
-LOADED_USER_PROVIDED_TOKENIZERS: Optional[Tokenizers] = None
+loaded_user_provided_tokenizers: Optional[Tokenizers] = None
 
 
 def load_user_provided_tokenizers() -> Tokenizers:
 
-    global LOADED_USER_PROVIDED_TOKENIZERS
+    global loaded_user_provided_tokenizers
 
-    if LOADED_USER_PROVIDED_TOKENIZERS is not None:
-        return LOADED_USER_PROVIDED_TOKENIZERS
+    if loaded_user_provided_tokenizers is not None:
+        return loaded_user_provided_tokenizers
 
     fm_plugin_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     anki_plugins_dir = os.path.abspath(os.path.join(fm_plugin_root, '..'))
@@ -72,7 +72,7 @@ def load_user_provided_tokenizers() -> Tokenizers:
     if not os.path.exists(anki_plugins_dir):
         raise Exception("Could not find anki plugin directory!")
 
-    LOADED_USER_PROVIDED_TOKENIZERS = Tokenizers()
+    loaded_user_provided_tokenizers = Tokenizers()
 
     # load custom defined tokenizers from user_files directory
 
@@ -109,7 +109,7 @@ def load_user_provided_tokenizers() -> Tokenizers:
                 if not isinstance(lang_id, str) or len(lang_id) != 2:
                     raise Exception("Invalid lang_id given by '{}' in '{}'.".format(tokenizers_provider.__name__, tokenizer_dir))
 
-                LOADED_USER_PROVIDED_TOKENIZERS.register(LangId(lang_id), tokenizer)
+                loaded_user_provided_tokenizers.register(LangId(lang_id), tokenizer)
 
     # ankimorphs-chinese-jieba plugin (companion add-on for AnkiMorphs)
 
@@ -123,7 +123,7 @@ def load_user_provided_tokenizers() -> Tokenizers:
         def anki_morphs_jieba_tokenizer(txt: str) -> list[str]:
             return list(token for (token, _) in jieba_anki_morphs_module.lcut(txt) if token is not None)
 
-        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('zh'), anki_morphs_jieba_tokenizer)
+        loaded_user_provided_tokenizers.register(LangId('zh'), anki_morphs_jieba_tokenizer)
 
     # ankimorphs-japanese-mecab plugin (companion add-on for AnkiMorphs)
 
@@ -141,7 +141,7 @@ def load_user_provided_tokenizers() -> Tokenizers:
         def anki_morphs_mecab_tokenizer(expression: str) -> list[str]:
             return get_morphemes_mecab(expression)
 
-        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('ja'), anki_morphs_mecab_tokenizer)
+        loaded_user_provided_tokenizers.register(LangId('ja'), anki_morphs_mecab_tokenizer)
 
     # mecab tokenizer from 'ajt japanese' plugin
 
@@ -157,7 +157,7 @@ def load_user_provided_tokenizers() -> Tokenizers:
         def ajt_japanese_mecab_tokenizer(txt: str) -> list[str]:
             return [token.word for token in mecab.translate(txt)]
 
-        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('ja'), ajt_japanese_mecab_tokenizer)
+        loaded_user_provided_tokenizers.register(LangId('ja'), ajt_japanese_mecab_tokenizer)
 
     #  mecab and jieba tokenizer from 'morphman' plugin
 
@@ -173,14 +173,14 @@ def load_user_provided_tokenizers() -> Tokenizers:
         def morphman_mecab_tokenizer(txt: str) -> list[str]:
             return [token.base for token in morphemizer_mecab.getMorphemesFromExpr(txt)]
 
-        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('ja'), morphman_mecab_tokenizer)
+        loaded_user_provided_tokenizers.register(LangId('ja'), morphman_mecab_tokenizer)
 
         morphemizer_jieba = morphemizer_module.getMorphemizerByName("JiebaMorphemizer")
 
         def morphman_jieba_tokenizer(txt: str) -> list[str]:
             return [token.base for token in morphemizer_jieba.getMorphemesFromExpr(txt)]
 
-        LOADED_USER_PROVIDED_TOKENIZERS.register(LangId('zh'), morphman_jieba_tokenizer)
+        loaded_user_provided_tokenizers.register(LangId('zh'), morphman_jieba_tokenizer)
 
     # done
-    return LOADED_USER_PROVIDED_TOKENIZERS
+    return loaded_user_provided_tokenizers

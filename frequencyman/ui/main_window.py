@@ -11,8 +11,9 @@ from aqt.main import AnkiQt
 
 try:
     from ..version import FREQUENCYMAN_VERSION
+    fm_version = FREQUENCYMAN_VERSION
 except ImportError:
-    FREQUENCYMAN_VERSION = ""
+    fm_version = ""
 
 
 class FrequencyManTab(QWidget):
@@ -31,11 +32,10 @@ class FrequencyManTab(QWidget):
     def on_tab_painted(self, tab_layout: QLayout):
         pass
 
-    def paintEvent(self, _: Optional[QPaintEvent]):
+    def paintEvent(self, a0: Optional[QPaintEvent]):
         if not self.first_paint_done and (layout := self.layout()) is not None:
             self.first_paint_done = True
             self.on_tab_painted(layout)
-
 
 
 # FrequencyMan Main Window class
@@ -59,8 +59,8 @@ class FrequencyManMainWindow(QDialog):
         self.mw = mw
         self.is_dark_mode = mw.app.styleSheet().lower().find("dark") != -1
 
-        if FREQUENCYMAN_VERSION != "":
-            self.setWindowTitle("FrequencyMan v"+FREQUENCYMAN_VERSION)
+        if fm_version != "":
+            self.setWindowTitle("FrequencyMan v"+fm_version)
         else:
             self.setWindowTitle("FrequencyMan")
 
@@ -90,7 +90,6 @@ class FrequencyManMainWindow(QDialog):
         # dirs
         self.root_dir = root_dir
         self.user_files_dir = user_files_dir
-
 
     def add_tab(self, new_tab: FrequencyManTab) -> None:
 

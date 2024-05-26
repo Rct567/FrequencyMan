@@ -81,7 +81,6 @@ class TargetCards:
         if len(self.all_cards_ids) != len(self.all_cards):
             raise Exception("Could not get cards from database!")
 
-
     def get_note(self, note_id: NoteId) -> Note:
 
         if note_id not in self.notes_from_cards_cached:

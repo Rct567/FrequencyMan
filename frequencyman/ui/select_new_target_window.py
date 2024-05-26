@@ -14,11 +14,11 @@ from aqt.utils import askUser, showWarning, showInfo, getOnlyText
 from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
 from aqt.qt import *
 
+from ..target import ConfiguredTargetNote, ValidConfiguredTarget
+
 from ..lib.utilities import var_dump, var_dump_log
 
 from .main_window import FrequencyManMainWindow
-
-from ..target_list import ConfiguredTarget
 
 
 class SelectNewTargetWindow(QDialog):
@@ -26,7 +26,6 @@ class SelectNewTargetWindow(QDialog):
     selected_deck: str
     selected_note_type: str
     selected_fields: dict[str, str]
-
 
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection):
 
@@ -67,7 +66,7 @@ class SelectNewTargetWindow(QDialog):
         self.note_filter = QLineEdit()
         self.note_filter.setPlaceholderText("Filter note types...")
         self.note_list_view = QListView()
-        #self.note_list_view.setMinimumHeight(200)
+        # self.note_list_view.setMinimumHeight(200)
         self.note_list_model = QStringListModel([model.name for model in self.get_sorted_note_types()])
 
         self.note_list_view.setModel(self.note_list_model)
@@ -111,7 +110,6 @@ class SelectNewTargetWindow(QDialog):
     def get_sorted_note_types(self) -> list[NotetypeNameIdUseCount]:
         return [model for model in sorted(self.col.models.all_use_counts(), key=lambda x: x.use_count, reverse=True)]
 
-
     def get_note_types_counts_by_deck(self, deck_name: str) -> dict[str, int]:
 
         card_ids = list(self.col.find_cards("deck:\"{}\"".format(deck_name)))
@@ -140,11 +138,11 @@ class SelectNewTargetWindow(QDialog):
 
     def set_decks_list(self, strings: Sequence[str]) -> None:
         self.deck_list_model.setStringList(strings)
-        self.on_deck_selection_change() # deselected
+        self.on_deck_selection_change()  # deselected
 
     def set_note_types_list(self, strings: Sequence[str]) -> None:
         self.note_list_model.setStringList(strings)
-        self.on_note_selection_change() # deselected
+        self.on_note_selection_change()  # deselected
 
     def filter_decks(self, text: str) -> None:
         filtered_decks = [deck.name for deck in self.get_sorted_decks() if text.lower() in deck.name.lower()]
@@ -189,7 +187,7 @@ class SelectNewTargetWindow(QDialog):
 
         if self.selected_deck != "" and self.selected_note_type != "":
             target_result = self.col.find_cards("\"deck:{}\" AND note:\"{}\"".format(self.selected_deck, self.selected_note_type))
-            num_cards_text  = ("{} card" if len(target_result) == 1 else "{:n} cards").format(len(target_result))
+            num_cards_text = ("{} card" if len(target_result) == 1 else "{:n} cards").format(len(target_result))
             self.pre_submit_info_label.setText("Found {} for selected deck and note type.".format(num_cards_text))
             self.pre_submit_info_label.setVisible(True)
         else:
@@ -220,15 +218,6 @@ class SelectNewTargetWindow(QDialog):
     def get_selected_target(self) -> ValidConfiguredTarget:
         new_target_note: ConfiguredTargetNote = {'name': self.selected_note_type, 'fields': self.selected_fields}
         return ValidConfiguredTarget({
-            'decks': [self.selected_deck],
+            'deck': self.selected_deck,
             'notes': [new_target_note],
-            'decks': None,
-            'scope_query': None,
-            'reorder_scope_query': None,
-            'familiarity_sweetspot_point': None,
-            'suspended_card_value': None,
-            'suspended_leech_card_value': None,
-            'ideal_word_count': None,
-            'ranking_factors': None,
-            'corpus_segmentation_strategy': None
         })

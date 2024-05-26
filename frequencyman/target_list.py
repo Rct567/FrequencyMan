@@ -152,7 +152,6 @@ class TargetList:
                 return (False, "Deck defined in target #{} is empty.".format(index), None)
             result['deck'] = target_data['deck']
 
-
         if 'decks' in target_data:
             if isinstance(target_data['decks'], list):
                 if not all(isinstance(deck_name, str) for deck_name in target_data['decks']):
@@ -182,7 +181,6 @@ class TargetList:
             for deck_name in defined_decks:
                 if col.decks.id_for_name(deck_name) is None:
                     return (False, "Deck '{}' defined in target #{} not found.".format(deck_name, index), None)
-
 
         if 'reorder_scope_query' in target_data:
             if not isinstance(target_data['reorder_scope_query'], str):
@@ -217,7 +215,6 @@ class TargetList:
                 return (False, "Ideal word count specified in target #{} should has a min value that is higher or equal to the max value.".format(index), None)
             result['ideal_word_count'] = [int(val) for val in target_data['ideal_word_count'] if val is not None and isinstance(val, int)]
 
-
         if 'familiarity_sweetspot_point' in target_data:
             if isinstance(target_data['familiarity_sweetspot_point'], float) or isinstance(target_data['familiarity_sweetspot_point'], int):
                 result['familiarity_sweetspot_point'] = float(target_data['familiarity_sweetspot_point'])
@@ -237,7 +234,6 @@ class TargetList:
                 result['suspended_leech_card_value'] = float(target_data['suspended_leech_card_value'])
             else:
                 return (False, "Suspended leech card value defined in target #{} is not a float (float expected).".format(index), None)
-
 
         if 'corpus_segmentation_strategy' in target_data:
             if not isinstance(target_data['corpus_segmentation_strategy'], str):
@@ -293,7 +289,6 @@ class TargetList:
             return (False, "Target object #{} value for 'notes' is not a valid type (array expected).".format(index), None)
         elif len(target_data['notes']) == 0:
             return (False, "Target object #{} value for 'notes' is empty.".format(index), None)
-
 
         for note_index, note in enumerate(target_data['notes']):
             if not isinstance(note, dict):

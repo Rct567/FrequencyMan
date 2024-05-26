@@ -36,7 +36,7 @@ class TextProcessing:
             word_pattern = TextProcessing.KOREAN_PATTERN
         elif lang_id == 'ar':
             word_pattern = TextProcessing.ARABIC_PATTERN
-        elif lang_id in {'am', 'ti', 'om', 'so', 'ha'}:
+        elif lang_id is not None and str(lang_id) in {'am', 'ti', 'om', 'so', 'ha'}:
             word_pattern = TextProcessing.ETHIOPIC_PATTERN
         else:
             word_pattern = TextProcessing.DEFAULT_PATTERN

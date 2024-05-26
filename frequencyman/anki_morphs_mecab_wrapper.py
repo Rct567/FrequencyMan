@@ -141,7 +141,7 @@ def _get_morpheme(morph_string_parts: list[str]) -> str | None:
     if (pos in _MECAB_POS_BLACKLIST) or (sub_pos in _MECAB_SUB_POS_BLACKLIST):
         return None
 
-    lemma = morph_string_parts[0].strip()
+    #lemma = morph_string_parts[0].strip()
     inflection = morph_string_parts[1].strip()
 
     return inflection

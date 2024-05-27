@@ -114,3 +114,36 @@ class TestConfiguredTarget:
             }
         }
 
+    def test_get_reorder_scope_query_none(self):
+
+        defined_target = ValidConfiguredTarget({
+            'deck': 'big_collection_es',
+            'notes': [{
+                "name": "basic",
+                "fields": {
+                    "Front": "EN",
+                    "Back": "es"
+                },
+            }]
+        })
+
+        assert defined_target.get_reorder_scope_query() == None
+
+    def test_get_reorder_scope_query(self):
+
+        defined_target = ValidConfiguredTarget({
+            'deck': 'big_collection_es',
+            'reorder_scope_query': '-card:*Reading*',
+            'notes': [{
+                "name": "basic",
+                "fields": {
+                    "Front": "EN",
+                    "Back": "es"
+                },
+            }]
+        })
+
+        reorder_scope = defined_target.get_reorder_scope_query()
+        assert reorder_scope == '("deck:big_collection_es") AND ("note:basic") AND (-card:*Reading*)'
+        assert defined_target.construct_main_scope_query() in reorder_scope
+

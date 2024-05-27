@@ -186,7 +186,6 @@ class ValidConfiguredTarget(ConfiguredTargetTypedDict):
                 keys.add(LangDataId(lang_data_id.lower()))
         return keys
 
-
     def construct_main_scope_query(self) -> str:
 
         target_notes = self["notes"] if isinstance(self["notes"], list) else []
@@ -203,6 +202,11 @@ class ValidConfiguredTarget(ConfiguredTargetTypedDict):
             return notes_query  # main scope is just the notes
 
         return defined_scope_query+" AND "+notes_query
+
+    def get_reorder_scope_query(self) -> Optional[str]:
+
+        if 'reorder_scope_query' in self and len(self['reorder_scope_query']) > 0:
+            return self.construct_main_scope_query()+" AND ("+self['reorder_scope_query']+")"
 
 
 

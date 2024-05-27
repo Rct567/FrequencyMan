@@ -3,8 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-import re
-from typing import Optional, Tuple, TypedDict, Union, overload
+from typing import Optional, Tuple, TypedDict
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -57,8 +56,8 @@ class TargetReorderResult():
 
 
 class ReorderCacheData(TypedDict):
-    target_cards: dict[Tuple, TargetCards]  # type: ignore
-    corpus: dict[Tuple, TargetCorpusData]  # type: ignore
+    target_cards: dict[Tuple, TargetCards]
+    corpus: dict[Tuple, TargetCorpusData]
 
 
 class Target:
@@ -67,7 +66,7 @@ class Target:
     index_num: int
     col: Collection
 
-    main_scope_query: Optional[str]
+    main_scope_query: str
     reorder_scope_query: Optional[str]
     target_corpus_data: Optional[TargetCorpusData]
 
@@ -77,29 +76,17 @@ class Target:
 
         self.config_target = target
         self.index_num = index_num
-        self.main_scope_query = None
-        self.reorder_scope_query = None
         self.target_corpus_data = None
         self.col = col
 
+        self.main_scope_query = self.config_target.construct_main_scope_query()
+        self.reorder_scope_query = self.config_target.get_reorder_scope_query()
 
-    def __get_main_scope_query(self) -> str:
-
-        if self.main_scope_query is None:
-            self.main_scope_query = self.config_target.construct_main_scope_query()
-        return self.main_scope_query
-
-    def __get_reorder_scope_query(self) -> Optional[str]:
-
-        if self.reorder_scope_query is None:
-            if 'reorder_scope_query' in self.config_target and len(self.config_target['reorder_scope_query']) > 0:
-                self.reorder_scope_query = self.config_target.construct_main_scope_query()+" AND ("+self.config_target['reorder_scope_query']+")"
-        return self.reorder_scope_query
 
     def get_cards(self, search_query: Optional[str] = None) -> TargetCards:
 
         if not search_query:
-            search_query = self.__get_main_scope_query()
+            search_query = self.main_scope_query
 
         target_cards_ids = self.col.find_cards(search_query, order="c.due asc")
         target_cards = TargetCards(target_cards_ids, self.col)
@@ -109,7 +96,7 @@ class Target:
     def __get_cards_cached(self, search_query: Optional[str] = None) -> TargetCards:
 
         if not search_query:
-            search_query = self.__get_main_scope_query()
+            search_query = self.main_scope_query
 
         cache_key = (search_query, self.col)
 
@@ -186,7 +173,7 @@ class Target:
         if self.cache_data is None:
             raise ValueError("Cache data object required for reordering!")
 
-        if "note:" not in self.__get_main_scope_query():
+        if "note:" not in self.main_scope_query:
             error_msg = "No valid note type defined. At least one note is required for reordering!"
             event_logger.add_entry(error_msg)
             return TargetReorderResult(success=False, error=error_msg)
@@ -228,7 +215,7 @@ class Target:
             target_corpus_data = self.__get_corpus_data_cached(target_cards, language_data)
 
         # If reorder scope is defined, use it for reordering
-        reorder_scope_query = self.__get_reorder_scope_query()
+        reorder_scope_query = self.reorder_scope_query
         reorder_scope_target_cards = target_cards
         if reorder_scope_query:
             new_target_cards = self.get_cards(reorder_scope_query)

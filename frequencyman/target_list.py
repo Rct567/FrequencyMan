@@ -100,7 +100,7 @@ class TargetList:
         try:
             data: JSON_TYPE = json.loads(json_data)
             if not isinstance(data, list):
-                return JsonTargetsResult(JsonTargetsValidity.INVALID_TARGETS, [], "Reorder target is not a list (array expected).", [])
+                return JsonTargetsResult(JsonTargetsValidity.INVALID_TARGETS, [], "Reorder target is not a list (array expected).", None)
             (validity_state, err_desc, valid_target_list) = TargetList.validate_target_list(data, col, language_data)
             return JsonTargetsResult(validity_state, data, err_desc, valid_target_list)
         except json.JSONDecodeError as e:

@@ -1,67 +1,24 @@
-import pprint
 import pytest
-import os
-import shutil
 
-from frequencyman.target import Target
 from frequencyman.target_list import TargetList, TargetListReorderResult
 from frequencyman.lib.event_logger import EventLogger
 from frequencyman.language_data import LangDataId, LanguageData
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
-from aqt.operations import QueryOp, CollectionOp
 
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
-
-def store_card_id_list(filename: str, int_list: list[CardId]) -> None:
-    with open(filename, 'w') as file:
-        file.write('\n'.join(map(str, int_list)))
+from tests.tools import TestCollections
 
 
-def read_card_id_list(filename: str) -> list[CardId]:
-    with open(filename, 'r') as file:
-        int_list = [CardId(int(line.strip())) for line in file]
-    return int_list
 
-
-class TestTargetListReorder:
-
-    TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
-    TEST_COLLECTIONS_DIR = os.path.join(TEST_DATA_DIR, 'collections')
-
-    def __get_test_collection(self, test_collection_name: str, collection_test_seq_num: int):
-
-        collection_dir = os.path.join(self.TEST_COLLECTIONS_DIR, test_collection_name)
-        lang_data_dir = os.path.join(collection_dir, 'lang_data')
-
-        lang_data = LanguageData(lang_data_dir)
-
-        # create temporary collection
-        collection_file = os.path.join(collection_dir, test_collection_name+".anki2")
-        temp_collection_file = os.path.join(collection_dir, test_collection_name+"_"+str(collection_test_seq_num)+"_temp.anki2")
-        if os.path.exists(temp_collection_file):
-            os.remove(temp_collection_file)
-        shutil.copy(collection_file, temp_collection_file)
-
-        # helper function used to lock-in and assert order
-        def assert_locked_order(sorted_cards_ids: list[CardId]):
-            order_file = os.path.join(collection_dir, 'expected_order_{}.txt'.format(collection_test_seq_num))
-
-            if os.path.exists(order_file):
-                expected_order = read_card_id_list(order_file)
-                assert sorted_cards_ids == expected_order
-            else:
-                store_card_id_list(order_file, sorted_cards_ids)
-                print("WARNING: Order file for '{}' didn't exist yet!".format(test_collection_name))
-
-        # return result
-        return Collection(temp_collection_file), lang_data, assert_locked_order
+class TestTargetListReorder():
 
     def test_reorder_cards_big_collection_es(self):
 
-        col, lang_data, assert_locked_order = self.__get_test_collection('big_collection_es', collection_test_seq_num=0)
+
+        col, lang_data, assert_locked_order = TestCollections.get_test_collection('big_collection_es')
 
         target_list = TargetList(lang_data, col)
 
@@ -129,7 +86,7 @@ class TestTargetListReorder:
 
     def test_reorder_cards_big_collection_es_with_reorder_scope(self):
 
-        col, lang_data, assert_locked_order = self.__get_test_collection('big_collection_es', collection_test_seq_num=1)
+        col, lang_data, assert_locked_order = TestCollections.get_test_collection('big_collection_es')
 
         target_list = TargetList(lang_data, col)
 
@@ -186,7 +143,7 @@ class TestTargetListReorder:
 
     def test_two_deck_collection(self):
 
-        col, language_data, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=0)
+        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
         target_list = TargetList(language_data, col)
 
@@ -253,7 +210,7 @@ class TestTargetListReorder:
 
     def test_two_deck_collection_with_ignore_list(self):
 
-        col, language_data, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=1)
+        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
         target_list = TargetList(language_data, col)
 
@@ -293,7 +250,7 @@ class TestTargetListReorder:
 
     def test_two_deck_collection_with_reorder_scope(self):
 
-        col, language_data, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=2)
+        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
         target_list = TargetList(language_data, col)
 
@@ -366,7 +323,7 @@ class TestTargetListReorder:
 
     def test_two_deck_collection_no_reviewed_cards(self):
 
-        col, language_data, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=3)
+        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
         # reset all cards
         all_card_ids = col.find_cards('*')
@@ -417,7 +374,7 @@ class TestTargetListReorder:
 
     def test_two_deck_collection_corpus_segmentation_by_note_field(self):
 
-        col, language_data, assert_locked_order = self.__get_test_collection('two_deck_collection', collection_test_seq_num=4)
+        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
         target_list = TargetList(language_data, col)
 

@@ -32,7 +32,6 @@ from ..target_list import JsonTargetsValidity, TargetList, TargetListReorderResu
 class TargetsDefiningTextArea(QTextEdit):
 
     json_result: Optional[JsonTargetsResult]
-    last_valid_targets_defined: Optional[list[ValidConfiguredTarget]]
     json_interpreter: Callable[[str], JsonTargetsResult]
     validity_change_callbacks: list[Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]]
     change_callbacks: list[Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]]
@@ -54,7 +53,6 @@ class TargetsDefiningTextArea(QTextEdit):
 
         self.first_paint_done = False
         self.json_result = None
-        self.last_valid_targets_defined = None
 
     @pyqtSlot()
     def __handle_content_change(self):
@@ -66,7 +64,7 @@ class TargetsDefiningTextArea(QTextEdit):
             self.first_paint_done = True
             self.__call_first_paint_listeners()
 
-    def handle_current_content(self, allow_error_interception:int = 5):
+    def handle_current_content(self, allow_error_interception: int = 5):
 
         current_content = self.toPlainText()
 
@@ -78,9 +76,6 @@ class TargetsDefiningTextArea(QTextEdit):
                 if reload_content:
                     self.handle_current_content(allow_error_interception-1)
                     return
-
-        if (new_json_result.validity_state == JsonTargetsValidity.VALID_TARGETS):
-            self.last_valid_targets_defined = new_json_result.valid_targets_defined
 
         self.__call_change_listeners(new_json_result)
 
@@ -131,6 +126,14 @@ class TargetsDefiningTextArea(QTextEdit):
 
     def add_error_interceptor(self, interceptor: Callable[[JsonTargetsResult], bool]):
         self.error_interceptors.append(interceptor)
+
+    def save_current_to_config(self) -> None:
+        if self.json_result is None or self.json_result.valid_targets_defined is None:
+            showWarning("Can not save to config because the current list of targets is not valid!")
+            return
+        self.fm_window.addon_config['reorder_target_list'] = self.json_result.valid_targets_defined
+        self.fm_window.addon_config_write(self.fm_window.addon_config)
+        self.handle_current_content()
 
 
 class ReorderCardsTab(FrequencyManTab):
@@ -264,6 +267,15 @@ class ReorderCardsTab(FrequencyManTab):
 
         return targets_input_textarea
 
+    def on_window_closing(self) -> Optional[int]:
+
+        if self.targets_input_textarea.json_result is None or self.targets_input_textarea.json_result.validity_state is not JsonTargetsValidity.VALID_TARGETS:
+            return askUserDialog("Unsaved changes will be lost!", buttons=["Ok", "Cancel"]).exec()
+        if self.fm_window.addon_config['reorder_target_list'] == self.targets_input_textarea.json_result.valid_targets_defined:
+            return  # save to close fm window
+        if askUser("Defined targets have changed. Save them to config?"):
+            self.targets_input_textarea.save_current_to_config()
+
     def __create_targets_input_options_row_widget(self) -> QWidget:
 
         # add target button
@@ -286,7 +298,6 @@ class ReorderCardsTab(FrequencyManTab):
                 # scroll textarea to bottom
                 if len(new_targets) > 1 and (vertical_scrollbar := self.targets_input_textarea.verticalScrollBar()) is not None and vertical_scrollbar.isVisible():
                     vertical_scrollbar.setValue(vertical_scrollbar.maximum())
-
 
         def update_add_target_button_state(new_json_result: JsonTargetsResult, _):
             add_target_button.setDisabled(self.target_list.has_targets() and new_json_result.validity_state == JsonTargetsValidity.INVALID_JSON)
@@ -368,8 +379,8 @@ class ReorderCardsTab(FrequencyManTab):
 
         def update_save_button_state(new_json_result: JsonTargetsResult, targets_input_textarea: TargetsDefiningTextArea):
 
-            if (new_json_result.validity_state == JsonTargetsValidity.VALID_TARGETS):
-                if self.fm_window.addon_config['reorder_target_list'] != targets_input_textarea.last_valid_targets_defined:
+            if (new_json_result.validity_state == JsonTargetsValidity.VALID_TARGETS and new_json_result.valid_targets_defined is not None):
+                if self.fm_window.addon_config['reorder_target_list'] != new_json_result.valid_targets_defined:
                     save_button.setDisabled(False)
                     return
             save_button.setDisabled(True)
@@ -431,18 +442,16 @@ class ReorderCardsTab(FrequencyManTab):
             if self.fm_window.addon_config['reorder_target_list'] == targets_defined:
                 return
             if askUser("Defined targets have changed. Save them to config?"):
-                self.fm_window.addon_config['reorder_target_list'] = [target for target in targets_defined]
-                self.fm_window.addon_config_write(self.fm_window.addon_config)
-                self.targets_input_textarea.handle_current_content()
+                self.targets_input_textarea.save_current_to_config()
 
         @pyqtSlot()
         def user_clicked_reorder_button() -> None:
-            if self.targets_input_textarea.json_result is None or self.targets_input_textarea.last_valid_targets_defined is None:
+            if self.targets_input_textarea.json_result is None or self.targets_input_textarea.json_result.valid_targets_defined is None:
                 showWarning("No valid result found for defined targets!")
             elif not self.targets_input_textarea.json_result.validity_state == JsonTargetsValidity.VALID_TARGETS:
                 showWarning("Defined targets are not valid!\n\n"+self.targets_input_textarea.json_result.err_desc)
             else:
-                ask_to_save_new_targets_to_config(self.targets_input_textarea.last_valid_targets_defined)
+                ask_to_save_new_targets_to_config(self.targets_input_textarea.json_result.valid_targets_defined)
                 self.__execute_reorder_request()
 
         normal_style = "QPushButton { font-size: 16px; font-weight: bold; margin-top:15px; }"

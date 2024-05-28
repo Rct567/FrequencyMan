@@ -32,6 +32,9 @@ class FrequencyManTab(QWidget):
     def on_tab_painted(self, tab_layout: QLayout):
         pass
 
+    def on_window_closing(self) -> Optional[int]:
+        pass
+
     def paintEvent(self, a0: Optional[QPaintEvent]):
         if not self.first_paint_done and (layout := self.layout()) is not None:
             self.first_paint_done = True
@@ -101,3 +104,18 @@ class FrequencyManMainWindow(QDialog):
         self.tab_widget.addTab(new_tab, new_tab.name)
 
         new_tab.on_tab_created(tab_layout)
+
+    def closeEvent(self, a0: Union[QCloseEvent, None]) -> None:
+
+        if a0 is None:
+            return
+
+        for tab in self.tab_widget.findChildren(FrequencyManTab):
+            result = tab.on_window_closing()
+            if result is not None and result == 1:
+                a0.ignore()
+                return
+
+        a0.accept()
+
+

@@ -12,8 +12,7 @@ import os
 import pprint
 import pstats
 import sys
-import threading
-from typing import IO, Any, Iterable, Iterator, Optional, TypeVar
+from typing import IO, Any, Callable, Iterable, Iterator, Optional, TypeVar
 from aqt.utils import showInfo
 
 var_dump_count = 0
@@ -173,3 +172,17 @@ def remove_bottom_percent_dict(input_dict: dict[K, float], percent_remove: float
         keep_offset_end = min_num_preserve
 
     return dict(list(input_dict.items())[0:keep_offset_end])
+
+
+
+# Check Python version and import override if available, else use a dummy
+
+if sys.version_info >= (3, 12):
+    from typing import override as override
+else: # A dummy 'override' decorator for Python < 3.12
+    T_CALLABLE = TypeVar('T_CALLABLE', bound=Callable)
+
+    def dummy_override(method: T_CALLABLE) -> T_CALLABLE:
+        return method
+
+    override = dummy_override

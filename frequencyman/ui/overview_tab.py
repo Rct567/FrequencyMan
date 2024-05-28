@@ -4,7 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import json
-from typing import Tuple
+from typing import Any, Tuple, Type
 from anki.collection import Collection
 
 from aqt import QAction
@@ -18,7 +18,7 @@ from ..card_ranker import CardRanker
 from ..target_corpus_data import TargetCorpusData
 from ..language_data import LanguageData
 
-from ..lib.utilities import var_dump_log
+from ..lib.utilities import var_dump_log, override
 from ..lib.event_logger import EventLogger
 
 
@@ -32,6 +32,7 @@ class OverviewTab(FrequencyManTab):
         self.name = 'Word overview'
         self.fm_window = fm_window
 
+    @override
     def on_tab_created(self, tab_layout: QVBoxLayout) -> None:
 
         label = QLabel("Overview of:\n\n1. familiar words not in word frequency lists.\n2. words with most lexical_discrepancy.")

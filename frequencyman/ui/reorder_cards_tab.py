@@ -22,7 +22,7 @@ from .main_window import FrequencyManMainWindow, FrequencyManTab
 from .select_new_target_window import SelectNewTargetWindow
 
 from ..lib.event_logger import EventLogger
-from ..lib.utilities import var_dump, var_dump_log
+from ..lib.utilities import var_dump, var_dump_log, override
 
 from ..language_data import LanguageData
 from ..target import ValidConfiguredTarget
@@ -58,6 +58,7 @@ class TargetsDefiningTextArea(QTextEdit):
     def __handle_content_change(self):
         self.handle_current_content()
 
+    @override
     def paintEvent(self, e: Optional[QPaintEvent]):
         super().paintEvent(e)
         if not self.first_paint_done:
@@ -156,6 +157,7 @@ class ReorderCardsTab(FrequencyManTab):
         self.fm_window = fm_window
         self.col = col
 
+    @override
     def on_tab_painted(self, tab_layout: QLayout) -> None:
 
         # language data
@@ -267,6 +269,7 @@ class ReorderCardsTab(FrequencyManTab):
 
         return targets_input_textarea
 
+    @override
     def on_window_closing(self) -> Optional[int]:
 
         if self.targets_input_textarea.json_result is None or self.targets_input_textarea.json_result.validity_state is not JsonTargetsValidity.VALID_TARGETS:

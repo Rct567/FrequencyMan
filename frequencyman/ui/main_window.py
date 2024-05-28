@@ -5,6 +5,8 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from typing import Any, Optional, Tuple, Callable
 
+from ..lib.utilities import var_dump_log, override
+
 from aqt import QAction
 from aqt.qt import *
 from aqt.main import AnkiQt
@@ -35,6 +37,7 @@ class FrequencyManTab(QWidget):
     def on_window_closing(self) -> Optional[int]:
         pass
 
+    @override
     def paintEvent(self, a0: Optional[QPaintEvent]):
         if not self.first_paint_done and (layout := self.layout()) is not None:
             self.first_paint_done = True

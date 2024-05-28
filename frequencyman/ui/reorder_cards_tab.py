@@ -280,8 +280,13 @@ class ReorderCardsTab(FrequencyManTab):
 
             dialog = SelectNewTargetWindow(self.fm_window, self.col)
             if dialog.exec():
+                # add new target
                 new_targets = json_result.valid_targets_defined + [dialog.get_selected_target()]
                 self.targets_input_textarea.set_content(new_targets)
+                # scroll textarea to bottom
+                if len(new_targets) > 1 and (vertical_scrollbar := self.targets_input_textarea.verticalScrollBar()) is not None and vertical_scrollbar.isVisible():
+                    vertical_scrollbar.setValue(vertical_scrollbar.maximum())
+
 
         def update_add_target_button_state(new_json_result: JsonTargetsResult, _):
             add_target_button.setDisabled(self.target_list.has_targets() and new_json_result.validity_state == JsonTargetsValidity.INVALID_JSON)

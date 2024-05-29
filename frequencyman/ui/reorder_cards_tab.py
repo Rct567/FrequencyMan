@@ -462,9 +462,9 @@ class ReorderCardsTab(FrequencyManTab):
                 ask_to_save_new_targets_to_config(self.targets_input_textarea.json_result.valid_targets_defined)
                 self.__execute_reorder_request()
 
-        normal_style = "QPushButton { font-size: 16px; font-weight: bold; margin-top:15px; }"
-        disabled_style = 'QPushButton:enabled { background-color:#23b442; border:2px solid #23a03e; color:white; }'
-        reorder_button.setStyleSheet(normal_style+" "+disabled_style)
+        normal_style = "QPushButton { font-size: 16px; font-weight: bold; margin-top:15px; padding-top:5px; padding-bottom:5px; }"
+        enabled_style = 'QPushButton:enabled { background-color:#23b442; border:2px solid #23a03e; color:white; }'
+        reorder_button.setStyleSheet(normal_style+" "+enabled_style)
 
         def update_reorder_button_state(new_json_result: JsonTargetsResult, _):
             if self.target_list.has_targets() and new_json_result.validity_state == JsonTargetsValidity.VALID_TARGETS:

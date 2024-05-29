@@ -289,14 +289,12 @@ class ReorderCardsTab(FrequencyManTab):
             if json_result.validity_state == JsonTargetsValidity.INVALID_JSON:
                 showWarning(json_result.err_desc)
                 return
-            elif json_result.valid_targets_defined is None:
-                showWarning("No targets defined!")
-                return
 
             dialog = SelectNewTargetWindow(self.fm_window, self.col)
             if dialog.exec():
                 # add new target
-                new_targets = json_result.valid_targets_defined + [dialog.get_selected_target()]
+                current_targets = json_result.valid_targets_defined if json_result.valid_targets_defined is not None else []
+                new_targets = current_targets + [dialog.get_selected_target()]
                 self.targets_input_textarea.set_content(new_targets)
                 # scroll textarea to bottom
                 if len(new_targets) > 1 and (vertical_scrollbar := self.targets_input_textarea.verticalScrollBar()) is not None and vertical_scrollbar.isVisible():

@@ -7,6 +7,7 @@ import sys
 from typing import Never, Optional
 import zipfile
 
+
 def copy_directory(src: str, dst: str, ignore_patterns: list[str]) -> None:
 
     for item in os.listdir(src):
@@ -46,12 +47,12 @@ def ignore_patterns_from_gitignore_file(src: str) -> list[str]:
     return ignore_patterns
 
 
-def is_valid_version(version) -> bool:
+def is_valid_version(version: str) -> bool:
     pattern = r"^(\d+\.)?(\d+\.)?(\*|\d+)$"
     return bool(re.match(pattern, version))
 
 
-def set_release_version(src_dir) -> Optional[str]:
+def set_release_version(src_dir: str) -> Optional[str]:
     provided_version_number = input("Version number? ")
     if not is_valid_version(provided_version_number):
         return None
@@ -86,7 +87,17 @@ def commit_and_tag(version_number: str) -> None:
     # Push the new tag to remote repository
     subprocess.run(["git", "push", "origin", git_tag], check=True)
 
-def run_pytest() -> bool:
+
+def has_unstaged_changes() -> bool:
+    result = subprocess.run(["git", "diff", "--exit-code"], capture_output=True)
+    return result.returncode != 0
+
+def has_staged_changes() -> bool:
+    result = subprocess.run(["git", "diff", "--cached", "--exit-code"], capture_output=True)
+    return result.returncode != 0
+
+
+def run_pytest_with_success() -> bool:
 
     result = subprocess.run(["pytest"], capture_output=True, text=True)
 
@@ -97,18 +108,29 @@ def run_pytest() -> bool:
         print(result.stderr)
         return False
 
+
 def create_zip(directory: str, zip_file: str) -> None:
 
     with zipfile.ZipFile(zip_file, 'w') as zf:
-        for root, dirs, files in os.walk(directory):
+        for root, _, files in os.walk(directory):
             for file in files:
                 zf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), directory))
 
-def print_and_exit(message, exit_code=0) -> Never:
+
+def print_and_exit_error(message: str) -> Never:
     print(message)
-    sys.exit(exit_code)
+    sys.exit(1)
+
+
 
 # create release
+
+if has_unstaged_changes():
+    print_and_exit_error("You have unstaged changes, please commit or stash them before creating a release!")
+
+if has_staged_changes():
+     print_and_exit_error("You have staged changes, please commit or stash them before creating a release!")
+
 
 root_dir = os.getcwd()
 releases_dir = os.path.join(root_dir, 'releases')
@@ -118,19 +140,19 @@ new_release_src_dir = root_dir
 if not os.path.exists(releases_dir):
     os.mkdir(releases_dir)
 
-if not run_pytest():
-    print_and_exit("Pytest failed!")
+if not run_pytest_with_success():
+    print_and_exit_error("Pytest failed!")
 
 new_release_version = set_release_version(new_release_src_dir)
 
 if not new_release_version:
-    print_and_exit("Failed to set new release version!")
+    print_and_exit_error("Failed to set new release version!")
 
 new_release_obj_name = 'release-v'+new_release_version.replace('.', '_')
 new_release_dst_dir = os.path.join(releases_dir, new_release_obj_name)
 
 if os.path.exists(new_release_dst_dir):
-    print_and_exit("Release directory '{}' already exists!".format(new_release_dst_dir))
+    print_and_exit_error("Release directory '{}' already exists!".format(new_release_dst_dir))
 
 ignore_patterns = ignore_patterns_from_gitignore_file(new_release_src_dir)
 ignore_patterns.extend(['tests/', 'pytest.ini', 'create_release.py', 'create_default_wf_lists.py', 'pyproject.toml'])

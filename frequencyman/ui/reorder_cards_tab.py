@@ -271,11 +271,18 @@ class ReorderCardsTab(FrequencyManTab):
 
     @override
     def on_window_closing(self) -> Optional[int]:
-
-        if self.targets_input_textarea.json_result is None or self.targets_input_textarea.json_result.validity_state is not JsonTargetsValidity.VALID_TARGETS:
+        # empty list
+        if self.targets_input_textarea.json_result is None:
+            return
+        if self.targets_input_textarea.json_result.validity_state is JsonTargetsValidity.INVALID_TARGETS and len(self.targets_input_textarea.json_result.targets_defined) == 0:
+            return
+        # contains invalid json or invalid targets
+        if self.targets_input_textarea.json_result.validity_state is not JsonTargetsValidity.VALID_TARGETS:
             return askUserDialog("Unsaved changes will be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).exec()
+        # nothing changed
         if self.fm_window.addon_config['reorder_target_list'] == self.targets_input_textarea.json_result.valid_targets_defined:
-            return  # save to close fm window
+            return
+        # something changed and is valid
         if askUser("Defined targets have changed. Save them to config?"):
             self.targets_input_textarea.save_current_to_config()
 

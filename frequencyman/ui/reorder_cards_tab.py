@@ -273,7 +273,7 @@ class ReorderCardsTab(FrequencyManTab):
     def on_window_closing(self) -> Optional[int]:
 
         if self.targets_input_textarea.json_result is None or self.targets_input_textarea.json_result.validity_state is not JsonTargetsValidity.VALID_TARGETS:
-            return askUserDialog("Unsaved changes will be lost!", buttons=["Ok", "Cancel"]).exec()
+            return askUserDialog("Unsaved changes will be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).exec()
         if self.fm_window.addon_config['reorder_target_list'] == self.targets_input_textarea.json_result.valid_targets_defined:
             return  # save to close fm window
         if askUser("Defined targets have changed. Save them to config?"):
@@ -334,7 +334,7 @@ class ReorderCardsTab(FrequencyManTab):
 
             if len(self.fm_window.addon_config['reorder_target_list']) == 0:
                 if askUser("Target list in config is empty. Resetting will result in an empty target list. Continue?"):
-                    if askUserDialog("Currently defined targets will be lost!", buttons=["Ok", "Cancel"]).exec() == 0:
+                    if askUserDialog("Currently defined targets will be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).exec() == 0:
                         self.targets_input_textarea.set_content([])
                 return
 
@@ -345,7 +345,7 @@ class ReorderCardsTab(FrequencyManTab):
                 return
 
             if askUser("Reset targets to those stored in the config?"):
-                if askUserDialog("Currently defined targets may be lost.", buttons=["Ok", "Cancel"]).exec() == 0:
+                if askUserDialog("Currently defined targets may be lost.", buttons=["Ok", "Cancel"], parent=self.fm_window).exec() == 0:
                     stored_target_list = self.fm_window.addon_config['reorder_target_list']
                     self.targets_input_textarea.set_content(stored_target_list)
 

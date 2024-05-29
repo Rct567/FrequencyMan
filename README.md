@@ -156,9 +156,9 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `familiarity_sweetspot`: Promotes cards with words close to a specific 'sweetspot' of familiarity. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These can be new words, or words that are 'hidden' (non-prominent) in older cards. Use target setting `familiarity_sweetspot_point` to customize the sweetspot value.
 - `lexical_underexposure`: Promotes cards with high-frequency words that you are not yet proportionally familiar with. Basically, _lexical_underexposure = (word_frequency-word_familiarity)_. Increasing this value means you will be 'pushed' forward more in your language learning journey (and the word frequency list). Increase the value slightly if you experience too much overlap and not enough new words.
 - `ideal_focus_word_count`: Promotes cards with only a single '_focus word_'. See also _N+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis. A _focus word_ is a word you are not yet appropriately familiar with. Use target setting `focus_words_max_familiarity` to customize the maximum familiarly of the focus words.
-- `ideal_word_count`: Represents how close the _word count_ of the content is to the defined ideal range. By default this is 2 to 5, but you can customize it per target with:
+- `ideal_word_count`: Represents how close the _word count_ of the content is to the defined ideal range. By default this is 1 to 5, but you can customize it per target with:
   ```json
-  "ideal_word_count": [1, 8]
+  "ideal_word_count": [2, 8]
   ```
 - `reinforce_focus_words`: Promotes cards with one or more already seen '_focus word_', but only if there are no new words.
 - `most_obscure_word`: Represents the most obscure word. The non-obscurity of a word is defined by either _word_frequency_ or _word_familiarity_ (depending on which is higher, and thus less 'obscure').
@@ -211,7 +211,7 @@ For each defined target, the following setting are available:
 | `familiarity_sweetspot_point`   | string \| float | Defines a specific 'sweetspot' of familiarity for  ranking factor `familiarity_sweetspot`.  |   `"~0.5"` (=50% of focus_words_max_familiarity)  |
 | `suspended_card_value`   | float |  |   `0.5`  |
 | `suspended_leech_card_value`   | float |  |   `0.0`  |
-| `ideal_word_count`   | array with two int's |  |  `[2, 5]`   |
+| `ideal_word_count`   | array with two int's |  |  `[1, 5]`   |
 | `focus_words_max_familiarity`   | float |  |  `0.28`   |
 | `corpus_segmentation_strategy`   | string | Corpus data is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`  |  `"by_lang_data_id"`   |
 

@@ -99,7 +99,7 @@ class CardRanker:
         self.ranking_factors_stats = None
         self.ranking_factors_span = self.get_default_ranking_factors_span()
         self.target_name = 'undefined'
-        self.ideal_word_count_min = 2
+        self.ideal_word_count_min = 1
         self.ideal_word_count_max = 5
         self.field_all_empty = {}
 

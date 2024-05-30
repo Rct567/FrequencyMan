@@ -31,7 +31,8 @@ class TestTargetListReorder():
                         "Meaning": "EN",
                         "Sentence": "ES"
                     },
-                }]
+                }],
+                'ideal_word_count': [2, 5]
             }
         ])
 
@@ -223,7 +224,8 @@ class TestTargetListReorder():
                         "Front": "EN_with_ignore",
                         "Back": "ES_with_ignore"
                     },
-                }]
+                }],
+                'ideal_word_count': [2, 5]
             }
         ])
 
@@ -341,6 +343,7 @@ class TestTargetListReorder():
                         "Back": "EN"
                     },
                 }],
+                'ideal_word_count': [2, 5],
                 'reorder_scope_query': 'deck:decka'
             }
         ])

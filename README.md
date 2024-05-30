@@ -10,8 +10,7 @@ Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 - More than 50 default word frequency lists.
 - Define multiple sorting targets for different decks or selection of cards.
 - Customize the ranking factors for each target.
-- Define a language for each field.
-- Use multiple fields (such as 'front' *and* 'back') to influence the ranking.
+- Use multiple fields and languages (such as 'front' *and* 'back') to influence the ranking of a card.
 - Multiple 'word frequency' lists can be used per language.
 
 ## Basic usage
@@ -153,7 +152,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 
 - `word_frequency`: Represents the _word frequency_ of the words in the content, with a bias toward the lowest value. The _word frequency_ values come from the provided _word frequency lists_.
 - `familiarity`: Represents how familiar you are with the words in the content. Like _word_frequency_, it has a bias toward the lowest value. How familiar you are with a word depends on how many times you have seen the word and in what context that specific word was present (the interval and ease of the card, the amount of words in the content etc).
-- `familiarity_sweetspot`: Promotes cards with words close to a specific 'sweetspot' of familiarity. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These can be new words, or words that are 'hidden' (non-prominent) in older cards. Use target setting `familiarity_sweetspot_point` to customize the sweetspot value.
+- `familiarity_sweetspot`: Promotes cards with words close to a specific 'sweetspot' of familiarity. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These can be recently introduced words, or words that are 'hidden' (non-prominent) in older cards. Use target setting `familiarity_sweetspot_point` to customize the sweetspot value.
 - `lexical_underexposure`: Promotes cards with high-frequency words that you are not yet proportionally familiar with. Basically, _lexical_underexposure = (word_frequency-word_familiarity)_. Increasing this value means you will be 'pushed' forward more in your language learning journey (and the word frequency list). Increase the value slightly if you experience too much overlap and not enough new words.
 - `ideal_focus_word_count`: Promotes cards with only a single '_focus word_'. See also _N+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis. A _focus word_ is a word you are not yet appropriately familiar with. Use target setting `focus_words_max_familiarity` to customize the maximum familiarly of the focus words.
 - `ideal_word_count`: Represents how close the _word count_ of the content is to the defined ideal range. By default this is 1 to 5, but you can customize it per target with:

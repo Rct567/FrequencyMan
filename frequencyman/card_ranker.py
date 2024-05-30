@@ -241,7 +241,13 @@ class CardRanker:
             span = fsum(self.ranking_factors_span.values())
             notes_rankings[note_id] = total_value/span
 
-        return notes_ranking_scores_normalized, notes_rankings
+        # filter out factors not used in notes_rankings
+
+        useable_notes_ranking_scores_normalized = {attr: notes_ranking_scores_normalized[attr] for attr in notes_ranking_scores_normalized if attr in useable_factors}
+
+        # done
+        
+        return useable_notes_ranking_scores_normalized, notes_rankings
 
     def __get_notes_field_metrics(self, notes_all_card: dict[NoteId, Note], notes_from_new_cards: dict[NoteId, Note]) -> dict[NoteId, AggregatedFieldsMetrics]:
 

@@ -513,9 +513,9 @@ class ReorderCardsTab(FrequencyManTab):
             result_info_str += "\n\n"+str(event_logger)
 
             if num_errors > 0:
-                showWarning(result_info_str)
+                showWarning(result_info_str, parent=self.fm_window)
             else:
-                showInfo(result_info_str)
+                showInfo(result_info_str, parent=self.fm_window)
 
             if self.fm_window.addon_config.get('log_reorder_events', False):
                 event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))

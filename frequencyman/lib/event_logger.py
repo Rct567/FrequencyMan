@@ -8,7 +8,7 @@ from typing import Generator, Callable, Optional
 from contextlib import contextmanager
 import time
 
-from .utilities import var_dump
+from .utilities import var_dump, override
 
 
 class EventLogger:
@@ -50,5 +50,6 @@ class EventLogger:
         with open(target_file, 'a', encoding='utf-8') as file:
             file.write(str(self)+"\n\n=================================================================\n\n")
 
+    @override
     def __str__(self) -> str:
         return "\n".join(self.event_log)

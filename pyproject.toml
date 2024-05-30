@@ -15,3 +15,5 @@ reportUnknownArgumentType = false
 reportUnknownParameterType = false
 reportUnnecessaryIsInstance = false
 reportMissingTypeArgument = false
+reportImplicitStringConcatenation = true
+reportImplicitOverride = true

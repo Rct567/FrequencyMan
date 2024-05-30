@@ -11,7 +11,7 @@ from anki.notes import Note, NoteId
 
 from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
 from .text_processing import TextProcessing
-from .lib.utilities import get_float, profile_context, var_dump_log
+from .lib.utilities import get_float, profile_context, var_dump_log, override
 from .lib.event_logger import EventLogger
 from .language_data import LanguageData, LangDataId
 from .target_corpus_data import CorpusSegmentationStrategy, TargetCorpusData
@@ -51,6 +51,7 @@ class TargetReorderResult():
 
         return self
 
+    @override
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 

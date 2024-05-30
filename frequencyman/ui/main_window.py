@@ -108,6 +108,7 @@ class FrequencyManMainWindow(QDialog):
 
         new_tab.on_tab_created(tab_layout)
 
+    @override
     def closeEvent(self, a0: Union[QCloseEvent, None]) -> None:
 
         if a0 is None:

@@ -7,7 +7,7 @@ import re
 from typing import Any, Literal, Optional, TypedDict, Union, overload
 
 from .language_data import LangDataId
-
+from .lib.utilities import override
 from .card_ranker import CardRanker as CardRanker, TargetCards as TargetCards
 
 
@@ -98,6 +98,7 @@ class ConfiguredTargetTypedDict(dict):
     def __getitem__(self, key: ConfiguredTargetKeys) -> Any:
         ...
 
+    @override
     def __getitem__(self, key: ConfiguredTargetKeys):
         return super().__getitem__(key)
 
@@ -129,6 +130,7 @@ class ConfiguredTargetTypedDict(dict):
     def __setitem__(self, key: Literal['notes'], value: list[ConfiguredTargetNote]) -> None:
         ...
 
+    @override
     def __setitem__(self, key: ConfiguredTargetKeys, value: Union[str, float, list, dict]) -> None:
         return super().__setitem__(key, value)
 
@@ -165,6 +167,7 @@ class ValidConfiguredTarget(ConfiguredTargetTypedDict):
     def __getattr__(self, name: str):
         raise AttributeError(f"Access to attribute '{name}' is not allowed")
 
+    @override
     def __setattr__(self, name: str, value: Any):
         raise AttributeError(f"Setting attribute '{name}' is not allowed")
 

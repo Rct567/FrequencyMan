@@ -304,11 +304,12 @@ The `user_files` directory can be found inside Frequencyman's plugin directory, 
 
 Any files placed in this folder will be preserved when the add-on is upgraded. All other files in the add-on folder are removed on upgrade.
 
-## Manual installation
+## Manual installation from GitHub
 
-1. Go to the Anki plugin folder, such as `C:\Users\%USERNAME%\AppData\Roaming\Anki2\addons21`
-2. Create a new folder for the plugin, such as __addons21\FrequencyMan__
-3. Clone the project in the new folder: `git clone https://github.com/Rct567/FrequencyMan.git`
+1. Go to the Anki plugin folder, such as `C:\Users\%USERNAME%\AppData\Roaming\Anki2\addons21`.
+2. Create a new folder with the name `FrequencyMan`.
+3. Make sure you are still in the directory `addons21`.
+4. Run: `git clone https://github.com/Rct567/FrequencyMan.git FrequencyMan`
 5. Start Anki.
 
 

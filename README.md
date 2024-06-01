@@ -271,16 +271,16 @@ Every target has one or more 'corpus data' sets, depending on how many fields ar
 
 By default, `corpus_segmentation_strategy` is set to `"by_lang_data_id"`, which means that a _corpus data set_ will be created for every unique `language_data_id`:
 
-```json
-{.. {"Front": "EN", "Back": "EN"}} // <- A single corpus data set
-{.. {"Front": "EN", "Back": "EN", "Extra": "ES"}} // <- Two corpus data sets
+```js
+{"Front": "EN", "Back": "EN"} // <- A single corpus data set
+{"Front": "EN", "Back": "EN", "Extra": "ES"} // <- Two corpus data sets
 ```
 
 To create separate _corpus data sets_ for each field, you can set `corpus_segmentation_strategy` to `"by_note_model_id_and_field_name"`. This will create a corpus data set for each field in the target:
 
-```json
-{.. {"Front": "EN", "Back": "EN"}} // <- Two corpus data sets
-{.. {"Front": "EN", "Back": "EN", "Extra": "ES"}} // <- Three corpus data sets
+```js
+{"Front": "EN", "Back": "EN"} // <- Two corpus data sets
+{"Front": "EN", "Back": "EN", "Extra": "ES"} // <- Three corpus data sets
 ```
 
 Things to note:

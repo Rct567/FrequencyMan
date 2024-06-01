@@ -26,7 +26,7 @@ from ..lib.utilities import var_dump, var_dump_log, override
 
 from ..language_data import LanguageData
 from ..target import ValidConfiguredTarget
-from ..target_list import JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult
+from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult
 
 
 class TargetsDefiningTextArea(QTextEdit):
@@ -111,7 +111,7 @@ class TargetsDefiningTextArea(QTextEdit):
     def on_first_paint(self, callback: Callable[['TargetsDefiningTextArea'], None]):
         self.first_paint_callbacks.append(callback)
 
-    def set_content(self, target_list: Union[list[ValidConfiguredTarget], list[ValidConfiguredTarget], list[dict[str, Any]], TargetList]):
+    def set_content(self, target_list: Union[list[ValidConfiguredTarget], list[JSON_TYPE], TargetList]):
         if isinstance(target_list, TargetList):
             self.setText(target_list.dump_json())
         elif isinstance(target_list, list):
@@ -300,7 +300,7 @@ class ReorderCardsTab(FrequencyManTab):
             dialog = SelectNewTargetWindow(self.fm_window, self.col)
             if dialog.exec():
                 # add new target
-                current_targets = json_result.valid_targets_defined if json_result.valid_targets_defined is not None else []
+                current_targets = json_result.targets_defined
                 new_targets = current_targets + [dialog.get_selected_target()]
                 self.targets_input_textarea.set_content(new_targets)
                 # scroll textarea to bottom
@@ -308,7 +308,11 @@ class ReorderCardsTab(FrequencyManTab):
                     vertical_scrollbar.setValue(vertical_scrollbar.maximum())
 
         def update_add_target_button_state(new_json_result: JsonTargetsResult, _):
-            add_target_button.setDisabled(self.target_list.has_targets() and new_json_result.validity_state == JsonTargetsValidity.INVALID_JSON)
+            # allow if target list is empty or valid
+            if len(new_json_result.targets_defined) == 0 and new_json_result.validity_state != JsonTargetsValidity.INVALID_JSON:
+                add_target_button.setDisabled(False)
+                return
+            add_target_button.setDisabled(new_json_result.validity_state != JsonTargetsValidity.VALID_TARGETS or new_json_result.valid_targets_defined is None)
 
         add_target_button = QPushButton("Add target")
         add_target_button.setToolTip("Add a new target to the list.")

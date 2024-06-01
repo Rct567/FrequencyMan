@@ -6,6 +6,8 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 import json
 import re
 import shutil
+import hashlib
+import time
 from typing import Any, Optional, Tuple, Callable
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
@@ -481,14 +483,36 @@ class ReorderCardsTab(FrequencyManTab):
 
         return reorder_button
 
-    def __execute_reorder_request(self) -> None:
+    def __backup_target_list_config(self) -> None:
 
-        if not isinstance(self.col, Collection):
-            showWarning("Collection not found!")
-            return
+        json_backup = self.target_list.dump_json()
+        hash_hex = hashlib.md5(json_backup.encode('utf-8')).hexdigest()
+
+        backup_dir  = os.path.join(self.fm_window.user_files_dir, 'target_list_backups')
+        if not os.path.isdir(backup_dir):
+            os.makedirs(backup_dir)
+
+        json_backup_file_path = os.path.join(backup_dir, 'target_list_'+hash_hex+'.txt')
+
+        if not os.path.exists(json_backup_file_path):
+            with open(json_backup_file_path, 'w') as file:
+                # write date and time to file
+                file.write("Created on {} at {}.\n\n\n".format(time.strftime("%d-%m-%Y"), time.strftime("%H:%M:%S")))
+                file.write(json_backup)
+        else:
+            with open(json_backup_file_path, 'a'):  # touch (update modification time)
+                os.utime(json_backup_file_path, None)
+
+    def __execute_reorder_request(self) -> None:
 
         if not self.target_list.has_targets():
             showWarning("No targets defined!")
+            return
+
+        self.__backup_target_list_config()
+
+        if not isinstance(self.col, Collection):
+            showWarning("Collection not found!")
             return
 
         event_logger = EventLogger()

@@ -99,8 +99,8 @@ Reorder only based on word frequency (using word frequency from both front and b
             {
                 "name": "Basic-f4e28",
                 "fields": {
-                    "Spanish": "ES",
-                    "English": "EN"
+                    "Front": "ES",
+                    "Back": "EN"
                 }
             }
         ],
@@ -212,14 +212,14 @@ For each defined target, the following setting are available:
 | `suspended_leech_card_value`   | float |  |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[1, 5]`   |
 | `focus_words_max_familiarity`   | float |  |  `0.28`   |
-| `corpus_segmentation_strategy`   | string | Corpus data is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`  |  `"by_lang_data_id"`   |
+| `corpus_segmentation_strategy`   | string | [Corpus data](#target-corpus-data) is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`.   |  `"by_lang_data_id"`   |
 
 __Notes__:
  - `familiarity_sweetspot_point` accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the value of `focus_words_max_familiarity` value. In this case `"~0.5"` would result in a value of `0.14`. A string starting with `^` will make the number relative to the median word familiarity value.
 
 # Language data id
 
-For each field a **language data id** must be defined. In most cases this should just be a two letter (ISO 639) language code, such as `EN` or `ES`:
+For each field a **`language_data_id`** must be defined. In most cases this should just be a two letter (ISO 639) language code, such as `EN` or `ES`:
 
 ```json
 [
@@ -237,7 +237,7 @@ For each field a **language data id** must be defined. In most cases this should
     }
 ]
 ```
-Alternatively, a **language data id** can also be an 'extended two letter language code':
+Alternatively, a `language_data_id` can also be an 'extended two letter language code':
 
 ```json
 [
@@ -262,6 +262,32 @@ For every **language data id** defined, a directory should exist (although it co
 Two different types of files can be placed in a **language data id** directory:
 - __word frequency lists__: A text or csv file with words sorted to reflect the word frequency (in descending order). Only the position is used, not the (optional) word frequency value.
 - __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore".
+
+## Target Corpus data
+
+A '_corpus data set_' contains all the information related the the content of a note that is used to calculate the ranking of a card (such as the "familiarity" of a word).
+
+Every target has one or more 'corpus data' sets, depending on how many fields are defined in the target and how the `corpus_segmentation_strategy` is set.
+
+By default, `corpus_segmentation_strategy` is set to `"by_lang_data_id"`, which means that a _corpus data set_ will be created for every unique `language_data_id`:
+
+```json
+{.. {"Front": "EN", "Back": "EN"}} // <- A single corpus data set
+{.. {"Front": "EN", "Back": "EN", "Extra": "ES"}} // <- Two corpus data sets
+```
+
+To create separate _corpus data sets_ for each field, you can set `corpus_segmentation_strategy` to `"by_note_model_id_and_field_name"`. This will create a corpus data set for each field in the target:
+
+```json
+{.. {"Front": "EN", "Back": "EN"}} // <- Two corpus data sets
+{.. {"Front": "EN", "Back": "EN", "Extra": "ES"}} // <- Three corpus data sets
+```
+
+Things to note:
+- Using `"by_note_model_id_and_field_name"` also means that fields from different notes in the same target will not be 'joined' together.
+- Using `"by_note_model_id_and_field_name"` can create multiple _corpus data sets_ for the same language, which may not be desirable for language learning purposes.
+- Using `"by_lang_data_id"` will join fields from __all notes__ defined within a target, if they have the same `language_data_id`.
+
 
 ## Word frequency lists
 

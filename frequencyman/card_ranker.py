@@ -246,7 +246,7 @@ class CardRanker:
         useable_notes_ranking_scores_normalized = {attr: notes_ranking_scores_normalized[attr] for attr in notes_ranking_scores_normalized if attr in useable_factors}
 
         # done
-        
+
         return useable_notes_ranking_scores_normalized, notes_rankings
 
     def __get_notes_field_metrics(self, notes_all_card: dict[NoteId, Note], notes_from_new_cards: dict[NoteId, Note]) -> dict[NoteId, AggregatedFieldsMetrics]:
@@ -305,7 +305,7 @@ class CardRanker:
                 # familiarity scores (push down)
                 if len(field_metrics.words_familiarity_positional_scores) > 0:
                     familiarity_positional_scores = field_metrics.words_familiarity_positional_scores.values()
-                    field_familiarity_score = (median(familiarity_positional_scores) + (min(familiarity_positional_scores)*9)) / 10
+                    field_familiarity_score = (median(familiarity_positional_scores) + (min(familiarity_positional_scores)*99)) / 100
                     note_metrics.familiarity_scores.append(field_familiarity_score)
                 else:
                     note_metrics.familiarity_scores.append(0)
@@ -321,7 +321,7 @@ class CardRanker:
 
                 # word frequency scores (push down)
                 if (len(field_metrics.fr_scores) > 0):
-                    field_fr_score = (median(field_metrics.fr_scores) + (min(field_metrics.fr_scores)*9)) / 10
+                    field_fr_score = (median(field_metrics.fr_scores) + (min(field_metrics.fr_scores)*99)) / 100
                     note_metrics.fr_scores.append(field_fr_score)
                 else:
                     note_metrics.fr_scores.append(0)

@@ -4,7 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import re
-from typing import Any, Literal, Optional, TypedDict, Union, overload
+from typing import Any, Literal, Optional, Sequence, TypedDict, Union, overload
 
 from .language_data import LangDataId
 from .lib.utilities import override
@@ -24,7 +24,7 @@ ConfiguredTargetKeys = Literal['deck', 'decks', 'scope_query', 'reorder_scope_qu
 class ConfiguredTarget:
 
     @staticmethod
-    def get_deck_names_from_config_target(defined_deck: Any, defined_decks: Any) -> list[str]:
+    def get_deck_names_from_config_target(defined_deck: Any, defined_decks: Any) -> Sequence[str]:
 
         decks: list[str] = []
 
@@ -79,7 +79,7 @@ class ConfiguredTargetTypedDict(dict):
         ...
 
     @overload
-    def __getitem__(self, key: Literal['suspended_card_value', 'suspended_leech_card_value']) -> list[float]:
+    def __getitem__(self, key: Literal['suspended_card_value', 'suspended_leech_card_value']) -> Union[float, int]:
         ...
 
     @overload

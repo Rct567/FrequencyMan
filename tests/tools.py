@@ -1,7 +1,7 @@
 import inspect
 import os
 import shutil
-from typing import Final
+from typing import Sequence
 
 from frequencyman.language_data import LangDataId, LanguageData
 
@@ -13,11 +13,11 @@ from anki.notes import Note, NoteId
 from frequencyman.lib.utilities import var_dump_log
 
 
-def store_card_id_list(filename: str, int_list: list[CardId]) -> None:
+def store_card_id_list(filename: str, int_list: Sequence[CardId]) -> None:
     with open(filename, 'w') as file:
         file.write('\n'.join(map(str, int_list)))
 
-def read_card_id_list(filename: str) -> list[CardId]:
+def read_card_id_list(filename: str) -> Sequence[CardId]:
     with open(filename, 'r') as file:
         int_list = [CardId(int(line.strip())) for line in file]
     return int_list
@@ -52,7 +52,7 @@ class TestCollections:
         shutil.copy(collection_src_path, temp_collection_path)
 
         # helper function used to lock-in and assert order
-        def assert_locked_order(sorted_cards_ids: list[CardId]):
+        def assert_locked_order(sorted_cards_ids: Sequence[CardId]):
             order_file_path = os.path.join(collection_dir, 'expected_order_{}.txt'.format(caller_full_name))
 
             if os.path.exists(order_file_path):

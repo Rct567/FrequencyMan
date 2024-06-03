@@ -104,10 +104,10 @@ class SelectNewTargetWindow(QDialog):
         self.submit_button.clicked.connect(self.submit_button_clicked)
         layout.addWidget(self.submit_button)
 
-    def get_sorted_decks(self) -> list[DeckNameId]:
+    def get_sorted_decks(self) -> Sequence[DeckNameId]:
         return [deck for deck in self.col.decks.all_names_and_ids(include_filtered=False)]
 
-    def get_sorted_note_types(self) -> list[NotetypeNameIdUseCount]:
+    def get_sorted_note_types(self) -> Sequence[NotetypeNameIdUseCount]:
         return [model for model in sorted(self.col.models.all_use_counts(), key=lambda x: x.use_count, reverse=True)]
 
     def get_note_types_counts_by_deck(self, deck_name: str) -> dict[str, int]:

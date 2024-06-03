@@ -31,13 +31,13 @@ class TargetCards:
     col: Collection
 
     all_cards_ids: Sequence[CardId]
-    all_cards: list[TargetCard]
-    new_cards: list[TargetCard]
-    new_cards_ids: list[CardId]
-    reviewed_cards: list[TargetCard]
+    all_cards: Sequence[TargetCard]
+    new_cards: Sequence[TargetCard]
+    new_cards_ids: Sequence[CardId]
+    reviewed_cards: Sequence[TargetCard]
 
-    all_cards_notes_ids: list[NoteId]
-    new_cards_notes_ids: list[NoteId]
+    all_cards_notes_ids: Sequence[NoteId]
+    new_cards_notes_ids: Sequence[NoteId]
 
     notes_from_cards_cached: dict[NoteId, Note] = {}
     cache_lock: Optional[Collection] = None
@@ -46,14 +46,6 @@ class TargetCards:
 
         self.all_cards_ids = all_cards_ids
         self.col = col
-
-        self.all_cards = []
-        self.new_cards = []
-        self.new_cards_ids = []
-        self.reviewed_cards = []
-
-        self.all_cards_notes_ids = []
-        self.new_cards_notes_ids = []
 
         self.get_cards_from_db()
 
@@ -69,22 +61,32 @@ class TargetCards:
         card_ids_str = ",".join(map(str, self.all_cards_ids))
         cards = self.col.db.execute("SELECT id, nid, type, queue, ivl, reps, factor FROM cards WHERE id IN ({}) ORDER BY due ASC".format(card_ids_str))
 
+        all_cards = []
+        new_cards = []
+        new_cards_ids = []
+        reviewed_cards = []
+        all_cards_notes_ids = []
+        new_cards_notes_ids = []
         leech_card_ids = self.col.find_cards('tag:leech')
 
         for card_row in cards:
             card = TargetCard(*card_row, is_leech=False)
             card.is_leech = card.id in leech_card_ids
-            self.all_cards.append(card)
-            self.all_cards_notes_ids.append(card.nid)
+            all_cards.append(card)
+            all_cards_notes_ids.append(card.nid)
             if card.queue == 0:
-                self.new_cards.append(card)
-                self.new_cards_ids.append(CardId(card.id))
-                self.new_cards_notes_ids.append(card.nid)
+                new_cards.append(card)
+                new_cards_ids.append(CardId(card.id))
+                new_cards_notes_ids.append(card.nid)
             if card.queue != 0 and card.type == 2:
-                self.reviewed_cards.append(card)
+                reviewed_cards.append(card)
 
-        self.all_cards_notes_ids = sorted(set(self.all_cards_notes_ids))
-        self.new_cards_notes_ids = sorted(set(self.new_cards_notes_ids))
+        self.all_cards = all_cards
+        self.new_cards = new_cards
+        self.new_cards_ids = new_cards_ids
+        self.reviewed_cards = reviewed_cards
+        self.all_cards_notes_ids = sorted(set(all_cards_notes_ids))
+        self.new_cards_notes_ids = sorted(set(new_cards_notes_ids))
 
         if len(self.all_cards_ids) != len(self.all_cards):
             raise Exception("Could not get cards from database!")

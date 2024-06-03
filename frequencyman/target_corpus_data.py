@@ -7,7 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from math import fsum
 from statistics import fmean, median
-from typing import NewType, Union
+from typing import NewType, Sequence, Union
 from enum import Enum
 
 from anki.cards import CardId, Card
@@ -168,7 +168,7 @@ class TargetCorpusData:
                 self.content_metrics[corpus_segment_id].word_frequency = normalize_positional_dict_floats_values(self.content_metrics[corpus_segment_id].word_frequency)
 
     @staticmethod
-    def __get_cards_familiarity_score(cards: list[TargetCard]) -> dict[CardId, float]:
+    def __get_cards_familiarity_score(cards: Sequence[TargetCard]) -> dict[CardId, float]:
 
         if not cards:
             return {}
@@ -202,7 +202,7 @@ class TargetCorpusData:
         return cards_familiarity
 
     @staticmethod
-    def __get_cards_familiarity_factor(cards: list[TargetCard], suspended_card_value: float, suspended_leech_card_value: float) -> dict[CardId, float]:
+    def __get_cards_familiarity_factor(cards: Sequence[TargetCard], suspended_card_value: float, suspended_leech_card_value: float) -> dict[CardId, float]:
 
         cards_familiarity_value = TargetCorpusData.__get_cards_familiarity_score(cards)
 

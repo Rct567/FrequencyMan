@@ -3,7 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Optional, Tuple, TypedDict
+from typing import Optional, Sequence, Tuple, TypedDict
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -23,7 +23,7 @@ class TargetReorderResult():
     error: Optional[str]
     num_cards_repositioned: int
     cards_repositioned: bool
-    sorted_cards_ids: list[CardId]
+    sorted_cards_ids: Sequence[CardId]
     target_cards: Optional[TargetCards]
     repositioning_anki_op_changes: Optional[OpChangesWithCount]
 
@@ -40,7 +40,7 @@ class TargetReorderResult():
         self.target_cards = None
         self.repositioning_anki_op_changes = None
 
-    def with_repositioning_data(self, sorted_cards_ids: list[CardId], num_cards_repositioned: int,
+    def with_repositioning_data(self, sorted_cards_ids: Sequence[CardId], num_cards_repositioned: int,
                                 target_cards: TargetCards, repositioning_anki_op_changes: OpChangesWithCount) -> 'TargetReorderResult':
 
         self.sorted_cards_ids = sorted_cards_ids
@@ -277,7 +277,7 @@ class Target:
 
         return self.__reposition_cards(sorted_cards_ids, target_cards, repositioning_starting_from, event_logger, schedule_cards_as_new)
 
-    def __reposition_cards(self, sorted_cards_ids: list[CardId], target_cards: TargetCards, repositioning_starting_from: int,
+    def __reposition_cards(self, sorted_cards_ids: Sequence[CardId], target_cards: TargetCards, repositioning_starting_from: int,
                            event_logger: EventLogger, schedule_cards_as_new: bool) -> TargetReorderResult:
 
         if schedule_cards_as_new:  # may be needed in some cases, such as older anki version (?)

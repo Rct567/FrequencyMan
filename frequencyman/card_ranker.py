@@ -453,147 +453,164 @@ class CardRanker:
     def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_new_card: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]],
                                          notes_metrics: dict[NoteId, AggregatedFieldsMetrics]) -> None:
 
-        try:
-            reorder_scope_note_ids = list(notes_ranking_scores.values())[0].keys()
-        except:
-            reorder_scope_note_ids = []
-
         for note_id, note in notes_all_card.items():
 
             if note_id in self.modified_dirty_notes:
                 continue
 
+            # get new meta data for note fields
             note_metrics = notes_metrics[note_id]
-            new_note_vals: dict[str, str] = {}
-
-            # set fm_debug_info
-            if 'fm_debug_info' in note:
-                debug_info: dict[str, list] = {
-                    'fr_scores': note_metrics.fr_scores,
-                    'ue_scores': note_metrics.ue_scores,
-                    'most_obscure_word': note_metrics.most_obscure_word,
-                    'highest_ue_word': note_metrics.highest_ue_word,
-                    'ideal_focus_word_count': note_metrics.ideal_focus_words_count_scores,
-                    'ideal_word_count': note_metrics.ideal_words_count_scores,
-                    'familiarity_scores': note_metrics.familiarity_scores,
-                    'familiarity_sweetspot_scores': note_metrics.familiarity_sweetspot_scores,
-                    'lowest_fr_least_familiar_word': note_metrics.lowest_fr_least_familiar_word,
-                    'lowest_fr_word': note_metrics.lowest_fr_word,
-                    'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
-                }
-                new_note_vals['fm_debug_info'] = 'Target '+self.target_name+'<br />'
-                for info_name, info_val in debug_info.items():
-                    if info_val:
-                        fields_info = " | ".join([str(field_info) for field_info in info_val]).strip("| ")
-                        new_note_vals['fm_debug_info'] += info_name+": " + fields_info+"<br />\n"
-
-            # set fm_debug_ranking_info
-            if 'fm_debug_ranking_info' in note:
-                if note_id in notes_new_card:
-                    if not note_id in reorder_scope_note_ids:
-                        new_note_vals['fm_debug_ranking_info'] = '<< Not in reorder scope of target '+self.target_name+' >>'
-                    else:
-                        new_note_vals['fm_debug_ranking_info'] = 'Target '+self.target_name+'<br />'
-                        used_ranking_factors = {k: v for k, v in notes_ranking_scores.items() if k in self.ranking_factors_span and self.ranking_factors_span[k] > 0}
-                        ranking_scores = dict(sorted(used_ranking_factors.items(), key=lambda item: (item[1][note_id]*self.ranking_factors_span[item[0]]), reverse=True))
-                        for factor_name, factor_values in ranking_scores.items():
-                            factor_value = factor_values[note_id]
-                            factor_span = self.ranking_factors_span[factor_name]
-                            factor_score = factor_value*factor_span
-                            new_note_vals['fm_debug_ranking_info'] += "{}: {:.3f} <span style=\"opacity:0.5;\">x {} = {:.3f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score)
-                else:
-                    new_note_vals['fm_debug_ranking_info'] = '<< No new cards in main scope of target '+self.target_name+' >>'
-
-            # set fm_debug_words_info
-            if 'fm_debug_words_info' in note:
-                new_note_vals['fm_debug_words_info'] = 'Target '+self.target_name+'<br />'
-                fields_words_ue_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ue_scores]
-                new_note_vals['fm_debug_words_info'] += 'words_ue_scores: '+str(fields_words_ue_scores_sorted)+"<br />\n"
-                fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]
-                new_note_vals['fm_debug_words_info'] += 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"<br />\n"
-                fields_words_familiarity_sweetspot_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
-                                                                    for word_dict in note_metrics.words_familiarity_sweetspot_scores]
-                new_note_vals['fm_debug_words_info'] += 'familiarity_sweetspot_scores: '+str(fields_words_familiarity_sweetspot_scores_sorted)+"<br />\n"
-                fields_words_familiarity_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_familiarity_scores]
-                new_note_vals['fm_debug_words_info'] += 'familiarity_scores: '+str(fields_words_familiarity_scores_sorted)+"<br />\n"
-
-            # set fm_seen_words
-            if 'fm_seen_words' in note:
-                seen_words_per_field: list[str] = []
-                for field_index, seen_words in enumerate(note_metrics.seen_words):
-                    if seen_words:
-                        seen_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(seen_words).strip(", ")+'</span>')
-                if seen_words_per_field:
-                    words_lists = ' <span class="separator">/</span> '.join(seen_words_per_field)
-                    new_note_vals['fm_seen_words'] = '<span id="fm_seen_words">'+words_lists+'</span>'
-                else:
-                    new_note_vals['fm_seen_words'] = ''
-
-            # set fm_unseen_words
-            if 'fm_unseen_words' in note:
-                unseen_words_per_field: list[str] = []
-                for field_index, unseen_words in enumerate(note_metrics.unseen_words):
-                    if unseen_words:
-                        unseen_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(unseen_words).strip(", ")+'</span>')
-                if unseen_words_per_field:
-                    words_lists = ' <span class="separator">/</span> '.join(unseen_words_per_field)
-                    new_note_vals['fm_unseen_words'] = '<span id="fm_unseen_words">'+words_lists+'</span>'
-                else:
-                    new_note_vals['fm_unseen_words'] = ''
-
-            # set fm_focus_words
-            if 'fm_focus_words' in note:
-                focus_words_per_field: list[str] = []
-                for field_index, focus_words in enumerate(note_metrics.focus_words):
-                    if focus_words:
-                        focus_words_str = '<span data-field-index="'+str(field_index)+'">'+", ".join([word for word in focus_words.keys()])+'</span>'
-                        focus_words_per_field.append(focus_words_str)
-                if focus_words_per_field:
-                    words_lists = ' <span class="separator">/</span> '.join(focus_words_per_field)
-                    new_note_vals['fm_focus_words'] = '<span id="fm_focus_words">'+words_lists+'</span>'
-                else:
-                    new_note_vals['fm_focus_words'] = ''
-
-            # set fm_lowest_fr_word_[n]
-            for index, field_lowest_fr_word in enumerate(note_metrics.lowest_fr_word):
-                field_name = 'fm_lowest_fr_word_'+str(index)
-                if field_name in note:
-                    new_note_vals[field_name] = field_lowest_fr_word[0]
-
-            # set fm_lowest_familiarity_word_[n]
-            for index, field_lowest_familiarity_word in enumerate(note_metrics.lowest_familiarity_word):
-                field_name = 'fm_lowest_familiarity_word_'+str(index)
-                field_name_static = 'fm_lowest_familiarity_word_static_'+str(index)
-                if field_name in note:
-                    new_note_vals[field_name] = field_lowest_familiarity_word[0]
-                if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
-                    new_note_vals[field_name_static] = field_lowest_familiarity_word[0]
-
-            # set fm_main_focus_word_[n]
-            for index, focus_words in enumerate(note_metrics.focus_words):
-                field_name = 'fm_main_focus_word_'+str(index)
-                field_name_static = 'fm_main_focus_word_static_'+str(index)
-                if field_name in note:
-                    if focus_words:
-                        new_note_vals[field_name] = list(focus_words.keys())[0]
-                    else:
-                        new_note_vals[field_name] = ''
-                if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
-                    if focus_words:
-                        new_note_vals[field_name_static] = list(focus_words.keys())[0]
-                    else:
-                        new_note_vals[field_name_static] = ''
+            new_field_data = self.__get_new_meta_data_for_note(note, note_metrics, notes_all_card)
+            # add debug info
+            new_field_data.update(self.__get_new_debug_info_for_note(note, note_metrics, notes_ranking_scores, notes_new_card))
 
             # check if update is needed, else lock to prevent other targets from overwriting
             update_note_data = False
-            for attr_name, new_attr_val in new_note_vals.items():
+            for attr_name, new_attr_val in new_field_data.items():
                 if note[attr_name] != new_attr_val:
                     note[attr_name] = new_attr_val
                     update_note_data = True  # only update if anything is different
 
-            lock_note_data = len(new_note_vals) > 0
+            lock_note_data = len(new_field_data) > 0
 
             if update_note_data:
                 self.modified_dirty_notes[note_id] = note
             elif lock_note_data:  # lock to keep it as it is
                 self.modified_dirty_notes[note_id] = None
+
+
+    def __get_new_meta_data_for_note(self, note: Note, note_metrics: AggregatedFieldsMetrics, notes_all_card: dict[NoteId, Note]) -> dict[str, str]:
+
+        note_data: dict[str, str] = {}
+
+        # set fm_seen_words
+        if 'fm_seen_words' in note:
+            seen_words_per_field: list[str] = []
+            for field_index, seen_words in enumerate(note_metrics.seen_words):
+                if seen_words:
+                    seen_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(seen_words).strip(", ")+'</span>')
+            if seen_words_per_field:
+                words_lists = ' <span class="separator">/</span> '.join(seen_words_per_field)
+                note_data['fm_seen_words'] = '<span id="fm_seen_words">'+words_lists+'</span>'
+            else:
+                note_data['fm_seen_words'] = ''
+
+        # set fm_unseen_words
+        if 'fm_unseen_words' in note:
+            unseen_words_per_field: list[str] = []
+            for field_index, unseen_words in enumerate(note_metrics.unseen_words):
+                if unseen_words:
+                    unseen_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(unseen_words).strip(", ")+'</span>')
+            if unseen_words_per_field:
+                words_lists = ' <span class="separator">/</span> '.join(unseen_words_per_field)
+                note_data['fm_unseen_words'] = '<span id="fm_unseen_words">'+words_lists+'</span>'
+            else:
+                note_data['fm_unseen_words'] = ''
+
+        # set fm_focus_words
+        if 'fm_focus_words' in note:
+            focus_words_per_field: list[str] = []
+            for field_index, focus_words in enumerate(note_metrics.focus_words):
+                if focus_words:
+                    focus_words_str = '<span data-field-index="'+str(field_index)+'">'+", ".join([word for word in focus_words.keys()])+'</span>'
+                    focus_words_per_field.append(focus_words_str)
+            if focus_words_per_field:
+                words_lists = ' <span class="separator">/</span> '.join(focus_words_per_field)
+                note_data['fm_focus_words'] = '<span id="fm_focus_words">'+words_lists+'</span>'
+            else:
+                note_data['fm_focus_words'] = ''
+
+        # set fm_lowest_fr_word_[n]
+        for index, field_lowest_fr_word in enumerate(note_metrics.lowest_fr_word):
+            field_name = 'fm_lowest_fr_word_'+str(index)
+            if field_name in note:
+                note_data[field_name] = field_lowest_fr_word[0]
+
+        # set fm_lowest_familiarity_word_[n]
+        for index, field_lowest_familiarity_word in enumerate(note_metrics.lowest_familiarity_word):
+            field_name = 'fm_lowest_familiarity_word_'+str(index)
+            field_name_static = 'fm_lowest_familiarity_word_static_'+str(index)
+            if field_name in note:
+                note_data[field_name] = field_lowest_familiarity_word[0]
+            if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
+                note_data[field_name_static] = field_lowest_familiarity_word[0]
+
+        # set fm_main_focus_word_[n]
+        for index, focus_words in enumerate(note_metrics.focus_words):
+            field_name = 'fm_main_focus_word_'+str(index)
+            field_name_static = 'fm_main_focus_word_static_'+str(index)
+            if field_name in note:
+                if focus_words:
+                    note_data[field_name] = list(focus_words.keys())[0]
+                else:
+                    note_data[field_name] = ''
+            if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
+                if focus_words:
+                    note_data[field_name_static] = list(focus_words.keys())[0]
+                else:
+                    note_data[field_name_static] = ''
+
+        return note_data
+
+    def __get_new_debug_info_for_note(self, note: Note, note_metrics: AggregatedFieldsMetrics, notes_ranking_scores: dict[str, dict[NoteId, float]],
+                                     notes_new_card: dict[NoteId, Note]) -> dict[str, str]:
+
+        try:
+            reorder_scope_note_ids = list(list(notes_ranking_scores.values())[0].keys())
+        except:
+            reorder_scope_note_ids = []
+
+        note_data: dict[str, str] = {}
+
+        # set fm_debug_info
+        if 'fm_debug_info' in note:
+            debug_info: dict[str, list] = {
+                'fr_scores': note_metrics.fr_scores,
+                'ue_scores': note_metrics.ue_scores,
+                'most_obscure_word': note_metrics.most_obscure_word,
+                'highest_ue_word': note_metrics.highest_ue_word,
+                'ideal_focus_word_count': note_metrics.ideal_focus_words_count_scores,
+                'ideal_word_count': note_metrics.ideal_words_count_scores,
+                'familiarity_scores': note_metrics.familiarity_scores,
+                'familiarity_sweetspot_scores': note_metrics.familiarity_sweetspot_scores,
+                'lowest_fr_least_familiar_word': note_metrics.lowest_fr_least_familiar_word,
+                'lowest_fr_word': note_metrics.lowest_fr_word,
+                'ideal_unseen_words_count_scores': note_metrics.ideal_unseen_words_count_scores,
+            }
+            note_data['fm_debug_info'] = 'Target '+self.target_name+'<br />'
+            for info_name, info_val in debug_info.items():
+                if info_val:
+                    fields_info = " | ".join([str(field_info) for field_info in info_val]).strip("| ")
+                    note_data['fm_debug_info'] += info_name+": " + fields_info+"<br />\n"
+
+        # set fm_debug_ranking_info
+        if 'fm_debug_ranking_info' in note:
+            if note.id in notes_new_card:
+                if not note.id in reorder_scope_note_ids:
+                    note_data['fm_debug_ranking_info'] = '<< Not in reorder scope of target '+self.target_name+' >>'
+                else:
+                    note_data['fm_debug_ranking_info'] = 'Target '+self.target_name+'<br />'
+                    used_ranking_factors = {k: v for k, v in notes_ranking_scores.items() if k in self.ranking_factors_span and self.ranking_factors_span[k] > 0}
+                    ranking_scores = dict(sorted(used_ranking_factors.items(), key=lambda item: (item[1][note.id]*self.ranking_factors_span[item[0]]), reverse=True))
+                    for factor_name, factor_values in ranking_scores.items():
+                        factor_value = factor_values[note.id]
+                        factor_span = self.ranking_factors_span[factor_name]
+                        factor_score = factor_value*factor_span
+                        note_data['fm_debug_ranking_info'] += "{}: {:.3f} <span style=\"opacity:0.5;\">x {} = {:.3f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score)
+            else:
+                note_data['fm_debug_ranking_info'] = '<< No new cards in main scope of target '+self.target_name+' >>'
+
+        # set fm_debug_words_info
+        if 'fm_debug_words_info' in note:
+            note_data['fm_debug_words_info'] = 'Target '+self.target_name+'<br />'
+            fields_words_ue_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_ue_scores]
+            note_data['fm_debug_words_info'] += 'words_ue_scores: '+str(fields_words_ue_scores_sorted)+"<br />\n"
+            fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_fr_scores]
+            note_data['fm_debug_words_info'] += 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"<br />\n"
+            fields_words_familiarity_sweetspot_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
+                                                                for word_dict in note_metrics.words_familiarity_sweetspot_scores]
+            note_data['fm_debug_words_info'] += 'familiarity_sweetspot_scores: '+str(fields_words_familiarity_sweetspot_scores_sorted)+"<br />\n"
+            fields_words_familiarity_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in note_metrics.words_familiarity_scores]
+            note_data['fm_debug_words_info'] += 'familiarity_scores: '+str(fields_words_familiarity_scores_sorted)+"<br />\n"
+
+        return note_data

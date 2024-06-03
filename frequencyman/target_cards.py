@@ -11,6 +11,8 @@ from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 from anki.models import NotetypeId, NotetypeDict
 
+from .lib.utilities import var_dump, var_dump_log
+
 
 @dataclass
 class TargetCard:
@@ -33,7 +35,9 @@ class TargetCards:
     new_cards: list[TargetCard]
     new_cards_ids: list[CardId]
     reviewed_cards: list[TargetCard]
-    notes_ids: list[NoteId]
+
+    all_cards_notes_ids: list[NoteId]
+    new_cards_notes_ids: list[NoteId]
 
     notes_from_cards_cached: dict[NoteId, Note] = {}
     cache_lock: Optional[Collection] = None
@@ -47,7 +51,9 @@ class TargetCards:
         self.new_cards = []
         self.new_cards_ids = []
         self.reviewed_cards = []
-        self.notes_ids = []
+
+        self.all_cards_notes_ids = []
+        self.new_cards_notes_ids = []
 
         self.get_cards_from_db()
 
@@ -69,14 +75,16 @@ class TargetCards:
             card = TargetCard(*card_row, is_leech=False)
             card.is_leech = card.id in leech_card_ids
             self.all_cards.append(card)
-            self.notes_ids.append(card.nid)
+            self.all_cards_notes_ids.append(card.nid)
             if card.queue == 0:
                 self.new_cards.append(card)
                 self.new_cards_ids.append(CardId(card.id))
+                self.new_cards_notes_ids.append(card.nid)
             if card.queue != 0 and card.type == 2:
                 self.reviewed_cards.append(card)
 
-        self.notes_ids = sorted(self.notes_ids)
+        self.all_cards_notes_ids = sorted(set(self.all_cards_notes_ids))
+        self.new_cards_notes_ids = sorted(set(self.new_cards_notes_ids))
 
         if len(self.all_cards_ids) != len(self.all_cards):
             raise Exception("Could not get cards from database!")
@@ -88,7 +96,7 @@ class TargetCards:
 
         return self.notes_from_cards_cached[note_id]
 
-    def get_notes(self) -> dict[NoteId, Note]:
+    def get_notes_from_all_cards(self) -> dict[NoteId, Note]:
 
         notes_from_all_cards: dict[NoteId, Note] = {}
 
@@ -97,6 +105,8 @@ class TargetCards:
                 notes_from_all_cards[card.nid] = self.get_note(card.nid)
 
         notes_from_all_cards = {k: v for k, v in sorted(notes_from_all_cards.items(), key=lambda item: item[0])}
+
+        assert self.all_cards_notes_ids == list(notes_from_all_cards.keys())
 
         return notes_from_all_cards
 
@@ -108,6 +118,8 @@ class TargetCards:
                 notes_from_new_cards[card.nid] = self.get_note(card.nid)
 
         notes_from_new_cards = {k: v for k, v in sorted(notes_from_new_cards.items(), key=lambda item: item[0])}
+
+        assert self.new_cards_notes_ids == list(notes_from_new_cards.keys())
 
         return notes_from_new_cards
 

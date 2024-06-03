@@ -78,7 +78,7 @@ class TestTargetListReorder():
 
         # check acquired cards for each target
         assert len(target_list[0].get_cards().all_cards_ids) == 15790
-        assert len(target_list[0].get_cards().get_notes()) == 7895
+        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 7895
         assert len(target_list[0].get_cards().new_cards_ids) == 6566
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
 
@@ -135,7 +135,7 @@ class TestTargetListReorder():
 
         # check acquired cards
         assert len(target_list[0].get_cards().all_cards_ids) == 15790
-        assert len(target_list[0].get_cards().get_notes()) == 7895
+        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 7895
         assert len(target_list[0].get_cards().new_cards_ids) == 6566
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
 
@@ -198,11 +198,11 @@ class TestTargetListReorder():
 
         # check acquired cards for each target
         assert len(target_list[0].get_cards().all_cards_ids) == 10
-        assert len(target_list[0].get_cards().get_notes()) == 10
+        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 10
         assert len(target_list[0].get_cards().new_cards_ids) == 7
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 7
         assert len(target_list[1].get_cards().all_cards_ids) == 6
-        assert len(target_list[1].get_cards().get_notes()) == 6
+        assert len(target_list[1].get_cards().get_notes_from_all_cards()) == 6
         assert len(target_list[1].get_cards().new_cards_ids) == 4
         assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 4
 
@@ -312,11 +312,11 @@ class TestTargetListReorder():
 
         # check acquired cards for each target
         assert len(target_list[0].get_cards().all_cards_ids) == 16
-        assert len(target_list[0].get_cards().get_notes()) == 16
+        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 16
         assert len(target_list[0].get_cards().new_cards_ids) == 11
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 11
         assert len(target_list[1].get_cards().all_cards_ids) == 16
-        assert len(target_list[1].get_cards().get_notes()) == 16
+        assert len(target_list[1].get_cards().get_notes_from_all_cards()) == 16
         assert len(target_list[1].get_cards().new_cards_ids) == 11
         assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 11
 
@@ -368,7 +368,7 @@ class TestTargetListReorder():
         assert result.num_cards_repositioned == 10
 
         assert len(target_list[0].get_cards().all_cards_ids) == 16
-        assert len(target_list[0].get_cards().get_notes()) == 16
+        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 16
         assert len(target_list[0].get_cards().new_cards_ids) == 16
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 16
 

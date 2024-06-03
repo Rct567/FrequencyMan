@@ -142,7 +142,7 @@ class CardRanker:
         # card ranking is calculates per note (which may have different card, but same ranking)
 
         notes_from_new_cards = target_cards.get_notes_from_new_cards()
-        notes_all_card = target_cards.get_notes()
+        notes_all_card = target_cards.get_notes_from_all_cards()
 
         # get ranking factors for notes
 
@@ -168,7 +168,7 @@ class CardRanker:
 
         notes_ranking_scores_normalized: dict[str, dict[NoteId, float]] = {}
 
-        notes_ids = reorder_scope_target_cards.get_notes_from_new_cards().keys()
+        notes_ids = reorder_scope_target_cards.new_cards_notes_ids
 
         for ranking_factor in notes_ranking_scores.keys():
             notes_ranking_scores_normalized[ranking_factor] = {note_id: ranking_val for (note_id, ranking_val) in notes_ranking_scores[ranking_factor].items() if note_id in notes_ids}

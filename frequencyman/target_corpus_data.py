@@ -72,7 +72,6 @@ class TargetCorpusData:
     segmentation_strategy: CorpusSegmentationStrategy
     data_segments: set[str]
 
-
     def __init__(self):
 
         self.targeted_fields_per_note = {}
@@ -107,7 +106,7 @@ class TargetCorpusData:
 
     def __set_targeted_fields_data(self, target_fields_per_note_type: dict[str, dict[str, LangDataId]]):
 
-        for note in self.target_cards.get_notes().values():
+        for note in self.target_cards.get_notes_from_all_cards().values():
 
             note_type = self.target_cards.get_model(note.mid)
 
@@ -151,7 +150,7 @@ class TargetCorpusData:
 
     def __set_word_frequency(self, language_data: LanguageData):
 
-        for note_id in self.target_cards.notes_ids:
+        for note_id in self.target_cards.all_cards_notes_ids:
 
             for field_data in self.targeted_fields_per_note[note_id]:
 

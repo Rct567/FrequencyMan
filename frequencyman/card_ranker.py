@@ -386,7 +386,7 @@ class CardRanker:
                 field_metrics.most_obscure_word = (word, word_ubiquity_score)
 
             # focus words
-            if word_familiarity_score < self.corpus_data.focus_words_max_familiarity:
+            if word not in content_metrics.reviewed.words_post_focus:
                 field_metrics.focus_words[word] = word_familiarity_score
 
             # set seen and unseen

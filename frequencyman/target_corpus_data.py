@@ -48,6 +48,7 @@ class TargetReviewedContentMetrics:
     words_familiarity_max: float = field(default=0.0)
     words_familiarity_positional: dict[WordToken, float] = field(default_factory=dict)
     words_familiarity_sweetspot: dict[WordToken, float] = field(default_factory=dict)
+    words_post_focus: list[WordToken] = field(default_factory=list)
 
 
 @dataclass
@@ -102,6 +103,7 @@ class TargetCorpusData:
         self.__set_notes_reviewed_words_presence()
         self.__set_notes_reviewed_words_familiarity()
         self.__set_notes_reviewed_words_familiarity_sweetspot()
+        self.__set_notes_post_focus_words()
         self.__set_notes_words_underexposure()
 
     def __set_targeted_fields_data(self, target_fields_per_note_type: dict[str, dict[str, LangDataId]]):
@@ -195,7 +197,7 @@ class TargetCorpusData:
             card_interval = fall_of_value(cards_interval[card.id] / 300)
             card_reps = fall_of_value(cards_reps[card.id] / 12)
             card_ease = fall_of_value(cards_ease[card.id] / 2500)
-            card_score = ( card_interval + (card_ease/4) + (card_reps/4) ) / 1.5
+            card_score = (card_interval + (card_ease/4) + (card_reps/4)) / 1.5
             cards_familiarity[card.id] = card_score
 
         # done
@@ -272,7 +274,7 @@ class TargetCorpusData:
 
             for word_token, word_presence_scores in self.content_metrics[corpus_segment_id].reviewed.words_presence.items():
                 cards_familiarity_factor = self.content_metrics[corpus_segment_id].reviewed.words_cards_familiarity_factor[word_token]
-                words_familiarity = fsum( (card_familiarity_factor * word_presence) for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor) )
+                words_familiarity = fsum((card_familiarity_factor * word_presence) for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor))
                 self.content_metrics[corpus_segment_id].reviewed.words_familiarity[word_token] = words_familiarity
 
             # sort
@@ -320,10 +322,20 @@ class TargetCorpusData:
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot = sort_dict_floats_values(self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot)
 
             # cut of bottom 10%
-            self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot = remove_bottom_percent_dict(self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot, 0.1, 100)
+            self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot = remove_bottom_percent_dict(
+                self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot, 0.1, 100)
 
             # normalize
             self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot = normalize_dict_floats_values(self.content_metrics[corpus_segment_id].reviewed.words_familiarity_sweetspot)
+
+    def __set_notes_post_focus_words(self) -> None:
+
+        for corpus_segment_id in self.content_metrics.keys():
+
+            for word_token, word_familiarity in self.content_metrics[corpus_segment_id].reviewed.words_familiarity.items():
+
+                if word_familiarity > self.focus_words_max_familiarity:
+                    self.content_metrics[corpus_segment_id].reviewed.words_post_focus.append(word_token)
 
     def __set_notes_words_underexposure(self) -> None:
 

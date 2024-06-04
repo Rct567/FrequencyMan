@@ -61,12 +61,12 @@ class TargetCards:
         card_ids_str = ",".join(map(str, self.all_cards_ids))
         cards = self.col.db.execute("SELECT id, nid, type, queue, ivl, reps, factor FROM cards WHERE id IN ({}) ORDER BY due ASC".format(card_ids_str))
 
-        all_cards = []
-        new_cards = []
-        new_cards_ids = []
-        reviewed_cards = []
-        all_cards_notes_ids = []
-        new_cards_notes_ids = []
+        all_cards: list[TargetCard] = []
+        new_cards: list[TargetCard] = []
+        new_cards_ids: list[CardId] = []
+        reviewed_cards: list[TargetCard] = []
+        all_cards_notes_ids: list[NoteId] = []
+        new_cards_notes_ids: list[NoteId] = []
         leech_card_ids = self.col.find_cards('tag:leech')
 
         for card_row in cards:
@@ -76,7 +76,7 @@ class TargetCards:
             all_cards_notes_ids.append(card.nid)
             if card.queue == 0:
                 new_cards.append(card)
-                new_cards_ids.append(CardId(card.id))
+                new_cards_ids.append(card.id)
                 new_cards_notes_ids.append(card.nid)
             if card.queue != 0 and card.type == 2:
                 reviewed_cards.append(card)

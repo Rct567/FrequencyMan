@@ -168,7 +168,7 @@ class CardRanker:
 
         notes_ranking_scores_normalized: dict[str, dict[NoteId, float]] = {}
 
-        notes_ids = reorder_scope_target_cards.new_cards_notes_ids
+        notes_ids = set(reorder_scope_target_cards.new_cards_notes_ids)
 
         for ranking_factor in notes_ranking_scores.keys():
             notes_ranking_scores_normalized[ranking_factor] = {note_id: ranking_val for (note_id, ranking_val) in notes_ranking_scores[ranking_factor].items() if note_id in notes_ids}
@@ -453,6 +453,11 @@ class CardRanker:
     def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_new_card: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]],
                                          notes_metrics: dict[NoteId, AggregatedFieldsMetrics]) -> None:
 
+        try:
+            reorder_scope_note_ids = set(list(notes_ranking_scores.values())[0].keys())
+        except:
+            reorder_scope_note_ids = set()
+
         for note_id, note in notes_all_card.items():
 
             if note_id in self.modified_dirty_notes:
@@ -462,7 +467,8 @@ class CardRanker:
             note_metrics = notes_metrics[note_id]
             new_field_data = self.__get_new_meta_data_for_note(note, note_metrics, notes_all_card)
             # add debug info
-            new_field_data.update(self.__get_new_debug_info_for_note(note, note_metrics, notes_ranking_scores, notes_new_card))
+            debug_info = self.__get_new_debug_info_for_note(note, note_metrics, notes_ranking_scores, notes_new_card, reorder_scope_note_ids)
+            new_field_data.update(debug_info)
 
             # check if update is needed, else lock to prevent other targets from overwriting
             update_note_data = False
@@ -553,12 +559,8 @@ class CardRanker:
         return note_data
 
     def __get_new_debug_info_for_note(self, note: Note, note_metrics: AggregatedFieldsMetrics, notes_ranking_scores: dict[str, dict[NoteId, float]],
-                                     notes_new_card: dict[NoteId, Note]) -> dict[str, str]:
+                                     notes_new_card: dict[NoteId, Note], reorder_scope_note_ids: set[NoteId]) -> dict[str, str]:
 
-        try:
-            reorder_scope_note_ids = list(list(notes_ranking_scores.values())[0].keys())
-        except:
-            reorder_scope_note_ids = []
 
         note_data: dict[str, str] = {}
 

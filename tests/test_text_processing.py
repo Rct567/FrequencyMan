@@ -23,7 +23,7 @@ def test_acceptable_word():
 
 def test_get_plain_text():
 
-    assert TextProcessing.get_plain_text("This a <b>sample</b></b> text with HTML<p>tags</P>and example.") == "This a sample text with HTML tags and example."
+    assert TextProcessing.get_plain_text("This a <b>sample</b></b> text with HTML<p>tags</P>and<br>example.") == "This a sample text with HTML tags and example."
     assert TextProcessing.get_plain_text("This a <script> kk </script> example.") == "This a example."
     assert TextProcessing.get_plain_text("This N&amp;M that") == "This N&M that"
     assert TextProcessing.get_plain_text("Non-breaking space: This&nbsp;is&nbsp;a&nbsp;test.") == "Non-breaking space: This is a test."

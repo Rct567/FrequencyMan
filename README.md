@@ -135,7 +135,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 ```json
 "ranking_factors" : {
     "word_frequency": 1.0,
-    "familiarity": 3.0,
+    "familiarity": 2.5,
     "familiarity_sweetspot": 1.0,
     "lexical_underexposure": 0.25,
     "ideal_focus_word_count": 1.0,

@@ -207,7 +207,7 @@ class TestTargetListReorder():
         assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 4
 
         # check order
-        assert_locked_order(result.reorder_result_list[0].sorted_cards_ids+result.reorder_result_list[1].sorted_cards_ids)
+        assert_locked_order(list(result.reorder_result_list[0].sorted_cards_ids)+list(result.reorder_result_list[1].sorted_cards_ids))
 
     def test_two_deck_collection_with_ignore_list(self):
 
@@ -321,7 +321,7 @@ class TestTargetListReorder():
         assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 11
 
         # check order
-        assert_locked_order(result.reorder_result_list[0].sorted_cards_ids+result.reorder_result_list[1].sorted_cards_ids)
+        assert_locked_order(list(result.reorder_result_list[0].sorted_cards_ids)+list(result.reorder_result_list[1].sorted_cards_ids))
 
     def test_two_deck_collection_no_reviewed_cards(self):
 

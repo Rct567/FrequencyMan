@@ -56,13 +56,13 @@ class AggregatedFieldsMetrics:
     words_familiarity_sweetspot_scores: list[dict[WordToken, float]] = field(default_factory=list)
     words_familiarity_scores: list[dict[WordToken, float]] = field(default_factory=list)
     focus_words: list[dict[WordToken, float]] = field(default_factory=list)
-    lowest_familiarity_word: list[Tuple[WordToken, float]] = field(default_factory=list)
 
     seen_words: list[list[WordToken]] = field(default_factory=list)
     unseen_words: list[list[WordToken]] = field(default_factory=list)
 
-    lowest_fr_least_familiar_word: list[Tuple[WordToken, float, float]] = field(default_factory=list)
+    lowest_familiarity_word: list[Tuple[WordToken, float]] = field(default_factory=list)
     lowest_fr_word: list[Tuple[WordToken, float]] = field(default_factory=list)
+    lowest_fr_least_familiar_word: list[Tuple[WordToken, float, float]] = field(default_factory=list)
 
     highest_ue_word: list[Tuple[WordToken, float]] = field(default_factory=list)
     most_obscure_word: list[Tuple[WordToken, float]] = field(default_factory=list)
@@ -107,7 +107,7 @@ class CardRanker:
     def get_default_ranking_factors_span() -> dict[str, float]:
         return {
             "word_frequency": 1.0,
-            "familiarity": 3.0,
+            "familiarity": 2.5,
             "familiarity_sweetspot": 1.0,
             "lexical_underexposure": 0.25,
             "ideal_focus_word_count": 1.0,
@@ -116,6 +116,7 @@ class CardRanker:
             "most_obscure_word": 0.5,
             "lowest_fr_least_familiar_word": 0.25,
             "lowest_word_frequency": 0.25,
+            "lowest_familiarity": 0.25,
             "ideal_unseen_word_count": 0.0,
         }
 
@@ -426,7 +427,12 @@ class CardRanker:
             lowest_fr_least_familiar_word = [lowest_fr_unseen_word[1] for lowest_fr_unseen_word in note_metrics.lowest_fr_least_familiar_word]
 
             notes_ranking_factors['lowest_fr_least_familiar_word'][note_id] = fmean(lowest_fr_least_familiar_word)
-            notes_ranking_factors['lowest_word_frequency'][note_id] = fmean([lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word])
+
+            lowest_word_frequency_scores = [lowest_fr_word[1] for lowest_fr_word in note_metrics.lowest_fr_word]
+            notes_ranking_factors['lowest_word_frequency'][note_id] = (median(lowest_word_frequency_scores) + (min(lowest_word_frequency_scores)*99)) / 100
+
+            lowest_familiarity_scores = [lowest_familiarity_word[1] for lowest_familiarity_word in note_metrics.lowest_familiarity_word]
+            notes_ranking_factors['lowest_familiarity'][note_id] = (median(lowest_familiarity_scores) + (min(lowest_familiarity_scores)*99)) / 100
 
             notes_ranking_factors['ideal_word_count'][note_id] = fmean(note_metrics.ideal_words_count_scores)
             notes_ranking_factors['ideal_focus_word_count'][note_id] = fmean(note_metrics.ideal_focus_words_count_scores)

@@ -18,7 +18,7 @@ from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
 from aqt.qt import *
 from aqt.main import AnkiQt
 
-from ..default_wf_lists import DefaultWordFrequencyLists
+from ..static_lang_data import DEFAULT_WF_LISTS_SOURCES
 
 from .main_window import FrequencyManMainWindow, FrequencyManTab
 from .select_new_target_window import SelectNewTargetWindow
@@ -185,7 +185,7 @@ class ReorderCardsTab(FrequencyManTab):
             if not match:
                 return False
             defined_lang_data_id = str(match.group(1)).lower()
-            if not defined_lang_data_id in DefaultWordFrequencyLists.default_wf_lists:
+            if not defined_lang_data_id in DEFAULT_WF_LISTS_SOURCES:
                 return False
 
             src_file = os.path.join(default_wf_lists_dir, defined_lang_data_id+'.txt')

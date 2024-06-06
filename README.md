@@ -220,7 +220,7 @@ __Notes__:
 
 # Language data id
 
-For each field a **`language_data_id`** must be defined. In most cases this should just be a two letter (ISO 639) language code, such as `EN` or `ES`:
+For each field a **`language_data_id`** must be defined. In most cases this should just be a two letter language code (ISO 639-1), such as `EN` or `ES`:
 
 ```json
 [

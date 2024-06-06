@@ -2,7 +2,7 @@ import os
 import time
 import requests
 
-from frequencyman.default_wf_lists import DefaultWordFrequencyLists
+from frequencyman.static_lang_data import DEFAULT_WF_LISTS_SOURCES
 from frequencyman.text_processing import LangId
 from frequencyman.language_data import WordFrequencyLists
 
@@ -10,7 +10,7 @@ def download_default_wf_lists():
 
     target_dir = 'default_wf_lists'
 
-    for lang_id, wf_list_url in DefaultWordFrequencyLists.default_wf_lists.items():
+    for lang_id, wf_list_url in DEFAULT_WF_LISTS_SOURCES.items():
 
             print(wf_list_url)
             target_file = os.path.join(target_dir, lang_id+'.txt')

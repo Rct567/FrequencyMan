@@ -72,6 +72,7 @@ class AggregatedFieldsMetrics:
     familiarity_sweetspot_scores: list[float] = field(default_factory=list)
     familiarity_scores: list[float] = field(default_factory=list)
 
+    no_unseen_words_scores: list[float] = field(default_factory=list)
     reinforce_focus_words_scores: list[float] = field(default_factory=list)
     ideal_unseen_words_count_scores: list[float] = field(default_factory=list)
     ideal_words_count_scores: list[float] = field(default_factory=list)
@@ -117,6 +118,7 @@ class CardRanker:
             "lowest_fr_least_familiar_word": 0.25,
             "lowest_word_frequency": 0.25,
             "lowest_familiarity": 0.25,
+            "no_unseen_words": 0.1,
             "ideal_unseen_word_count": 0.0,
         }
 
@@ -296,6 +298,10 @@ class CardRanker:
                 field_ideal_word_count_score = self.__card_field_ideal_word_count_score(len(field_data.field_value_tokenized), self.ideal_word_count_min, self.ideal_word_count_max)
                 note_metrics.ideal_words_count_scores.append(field_ideal_word_count_score)
 
+                # no new words
+                field_no_unseen_words_score = 1 if len(field_metrics.unseen_words) == 0 else 0
+                note_metrics.no_unseen_words_scores.append(field_no_unseen_words_score)
+
                 # reinforce focus words (note has focus word already familiar to user)
                 if len(field_metrics.unseen_words) == 0 and len(field_metrics.focus_words) > 0:
                     reinforce_focus_words_score = 1
@@ -433,6 +439,8 @@ class CardRanker:
 
             lowest_familiarity_scores = [lowest_familiarity_word[1] for lowest_familiarity_word in note_metrics.lowest_familiarity_word]
             notes_ranking_factors['lowest_familiarity'][note_id] = (median(lowest_familiarity_scores) + (min(lowest_familiarity_scores)*99)) / 100
+
+            notes_ranking_factors['no_unseen_words'][note_id] = (median(note_metrics.no_unseen_words_scores) + (min(note_metrics.no_unseen_words_scores)*2)) / 3
 
             notes_ranking_factors['ideal_word_count'][note_id] = fmean(note_metrics.ideal_words_count_scores)
             notes_ranking_factors['ideal_focus_word_count'][note_id] = fmean(note_metrics.ideal_focus_words_count_scores)

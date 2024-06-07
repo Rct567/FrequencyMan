@@ -144,6 +144,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
     "most_obscure_word": 0.5,
     "lowest_fr_least_familiar_word": 0.5,
     "lowest_word_frequency": 0.25,
+    "no_unseen_words": 0.1,
     "ideal_unseen_word_count": 0.0,
 }
 ```
@@ -164,7 +165,8 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `lowest_fr_least_familiar_word`: Represents the lowest _word frequency_ among the words with the lowest familiarity score.
 - `lowest_word_frequency`: Represents the lowest _word frequency_ found in the content of any targeted field. This is different from `word_frequency`, which reflect the average _word frequency_ of all targeted fields.
 - `lowest_familiarity`: Represents the lowest _familiarity_ found in the content of any targeted field. This is different from `familiarity`, which reflect the average _familiarity_ of all targeted fields.
-- `ideal_unseen_word_count`: Like _ideal_focus_word_count_, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
+- `no_unseen_words`: Promotes cards with no new words. Put differently, it promotes cards who's words have all been seen before during review.
+- `ideal_unseen_word_count`: Like `ideal_focus_word_count`, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
 
 ## Custom fields
 

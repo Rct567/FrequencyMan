@@ -5,6 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from collections import defaultdict
 import random
+import re
 from typing import Iterable, Sequence
 
 from anki.collection import Collection
@@ -14,8 +15,8 @@ from aqt.utils import askUser, showWarning, showInfo, getOnlyText
 from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
 from aqt.qt import *
 
+from ..static_lang_data import ENGLISH_LANGUAGE_NAMES, LANGUAGE_NAMES_EN
 from ..target import ConfiguredTargetNote, ValidConfiguredTarget
-
 from ..lib.utilities import var_dump, var_dump_log
 
 from .main_window import FrequencyManMainWindow
@@ -205,12 +206,62 @@ class SelectNewTargetWindow(QDialog):
         note_field_names = [str(field['name']) for field in note_model['flds']]
         self.fields_list_model.setStringList(note_field_names)
 
+    @staticmethod
+    def get_lang_data_id_suggestion(field_name: str, note_type_name: str, deck_name: str) -> str:
+
+        field_name_lower = field_name.lower()
+        note_type_name_lower = note_type_name.lower()
+        deck_name_lower = deck_name.lower()
+
+        if '_' in field_name or len(field_name) == 2:
+            for lang_data_id in set(list(LANGUAGE_NAMES_EN.keys()) + list(LANGUAGE_NAMES_EN.keys())):
+                if field_name.startswith(lang_data_id+'_') or field_name_lower == lang_data_id.lower():
+                    return lang_data_id
+
+        if field_name_lower == 'translation' or field_name_lower == 'meaning' or field_name_lower == 'definition':
+            return 'en'
+
+        lang_names: dict[str, list[str]] = {}
+
+        for lang_id, lang_name_data in LANGUAGE_NAMES_EN.items():
+            names = re.split(r'[;,.()\s]', (lang_name_data['name']+";"+lang_name_data['nativeName']))
+            lang_names[lang_id] = [name.strip().lower() for name in names if isinstance(name, str) and len(name.encode('utf-8')) > 2]
+            if lang_id == 'en':
+                lang_names[lang_id] += ENGLISH_LANGUAGE_NAMES
+
+        # check by deck name
+
+        if field_name_lower == 'sentence' or field_name_lower == 'word':
+            for lang_id, names in lang_names.items():
+                for name in names:
+                    if name in deck_name_lower:
+                        var_dump_log("deck_name matches: "+name)
+                        return lang_id
+
+        # check by field name
+
+        for lang_id, names in lang_names.items():
+            for name in names:
+                if name in field_name_lower:
+                    var_dump_log("field_name matches: "+name)
+                    return lang_id
+
+        # check by note type name
+
+        for lang_id, names in lang_names.items():
+            for name in names:
+                if name in note_type_name_lower:
+                    var_dump_log("note_type_name matches: "+name)
+                    return lang_id
+
+        return ""
+
     def submit_button_clicked(self) -> None:
         selected_indexes = self.fields_list_view.selectedIndexes()
         selected_fields = [self.fields_list_model.data(index) for index in selected_indexes]
         self.selected_fields = {field_name: '' for field_name in selected_fields}
         for field_name in self.selected_fields.keys():
-            default_lang_data_id = "en" if field_name == "Front" else ""
+            default_lang_data_id = self.get_lang_data_id_suggestion(field_name, self.selected_note_type, self.selected_deck)
             field_lang_data_id = getOnlyText("Language id for field '{}' of note type '{}'?".format(field_name, self.selected_note_type), default=default_lang_data_id)
             self.selected_fields[field_name] = field_lang_data_id
         self.accept()

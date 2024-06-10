@@ -144,8 +144,8 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
     "most_obscure_word": 0.5,
     "lowest_fr_least_familiar_word": 0.5,
     "lowest_word_frequency": 0.25,
-    "no_unseen_words": 0.1,
-    "ideal_unseen_word_count": 0.0,
+    "no_new_words": 0.1,
+    "ideal_new_word_count": 0.0,
 }
 ```
 
@@ -155,7 +155,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `familiarity`: Represents how familiar you are with the words in the content. Like _word_frequency_, it has a bias toward the lowest value. How familiar you are with a word depends on how many times you have seen the word and in what context that specific word was present (the interval and ease of the card, the amount of words in the content etc).
 - `familiarity_sweetspot`: Promotes cards with words close to a specific 'sweetspot' of familiarity. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These can be recently introduced words, or words that are 'hidden' (non-prominent) in older cards. Use target setting `familiarity_sweetspot_point` to customize the sweetspot value.
 - `lexical_underexposure`: Promotes cards with high-frequency words that you are not yet proportionally familiar with. Basically, _lexical_underexposure = (word_frequency-word_familiarity)_. Increasing this value means you will be 'pushed' forward more in your language learning journey (and the word frequency list). Increase the value slightly if you experience too much overlap and not enough new words.
-- `ideal_focus_word_count`: Promotes cards with only a single '_focus word_'. See also _N+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis. A _focus word_ is a word you are not yet appropriately familiar with. Use target setting `focus_words_max_familiarity` to customize the maximum familiarly of the focus words.
+- `ideal_focus_word_count`: Promotes cards with only a single '_focus word_'. See also _N+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis. A _focus word_ is a new word or a word you are not yet appropriately familiar with. Use target setting `focus_words_max_familiarity` to customize the maximum familiarly of the focus words.
 - `ideal_word_count`: Represents how close the _word count_ of the content is to the defined ideal range. By default this is 1 to 5, but you can customize it per target with:
   ```json
   "ideal_word_count": [2, 8]
@@ -165,15 +165,15 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `lowest_fr_least_familiar_word`: Represents the lowest _word frequency_ among the words with the lowest familiarity score.
 - `lowest_word_frequency`: Represents the lowest _word frequency_ found in the content of any targeted field. This is different from `word_frequency`, which reflect the average _word frequency_ of all targeted fields.
 - `lowest_familiarity`: Represents the lowest _familiarity_ found in the content of any targeted field. This is different from `familiarity`, which reflect the average _familiarity_ of all targeted fields.
-- `no_unseen_words`: Promotes cards with no new words. Put differently, it promotes cards who's words have all been seen before during review.
-- `ideal_unseen_word_count`: Like `ideal_focus_word_count`, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
+- `no_new_words`: Promotes cards with no new words. Put differently, it promotes cards who's words have all been seen before during review.
+- `ideal_new_word_count`: Like `ideal_focus_word_count`, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
 
 ## Custom fields
 
 The following fields will be automatically populated when you reorder your cards:
 
 - `fm_focus_words`: A list of focus words for each field. (recommended!)
-- `fm_unseen_words`: A list of unseen words (words not found in reviewed cards) for each field.
+- `fm_new_words`: A list of new words (words not found in reviewed cards) for each field.
 - `fm_seen_words`: A list of seen words (words found in reviewed cards) for each field.
 
 Dynamic field names (the number at the end can be replaced with the index number of any field defined in the target):

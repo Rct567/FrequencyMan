@@ -15,7 +15,7 @@ from aqt.utils import askUser, showWarning, showInfo, getOnlyText
 from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
 from aqt.qt import *
 
-from ..static_lang_data import ENGLISH_LANGUAGE_NAMES, LANGUAGE_NAMES_EN
+from ..static_lang_data import NAMES_FOR_THE_ENGLISH_LANGUAGE, LANGUAGE_NAMES_ENG_AND_NATIVE
 from ..target import ConfiguredTargetNote, ValidConfiguredTarget
 from ..lib.utilities import var_dump, var_dump_log
 
@@ -214,7 +214,7 @@ class SelectNewTargetWindow(QDialog):
         deck_name_lower = deck_name.lower()
 
         if '_' in field_name or len(field_name) == 2:
-            for lang_data_id in set(list(LANGUAGE_NAMES_EN.keys()) + list(LANGUAGE_NAMES_EN.keys())):
+            for lang_data_id in LANGUAGE_NAMES_ENG_AND_NATIVE.keys():
                 if field_name.startswith(lang_data_id+'_') or field_name_lower == lang_data_id.lower():
                     return lang_data_id
 
@@ -223,11 +223,11 @@ class SelectNewTargetWindow(QDialog):
 
         lang_names: dict[str, list[str]] = {}
 
-        for lang_id, lang_name_data in LANGUAGE_NAMES_EN.items():
+        for lang_id, lang_name_data in LANGUAGE_NAMES_ENG_AND_NATIVE.items():
             names = re.split(r'[;,.()\s]', (lang_name_data['name']+";"+lang_name_data['nativeName']))
             lang_names[lang_id] = [name.strip().lower() for name in names if isinstance(name, str) and len(name.encode('utf-8')) > 2]
             if lang_id == 'en':
-                lang_names[lang_id] += ENGLISH_LANGUAGE_NAMES
+                lang_names[lang_id] += NAMES_FOR_THE_ENGLISH_LANGUAGE
 
         # check by deck name
 
@@ -235,7 +235,6 @@ class SelectNewTargetWindow(QDialog):
             for lang_id, names in lang_names.items():
                 for name in names:
                     if name in deck_name_lower:
-                        var_dump_log("deck_name matches: "+name)
                         return lang_id
 
         # check by field name
@@ -243,7 +242,6 @@ class SelectNewTargetWindow(QDialog):
         for lang_id, names in lang_names.items():
             for name in names:
                 if name in field_name_lower:
-                    var_dump_log("field_name matches: "+name)
                     return lang_id
 
         # check by note type name
@@ -251,7 +249,6 @@ class SelectNewTargetWindow(QDialog):
         for lang_id, names in lang_names.items():
             for name in names:
                 if name in note_type_name_lower:
-                    var_dump_log("note_type_name matches: "+name)
                     return lang_id
 
         return ""
@@ -262,7 +259,7 @@ class SelectNewTargetWindow(QDialog):
         self.selected_fields = {field_name: '' for field_name in selected_fields}
         for field_name in self.selected_fields.keys():
             default_lang_data_id = self.get_lang_data_id_suggestion(field_name, self.selected_note_type, self.selected_deck)
-            field_lang_data_id = getOnlyText("Language id for field '{}' of note type '{}'?".format(field_name, self.selected_note_type), default=default_lang_data_id)
+            field_lang_data_id = getOnlyText("Language id for field '{}' of note type '{}'?".format(field_name, self.selected_note_type), default=default_lang_data_id, parent=self)
             self.selected_fields[field_name] = field_lang_data_id
         self.accept()
 

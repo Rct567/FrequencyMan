@@ -65,7 +65,7 @@ DEFAULT_WF_LISTS_SOURCES = {
 }
 
 
-LANGUAGE_NAMES_EN = {
+LANGUAGE_NAMES_ENG_AND_NATIVE = {
     "ab": {"name": "Abkhaz", "nativeName": "аҧсуа"},
     "aa": {"name": "Afar", "nativeName": "Afaraf"},
     "af": {"name": "Afrikaans", "nativeName": "Afrikaans"},
@@ -250,7 +250,7 @@ LANGUAGE_NAMES_EN = {
     "za": {"name": "Zhuang, Chuang", "nativeName": "Saɯ cueŋƅ, Saw cuengh"}
 }
 
-ENGLISH_LANGUAGE_NAMES = {
+NAMES_FOR_THE_ENGLISH_LANGUAGE = {
     "English",
     "Inglés",
     "Anglais",

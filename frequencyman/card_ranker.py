@@ -15,7 +15,7 @@ from anki.collection import Collection
 
 from .text_processing import WordToken
 from .lib.utilities import *
-from .target_corpus_data import CorpusSegmentId, TargetCorpusData, TargetNoteFieldContentData
+from .target_corpus_data import CorpusSegmentId, TargetCorpusData, NoteFieldContentData
 from .language_data import LanguageData
 from .target_cards import TargetCards
 
@@ -343,7 +343,7 @@ class CardRanker:
 
         return notes_metrics
 
-    def __get_field_metrics_from_field_data(self, field_data: TargetNoteFieldContentData, corpus_segment_id: CorpusSegmentId) -> FieldMetrics:
+    def __get_field_metrics_from_field_data(self, field_data: NoteFieldContentData, corpus_segment_id: CorpusSegmentId) -> FieldMetrics:
 
         field_metrics = FieldMetrics()
         content_metrics = self.corpus_data.content_metrics[corpus_segment_id]
@@ -356,27 +356,29 @@ class CardRanker:
 
             # word frequency
             word_fr = content_metrics.word_frequency.get(word, 0)
-            word_ue = content_metrics.words_underexposure.get(word, 0)
-
             field_metrics.fr_scores.append(word_fr)
             field_metrics.words_fr_scores[word] = word_fr
-
-            field_metrics.ue_scores.append(word_ue)
-            field_metrics.words_ue_scores[word] = word_ue
 
             # lowest fr word
             if field_metrics.lowest_fr_word[0] == "" or word_fr < field_metrics.lowest_fr_word[1]:
                 field_metrics.lowest_fr_word = (word, word_fr)
 
-            # most underexposure word
-            if field_metrics.highest_ue_word[0] == "" or word_ue > field_metrics.highest_ue_word[1]:
-                field_metrics.highest_ue_word = (word, word_ue)
+            # lexical underexposure
+            if 'lexical_underexposure' in self.ranking_factors_span and self.ranking_factors_span['lexical_underexposure'] > 0:
+
+                word_ue = content_metrics.words_underexposure.get(word, 0)
+                field_metrics.ue_scores.append(word_ue)
+                field_metrics.words_ue_scores[word] = word_ue
+
+                # most underexposure word
+                if field_metrics.highest_ue_word[0] == "" or word_ue > field_metrics.highest_ue_word[1]:
+                    field_metrics.highest_ue_word = (word, word_ue)
 
             #  familiarity score of words
-            word_familiarity_score = content_metrics.reviewed.words_familiarity.get(word, 0)
+            word_familiarity_score = content_metrics.words_familiarity.get(word, 0)
             field_metrics.words_familiarity_scores[word] = word_familiarity_score
 
-            words_familiarity_positional = content_metrics.reviewed.words_familiarity_positional.get(word, 0)
+            words_familiarity_positional = content_metrics.words_familiarity_positional.get(word, 0)
             field_metrics.words_familiarity_positional_scores[word] = words_familiarity_positional
 
             # lowest familiarity word
@@ -384,8 +386,9 @@ class CardRanker:
                 field_metrics.lowest_familiarity_word = (word, word_familiarity_score)
 
             # familiarity sweetspot score of words in sweetspot range
-            word_familiarity_sweetspot_score = content_metrics.reviewed.words_familiarity_sweetspot.get(word, 0)
-            field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
+            if 'familiarity_sweetspot' in self.ranking_factors_span and self.ranking_factors_span['familiarity_sweetspot'] > 0:
+                word_familiarity_sweetspot_score = content_metrics.words_familiarity_sweetspot.get(word, 0)
+                field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
 
             # most obscure word (lowest ubiquity)
             word_ubiquity_score = max(word_fr, words_familiarity_positional)
@@ -393,11 +396,11 @@ class CardRanker:
                 field_metrics.most_obscure_word = (word, word_ubiquity_score)
 
             # focus words
-            if word not in content_metrics.reviewed.words_post_focus:
+            if word not in content_metrics.words_post_focus:
                 field_metrics.focus_words[word] = word_familiarity_score
 
             # set seen and new words
-            if word in content_metrics.reviewed.words:
+            if word in content_metrics.reviewed_words:
                 field_metrics.seen_words.append(word)  # word seen, word exist in at least one reviewed card
             else:
                 field_metrics.new_words.append(word)
@@ -498,7 +501,6 @@ class CardRanker:
             elif lock_note_data:  # lock to keep it as it is
                 self.modified_dirty_notes[note_id] = None
 
-
     def __get_new_meta_data_for_note(self, note: Note, note_metrics: AggregatedFieldsMetrics, notes_all_card: dict[NoteId, Note]) -> dict[str, str]:
 
         note_data: dict[str, str] = {}
@@ -573,8 +575,7 @@ class CardRanker:
         return note_data
 
     def __get_new_debug_info_for_note(self, note: Note, note_metrics: AggregatedFieldsMetrics, notes_ranking_scores: dict[str, dict[NoteId, float]],
-                                     notes_new_card: dict[NoteId, Note], reorder_scope_note_ids: set[NoteId]) -> dict[str, str]:
-
+                                      notes_new_card: dict[NoteId, Note], reorder_scope_note_ids: set[NoteId]) -> dict[str, str]:
 
         note_data: dict[str, str] = {}
 

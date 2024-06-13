@@ -534,7 +534,7 @@ class CardRanker:
             focus_words_per_field: list[str] = []
             for field_index, focus_words in enumerate(note_metrics.focus_words):
                 if focus_words:
-                    focus_words_str = '<span data-field-index="'+str(field_index)+'">'+", ".join([word for word in focus_words.keys()])+'</span>'
+                    focus_words_str = '<span data-field-index="'+str(field_index)+'">'+", ".join(focus_words.keys())+'</span>'
                     focus_words_per_field.append(focus_words_str)
             if focus_words_per_field:
                 words_lists = ' <span class="separator">/</span> '.join(focus_words_per_field)
@@ -597,7 +597,7 @@ class CardRanker:
             note_data['fm_debug_info'] = 'Target '+self.target_name+'<br />'
             for info_name, info_val in debug_info.items():
                 if info_val:
-                    fields_info = " | ".join([str(field_info) for field_info in info_val]).strip("| ")
+                    fields_info = " | ".join(str(field_info) for field_info in info_val).strip("| ")
                     note_data['fm_debug_info'] += info_name+": " + fields_info+"<br />\n"
 
         # set fm_debug_ranking_info

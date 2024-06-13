@@ -32,9 +32,9 @@ class ConfiguredTarget:
             decks.append(defined_deck)
 
         if defined_decks is not None and isinstance(defined_decks, list) and len(defined_decks) > 0:
-            decks.extend([deck_name for deck_name in defined_decks if isinstance(deck_name, str) and len(deck_name) > 0])
+            decks.extend(deck_name for deck_name in defined_decks if isinstance(deck_name, str) and len(deck_name) > 0)
         if defined_decks is not None and isinstance(defined_decks, str) and len(defined_decks) > 0:
-            decks.extend([deck_name.replace('\\,', ',').strip() for deck_name in re.split(r'(?<!\\),', defined_decks) if isinstance(deck_name, str)])
+            decks.extend(deck_name.replace('\\,', ',').strip() for deck_name in re.split(r'(?<!\\),', defined_decks) if isinstance(deck_name, str))
 
         return decks
 

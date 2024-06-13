@@ -370,7 +370,9 @@ class TargetList:
                     update_notes_anki_op_changes.append(op_changes)
 
         # Done
-        event_logger.add_entry("Done with reordering of all targets! {:n} cards repositioned.".format(num_cards_repositioned))
+        event_logger.add_entry("Done with reordering of all targets!")
+        event_logger.add_entry("{:n} cards repositioned in {:.2f} seconds.".format(num_cards_repositioned, event_logger.getElapsedTime()))
+
         return TargetListReorderResult(
             num_cards_repositioned=num_cards_repositioned,
             num_targets_repositioned=num_targets_repositioned,

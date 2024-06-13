@@ -17,6 +17,7 @@ class EventLogger:
         self.event_log: list[str] = []
         self.event_log_listeners: list[Callable[[str], None]] = []
         self.timed_entries_open: int = 0
+        self.time_started: Optional[float] = None
 
     def addEventLogListener(self, listener: Callable[[str], None]) -> None:
         self.event_log_listeners.append(listener)
@@ -27,9 +28,16 @@ class EventLogger:
             self.event_log.append(("  "*self.timed_entries_open)+" "+log_msg)
         else:
             self.event_log.append(log_msg)
+        if self.time_started is None:
+            self.time_started = time.time()
         for listener in self.event_log_listeners:
             listener(log_msg)
         return index
+
+    def getElapsedTime(self) -> float:
+        if self.time_started is None:
+            return 0.0
+        return time.time() - self.time_started
 
     @contextmanager
     def add_benchmarked_entry(self, log_msg: str) -> Generator[None, None, None]:

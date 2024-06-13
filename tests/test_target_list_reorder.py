@@ -375,6 +375,50 @@ class TestTargetListReorder():
         # check order
         assert_locked_order(result.reorder_result_list[0].sorted_cards_ids)
 
+    def test_two_deck_collection_no_cards(self):
+
+        col, language_data, _ = TestCollections.get_test_collection('two_deck_collection')
+
+        # remove all notes
+        col.remove_notes(list(col.find_notes('*')))
+
+        target_list = TargetList(language_data, col)
+
+        target_list.set_targets([
+            {
+                'decks': 'decka, deckb',
+                'notes': [{
+                    "name": "Basic",
+                    "fields": {
+                        "Front": "EN",
+                        "Back": "EN"
+                    },
+                }],
+                'reorder_scope_query': 'deck:decka'
+            }
+        ])
+
+        # reorder cards
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+
+        # check result
+
+        reorder_result = result.reorder_result_list[0]
+        assert not (reorder_result.success and reorder_result.cards_repositioned)
+        assert reorder_result.error is not None
+
+        assert "no new cards" in str(event_logger)
+        assert "0 cards repositioned" in str(event_logger)
+
+        assert result.reorder_result_list[0].num_cards_repositioned == 0
+        assert result.num_cards_repositioned == 0
+
+        assert len(target_list[0].get_cards().all_cards_ids) == 0
+        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 0
+        assert len(target_list[0].get_cards().new_cards_ids) == 0
+        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 0
+
     def test_two_deck_collection_corpus_segmentation_by_note_field(self):
 
         col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')

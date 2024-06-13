@@ -40,27 +40,24 @@ class NoteFieldContentData:
 
 @dataclass
 class SegmentContentMetrics:
+
     focus_words_max_familiarity: float
     familiarity_sweetspot_point: Union[float, str]
+    target_cards: TargetCards
+    language_data: LanguageData
+    cards_familiarity_factor: dict[CardId, float]
 
-    targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]] = field(default_factory=dict)
-    targeted_reviewed_fields_per_note: dict[NoteId, list[NoteFieldContentData]] = field(default_factory=dict)
-
-    reviewed_words: dict[WordToken, list[TargetCard]] = field(default_factory=dict)
-    reviewed_words_presence: dict[WordToken, list[float]] = field(default_factory=dict)  # list because a word can occur multiple times in a field
-    reviewed_words_cards_familiarity_factor: dict[WordToken, list[float]] = field(default_factory=dict)
-
-    word_frequency: dict[WordToken, float] = field(default_factory=dict)
+    targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]] = field(default_factory=lambda: defaultdict(list))
 
     @cached_property
-    def words_post_focus(self) -> list[WordToken]:
+    def words_post_focus(self) -> set[WordToken]:
 
-        words_post_focus: list[WordToken] = []
+        words_post_focus: set[WordToken] = set()
 
         for word_token, word_familiarity in self.words_familiarity.items():
 
             if word_familiarity > self.focus_words_max_familiarity:
-                words_post_focus.append(word_token)
+                words_post_focus.add(word_token)
 
         return words_post_focus
 
@@ -124,6 +121,7 @@ class SegmentContentMetrics:
 
         for word_token, word_presence_scores in self.reviewed_words_presence.items():
             cards_familiarity_factor = self.reviewed_words_cards_familiarity_factor[word_token]
+            assert len(word_presence_scores) == len(cards_familiarity_factor)
             word_familiarity = fsum((card_familiarity_factor * word_presence) for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor))
             words_familiarity[word_token] = word_familiarity
 
@@ -149,12 +147,90 @@ class SegmentContentMetrics:
 
         return normalize_positional_dict_floats_values(self.words_familiarity)
 
+    @cached_property
+    def reviewed_words_presence(self) -> dict[WordToken, list[float]]:
+
+        reviewed_words_presence = {}
+
+        for card in self.target_cards.reviewed_cards:
+
+            for field_data in self.targeted_fields_per_note[card.nid]:
+
+                for index, word_token in enumerate(field_data.field_value_tokenized):
+
+                    if word_token not in reviewed_words_presence:
+                        reviewed_words_presence[word_token] = []
+
+                    word_presence_score = TextProcessing.calc_word_presence_score(word_token, field_data.field_value_tokenized, index)
+                    reviewed_words_presence[word_token].append(word_presence_score)
+
+        return reviewed_words_presence
+
+    @cached_property
+    def reviewed_words_cards_familiarity_factor(self) -> dict[WordToken, list[float]]:
+
+        reviewed_words_cards_familiarity_factor:dict[WordToken, list[float]] = {}
+
+        for card in self.target_cards.reviewed_cards:
+
+            for field_data in self.targeted_fields_per_note[card.nid]:
+
+                for word_token in field_data.field_value_tokenized:
+
+                    if word_token not in reviewed_words_cards_familiarity_factor:
+                        reviewed_words_cards_familiarity_factor[word_token] = []
+
+                    reviewed_words_cards_familiarity_factor[word_token].append(self.cards_familiarity_factor[card.id])
+
+        return reviewed_words_cards_familiarity_factor
+
+    @cached_property
+    def reviewed_words(self) -> dict[WordToken, list[TargetCard]]:
+
+        reviewed_words:dict[WordToken, list[TargetCard]] = {}
+
+        for card in self.target_cards.reviewed_cards:
+
+            for field_data in self.targeted_fields_per_note[card.nid]:
+
+                for word_token in field_data.field_value_tokenized:
+                    if word_token not in reviewed_words:
+                        reviewed_words[word_token] = []
+                    reviewed_words[word_token].append(card)
+
+        return reviewed_words
+
+
+    @cached_property
+    def word_frequency(self) -> dict[WordToken, float]:
+
+        new_word_frequency: dict[WordToken, float] = {}
+
+        for note_id in self.targeted_fields_per_note.keys():
+
+            for field_data in self.targeted_fields_per_note[note_id]:
+
+                lang_data_id = field_data.target_language_data_id
+
+                for word_token in field_data.field_value_tokenized:
+                    word_frequency = self.language_data.get_word_frequency(lang_data_id, word_token, 0)
+                    if word_frequency > 0:
+                        new_word_frequency[word_token] = word_frequency
+
+
+        new_word_frequency = sort_dict_floats_values(new_word_frequency)
+        new_word_frequency = normalize_positional_dict_floats_values(new_word_frequency)
+        return new_word_frequency
+
+
+
 
 class TargetCorpusData:
     """
     Class representing corpus data from target cards.
     """
 
+    targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]] = field(default_factory=lambda: defaultdict(list))
     target_cards: TargetCards
     content_metrics: dict[CorpusSegmentId, SegmentContentMetrics]
     focus_words_max_familiarity: float
@@ -179,10 +255,11 @@ class TargetCorpusData:
         Create corpus data for the given target and its cards.
         """
 
-        self.content_metrics = defaultdict(lambda: SegmentContentMetrics(self.focus_words_max_familiarity, self.familiarity_sweetspot_point))
-
         if len(target_cards) == 0:
             return
+
+        cards_familiarity_factor = self.__get_cards_familiarity_factor(target_cards.reviewed_cards, self.suspended_card_value, self.suspended_leech_card_value)
+        self.content_metrics = defaultdict(lambda: SegmentContentMetrics(self.focus_words_max_familiarity, self.familiarity_sweetspot_point, target_cards, language_data, cards_familiarity_factor))
 
         if len(self.content_metrics) > 0:
             raise Exception("Data already created by TargetCorpusData.")
@@ -190,9 +267,6 @@ class TargetCorpusData:
         self.target_cards = target_cards
 
         self.__set_targeted_fields_data(target_fields_per_note_type)
-        self.__set_word_frequency(language_data)
-        self.__set_notes_reviewed_words()
-        self.__set_notes_reviewed_words_presence()
 
     def __set_targeted_fields_data(self, target_fields_per_note_type: dict[str, dict[str, LangDataId]]):
 
@@ -208,6 +282,7 @@ class TargetCorpusData:
             target_note_fields = target_fields_per_note_type[note_type['name']]
 
             card_note_fields_in_target: list[NoteFieldContentData] = []
+
             for field_name, field_val in note.items():
                 if field_name in target_note_fields.keys():
 
@@ -225,37 +300,24 @@ class TargetCorpusData:
 
                     self.data_segments.add(corpus_segment_id)
 
+                    corpus_segment_id = CorpusSegmentId(corpus_segment_id)
+
                     plain_text = TextProcessing.get_plain_text(field_val)
                     field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
 
-                    card_note_fields_in_target.append(NoteFieldContentData(
-                        corpus_segment_id=CorpusSegmentId(corpus_segment_id),
+                    content_data = NoteFieldContentData(
+                        corpus_segment_id=corpus_segment_id,
                         field_name=field_name,
                         field_value_tokenized=field_value_tokenized,
                         target_language_data_id=lang_data_id,
                         target_language_id=lang_id
-                    ))
+                    )
+
+                    card_note_fields_in_target.append(content_data)
+
+                    self.content_metrics[corpus_segment_id].targeted_fields_per_note[note.id].append(content_data)
 
             self.targeted_fields_per_note[note.id] = card_note_fields_in_target
-
-    def __set_word_frequency(self, language_data: LanguageData):
-
-        for note_id in self.target_cards.all_cards_notes_ids:
-
-            for field_data in self.targeted_fields_per_note[note_id]:
-
-                corpus_segment_id = field_data.corpus_segment_id
-                lang_data_id = field_data.target_language_data_id
-
-                for word_token in field_data.field_value_tokenized:
-                    word_frequency = language_data.get_word_frequency(lang_data_id, word_token, 0)
-                    if word_frequency > 0:
-                        self.content_metrics[corpus_segment_id].word_frequency[word_token] = word_frequency
-
-        for corpus_segment_id in self.content_metrics.keys():
-            if self.content_metrics[corpus_segment_id].word_frequency:
-                self.content_metrics[corpus_segment_id].word_frequency = sort_dict_floats_values(self.content_metrics[corpus_segment_id].word_frequency)
-                self.content_metrics[corpus_segment_id].word_frequency = normalize_positional_dict_floats_values(self.content_metrics[corpus_segment_id].word_frequency)
 
     @staticmethod
     def __get_cards_familiarity_score(cards: Sequence[TargetCard]) -> dict[CardId, float]:
@@ -322,36 +384,3 @@ class TargetCorpusData:
                 cards_familiarity_value[card_id] = cards_familiarity_value[card_id]/devalue_factor
 
         return cards_familiarity_value
-
-    def __set_notes_reviewed_words(self) -> None:
-
-        for card in self.target_cards.reviewed_cards:
-
-            for field_data in self.targeted_fields_per_note[card.nid]:
-
-                corpus_segment_id = field_data.corpus_segment_id
-
-                for word_token in field_data.field_value_tokenized:
-                    if word_token not in self.content_metrics[corpus_segment_id].reviewed_words:
-                        self.content_metrics[corpus_segment_id].reviewed_words[word_token] = []
-                    self.content_metrics[corpus_segment_id].reviewed_words[word_token].append(card)
-
-    def __set_notes_reviewed_words_presence(self) -> None:
-
-        cards_familiarity_factor = self.__get_cards_familiarity_factor(self.target_cards.reviewed_cards, self.suspended_card_value, self.suspended_leech_card_value)
-
-        for card in self.target_cards.reviewed_cards:
-
-            for field_data in self.targeted_fields_per_note[card.nid]:
-
-                corpus_segment_id = field_data.corpus_segment_id
-
-                for index, word_token in enumerate(field_data.field_value_tokenized):
-
-                    if word_token not in self.content_metrics[corpus_segment_id].reviewed_words_presence:
-                        self.content_metrics[corpus_segment_id].reviewed_words_presence[word_token] = []
-                        self.content_metrics[corpus_segment_id].reviewed_words_cards_familiarity_factor[word_token] = []
-
-                    word_presence_score = TextProcessing.calc_word_presence_score(word_token, field_data.field_value_tokenized, index)
-                    self.content_metrics[corpus_segment_id].reviewed_words_presence[word_token].append(word_presence_score)
-                    self.content_metrics[corpus_segment_id].reviewed_words_cards_familiarity_factor[word_token].append(cards_familiarity_factor[card.id])

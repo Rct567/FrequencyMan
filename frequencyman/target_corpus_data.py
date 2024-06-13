@@ -239,6 +239,7 @@ class TargetCorpusData:
     suspended_leech_card_value: float
     segmentation_strategy: CorpusSegmentationStrategy
     data_segments: set[str]
+    fields_tokenized_cache: dict[str, list[WordToken]] = {}
 
     def __init__(self):
 
@@ -300,10 +301,16 @@ class TargetCorpusData:
 
                     self.data_segments.add(corpus_segment_id)
 
-                    corpus_segment_id = CorpusSegmentId(corpus_segment_id)
+                    cache_key = corpus_segment_id+field_val
 
-                    plain_text = TextProcessing.get_plain_text(field_val)
-                    field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
+                    if cache_key not in self.fields_tokenized_cache:
+                        plain_text = TextProcessing.get_plain_text(field_val)
+                        field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
+                        self.fields_tokenized_cache[cache_key] = field_value_tokenized
+
+                    field_value_tokenized = self.fields_tokenized_cache[cache_key]
+
+                    corpus_segment_id = CorpusSegmentId(corpus_segment_id)
 
                     content_data = NoteFieldContentData(
                         corpus_segment_id=corpus_segment_id,

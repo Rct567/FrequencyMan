@@ -3,15 +3,15 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-import os
 import re
 import html
-from typing import NewType, Optional
+from typing import Callable, NewType, Optional
 
 from .tokenizers import Tokenizers, load_user_provided_tokenizers, Tokenizer, LangId
 
 
 WordToken = NewType('WordToken', str)
+
 
 class TextProcessing:
 
@@ -25,7 +25,7 @@ class TextProcessing:
     user_provided_tokenizers: Optional[Tokenizers] = None
 
     @staticmethod
-    def acceptable_word(word: str, lang_id: Optional[LangId] = None) -> bool:
+    def get_word_accepter(lang_id: Optional[LangId]) -> Callable[[str], bool]:
 
         min_length = 1
         if lang_id == 'zh':
@@ -42,12 +42,16 @@ class TextProcessing:
             word_pattern = TextProcessing.DEFAULT_PATTERN
             min_length = 2
 
-        stripped_word = word.strip("!@#$%^&*()_-=+{}:\"<>?,./;' ")
-        stripped_word_len = len(stripped_word)
-        if stripped_word_len < min_length or stripped_word_len > 300:
-            return False
+        def is_acceptable_word_for_lang(word: str) -> bool:
 
-        return re.search(word_pattern, stripped_word) is not None
+            stripped_word = word.strip("!@#$%^&*()_-=+{}:\"<>?,./;' ")
+            stripped_word_len = len(stripped_word)
+            if stripped_word_len < min_length or stripped_word_len > 300:
+                return False
+
+            return re.search(word_pattern, stripped_word) is not None
+
+        return is_acceptable_word_for_lang
 
     @staticmethod
     def get_plain_text(val: str) -> str:
@@ -73,11 +77,10 @@ class TextProcessing:
         text = str(text+" ").replace(". ", " ")
         return re.split(r"[^\w\-\_\'\’\.]{1,}", text)
 
-
     @staticmethod
     def default_tokenizer_removing_possessives(text: str) -> list[str]:
 
-        tokens =  TextProcessing.default_tokenizer(text)
+        tokens = TextProcessing.default_tokenizer(text)
 
         for i, token in enumerate(tokens):
             if len(token) <= 3:
@@ -110,9 +113,10 @@ class TextProcessing:
 
         return TextProcessing.default_tokenizer
 
-
     @staticmethod
     def get_word_tokens_from_text(text: str, lang_id: LangId, tokenizer: Optional[Tokenizer] = None) -> list[WordToken]:
+
+        is_acceptable_word = TextProcessing.get_word_accepter(lang_id)
 
         if tokenizer is None:
             tokenizer = TextProcessing.get_tokenizer(lang_id)
@@ -122,7 +126,7 @@ class TextProcessing:
                 raise ValueError("Tokenizer '{}' is not a valid tokenizer for language {}!".format(tokenizer.__name__, lang_id))
 
         word_tokens = (TextProcessing.create_word_token(token, lang_id) for token in tokenizer(text))
-        accepted_word_tokens = [token for token in word_tokens if TextProcessing.acceptable_word(token, lang_id)]
+        accepted_word_tokens = [token for token in word_tokens if is_acceptable_word(token)]
         return accepted_word_tokens
 
     @staticmethod

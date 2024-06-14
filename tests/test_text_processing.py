@@ -5,20 +5,24 @@ USER_PROVIDED_TOKENIZERS = TextProcessing.get_user_provided_tokenizers()
 
 def test_acceptable_word():
 
-    assert TextProcessing.acceptable_word("app-le") == True
-    assert TextProcessing.acceptable_word("app---le") == True
-    assert TextProcessing.acceptable_word("won't") == True
-    assert TextProcessing.acceptable_word("iñtërnâtiônàlizætiøn") == True
-    assert TextProcessing.acceptable_word("你", LangId("zh")) == True
+    is_acceptable_word = TextProcessing.get_word_accepter(None)
+    is_acceptable_word_zh = TextProcessing.get_word_accepter(LangId("zh"))
 
-    assert TextProcessing.acceptable_word("s") == False
-    assert TextProcessing.acceptable_word("s ") == False
-    assert TextProcessing.acceptable_word("s!!!") == False
-    assert TextProcessing.acceptable_word("_s_") == False
-    assert TextProcessing.acceptable_word("1234") == False
-    assert TextProcessing.acceptable_word("1.123") == False
-    assert TextProcessing.acceptable_word("$$$$$$$") == False
-    assert TextProcessing.acceptable_word("___") == False
+    assert is_acceptable_word("app-le") == True
+    assert is_acceptable_word("app---le") == True
+    assert is_acceptable_word("won't") == True
+    assert is_acceptable_word("iñtërnâtiônàlizætiøn") == True
+
+    assert is_acceptable_word("s") == False
+    assert is_acceptable_word("s ") == False
+    assert is_acceptable_word("s!!!") == False
+    assert is_acceptable_word("_s_") == False
+    assert is_acceptable_word("1234") == False
+    assert is_acceptable_word("1.123") == False
+    assert is_acceptable_word("$$$$$$$") == False
+    assert is_acceptable_word("___") == False
+
+    assert is_acceptable_word_zh("你") == True
 
 
 def test_get_plain_text():

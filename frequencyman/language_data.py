@@ -86,6 +86,7 @@ class WordFrequencyLists:
         line_number = 1
         is_csv_file = file_path.endswith('.csv')
         csv_patters = re.compile(r'(?:^|,)(?=[^"]|(")?)"?([^",]*)"?(")?,(?:.|$)')
+        is_acceptable_word = TextProcessing.get_word_accepter(lang_id)
 
         with open(file_path, encoding='utf-8') as text_file:
             for line in text_file:
@@ -106,7 +107,7 @@ class WordFrequencyLists:
                         word = line
 
                 word = word.strip().lower()
-                if TextProcessing.acceptable_word(word, lang_id):
+                if is_acceptable_word(word):
                     yield word, line_number
                     line_number += 1
 

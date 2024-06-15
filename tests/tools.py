@@ -1,7 +1,7 @@
 import inspect
 import os
 import shutil
-from typing import Sequence
+from typing import Callable, Sequence, Tuple
 
 from frequencyman.language_data import LangDataId, LanguageData
 
@@ -10,6 +10,7 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
+from frequencyman.lib.cacher import Cacher
 from frequencyman.lib.utilities import var_dump_log
 
 
@@ -28,7 +29,7 @@ class TestCollections:
     TEST_COLLECTIONS_DIR = os.path.join(TEST_DATA_DIR, 'collections')
 
     @staticmethod
-    def get_test_collection(test_collection_name: str):
+    def get_test_collection(test_collection_name: str) -> Tuple[Collection, LanguageData, Cacher, Callable[[Sequence[CardId]], None]]:
 
         caller_frame = inspect.stack()[1]
         caller_fn_name = caller_frame.function
@@ -42,6 +43,7 @@ class TestCollections:
         lang_data_dir = os.path.join(collection_dir, 'lang_data')
 
         lang_data = LanguageData(lang_data_dir)
+        cacher = Cacher(os.path.join(TestCollections.TEST_DATA_DIR, 'cacher_data.sqlite'))
 
         # create temporary collection
         collection_src_path = os.path.join(collection_dir, test_collection_name+".anki2")
@@ -63,4 +65,4 @@ class TestCollections:
                 print("WARNING: Order file '{}' for '{}' didn't exist yet!".format(order_file_path, test_collection_name))
 
         # return result
-        return Collection(temp_collection_path), lang_data, assert_locked_order
+        return Collection(temp_collection_path), lang_data, cacher, assert_locked_order

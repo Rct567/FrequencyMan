@@ -17,10 +17,9 @@ class TestTargetListReorder():
 
     def test_reorder_cards_big_collection_es(self):
 
+        col, lang_data, cacher, assert_locked_order = TestCollections.get_test_collection('big_collection_es')
 
-        col, lang_data, assert_locked_order = TestCollections.get_test_collection('big_collection_es')
-
-        target_list = TargetList(lang_data, col)
+        target_list = TargetList(lang_data, cacher, col)
 
         target_list.set_targets([
             {
@@ -87,9 +86,9 @@ class TestTargetListReorder():
 
     def test_reorder_cards_big_collection_es_with_reorder_scope(self):
 
-        col, lang_data, assert_locked_order = TestCollections.get_test_collection('big_collection_es')
+        col, lang_data, cacher, assert_locked_order = TestCollections.get_test_collection('big_collection_es')
 
-        target_list = TargetList(lang_data, col)
+        target_list = TargetList(lang_data, cacher, col)
 
         target_list.set_targets([
             {
@@ -144,9 +143,9 @@ class TestTargetListReorder():
 
     def test_two_deck_collection(self):
 
-        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
-        target_list = TargetList(language_data, col)
+        target_list = TargetList(language_data, cacher, col)
 
         target_list.set_targets([
             {
@@ -211,9 +210,9 @@ class TestTargetListReorder():
 
     def test_two_deck_collection_with_ignore_list(self):
 
-        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
-        target_list = TargetList(language_data, col)
+        target_list = TargetList(language_data, cacher, col)
 
         target_list.set_targets([
             {
@@ -252,9 +251,9 @@ class TestTargetListReorder():
 
     def test_two_deck_collection_with_reorder_scope(self):
 
-        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
-        target_list = TargetList(language_data, col)
+        target_list = TargetList(language_data, cacher, col)
 
         target_list.set_targets([
             {
@@ -325,13 +324,13 @@ class TestTargetListReorder():
 
     def test_two_deck_collection_no_reviewed_cards(self):
 
-        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
         # reset all cards
         all_card_ids = col.find_cards('*')
         col.sched.reset_cards(list(all_card_ids))
 
-        target_list = TargetList(language_data, col)
+        target_list = TargetList(language_data, cacher, col)
 
         target_list.set_targets([
             {
@@ -377,12 +376,12 @@ class TestTargetListReorder():
 
     def test_two_deck_collection_no_cards(self):
 
-        col, language_data, _ = TestCollections.get_test_collection('two_deck_collection')
+        col, language_data, cacher, _ = TestCollections.get_test_collection('two_deck_collection')
 
         # remove all notes
         col.remove_notes(list(col.find_notes('*')))
 
-        target_list = TargetList(language_data, col)
+        target_list = TargetList(language_data, cacher, col)
 
         target_list.set_targets([
             {
@@ -421,9 +420,9 @@ class TestTargetListReorder():
 
     def test_two_deck_collection_corpus_segmentation_by_note_field(self):
 
-        col, language_data, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
 
-        target_list = TargetList(language_data, col)
+        target_list = TargetList(language_data, cacher, col)
 
         target_list.set_targets([
             {

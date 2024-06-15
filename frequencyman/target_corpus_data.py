@@ -14,6 +14,7 @@ from enum import Enum
 from anki.cards import CardId, Card
 from anki.notes import NoteId
 
+from .lib.cacher import Cacher
 from .target_cards import TargetCard, TargetCards
 from .language_data import LangId, LangDataId, LanguageData
 from .lib.utilities import *
@@ -150,7 +151,7 @@ class SegmentContentMetrics:
     @cached_property
     def reviewed_words_presence(self) -> dict[WordToken, list[float]]:
 
-        reviewed_words_presence = {}
+        reviewed_words_presence: dict[WordToken, list[float]] = {}
 
         for card in self.target_cards.reviewed_cards:
 
@@ -169,7 +170,7 @@ class SegmentContentMetrics:
     @cached_property
     def reviewed_words_cards_familiarity_factor(self) -> dict[WordToken, list[float]]:
 
-        reviewed_words_cards_familiarity_factor:dict[WordToken, list[float]] = {}
+        reviewed_words_cards_familiarity_factor: dict[WordToken, list[float]] = {}
 
         for card in self.target_cards.reviewed_cards:
 
@@ -187,7 +188,7 @@ class SegmentContentMetrics:
     @cached_property
     def reviewed_words(self) -> dict[WordToken, list[TargetCard]]:
 
-        reviewed_words:dict[WordToken, list[TargetCard]] = {}
+        reviewed_words: dict[WordToken, list[TargetCard]] = {}
 
         for card in self.target_cards.reviewed_cards:
 
@@ -199,7 +200,6 @@ class SegmentContentMetrics:
                     reviewed_words[word_token].append(card)
 
         return reviewed_words
-
 
     @cached_property
     def word_frequency(self) -> dict[WordToken, float]:
@@ -217,12 +217,9 @@ class SegmentContentMetrics:
                     if word_frequency > 0:
                         new_word_frequency[word_token] = word_frequency
 
-
         new_word_frequency = sort_dict_floats_values(new_word_frequency)
         new_word_frequency = normalize_positional_dict_floats_values(new_word_frequency)
         return new_word_frequency
-
-
 
 
 class TargetCorpusData:
@@ -239,7 +236,8 @@ class TargetCorpusData:
     suspended_leech_card_value: float
     segmentation_strategy: CorpusSegmentationStrategy
     data_segments: set[str]
-    fields_tokenized_cache: dict[str, list[WordToken]] = {}
+    language_data: LanguageData
+    cacher: Cacher
 
     def __init__(self):
 
@@ -251,7 +249,7 @@ class TargetCorpusData:
         self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
         self.data_segments = set()
 
-    def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData) -> None:
+    def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData, cacher: Cacher) -> None:
         """
         Create corpus data for the given target and its cards.
         """
@@ -266,10 +264,13 @@ class TargetCorpusData:
             raise Exception("Data already created by TargetCorpusData.")
 
         self.target_cards = target_cards
+        self.cacher = cacher
 
         self.__set_targeted_fields_data(target_fields_per_note_type)
 
     def __set_targeted_fields_data(self, target_fields_per_note_type: dict[str, dict[str, LangDataId]]):
+
+        self.cacher.pre_load_all_items()
 
         for note in self.target_cards.get_notes_from_all_cards().values():
 
@@ -301,14 +302,8 @@ class TargetCorpusData:
 
                     self.data_segments.add(corpus_segment_id)
 
-                    cache_key = corpus_segment_id+field_val
-
-                    if cache_key not in self.fields_tokenized_cache:
-                        plain_text = TextProcessing.get_plain_text(field_val)
-                        field_value_tokenized = TextProcessing.get_word_tokens_from_text(plain_text, lang_id)
-                        self.fields_tokenized_cache[cache_key] = field_value_tokenized
-
-                    field_value_tokenized = self.fields_tokenized_cache[cache_key]
+                    cache_key = str(lang_id)+field_val
+                    field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(field_val), lang_id))
 
                     corpus_segment_id = CorpusSegmentId(corpus_segment_id)
 

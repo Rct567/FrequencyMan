@@ -1,4 +1,3 @@
-from operator import index
 from ..frequencyman.configured_target import ValidConfiguredTarget
 from frequencyman.target import Target
 from frequencyman.target_list import JsonTargetsResult, JsonTargetsValidity, TargetList, TargetListReorderResult
@@ -15,7 +14,7 @@ class TestTargetList:
 
     def test_get_targets_from_json_valid_json(self):
 
-        col, lang_data, _ = TestCollections.get_test_collection('big_collection_es')
+        col, lang_data, _, _ = TestCollections.get_test_collection('big_collection_es')
 
         targets = TargetList.get_targets_from_json("""[
             {
@@ -54,7 +53,7 @@ class TestTargetList:
 
     def test_get_targets_from_json_invalid_json(self):
 
-        col, lang_data, _ = TestCollections.get_test_collection('big_collection_es')
+        col, lang_data, _, _ = TestCollections.get_test_collection('big_collection_es')
 
         invalid_targets_data: list[str] = [
             "X",
@@ -70,7 +69,7 @@ class TestTargetList:
 
     def test_get_targets_from_json_invalid_targets(self):
 
-        col, lang_data, _ = TestCollections.get_test_collection('big_collection_es')
+        col, lang_data, _, _ = TestCollections.get_test_collection('big_collection_es')
 
         invalid_targets_data: dict[str, str] = {
             '': '',

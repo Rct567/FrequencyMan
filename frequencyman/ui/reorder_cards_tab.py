@@ -28,7 +28,7 @@ from ..lib.utilities import var_dump, var_dump_log, override
 
 from ..language_data import LanguageData
 from ..target import ValidConfiguredTarget
-from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult
+from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult, Cacher
 
 
 class TargetsDefiningTextArea(QTextEdit):
@@ -168,9 +168,10 @@ class ReorderCardsTab(FrequencyManTab):
             os.makedirs(lang_data_dir)
 
         self.language_data = LanguageData(lang_data_dir)
+        cacher = Cacher(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite'))
 
         # target data (list of targets for reordering)
-        self.target_list = TargetList(self.language_data, self.col)
+        self.target_list = TargetList(self.language_data, cacher, self.col)
 
         # textarea (user can input json to define targets)
         self.targets_input_textarea = self.__create_targets_input_textarea()

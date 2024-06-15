@@ -9,6 +9,7 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
+from .lib.cacher import Cacher
 from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
 from .text_processing import TextProcessing
 from .lib.utilities import get_float, profile_context, var_dump_log, override
@@ -73,12 +74,14 @@ class Target:
 
     cache_data: Optional[ReorderCacheData]
 
-    def __init__(self, target: ValidConfiguredTarget, index_num: int, col: Collection) -> None:
+    def __init__(self, target: ValidConfiguredTarget, index_num: int, col: Collection, language_data: LanguageData, cacher: Cacher) -> None:
 
         self.config_target = target
         self.index_num = index_num
         self.target_corpus_data = None
         self.col = col
+        self.language_data = language_data
+        self.cacher = cacher
 
         self.main_scope_query = self.config_target.construct_main_scope_query()
         self.reorder_scope_query = self.config_target.get_reorder_scope_query()
@@ -111,7 +114,7 @@ class Target:
 
         return target_cards
 
-    def get_corpus_data(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
+    def get_corpus_data(self, target_cards: TargetCards) -> TargetCorpusData:
 
         if not self.target_corpus_data is None:
             return self.target_corpus_data
@@ -146,14 +149,14 @@ class Target:
                 self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME
 
         # create corpus data
-        self.target_corpus_data.create_data(target_cards, self.config_target.get_config_fields_per_note_type(), language_data)
+        self.target_corpus_data.create_data(target_cards, self.config_target.get_config_fields_per_note_type(), self.language_data, self.cacher)
 
         # done
         return self.target_corpus_data
 
-    def __get_corpus_data_cached(self, target_cards: TargetCards, language_data: LanguageData) -> TargetCorpusData:
+    def __get_corpus_data_cached(self, target_cards: TargetCards) -> TargetCorpusData:
 
-        cache_key = (str(target_cards.all_cards_ids), str(self.config_target.get_config_fields_per_note_type()), self.col, language_data,
+        cache_key = (str(target_cards.all_cards_ids), str(self.config_target.get_config_fields_per_note_type()), self.col, self.language_data,
                      self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'),
                      self.config_target.get('suspended_leech_card_value'), self.config_target.get('corpus_segmentation_strategy'),
                      self.config_target.get('focus_words_max_familiarity'))
@@ -161,14 +164,14 @@ class Target:
         if self.cache_data and cache_key in self.cache_data['corpus']:
             return self.cache_data['corpus'][cache_key]
 
-        target_corpus_data = self.get_corpus_data(target_cards, language_data)
+        target_corpus_data = self.get_corpus_data(target_cards)
 
         if self.cache_data:
             self.cache_data['corpus'][cache_key] = target_corpus_data
 
         return target_corpus_data
 
-    def reorder_cards(self, repositioning_starting_from: int, language_data: LanguageData, event_logger: EventLogger,
+    def reorder_cards(self, repositioning_starting_from: int, event_logger: EventLogger,
                       modified_dirty_notes: dict[NoteId, Optional[Note]], schedule_cards_as_new: bool) -> TargetReorderResult:
 
         if self.cache_data is None:
@@ -181,16 +184,16 @@ class Target:
 
         # Check defined target lang keys and then load frequency lists for target
         for lang_data_id in self.config_target.get_language_data_ids():
-            if not language_data.id_has_directory(lang_data_id):
-                error_msg = "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, language_data.data_dir)
+            if not self.language_data.id_has_directory(lang_data_id):
+                error_msg = "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, self.language_data.data_dir)
                 event_logger.add_entry(error_msg)
                 return TargetReorderResult(success=False, error=error_msg)
 
         with event_logger.add_benchmarked_entry("Loading word frequency lists."):
-            language_data.load_data(self.config_target.get_language_data_ids())
+            self.language_data.load_data(self.config_target.get_language_data_ids())
 
             for lang_key in self.config_target.get_language_data_ids():
-                if not language_data.word_frequency_lists.id_has_list_file(lang_key):
+                if not self.language_data.word_frequency_lists.id_has_list_file(lang_key):
                     event_logger.add_entry("No word frequency list file found for language '{}'!".format(lang_key))
 
         # Get cards for target
@@ -206,14 +209,14 @@ class Target:
             event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.all_cards_ids)))
 
         # Get corpus data
-
-        for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.config_target.get_language_data_ids()]:
-            tokenizer = TextProcessing.get_tokenizer(lang_id)
-            if hasattr(tokenizer, "__name__") and "default_tokenizer" not in tokenizer.__name__:
-                event_logger.add_entry("Using tokenizer '{}' for '{}'.".format(tokenizer.__name__, lang_id.upper()))
+        if TextProcessing.user_provided_tokenizers is not None:
+            for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.config_target.get_language_data_ids()]:
+                tokenizer = TextProcessing.get_tokenizer(lang_id)
+                if hasattr(tokenizer, "__name__") and "default_tokenizer" not in tokenizer.__name__:
+                    event_logger.add_entry("Using tokenizer '{}' for '{}'.".format(tokenizer.__name__, lang_id.upper()))
 
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
-            target_corpus_data = self.__get_corpus_data_cached(target_cards, language_data)
+            target_corpus_data = self.__get_corpus_data_cached(target_cards)
 
         # If reorder scope is defined, use it for reordering
         reorder_scope_query = self.reorder_scope_query
@@ -240,7 +243,7 @@ class Target:
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
 
-            card_ranker = CardRanker(target_corpus_data, language_data, self.col, modified_dirty_notes)
+            card_ranker = CardRanker(target_corpus_data, self.language_data, self.col, modified_dirty_notes)
             card_ranker.target_name = '#'+str(self.index_num)
 
             # Use any custom ranking weights defined in target definition

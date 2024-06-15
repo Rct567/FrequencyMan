@@ -1,7 +1,8 @@
 import binascii
 import hashlib
+import json
+import os
 import sqlite3
-import pickle
 from typing import Any, Callable, Optional, TypeVar
 from time import time
 
@@ -9,12 +10,20 @@ T = TypeVar('T')
 
 
 class Cacher:
-    def __init__(self, db_path: str, save_buffer_limit: int = 10_000) -> None:
-        self._db_path = db_path
+    def __init__(self, db_file_path: str, save_buffer_limit: int = 10_000) -> None:
+
+        if not os.path.isdir(os.path.dirname(db_file_path)):
+            raise ValueError("Directory for db_file_path does not exist!")
+
+        if os.path.isdir(db_file_path):
+            raise ValueError("db_file_path is a directory!")
+
+        self._db_file_path = db_file_path
         self.__conn: Optional[sqlite3.Connection] = None
-        self._save_buffer: dict[str, tuple[Any, Optional[int]]] = {}
+        self._save_buffer: dict[str, tuple[str, int]] = {}
         self._save_buffer_num_limit = save_buffer_limit
         self._pre_loaded_cache: dict[str, Any] = {}
+        self._items_preloaded = False
 
     def _create_table(self) -> None:
         conn = self._get_connection()
@@ -30,7 +39,7 @@ class Cacher:
 
     def _get_connection(self) -> sqlite3.Connection:
         if self.__conn is None:
-            self.__conn = sqlite3.connect(self._db_path)
+            self.__conn = sqlite3.connect(self._db_file_path)
             self._create_table()
         return self.__conn
 
@@ -47,6 +56,8 @@ class Cacher:
         return binascii.hexlify(binary_data).decode('utf-8')
 
     def pre_load_all_items(self) -> None:
+        if self._items_preloaded:
+            return
 
         conn = self._get_connection()
         cursor = conn.cursor()
@@ -54,7 +65,8 @@ class Cacher:
         for row in cursor:
             hashed_cache_id = self.binary_to_hex(row[0])
             assert len(hashed_cache_id) == 32
-            self._pre_loaded_cache[hashed_cache_id] = pickle.loads(row[1])
+            self._pre_loaded_cache[hashed_cache_id] = json.loads(row[1])
+        self._items_preloaded = True
 
     def num_items_stored(self) -> int:
         if self._save_buffer:
@@ -75,7 +87,7 @@ class Cacher:
         row = cursor.fetchone()
 
         if row:
-            return pickle.loads(row[0])
+            return json.loads(row[0])
 
         result = producer()
         self.save_item(cache_id, result)
@@ -97,7 +109,7 @@ class Cacher:
     def _add_to_save_buffer(self, cache_id: str, value: Any) -> None:
 
         timestamp = int(time())
-        serialized_value = pickle.dumps(value)
+        serialized_value = json.dumps(value)
         self._save_buffer[cache_id] = (serialized_value, timestamp)
         if len(self._save_buffer) >= self._save_buffer_num_limit:
             self.flush_save_buffer()

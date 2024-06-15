@@ -12,11 +12,11 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
+from .lib.cacher import Cacher
 from .configured_target import ConfiguredTarget
-
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
-from .lib.utilities import batched, get_float, var_dump_log
+from .lib.utilities import batched, get_float, profile_context, var_dump_log
 from .target import ConfiguredTargetNote, ReorderCacheData, TargetReorderResult, Target, ValidConfiguredTarget, CardRanker
 from .language_data import LangDataId, LanguageData
 from .lib.event_logger import EventLogger
@@ -58,10 +58,11 @@ class TargetList:
     language_data: LanguageData
     col: Collection
 
-    def __init__(self, language_data: LanguageData, col: Collection) -> None:
+    def __init__(self, language_data: LanguageData, cacher: Cacher, col: Collection) -> None:
         self.target_list = []
         self.language_data = language_data
         self.col = col
+        self.cacher = cacher
 
     def __iter__(self) -> Iterator[Target]:
         return iter(self.target_list)
@@ -74,7 +75,7 @@ class TargetList:
 
     def set_valid_targets(self, valid_target_list: list[ValidConfiguredTarget]) -> None:
 
-        self.target_list = [Target(target, target_num, self.col) for target_num, target in enumerate(valid_target_list)]
+        self.target_list = [Target(target, target_num, self.col, self.language_data, self.cacher) for target_num, target in enumerate(valid_target_list)]
 
     def set_targets(self, target_list_data: list[JSON_TYPE]) -> None:
 
@@ -347,11 +348,13 @@ class TargetList:
         for target in self.target_list:
             target.cache_data = cache_data
             with event_logger.add_benchmarked_entry("Reordering target #{}.".format(target.index_num)):
-                reorder_result = target.reorder_cards(num_cards_repositioned, self.language_data, event_logger, modified_dirty_notes, schedule_cards_as_new)
+                reorder_result = target.reorder_cards(num_cards_repositioned, event_logger, modified_dirty_notes, schedule_cards_as_new)
                 reorder_result_list.append(reorder_result)
                 if reorder_result.cards_repositioned:
                     num_cards_repositioned += reorder_result.num_cards_repositioned
                     num_targets_repositioned += 1
+
+        self.cacher.close()
 
         if num_cards_repositioned == 0:
             event_logger.add_entry("Order of cards from targets was already up-to-date!")

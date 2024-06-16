@@ -1,7 +1,7 @@
 import inspect
 import os
 import shutil
-from typing import Callable, Sequence, Tuple
+from typing import Callable, Optional, Sequence, Tuple
 
 from frequencyman.language_data import LangDataId, LanguageData
 
@@ -27,6 +27,9 @@ class TestCollections:
 
     TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
     TEST_COLLECTIONS_DIR = os.path.join(TEST_DATA_DIR, 'collections')
+    CACHER_FILE_PATH = os.path.join(TEST_DATA_DIR, 'cacher_data.sqlite')
+    CACHER: Optional[Cacher] = None
+    cacher_data_cleared = False
 
     @staticmethod
     def get_test_collection(test_collection_name: str) -> Tuple[Collection, LanguageData, Cacher, Callable[[Sequence[CardId]], None]]:
@@ -38,12 +41,19 @@ class TestCollections:
         assert caller_class_name.startswith('Test')
         caller_full_name = "{}_{}".format(caller_class_name[4:], caller_fn_name[5:])
 
-
         collection_dir = os.path.join(TestCollections.TEST_COLLECTIONS_DIR, test_collection_name)
         lang_data_dir = os.path.join(collection_dir, 'lang_data')
 
         lang_data = LanguageData(lang_data_dir)
-        cacher = Cacher(os.path.join(TestCollections.TEST_DATA_DIR, 'cacher_data.sqlite'))
+
+        # cacher
+        if TestCollections.CACHER is None:
+            if not TestCollections.cacher_data_cleared and os.path.exists(TestCollections.CACHER_FILE_PATH):
+                os.remove(TestCollections.CACHER_FILE_PATH)
+                TestCollections.cacher_data_cleared = True
+            TestCollections.CACHER = Cacher(TestCollections.CACHER_FILE_PATH)
+        else:
+            TestCollections.CACHER.close()
 
         # create temporary collection
         collection_src_path = os.path.join(collection_dir, test_collection_name+".anki2")
@@ -65,4 +75,4 @@ class TestCollections:
                 print("WARNING: Order file '{}' for '{}' didn't exist yet!".format(order_file_path, test_collection_name))
 
         # return result
-        return Collection(temp_collection_path), lang_data, cacher, assert_locked_order
+        return Collection(temp_collection_path), lang_data, TestCollections.CACHER, assert_locked_order

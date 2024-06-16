@@ -302,8 +302,11 @@ class TargetCorpusData:
 
                     self.data_segments.add(corpus_segment_id)
 
-                    cache_key = str(lang_id)+field_val
-                    field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(field_val), lang_id))
+                    if field_val == "":
+                        field_value_tokenized = []
+                    else:
+                        cache_key = str(lang_id)+field_val
+                        field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(field_val), lang_id))
 
                     corpus_segment_id = CorpusSegmentId(corpus_segment_id)
 

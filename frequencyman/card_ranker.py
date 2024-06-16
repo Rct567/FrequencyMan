@@ -547,14 +547,14 @@ class CardRanker:
             debug_info: dict[str, list] = {
                 'fr_scores': [field_metrics.fr_score for field_metrics in note_metrics],
                 'ue_scores': [field_metrics.ue_score for field_metrics in note_metrics],
-                'most_obscure_word': [field_metrics.most_obscure_word[1] for field_metrics in note_metrics],
-                'highest_ue_word': [field_metrics.highest_ue_word[1] for field_metrics in note_metrics],
+                'most_obscure_word': [field_metrics.most_obscure_word for field_metrics in note_metrics],
+                'highest_ue_word': [field_metrics.highest_ue_word for field_metrics in note_metrics],
                 'ideal_focus_word_count': [field_metrics.ideal_focus_words_count_score for field_metrics in note_metrics],
                 'ideal_word_count': [field_metrics.ideal_words_count_score for field_metrics in note_metrics],
                 'familiarity_scores': [field_metrics.familiarity_score for field_metrics in note_metrics],
                 'familiarity_sweetspot_scores': [field_metrics.familiarity_sweetspot_score for field_metrics in note_metrics],
-                'lowest_fr_least_familiar_word': [field_metrics.lowest_fr_least_familiar_word[1] for field_metrics in note_metrics],
-                'lowest_fr_word': [field_metrics.lowest_fr_word[1] for field_metrics in note_metrics],
+                'lowest_fr_least_familiar_word': [field_metrics.lowest_fr_least_familiar_word for field_metrics in note_metrics],
+                'lowest_fr_word': [field_metrics.lowest_fr_word for field_metrics in note_metrics],
                 'ideal_new_words_count_scores': [field_metrics.ideal_new_words_count_score for field_metrics in note_metrics],
             }
             note_data['fm_debug_info'] = 'Target '+self.target_name+'<br />'

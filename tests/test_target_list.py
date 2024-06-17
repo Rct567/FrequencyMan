@@ -1,6 +1,4 @@
-from cgi import test
 from ..frequencyman.configured_target import ValidConfiguredTarget
-from frequencyman.target import Target
 from frequencyman.target_list import JsonTargetsResult, JsonTargetsValidity, TargetList, TargetListReorderResult
 from frequencyman.language_data import LangDataId, LanguageData
 

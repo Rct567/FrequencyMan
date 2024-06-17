@@ -81,7 +81,7 @@ class TestTargetListReorder():
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
 
         # check order
-        col.lock_and_assert_order('', target_result.sorted_cards_ids)
+        col.lock_and_assert_order('sorted_cards_ids', target_result.sorted_cards_ids)
 
     def test_reorder_cards_big_collection_es_with_reorder_scope(self):
 
@@ -138,7 +138,7 @@ class TestTargetListReorder():
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
 
         # check order
-        col.lock_and_assert_order('', target_result.sorted_cards_ids)
+        col.lock_and_assert_order('sorted_cards_ids', target_result.sorted_cards_ids)
 
     def test_two_deck_collection(self):
 
@@ -204,7 +204,9 @@ class TestTargetListReorder():
         assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 4
 
         # check order
-        col.lock_and_assert_order('', list(result.reorder_result_list[0].sorted_cards_ids)+list(result.reorder_result_list[1].sorted_cards_ids))
+        col.lock_and_assert_order('sorted_cards_ids_0', result.reorder_result_list[0].sorted_cards_ids)
+        col.lock_and_assert_order('sorted_cards_ids_1', result.reorder_result_list[1].sorted_cards_ids)
+
 
     def test_two_deck_collection_with_ignore_list(self):
 
@@ -245,7 +247,7 @@ class TestTargetListReorder():
         assert "11 cards repositioned" in str(event_logger)
 
         # check order
-        col.lock_and_assert_order('', result.reorder_result_list[0].sorted_cards_ids)
+        col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
     def test_two_deck_collection_with_reorder_scope(self):
 
@@ -318,7 +320,8 @@ class TestTargetListReorder():
         assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 11
 
         # check order
-        col.lock_and_assert_order('', list(result.reorder_result_list[0].sorted_cards_ids)+list(result.reorder_result_list[1].sorted_cards_ids))
+        col.lock_and_assert_order('sorted_cards_ids_0', result.reorder_result_list[0].sorted_cards_ids)
+        col.lock_and_assert_order('sorted_cards_ids_1', result.reorder_result_list[1].sorted_cards_ids)
 
     def test_two_deck_collection_no_reviewed_cards(self):
 
@@ -370,7 +373,7 @@ class TestTargetListReorder():
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 16
 
         # check order
-        col.lock_and_assert_order('', result.reorder_result_list[0].sorted_cards_ids)
+        col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
     def test_two_deck_collection_no_cards(self):
 
@@ -457,4 +460,4 @@ class TestTargetListReorder():
         assert result.num_cards_repositioned == 11
 
         # check order
-        col.lock_and_assert_order('', result.reorder_result_list[0].sorted_cards_ids)
+        col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)

@@ -14,7 +14,7 @@ from frequencyman.lib.cacher import Cacher
 from frequencyman.lib.utilities import var_dump_log
 
 class TestCollection(Collection):
-    test_name: str
+    collection_name: str
     collection_dir: str
     lang_data: LanguageData
     cacher: Cacher
@@ -23,7 +23,7 @@ class TestCollection(Collection):
     caller_full_name: str
 
     def __init__(self, collection_name: str, collection_dir: str, lang_data: LanguageData, caller_frame: inspect.FrameInfo):
-        self.test_name = collection_name
+        self.collection_name = collection_name
         self.collection_dir = collection_dir
         self.caller = caller_frame
         self.lang_data = lang_data
@@ -32,7 +32,7 @@ class TestCollection(Collection):
         assert caller_fn_name.startswith('test_')
         self.caller_class_name = caller_frame.frame.f_locals['self'].__class__.__name__
         assert self.caller_class_name.startswith('Test')
-        self.caller_full_name = "{}_{}".format(self.caller_class_name[4:], caller_fn_name[5:])
+        self.caller_full_name = "{}_{}".format(self.caller_class_name, caller_fn_name)
 
         # cacher
         if TestCollections.CACHER is None:
@@ -55,36 +55,41 @@ class TestCollection(Collection):
         # init anki collection
         super().__init__(temp_collection_path)
 
+    def __get_lock_file_path(self, lock_name: str, lock_dir: str) -> str:
+        assert lock_name != ''
+        order_file_dir = os.path.join(self.collection_dir, lock_dir)
+        if not os.path.exists(order_file_dir):
+            os.makedirs(order_file_dir)
+        return os.path.join(order_file_dir, '{}_{}.txt'.format(self.caller_full_name, lock_name))
+
     # helper function used to lock-in and assert result
-    def lock_and_assert_result(self, result_name: str,  result_data: Any):
-        result_file_path = os.path.join(self.collection_dir, 'expected_result_{}_{}.txt'.format(self.caller_full_name, result_name))
+    def lock_and_assert_result(self, lock_name: str,  result_data: Any):
+        result_file_path = self.__get_lock_file_path(lock_name, 'locked_results')
 
         if os.path.exists(result_file_path):
             with open(result_file_path, 'r') as file:
                 expected_result = file.read()
-            assert str(result_data) == expected_result, "Result file '{}' for '{}' didn't match!".format(result_file_path, self.test_name)
+            assert str(result_data) == expected_result, "Result file '{}' for '{}' didn't match!".format(result_file_path, self.collection_name)
         else:
             with open(result_file_path, 'w') as file:
                 file.write(str(result_data))
-            print("WARNING: Result file '{}' for '{}' didn't exist yet!".format(result_file_path, self.test_name))
+            print("WARNING: Result file '{}' for '{}' didn't exist yet!".format(result_file_path, self.collection_name))
 
 
     # helper function used to lock-in and assert order
-    def lock_and_assert_order(self, items_name: str, sorted_items: Sequence[Any]):
-        if items_name == '':
-            order_file_path = os.path.join(self.collection_dir, 'expected_order_{}.txt'.format(self.caller_full_name))
-        else:
-            order_file_path = os.path.join(self.collection_dir, 'expected_order_{}_{}.txt'.format(self.caller_full_name, items_name))
+    def lock_and_assert_order(self, lock_name: str, sorted_items: Sequence[Any]):
+
+        order_file_path = self.__get_lock_file_path(lock_name, 'locked_orders')
 
         if os.path.exists(order_file_path):
             with open(order_file_path, 'r') as file:
                 expected_order = [line.rstrip() for line in file]
             for i, line in enumerate(expected_order):
-                assert line == str(sorted_items[i]), "Order file '{}' for '{}' didn't match on line {}!".format(order_file_path, self.test_name, i)
+                assert line == str(sorted_items[i]), "Order file '{}' for '{}' didn't match on line {}!".format(order_file_path, self.collection_name, i)
         else:
             with open(order_file_path, 'w') as file:
                 file.write('\n'.join(map(str, sorted_items)))
-            print("WARNING: Order file '{}' for '{}' didn't exist yet!".format(order_file_path, self.test_name))
+            print("WARNING: Order file '{}' for '{}' didn't exist yet!".format(order_file_path, self.collection_name))
 
 
 class TestCollections:

@@ -40,6 +40,7 @@ class TargetCards:
     new_cards_notes_ids: Sequence[NoteId]
 
     notes_from_cards_cached: dict[NoteId, Note] = {}
+    leech_card_ids_cached: set[CardId] = set()
     cache_lock: Optional[Collection] = None
 
     def __init__(self, all_cards_ids: Sequence[CardId], col: Collection) -> None:
@@ -47,11 +48,19 @@ class TargetCards:
         self.all_cards_ids = all_cards_ids
         self.col = col
 
-        self.get_cards_from_db()
-
         if not TargetCards.cache_lock or TargetCards.cache_lock != col:
             TargetCards.cache_lock = col
-            TargetCards.notes_from_cards_cached = {}
+            TargetCards.notes_from_cards_cached.clear()
+            TargetCards.leech_card_ids_cached.clear()
+
+        self.get_cards_from_db()
+
+    def get_leech_cards_ids(self) -> set[CardId]:
+
+        if len(self.leech_card_ids_cached) == 0:
+            self.leech_card_ids_cached.update(self.col.find_cards('tag:leech'))
+
+        return self.leech_card_ids_cached
 
     def get_cards_from_db(self) -> None:
 
@@ -67,11 +76,11 @@ class TargetCards:
         reviewed_cards: list[TargetCard] = []
         all_cards_notes_ids: list[NoteId] = []
         new_cards_notes_ids: list[NoteId] = []
-        leech_card_ids = self.col.find_cards('tag:leech')
+        leech_cards_ids = self.get_leech_cards_ids()
 
         for card_row in cards:
             card = TargetCard(*card_row, is_leech=False)
-            card.is_leech = card.id in leech_card_ids
+            card.is_leech = card.id in leech_cards_ids
             all_cards.append(card)
             all_cards_notes_ids.append(card.nid)
             if card.queue == 0:

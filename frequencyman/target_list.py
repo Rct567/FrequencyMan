@@ -360,7 +360,8 @@ class TargetList:
             event_logger.add_entry("Order of cards from targets was already up-to-date!")
 
         # Clear cache
-        TargetCards.notes_from_cards_cached = {}
+        TargetCards.notes_from_cards_cached.clear()
+        TargetCards.leech_card_ids_cached.clear()
 
         # Update notes that have been modifies (field values for example)
         update_notes_anki_op_changes: list[OpChanges] = []

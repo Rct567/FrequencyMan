@@ -4,8 +4,8 @@ max_line_length = 200
 
 [tool.pyright]
 typeCheckingMode="strict"
-include = ["frequencyman"]
-exclude = ["tests", "releases", "build", "user_files", "**/tokenizers/*/"]
+include = ["frequencyman", "tests"]
+exclude = ["releases", "build", "user_files", "**/tokenizers/*/"]
 reportMissingImports = true
 reportMissingTypeStubs = true
 reportUnusedImport = false

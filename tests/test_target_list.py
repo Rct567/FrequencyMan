@@ -1,3 +1,4 @@
+from cgi import test
 from ..frequencyman.configured_target import ValidConfiguredTarget
 from frequencyman.target import Target
 from frequencyman.target_list import JsonTargetsResult, JsonTargetsValidity, TargetList, TargetListReorderResult
@@ -14,7 +15,7 @@ class TestTargetList:
 
     def test_get_targets_from_json_valid_json(self):
 
-        col, lang_data, _, _ = TestCollections.get_test_collection('big_collection_es')
+        col = TestCollections.get_test_collection('big_collection_es')
 
         targets = TargetList.get_targets_from_json("""[
             {
@@ -30,7 +31,7 @@ class TestTargetList:
                     }
                 ]
             }
-        ]""", col, lang_data)
+        ]""", col, col.lang_data)
 
         assert targets.err_desc == ""
         assert len(targets.targets_defined) == 1
@@ -53,7 +54,7 @@ class TestTargetList:
 
     def test_get_targets_from_json_invalid_json(self):
 
-        col, lang_data, _, _ = TestCollections.get_test_collection('big_collection_es')
+        col = TestCollections.get_test_collection('big_collection_es')
 
         invalid_targets_data: list[str] = [
             "X",
@@ -61,7 +62,7 @@ class TestTargetList:
         ]
 
         for json_data in invalid_targets_data:
-            targets = TargetList.get_targets_from_json(json_data, col, lang_data)
+            targets = TargetList.get_targets_from_json(json_data, col, col.lang_data)
             assert targets.validity_state == JsonTargetsValidity.INVALID_JSON, json_data
             assert targets.err_desc != "", json_data
             assert targets.valid_targets_defined is None, json_data
@@ -69,7 +70,7 @@ class TestTargetList:
 
     def test_get_targets_from_json_invalid_targets(self):
 
-        col, lang_data, _, _ = TestCollections.get_test_collection('big_collection_es')
+        col = TestCollections.get_test_collection('big_collection_es')
 
         invalid_targets_data: dict[str, str] = {
             '': '',
@@ -87,7 +88,7 @@ class TestTargetList:
         }
 
         for index, (json_data, expected_error) in enumerate(invalid_targets_data.items()):
-            targets = TargetList.get_targets_from_json(json_data, col, lang_data)
+            targets = TargetList.get_targets_from_json(json_data, col, col.lang_data)
             assert targets.validity_state == JsonTargetsValidity.INVALID_TARGETS, json_data
             assert expected_error in targets.err_desc, json_data
             assert targets.valid_targets_defined is None, json_data

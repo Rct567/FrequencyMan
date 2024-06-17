@@ -12,14 +12,13 @@ from anki.notes import Note, NoteId
 from tests.tools import TestCollections
 
 
-
 class TestTargetListReorder():
 
     def test_reorder_cards_big_collection_es(self):
 
-        col, lang_data, cacher, assert_locked_order = TestCollections.get_test_collection('big_collection_es')
+        col = TestCollections.get_test_collection('big_collection_es')
 
-        target_list = TargetList(lang_data, cacher, col)
+        target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
             {
@@ -82,13 +81,13 @@ class TestTargetListReorder():
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
 
         # check order
-        assert_locked_order(target_result.sorted_cards_ids)
+        col.lock_and_assert_order('', target_result.sorted_cards_ids)
 
     def test_reorder_cards_big_collection_es_with_reorder_scope(self):
 
-        col, lang_data, cacher, assert_locked_order = TestCollections.get_test_collection('big_collection_es')
+        col = TestCollections.get_test_collection('big_collection_es')
 
-        target_list = TargetList(lang_data, cacher, col)
+        target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
             {
@@ -139,13 +138,13 @@ class TestTargetListReorder():
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
 
         # check order
-        assert_locked_order(target_result.sorted_cards_ids)
+        col.lock_and_assert_order('', target_result.sorted_cards_ids)
 
     def test_two_deck_collection(self):
 
-        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col = TestCollections.get_test_collection('two_deck_collection')
 
-        target_list = TargetList(language_data, cacher, col)
+        target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
             {
@@ -182,7 +181,6 @@ class TestTargetListReorder():
         assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 2
         assert target_list[1].target_corpus_data is not None and len(target_list[1].target_corpus_data.data_segments) == 2
 
-
         assert result.reorder_result_list[0].success and result.reorder_result_list[0].cards_repositioned
         assert result.reorder_result_list[0].error is None
         assert len(result.modified_dirty_notes) == 0
@@ -206,13 +204,13 @@ class TestTargetListReorder():
         assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 4
 
         # check order
-        assert_locked_order(list(result.reorder_result_list[0].sorted_cards_ids)+list(result.reorder_result_list[1].sorted_cards_ids))
+        col.lock_and_assert_order('', list(result.reorder_result_list[0].sorted_cards_ids)+list(result.reorder_result_list[1].sorted_cards_ids))
 
     def test_two_deck_collection_with_ignore_list(self):
 
-        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col = TestCollections.get_test_collection('two_deck_collection')
 
-        target_list = TargetList(language_data, cacher, col)
+        target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
             {
@@ -247,13 +245,13 @@ class TestTargetListReorder():
         assert "11 cards repositioned" in str(event_logger)
 
         # check order
-        assert_locked_order(result.reorder_result_list[0].sorted_cards_ids)
+        col.lock_and_assert_order('', result.reorder_result_list[0].sorted_cards_ids)
 
     def test_two_deck_collection_with_reorder_scope(self):
 
-        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col = TestCollections.get_test_collection('two_deck_collection')
 
-        target_list = TargetList(language_data, cacher, col)
+        target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
             {
@@ -290,7 +288,7 @@ class TestTargetListReorder():
 
         # check result
         assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 2
-        assert target_list[1].target_corpus_data is None # was cached
+        assert target_list[1].target_corpus_data is None  # was cached
 
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success and reorder_result.cards_repositioned
@@ -320,17 +318,17 @@ class TestTargetListReorder():
         assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 11
 
         # check order
-        assert_locked_order(list(result.reorder_result_list[0].sorted_cards_ids)+list(result.reorder_result_list[1].sorted_cards_ids))
+        col.lock_and_assert_order('', list(result.reorder_result_list[0].sorted_cards_ids)+list(result.reorder_result_list[1].sorted_cards_ids))
 
     def test_two_deck_collection_no_reviewed_cards(self):
 
-        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col = TestCollections.get_test_collection('two_deck_collection')
 
         # reset all cards
         all_card_ids = col.find_cards('*')
         col.sched.reset_cards(list(all_card_ids))
 
-        target_list = TargetList(language_data, cacher, col)
+        target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
             {
@@ -372,16 +370,16 @@ class TestTargetListReorder():
         assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 16
 
         # check order
-        assert_locked_order(result.reorder_result_list[0].sorted_cards_ids)
+        col.lock_and_assert_order('', result.reorder_result_list[0].sorted_cards_ids)
 
     def test_two_deck_collection_no_cards(self):
 
-        col, language_data, cacher, _ = TestCollections.get_test_collection('two_deck_collection')
+        col = TestCollections.get_test_collection('two_deck_collection')
 
         # remove all notes
         col.remove_notes(list(col.find_notes('*')))
 
-        target_list = TargetList(language_data, cacher, col)
+        target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
             {
@@ -420,9 +418,9 @@ class TestTargetListReorder():
 
     def test_two_deck_collection_corpus_segmentation_by_note_field(self):
 
-        col, language_data, cacher, assert_locked_order = TestCollections.get_test_collection('two_deck_collection')
+        col = TestCollections.get_test_collection('two_deck_collection')
 
-        target_list = TargetList(language_data, cacher, col)
+        target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
             {
@@ -459,4 +457,4 @@ class TestTargetListReorder():
         assert result.num_cards_repositioned == 11
 
         # check order
-        assert_locked_order(result.reorder_result_list[0].sorted_cards_ids)
+        col.lock_and_assert_order('', result.reorder_result_list[0].sorted_cards_ids)

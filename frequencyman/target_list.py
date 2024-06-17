@@ -145,6 +145,21 @@ class TargetList:
 
         result = ValidConfiguredTarget(notes=[])
 
+        # handle renamed ranking factors
+
+        renamed_ranking_factors = {'ideal_unseen_word_count':'ideal_new_word_count'}
+
+        for old_factor_name, new_factor_name in renamed_ranking_factors.items():
+            if 'ranking_'+old_factor_name in target_data:
+                target_data['ranking_'+new_factor_name] = target_data['ranking_'+old_factor_name]
+                del target_data['ranking_'+old_factor_name]
+
+        if 'ranking_factors' in target_data and isinstance(target_data['ranking_factors'], dict) and len(target_data['ranking_factors']) > 0:
+            for old_factor_name, new_factor_name in renamed_ranking_factors.items():
+                if old_factor_name in target_data['ranking_factors']:
+                    target_data['ranking_factors'][new_factor_name] = target_data['ranking_factors'][old_factor_name]
+                    del target_data['ranking_factors'][old_factor_name]
+
         # check deck names
 
         if 'deck' in target_data:

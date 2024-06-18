@@ -461,3 +461,55 @@ class TestTargetListReorder():
 
         # check order
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
+
+    def test_two_deck_collection_low_familiarity(self):
+
+        col = TestCollections.get_test_collection('two_deck_collection_low_fam')
+
+        target_list = TargetList(col.lang_data, col.cacher, col)
+
+        target_list.set_targets([
+            {
+                'decks': 'decka, deckb',
+                'notes': [{
+                    "name": "Basic",
+                    "fields": {
+                        "Front": "EN",
+                        "Back": "EN"
+                    },
+                }]
+            }
+        ])
+
+        # reorder cards
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+
+        # check result
+        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 1
+
+        reorder_result = result.reorder_result_list[0]
+        assert reorder_result.success and reorder_result.cards_repositioned
+        assert reorder_result.error is None
+
+        # check result
+        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 1
+
+        reorder_result = result.reorder_result_list[0]
+        assert reorder_result.success and reorder_result.cards_repositioned
+        assert reorder_result.error is None
+        assert len(result.modified_dirty_notes) == 0
+
+        assert "Reordering target #0" in str(event_logger)
+        assert "Found 12 new cards in a target collection of 16 cards." in str(event_logger)
+
+        assert result.reorder_result_list[0].num_cards_repositioned == 12
+        assert result.num_cards_repositioned == 12
+
+        assert len(target_list[0].get_cards().all_cards_ids) == 16
+        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 16
+        assert len(target_list[0].get_cards().new_cards_ids) == 12
+        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 12
+
+        # check order
+        col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)

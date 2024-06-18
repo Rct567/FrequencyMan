@@ -103,6 +103,9 @@ class SegmentContentMetrics:
         else:
             familiarity_sweetspot_point = self.familiarity_sweetspot_point
 
+        if not self.words_familiarity_max > (familiarity_sweetspot_point*2):
+            return {}
+
         for word_token in self.words_familiarity:
 
             familiarity = self.words_familiarity[word_token]

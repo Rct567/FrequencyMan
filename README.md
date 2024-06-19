@@ -144,6 +144,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
     "most_obscure_word": 0.5,
     "lowest_fr_least_familiar_word": 0.5,
     "lowest_word_frequency": 0.25,
+    "lowest_familiarity": 0.25,
     "no_new_words": 0.1,
     "ideal_new_word_count": 0.0,
 }

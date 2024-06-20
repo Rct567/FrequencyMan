@@ -3,16 +3,17 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from hmac import new
 import io
 import cProfile
 from contextlib import contextmanager
 import itertools
+import json
 import os
 import pprint
 import pstats
+import re
 import sys
-from typing import IO, Any, Callable, Iterable, Iterator, Optional, TypeVar
+from typing import IO, TYPE_CHECKING, Any, Callable, Iterable, Iterator, Optional, TypeVar
 from aqt.utils import showInfo
 
 var_dump_count = 0
@@ -63,6 +64,32 @@ def get_float(val: Any) -> Optional[float]:
         return float(val)
     except ValueError:
         return None
+
+def remove_trailing_commas_from_json(json_str: str) -> str:
+
+    return re.sub(r'("(?:\\?.)*?")|,(\s*)([]}])', r'\1\2\3', json_str)
+
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
+    JSON_TYPE: TypeAlias = dict[str, "JSON_TYPE"] | list["JSON_TYPE"] | str | int | float | bool | None
+else:
+    JSON_TYPE = Any
+
+
+def load_json(json_data: str) -> JSON_TYPE:
+
+    try:
+        return json.loads(json_data)
+    except json.JSONDecodeError as e:
+        if not "double quotes" in e.msg:
+            raise e
+        # try again, but throw original exception if it fails
+        new_json_data = remove_trailing_commas_from_json(json_data)
+        try:
+            return json.loads(new_json_data)
+        except json.JSONDecodeError as _:
+            raise e
 
 
 @contextmanager

@@ -6,7 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from dataclasses import dataclass
 from enum import Enum
 import json
-from typing import TYPE_CHECKING, Iterator, Optional, Any
+from typing import Iterator, Optional, Any
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -16,7 +16,7 @@ from .lib.cacher import Cacher
 from .configured_target import ConfiguredTarget
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
-from .lib.utilities import batched, get_float, profile_context, var_dump_log
+from .lib.utilities import JSON_TYPE, batched, get_float, load_json, profile_context, var_dump_log
 from .target import ConfiguredTargetNote, ReorderCacheData, TargetReorderResult, Target, ValidConfiguredTarget, CardRanker
 from .language_data import LangDataId, LanguageData
 from .lib.event_logger import EventLogger
@@ -31,11 +31,7 @@ class TargetListReorderResult():
     num_targets_repositioned: int
 
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-    JSON_TYPE: TypeAlias = dict[str, "JSON_TYPE"] | list["JSON_TYPE"] | str | int | float | bool | None
-else:
-    JSON_TYPE = Any
+
 
 
 class JsonTargetsValidity(Enum):
@@ -99,7 +95,7 @@ class TargetList:
         if json_data == "":
             return JsonTargetsResult(JsonTargetsValidity.INVALID_TARGETS, [], "", None)
         try:
-            data: JSON_TYPE = json.loads(json_data)
+            data = load_json(json_data)
             if not isinstance(data, list):
                 return JsonTargetsResult(JsonTargetsValidity.INVALID_TARGETS, [], "Reorder target is not a list (array expected).", None)
             (validity_state, err_desc, valid_target_list) = TargetList.validate_target_list(data, col, language_data)

@@ -1,7 +1,6 @@
-import sys
 import pytest
 
-from frequencyman.lib.utilities import get_float, normalize_dict_floats_values, normalize_positional_dict_floats_values, remove_bottom_percent_dict
+from frequencyman.lib.utilities import get_float, normalize_dict_floats_values, normalize_positional_dict_floats_values, remove_bottom_percent_dict, remove_trailing_commas_from_json
 
 def test_normalize_dict_floats_values():
 
@@ -106,3 +105,27 @@ def test_remove_bottom_percent_dict():
 
     result = remove_bottom_percent_dict({"a": 4, "b": 3, "c": 2, "d": 1}, 0.25, 0)
     assert result == {"a": 4, "b": 3, "c": 2}
+
+
+def test_remove_trailing_commas_from_json():
+
+    test_json_str = r'''
+    [
+        123, true, false, null, {",": ", "},
+        {
+            "\n\\\",]\\": "\n\\\",]\\",
+            "\n\\\",}\\": "\n\\\",}\\",
+        },
+    ]
+    '''
+
+    assert remove_trailing_commas_from_json(test_json_str) == r'''
+    [
+        123, true, false, null, {",": ", "},
+        {
+            "\n\\\",]\\": "\n\\\",]\\",
+            "\n\\\",}\\": "\n\\\",}\\"
+        }
+    ]
+    '''
+

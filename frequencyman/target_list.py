@@ -87,7 +87,7 @@ class TargetList:
 
     def dump_json(self) -> str:
         target_list = [target.config_target for target in self.target_list]
-        return json.dumps(target_list, indent=4)
+        return json.dumps(target_list, indent=4, ensure_ascii=False)
 
     @staticmethod
     def get_targets_from_json(json_data: str, col: Collection, language_data: LanguageData) -> JsonTargetsResult:

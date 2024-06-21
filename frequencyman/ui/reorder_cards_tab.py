@@ -123,7 +123,7 @@ class TargetsDefiningTextArea(QTextEdit):
                     dict_target_list.append(target)
                 else:
                     raise ValueError("Invalid type in target_list!")
-            self.setText(json.dumps(dict_target_list, indent=4))
+            self.setText(json.dumps(dict_target_list, indent=4, ensure_ascii=False))
         else:
             raise ValueError("Invalid target_list type!")
 
@@ -496,7 +496,7 @@ class ReorderCardsTab(FrequencyManTab):
         json_backup_file_path = os.path.join(backup_dir, 'target_list_'+hash_hex+'.txt')
 
         if not os.path.exists(json_backup_file_path):
-            with open(json_backup_file_path, 'w') as file:
+            with open(json_backup_file_path, 'w', encoding="utf-8") as file:
                 # write date and time to file
                 file.write("Created on {} at {}.\n\n\n".format(time.strftime("%d-%m-%Y"), time.strftime("%H:%M:%S")))
                 file.write(json_backup)

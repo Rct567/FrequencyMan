@@ -3,6 +3,7 @@ import inspect
 import os
 import shutil
 from typing import Any, AnyStr, Callable, Generator, Optional, Sequence, Tuple, TypeVar, override
+import pprint
 
 from anki.collection import Collection
 
@@ -65,14 +66,21 @@ class TestCollection(Collection):
     # helper function used to lock-in and assert result
     def lock_and_assert_result(self, lock_name: str,  result_data: Any):
         result_file_path = self.__get_lock_file_path(lock_name, 'locked_results')
+        result_data_str = pprint.pformat(result_data, width=10000)
 
         if os.path.exists(result_file_path):
-            with open(result_file_path, 'r') as file:
-                expected_result = file.read()
-            assert str(result_data) == expected_result, "Result file '{}' for '{}' didn't match!".format(result_file_path, self.collection_name)
+            with open(result_file_path, 'r', encoding="utf-8") as file:
+                expected_result = file.read().splitlines()
+            result_lines = result_data_str.splitlines()
+            assert len(expected_result) == len(result_lines)
+            for line_num, (expected_line, result_line) in enumerate(zip(expected_result, result_lines)):
+                assert expected_line.strip() == result_line.strip(), (
+                    "Result file '{}' for '{}' didn't match at line {}!\nDiff:\n\"{}\"\nnot equal expected:\n\"{}\""
+                    .format(result_file_path, self.collection_name, line_num, result_line, expected_line)
+                )
         else:
-            with open(result_file_path, 'w') as file:
-                file.write(str(result_data))
+            with open(result_file_path, 'w', encoding="utf-8") as file:
+                file.write(result_data_str)
             print("WARNING: Result file '{}' for '{}' didn't exist yet!".format(result_file_path, self.collection_name))
 
 
@@ -82,12 +90,16 @@ class TestCollection(Collection):
         order_file_path = self.__get_lock_file_path(lock_name, 'locked_orders')
 
         if os.path.exists(order_file_path):
-            with open(order_file_path, 'r') as file:
+            with open(order_file_path, 'r', encoding="utf-8") as file:
                 expected_order = [line.rstrip() for line in file]
-            for i, line in enumerate(expected_order):
-                assert line == str(sorted_items[i]), "Order file '{}' for '{}' didn't match on line {}!".format(order_file_path, self.collection_name, i)
+            for line_num, expected_line in enumerate(expected_order):
+                result_item = str(sorted_items[line_num]).rstrip()
+                assert expected_line == result_item, (
+                    "Order file '{}' for '{}' didn't match on line {}!\nDiff:\n\"{}\"\nnot equal expected:\n\"{}\""
+                    .format(order_file_path, self.collection_name, line_num, result_item, expected_line)
+                )
         else:
-            with open(order_file_path, 'w') as file:
+            with open(order_file_path, 'w', encoding="utf-8") as file:
                 file.write('\n'.join(map(str, sorted_items)))
             print("WARNING: Order file '{}' for '{}' didn't exist yet!".format(order_file_path, self.collection_name))
 

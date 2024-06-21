@@ -57,22 +57,13 @@ class TestTargetListReorder():
         assert "Repositioning 6566 cards" in str(event_logger)
         assert "Updating 7895 modified notes" in str(event_logger)
 
-        # check value of focus words
-        assert col.get_note(NoteId(1548089874907))['fm_focus_words'] == '<span id="fm_focus_words"><span data-field-index="0">ajedrez, jugamos</span> <span class="separator">/</span> <span data-field-index="1">chess</span></span>'
-        assert col.get_note(NoteId(1548089876496))['fm_focus_words'] == '<span id="fm_focus_words"><span data-field-index="0">fotografías</span></span>'
-        assert col.get_note(NoteId(1671840154010))['fm_focus_words'] == '<span id="fm_focus_words"><span data-field-index="0">hacerlas</span> <span class="separator">/</span> <span data-field-index="1">efficient, pleasure</span></span>'
+        # check focus word field for all notes
+        notes_focus_words = []
+        for note_id in col.find_notes('*'):
+            note = col.get_note(note_id)
+            notes_focus_words.append(str(note_id)+" => "+note['fm_focus_words'])
 
-        # these should not have focus words
-        notes_empty_focus_words = {1678410313201, 1548089872580, 1695675879863, 1695675879703, 1687208310219,
-                                   1548089874025, 1546160205490, 1548089878113, 1651511363702}
-        for note_id in notes_empty_focus_words:
-            assert col.get_note(NoteId(note_id))['fm_focus_words'] == "", note_id
-
-        # these should have focus words
-        notes_none_empty_focus_word = {1548089873399, 1548089879591, 1562346819967, 1546959316161, 1562346819250,
-                                       1548089877279, 1548089878563, 1548089878527}
-        for note_id in notes_none_empty_focus_word:
-            assert len(col.get_note(NoteId(note_id))['fm_focus_words']) > 7, note_id
+        col.lock_and_assert_result('notes_focus_words', notes_focus_words)
 
         # check acquired cards for each target
         assert len(target_list[0].get_cards().all_cards_ids) == 15790

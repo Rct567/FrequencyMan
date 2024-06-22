@@ -127,7 +127,7 @@ class CardRanker:
         return score
 
     @staticmethod
-    def __calc_proper_introduction_score(field_metrics: FieldMetrics) -> tuple[Optional[WordToken], float]:
+    def __calc_proper_introduction_score(field_metrics: FieldMetrics, field_data: NoteFieldContentData) -> tuple[Optional[WordToken], float]:
         num_new_words = len(field_metrics.new_words)
         if num_new_words == 0:
             return (None, 1)
@@ -147,6 +147,12 @@ class CardRanker:
                         break
             assert lowest_wf_new is not None
 
+        # no repeat factor
+
+        new_word_no_repeat_factor = 1 / field_data.field_value_tokenized.count(new_word)
+        general_no_repeat_factor = 1 / (1+(field_metrics.num_words-len(field_metrics.unique_words)))
+        no_repeat_factor = (new_word_no_repeat_factor+general_no_repeat_factor+0.5)/3
+
         # non obscurity of other words
 
         other_words = [word for word in field_metrics.words_fr_scores.keys() if word != new_word]
@@ -165,8 +171,9 @@ class CardRanker:
         factors = [
             field_metrics.ideal_new_words_count_score,
             field_metrics.ideal_focus_words_count_score,
+            field_metrics.ideal_words_count_score,
             non_obscurity_others_words_score,
-            field_metrics.ideal_words_count_score
+            no_repeat_factor,
         ]
 
         proper_introduction_score = fmean(factors)
@@ -329,7 +336,7 @@ class CardRanker:
 
                 # proper introduction
                 if set_proper_introduction:
-                    (new_word, proper_introduction_score) = self.__calc_proper_introduction_score(field_metrics)
+                    (new_word, proper_introduction_score) = self.__calc_proper_introduction_score(field_metrics, field_data)
                     field_metrics.proper_introduction_score = proper_introduction_score
                     if new_word is not None:
                         if new_word not in top_introducing_notes or top_introducing_notes[new_word][1] < proper_introduction_score:

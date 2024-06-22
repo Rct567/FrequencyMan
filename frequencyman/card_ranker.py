@@ -35,6 +35,7 @@ class FieldMetrics:
     focus_words: dict[WordToken, float] = field(default_factory=dict)
 
     num_words: int = 0
+    unique_words: set[WordToken] = field(default_factory=set)
     seen_words: list[WordToken] = field(default_factory=list)
     new_words: list[WordToken] = field(default_factory=list)
 
@@ -434,11 +435,13 @@ class CardRanker:
             if word not in content_metrics.words_post_focus:
                 field_metrics.focus_words[word] = word_familiarity_score
 
-            # set seen and new words
-            if word in content_metrics.reviewed_words:
-                field_metrics.seen_words.append(word)  # word seen, word exist in at least one reviewed card
-            else:
-                field_metrics.new_words.append(word)
+            # set unique, seen and new words
+            if word not in field_metrics.unique_words:
+                field_metrics.unique_words.add(word)
+                if word in content_metrics.reviewed_words:
+                    field_metrics.seen_words.append(word)  # word seen, word exist in at least one reviewed card
+                else:
+                    field_metrics.new_words.append(word)
 
             # set lowest fr of least familiar word
             if field_metrics.lowest_fr_least_familiar_word[0] == "" or word_familiarity_score < field_metrics.lowest_fr_least_familiar_word[2]:

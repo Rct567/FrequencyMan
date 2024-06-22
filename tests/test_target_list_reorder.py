@@ -483,13 +483,6 @@ class TestTargetListReorder():
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success and reorder_result.cards_repositioned
         assert reorder_result.error is None
-
-        # check result
-        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 1
-
-        reorder_result = result.reorder_result_list[0]
-        assert reorder_result.success and reorder_result.cards_repositioned
-        assert reorder_result.error is None
         assert len(result.modified_dirty_notes) == 0
 
         assert "Reordering target #0" in str(event_logger)

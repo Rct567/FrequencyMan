@@ -6,6 +6,8 @@ FrequencyMan allows you to __sort your new cards__ by word frequency and other u
 
 Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
 
+![FrequencyMan](frequencyman_showcase_1.gif)
+
 ## Features
 - More than 50 default word frequency lists.
 - Define multiple sorting targets for different decks or selection of cards.

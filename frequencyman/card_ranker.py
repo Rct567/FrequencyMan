@@ -147,11 +147,15 @@ class CardRanker:
                         break
             assert lowest_wf_new is not None
 
+        # single new word factor
+
+        single_new_word_score = 0.0 if num_new_words > 1 else 1.0
+
         # no repeat factor
 
         new_word_no_repeat_factor = 1 / field_data.field_value_tokenized.count(new_word)
         general_no_repeat_factor = 1 / (1+(field_metrics.num_words-len(field_metrics.unique_words)))
-        no_repeat_factor = (new_word_no_repeat_factor+general_no_repeat_factor+0.5)/3
+        no_repeat_score = (new_word_no_repeat_factor+general_no_repeat_factor+1)/3
 
         # non obscurity of other words
 
@@ -172,8 +176,9 @@ class CardRanker:
             field_metrics.ideal_new_words_count_score,
             field_metrics.ideal_focus_words_count_score,
             field_metrics.ideal_words_count_score,
+            single_new_word_score,
             non_obscurity_others_words_score,
-            no_repeat_factor,
+            no_repeat_score,
         ]
 
         proper_introduction_score = fmean(factors)

@@ -55,6 +55,7 @@ class FieldMetrics:
     no_new_words_score: float = 0
     reinforce_focus_words_score: float = 0
     proper_introduction_score: float = 0
+    proper_introduction_dispersed_score: float = 0
 
     familiarity_score: float = 0
     familiarity_sweetspot_score: float = 0
@@ -106,6 +107,7 @@ class CardRanker:
             "no_new_words": 0.1,
             "ideal_new_word_count": 0.0,
             "proper_introduction": 0.0,
+            "proper_introduction_dispersed": 0.0
         }
 
     @staticmethod
@@ -297,11 +299,19 @@ class CardRanker:
 
         return useable_notes_ranking_scores_normalized, notes_rankings
 
+    def __is_factor_used(self, factor_name: str) -> bool:
+
+        try:
+            return self.ranking_factors_span[factor_name] > 0
+        except KeyError:
+            return False
+
     def __get_notes_field_metrics(self, notes_all_card: dict[NoteId, Note], notes_from_new_cards: dict[NoteId, Note]) -> dict[NoteId, list[FieldMetrics]]:
 
         notes_metrics: dict[NoteId, list[FieldMetrics]] = {note_id: [] for note_id in notes_all_card.keys()}
         bucked_size = fmean([1, (self.ideal_word_count_min+self.ideal_word_count_max)/4])
-        set_proper_introduction = 'proper_introduction' in self.ranking_factors_span and self.ranking_factors_span['proper_introduction'] > 0
+        set_proper_introduction = self.__is_factor_used('proper_introduction')
+        set_proper_introduction_dispersed = self.__is_factor_used('proper_introduction_dispersed')
         top_introducing_notes: dict[WordToken, tuple[NoteId, float, int]] = {}
 
         for note_id, note in notes_all_card.items():
@@ -340,10 +350,11 @@ class CardRanker:
                 field_metrics.no_new_words_score = field_no_new_words_score
 
                 # proper introduction
-                if set_proper_introduction:
+                if set_proper_introduction or set_proper_introduction_dispersed:
                     (new_word, proper_introduction_score) = self.__calc_proper_introduction_score(field_metrics, field_data)
                     field_metrics.proper_introduction_score = proper_introduction_score
-                    if new_word is not None:
+                    field_metrics.proper_introduction_dispersed_score = proper_introduction_score
+                    if new_word is not None and set_proper_introduction_dispersed:
                         if new_word not in top_introducing_notes or top_introducing_notes[new_word][1] < proper_introduction_score:
                             top_introducing_notes[new_word] = (note_id, proper_introduction_score, notes_metrics_index)
 
@@ -376,16 +387,16 @@ class CardRanker:
                     field_ue_score = ((bucked_score*2) + fmean(field_metrics.ue_scores) + max(field_metrics.ue_scores)) / 4
                     field_metrics.ue_score = field_ue_score
 
-        if set_proper_introduction:
+        if set_proper_introduction_dispersed:
 
             for (note_id, _, notes_metrics_index) in top_introducing_notes.values():
-                notes_metrics[note_id][notes_metrics_index].proper_introduction_score = 1
+                notes_metrics[note_id][notes_metrics_index].proper_introduction_dispersed_score = 1
 
             fall_over_border = 0.75
             for note_id, fields_metrics in notes_metrics.items():
                 for metric_index, field_metrics in enumerate(fields_metrics):
-                    if field_metrics.proper_introduction_score < 1 and field_metrics.proper_introduction_score > fall_over_border:
-                        notes_metrics[note_id][metric_index].proper_introduction_score = (field_metrics.proper_introduction_score+fall_over_border)/2
+                    if field_metrics.proper_introduction_dispersed_score < 1 and field_metrics.proper_introduction_dispersed_score > fall_over_border:
+                        notes_metrics[note_id][metric_index].proper_introduction_dispersed_score = (field_metrics.proper_introduction_dispersed_score+fall_over_border)/2
 
         # done
 
@@ -395,7 +406,8 @@ class CardRanker:
 
         field_metrics = FieldMetrics()
         content_metrics = self.corpus_data.content_metrics[corpus_segment_id]
-        set_lexical_underexposure = 'lexical_underexposure' in self.ranking_factors_span and self.ranking_factors_span['lexical_underexposure'] > 0
+        set_lexical_underexposure = self.__is_factor_used('lexical_underexposure')
+        set_familiarity_sweetspot = self.__is_factor_used('familiarity_sweetspot')
 
         for word in field_data.field_value_tokenized:
 
@@ -434,7 +446,7 @@ class CardRanker:
                 field_metrics.lowest_familiarity_word = (word, word_familiarity_score)
 
             # familiarity sweetspot score of words in sweetspot range
-            if 'familiarity_sweetspot' in self.ranking_factors_span and self.ranking_factors_span['familiarity_sweetspot'] > 0:
+            if set_familiarity_sweetspot:
                 word_familiarity_sweetspot_score = content_metrics.words_familiarity_sweetspot.get(word, 0)
                 field_metrics.words_familiarity_sweetspot_scores[word] = word_familiarity_sweetspot_score
 
@@ -498,6 +510,7 @@ class CardRanker:
             notes_ranking_factors['no_new_words'][note_id] = (median(no_new_words_scores) + (min(no_new_words_scores)*2)) / 3
 
             notes_ranking_factors['proper_introduction'][note_id] = fmean(field_metrics.proper_introduction_score for field_metrics in note_metrics)
+            notes_ranking_factors['proper_introduction_dispersed'][note_id] = fmean(field_metrics.proper_introduction_dispersed_score for field_metrics in note_metrics)
 
             notes_ranking_factors['ideal_word_count'][note_id] = fmean(field_metrics.ideal_words_count_score for field_metrics in note_metrics)
             notes_ranking_factors['ideal_focus_word_count'][note_id] = fmean(field_metrics.ideal_focus_words_count_score for field_metrics in note_metrics)

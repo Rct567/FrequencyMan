@@ -335,7 +335,7 @@ class TestTargetListReorder():
                     },
                 }],
                 'ideal_word_count': [2, 5],
-                'ranking_proper_introduction': 0.5,
+                'ranking_proper_introduction_dispersed': 0.5,
                 'reorder_scope_query': 'deck:decka'
             }
         ])

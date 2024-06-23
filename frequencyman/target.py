@@ -78,10 +78,12 @@ class Target:
 
         self.config_target = target
         self.index_num = index_num
-        self.target_corpus_data = None
         self.col = col
         self.language_data = language_data
         self.cacher = cacher
+
+        self.target_corpus_data = None
+        self.cache_data = None
 
         self.main_scope_query = self.config_target.construct_main_scope_query()
         self.reorder_scope_query = self.config_target.get_reorder_scope_query()

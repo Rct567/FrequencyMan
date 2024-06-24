@@ -149,6 +149,8 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
     "lowest_familiarity": 0.25,
     "no_new_words": 0.1,
     "ideal_new_word_count": 0.0,
+    "proper_introduction": 0.1,
+    "proper_introduction_dispersed": 0.0,
 }
 ```
 
@@ -170,6 +172,8 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `lowest_familiarity`: Represents the lowest _familiarity_ found in the content of any targeted field. This is different from `familiarity`, which reflect the average _familiarity_ of all targeted fields.
 - `no_new_words`: Promotes cards with no new words. Put differently, it promotes cards who's words have all been seen before during review.
 - `ideal_new_word_count`: Like `ideal_focus_word_count`, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
+- `proper_introduction`: Promotes cards that appear to be well suited to introduce a new word. Various factor are used, including the position of the new word and the word frequency + familiarity of the other words in the content. Cards without new words are not effected.
+- 'proper_introduction_dispersed': Disperses cards using the 'proper introduction' factor. This is done per new word, thus dispersing cards with the same new word.
 
 ## Custom fields
 

@@ -106,7 +106,7 @@ class CardRanker:
             "lowest_familiarity": 0.25,
             "no_new_words": 0.1,
             "ideal_new_word_count": 0.0,
-            "proper_introduction": 0.0,
+            "proper_introduction": 0.1,
             "proper_introduction_dispersed": 0.0
         }
 

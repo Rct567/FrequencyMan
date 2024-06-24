@@ -149,6 +149,11 @@ class CardRanker:
                         break
             assert lowest_wf_new is not None
 
+        # position of new word in field
+
+        new_word_index = field_data.field_value_tokenized.index(new_word)
+        new_word_position_score = 1/(1+(new_word_index/4))
+
         # single new word factor
 
         single_new_word_score = 0.0 if num_new_words > 1 else 1.0
@@ -178,6 +183,7 @@ class CardRanker:
             field_metrics.ideal_new_words_count_score,
             field_metrics.ideal_focus_words_count_score,
             field_metrics.ideal_words_count_score,
+            new_word_position_score,
             single_new_word_score,
             non_obscurity_others_words_score,
             no_repeat_score,

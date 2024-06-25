@@ -1,13 +1,8 @@
 import pytest
 
+from frequencyman.card_ranker import CardRanker
 from frequencyman.target_list import TargetList, TargetListReorderResult
 from frequencyman.lib.event_logger import EventLogger
-from frequencyman.language_data import LangDataId, LanguageData
-
-from anki.collection import Collection, OpChanges, OpChangesWithCount
-
-from anki.cards import CardId, Card
-from anki.notes import Note, NoteId
 
 from tests.tools import TestCollections
 
@@ -498,3 +493,38 @@ class TestTargetListReorder():
 
         # check order
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
+
+    def test_two_deck_collection_every_factor(self):
+
+        for ranking_factor in CardRanker. get_default_ranking_factors_span().keys():
+
+            col = TestCollections.get_test_collection('two_deck_collection')
+
+            target_list = TargetList(col.lang_data, col.cacher, col)
+
+            target_list.set_targets([
+                {
+                    'decks': ['decka', 'deckb'],
+                    'notes': [{
+                        "name": "Basic",
+                        "fields": {
+                            "Front": "EN",
+                            "Back": "EN"
+                        },
+                    }],
+                    'ranking_factors': {ranking_factor: 1}
+                }
+            ])
+
+            # reorder cards
+            event_logger = EventLogger()
+            result = target_list.reorder_cards(col, event_logger)
+
+            reorder_result = result.reorder_result_list[0]
+            assert reorder_result.success and  reorder_result.error is None
+
+            assert len(target_list[0].get_cards().all_cards_ids) == 16
+
+            col.lock_and_assert_order('all_cards_ids_'+ranking_factor, target_list[0].get_cards().all_cards_ids)
+
+            col.close()

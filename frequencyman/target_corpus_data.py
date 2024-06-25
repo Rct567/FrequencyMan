@@ -238,7 +238,7 @@ class TargetCorpusData:
     suspended_card_value: float
     suspended_leech_card_value: float
     segmentation_strategy: CorpusSegmentationStrategy
-    data_segments: set[str]
+    data_segments: set[CorpusSegmentId]
     language_data: LanguageData
     cacher: PersistentCacher
 
@@ -303,6 +303,7 @@ class TargetCorpusData:
                     else:
                         raise Exception("Invalid segmentation_strategy set!")
 
+                    corpus_segment_id = CorpusSegmentId(corpus_segment_id)
                     self.data_segments.add(corpus_segment_id)
 
                     if field_val == "":
@@ -310,8 +311,6 @@ class TargetCorpusData:
                     else:
                         cache_key = str(lang_id)+field_val
                         field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(field_val), lang_id))
-
-                    corpus_segment_id = CorpusSegmentId(corpus_segment_id)
 
                     content_data = NoteFieldContentData(
                         corpus_segment_id=corpus_segment_id,

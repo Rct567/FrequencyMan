@@ -203,6 +203,13 @@ class TestTargetListReorder():
         assert result.num_targets_repositioned == 0
         assert result.num_cards_repositioned == 0
 
+        # check focus words in corpus data
+        focus_words: dict[str, list] = {}
+        for target in target_list.target_list:
+            if target.target_corpus_data and target.target_corpus_data.content_metrics:
+                for segment_id, segment_data in target.target_corpus_data.content_metrics.items():
+                    focus_words[str(target.index_num)+'_'+str(segment_id)] = sorted(segment_data.words_post_focus)
+        col.lock_and_assert_result('focus_words', focus_words)
 
     def test_two_deck_collection_with_ignore_list(self):
 
@@ -531,7 +538,7 @@ class TestTargetListReorder():
             result = target_list.reorder_cards(col, event_logger)
 
             reorder_result = result.reorder_result_list[0]
-            assert reorder_result.success and  reorder_result.error is None
+            assert reorder_result.success and reorder_result.error is None
 
             assert len(target_list[0].get_cards().all_cards_ids) == 16
 

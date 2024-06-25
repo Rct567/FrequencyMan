@@ -9,13 +9,14 @@ from time import time
 
 T = TypeVar('T')
 
+
 class SerializationType(Enum):
     JSON = 0
     STR = 1
     LIST_STR = 2
 
 
-class Cacher:
+class PersistentCacher:
     def __init__(self, db_file_path: str, save_buffer_limit: int = 10_000) -> None:
 
         if not os.path.isdir(os.path.dirname(db_file_path)):
@@ -98,7 +99,7 @@ class Cacher:
         else:
             storage_type = SerializationType.JSON
 
-        return (Cacher.serialize(value, storage_type), storage_type)
+        return (PersistentCacher.serialize(value, storage_type), storage_type)
 
     def pre_load_all_items(self) -> None:
         if self._items_preloaded:
@@ -110,7 +111,7 @@ class Cacher:
         for row in cursor:
             hashed_cache_id = self.binary_to_hex(row[0])
             assert len(hashed_cache_id) == 32
-            self._pre_loaded_cache[hashed_cache_id] = Cacher.deserialize(row[1], SerializationType(row[2]))
+            self._pre_loaded_cache[hashed_cache_id] = PersistentCacher.deserialize(row[1], SerializationType(row[2]))
         self._items_preloaded = True
 
     def num_items_stored(self) -> int:
@@ -132,7 +133,7 @@ class Cacher:
         row = cursor.fetchone()
 
         if row:
-            return Cacher.deserialize(row[0], SerializationType(row[1]))
+            return PersistentCacher.deserialize(row[0], SerializationType(row[1]))
 
         result = producer()
         self.save_item(cache_id, result)
@@ -154,7 +155,7 @@ class Cacher:
     def _add_to_save_buffer(self, cache_id: str, value: Any) -> None:
 
         timestamp = int(time())
-        serialized_value, storage_type = Cacher.auto_serialize(value)
+        serialized_value, storage_type = PersistentCacher.auto_serialize(value)
         self._save_buffer[cache_id] = (serialized_value, storage_type, timestamp)
         if len(self._save_buffer) >= self._save_buffer_num_limit:
             self.flush_save_buffer()

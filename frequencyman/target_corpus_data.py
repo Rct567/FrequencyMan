@@ -14,7 +14,7 @@ from enum import Enum
 from anki.cards import CardId, Card
 from anki.notes import NoteId
 
-from .lib.cacher import Cacher
+from .lib.persistent_cacher import PersistentCacher
 from .target_cards import TargetCard, TargetCards
 from .language_data import LangId, LangDataId, LanguageData
 from .lib.utilities import *
@@ -240,7 +240,7 @@ class TargetCorpusData:
     segmentation_strategy: CorpusSegmentationStrategy
     data_segments: set[str]
     language_data: LanguageData
-    cacher: Cacher
+    cacher: PersistentCacher
 
     def __init__(self):
 
@@ -252,7 +252,7 @@ class TargetCorpusData:
         self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
         self.data_segments = set()
 
-    def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData, cacher: Cacher) -> None:
+    def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData, cacher: PersistentCacher) -> None:
         """
         Create corpus data for the given target and its cards.
         """

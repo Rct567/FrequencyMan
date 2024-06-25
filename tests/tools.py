@@ -11,14 +11,15 @@ from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
 from frequencyman.language_data import LangDataId, LanguageData
-from frequencyman.lib.cacher import Cacher
+from frequencyman.lib.persistent_cacher import PersistentCacher
 from frequencyman.lib.utilities import var_dump_log
+
 
 class TestCollection(Collection):
     collection_name: str
     collection_dir: str
     lang_data: LanguageData
-    cacher: Cacher
+    cacher: PersistentCacher
 
     caller_class_name: str
     caller_full_name: str
@@ -40,7 +41,7 @@ class TestCollection(Collection):
             if not TestCollections.cacher_data_cleared and os.path.exists(TestCollections.CACHER_FILE_PATH):
                 os.remove(TestCollections.CACHER_FILE_PATH)
                 TestCollections.cacher_data_cleared = True
-            TestCollections.CACHER = Cacher(TestCollections.CACHER_FILE_PATH)
+            TestCollections.CACHER = PersistentCacher(TestCollections.CACHER_FILE_PATH)
         else:
             TestCollections.CACHER.close()
         self.cacher = TestCollections.CACHER
@@ -83,8 +84,8 @@ class TestCollection(Collection):
                 file.write(result_data_str)
             print("WARNING: Result file '{}' for '{}' didn't exist yet!".format(result_file_path, self.collection_name))
 
-
     # helper function used to lock-in and assert order
+
     def lock_and_assert_order(self, lock_name: str, sorted_items: Sequence[Any]):
 
         order_file_path = self.__get_lock_file_path(lock_name, 'locked_orders')
@@ -109,7 +110,7 @@ class TestCollections:
     TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
     TEST_COLLECTIONS_DIR = os.path.join(TEST_DATA_DIR, 'collections')
     CACHER_FILE_PATH = os.path.join(TEST_DATA_DIR, 'cacher_data.sqlite')
-    CACHER: Optional[Cacher] = None
+    CACHER: Optional[PersistentCacher] = None
     cacher_data_cleared = False
 
     @staticmethod

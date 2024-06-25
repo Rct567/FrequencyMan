@@ -12,7 +12,7 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
-from .lib.cacher import Cacher
+from .lib.persistent_cacher import PersistentCacher
 from .configured_target import ConfiguredTarget
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
@@ -29,9 +29,6 @@ class TargetListReorderResult():
     modified_dirty_notes: dict[NoteId, Optional[Note]]
     num_cards_repositioned: int
     num_targets_repositioned: int
-
-
-
 
 
 class JsonTargetsValidity(Enum):
@@ -54,7 +51,7 @@ class TargetList:
     language_data: LanguageData
     col: Collection
 
-    def __init__(self, language_data: LanguageData, cacher: Cacher, col: Collection) -> None:
+    def __init__(self, language_data: LanguageData, cacher: PersistentCacher, col: Collection) -> None:
         self.target_list = []
         self.language_data = language_data
         self.col = col
@@ -143,7 +140,7 @@ class TargetList:
 
         # handle renamed ranking factors
 
-        renamed_ranking_factors = {'ideal_unseen_word_count':'ideal_new_word_count'}
+        renamed_ranking_factors = {'ideal_unseen_word_count': 'ideal_new_word_count'}
 
         for old_factor_name, new_factor_name in renamed_ranking_factors.items():
             if 'ranking_'+old_factor_name in target_data:

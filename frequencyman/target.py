@@ -9,7 +9,7 @@ from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
-from .lib.cacher import Cacher
+from .lib.persistent_cacher import PersistentCacher
 from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
 from .text_processing import TextProcessing
 from .lib.utilities import get_float, profile_context, var_dump_log, override
@@ -74,7 +74,7 @@ class Target:
 
     cache_data: Optional[ReorderCacheData]
 
-    def __init__(self, target: ValidConfiguredTarget, index_num: int, col: Collection, language_data: LanguageData, cacher: Cacher) -> None:
+    def __init__(self, target: ValidConfiguredTarget, index_num: int, col: Collection, language_data: LanguageData, cacher: PersistentCacher) -> None:
 
         self.config_target = target
         self.index_num = index_num
@@ -87,7 +87,6 @@ class Target:
 
         self.main_scope_query = self.config_target.construct_main_scope_query()
         self.reorder_scope_query = self.config_target.get_reorder_scope_query()
-
 
     def get_cards(self, search_query: Optional[str] = None) -> TargetCards:
 

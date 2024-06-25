@@ -28,7 +28,7 @@ from ..lib.utilities import var_dump, var_dump_log, override
 
 from ..language_data import LanguageData
 from ..target import ValidConfiguredTarget
-from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult, Cacher
+from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult, PersistentCacher
 
 
 class TargetsDefiningTextArea(QTextEdit):
@@ -168,7 +168,7 @@ class ReorderCardsTab(FrequencyManTab):
             os.makedirs(lang_data_dir)
 
         self.language_data = LanguageData(lang_data_dir)
-        cacher = Cacher(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite'))
+        cacher = PersistentCacher(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite'))
 
         # target data (list of targets for reordering)
         self.target_list = TargetList(self.language_data, cacher, self.col)
@@ -489,7 +489,7 @@ class ReorderCardsTab(FrequencyManTab):
         json_backup = self.target_list.dump_json()
         hash_hex = hashlib.md5(json_backup.encode('utf-8')).hexdigest()
 
-        backup_dir  = os.path.join(self.fm_window.user_files_dir, 'target_list_backups')
+        backup_dir = os.path.join(self.fm_window.user_files_dir, 'target_list_backups')
         if not os.path.isdir(backup_dir):
             os.makedirs(backup_dir)
 

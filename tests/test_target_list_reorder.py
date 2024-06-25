@@ -38,6 +38,8 @@ class TestTargetListReorder():
 
         assert isinstance(result, TargetListReorderResult)
         assert len(result.reorder_result_list) == len(target_list)
+        assert result.num_cards_repositioned == 6566
+        assert result.num_targets_repositioned == 1
         assert len(result.modified_dirty_notes) == 7895
 
         # check result
@@ -161,7 +163,7 @@ class TestTargetListReorder():
         event_logger = EventLogger()
         result = target_list.reorder_cards(col, event_logger)
         assert isinstance(result, TargetListReorderResult)
-        assert len(result.reorder_result_list) == len(target_list)
+        assert len(result.reorder_result_list) == len(target_list) == result.num_targets_repositioned == 2
 
         # check result
         assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 2
@@ -192,6 +194,14 @@ class TestTargetListReorder():
         # check order
         col.lock_and_assert_order('sorted_cards_ids_0', result.reorder_result_list[0].sorted_cards_ids)
         col.lock_and_assert_order('sorted_cards_ids_1', result.reorder_result_list[1].sorted_cards_ids)
+
+        # reorder again
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+        assert "Repositioning 7 cards not needed for this target." in str(event_logger)
+        assert "Repositioning 4 cards not needed for this target." in str(event_logger)
+        assert result.num_targets_repositioned == 0
+        assert result.num_cards_repositioned == 0
 
 
     def test_two_deck_collection_with_ignore_list(self):

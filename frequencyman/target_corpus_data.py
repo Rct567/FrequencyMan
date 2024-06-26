@@ -238,7 +238,7 @@ class TargetCorpusData:
     suspended_card_value: float
     suspended_leech_card_value: float
     segmentation_strategy: CorpusSegmentationStrategy
-    data_segments: set[CorpusSegmentId]
+    segments_ids: set[CorpusSegmentId]
     language_data: LanguageData
     cacher: PersistentCacher
 
@@ -250,7 +250,7 @@ class TargetCorpusData:
         self.suspended_card_value = 0.1
         self.suspended_leech_card_value = 0.0
         self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
-        self.data_segments = set()
+        self.segments_ids = set()
 
     def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData, cacher: PersistentCacher) -> None:
         """
@@ -304,7 +304,7 @@ class TargetCorpusData:
                         raise Exception("Invalid segmentation_strategy set!")
 
                     corpus_segment_id = CorpusSegmentId(corpus_segment_id)
-                    self.data_segments.add(corpus_segment_id)
+                    self.segments_ids.add(corpus_segment_id)
 
                     if field_val == "":
                         field_value_tokenized = []

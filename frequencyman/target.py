@@ -70,7 +70,7 @@ class Target:
 
     main_scope_query: str
     reorder_scope_query: Optional[str]
-    target_corpus_data: Optional[TargetCorpusData]
+    corpus_data: Optional[TargetCorpusData]
 
     cache_data: Optional[ReorderCacheData]
 
@@ -82,7 +82,7 @@ class Target:
         self.language_data = language_data
         self.cacher = cacher
 
-        self.target_corpus_data = None
+        self.corpus_data = None
         self.cache_data = None
 
         self.main_scope_query = self.config_target.construct_main_scope_query()
@@ -117,43 +117,43 @@ class Target:
 
     def get_corpus_data(self, target_cards: TargetCards) -> TargetCorpusData:
 
-        if not self.target_corpus_data is None:
-            return self.target_corpus_data
+        if not self.corpus_data is None:
+            return self.corpus_data
 
-        self.target_corpus_data = TargetCorpusData()
+        self.corpus_data = TargetCorpusData()
 
         # familiarity_sweetspot_point
         configured_familiarity_sweetspot_point = self.config_target.get('familiarity_sweetspot_point')
         if isinstance(configured_familiarity_sweetspot_point, str) and configured_familiarity_sweetspot_point[0] in ['~', '^']:
-            self.target_corpus_data.familiarity_sweetspot_point = configured_familiarity_sweetspot_point
+            self.corpus_data.familiarity_sweetspot_point = configured_familiarity_sweetspot_point
         elif (familiarity_sweetspot_point := get_float(configured_familiarity_sweetspot_point)) is not None:
-            self.target_corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
+            self.corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
         # focus_words_max_familiarity
         if (focus_words_max_familiarity := get_float(self.config_target.get('focus_words_max_familiarity'))) is not None:
-            self.target_corpus_data.focus_words_max_familiarity = focus_words_max_familiarity
+            self.corpus_data.focus_words_max_familiarity = focus_words_max_familiarity
 
         # suspended_card_value
         if (suspended_card_value := get_float(self.config_target.get('suspended_card_value'))) is not None:
-            self.target_corpus_data.suspended_card_value = suspended_card_value
+            self.corpus_data.suspended_card_value = suspended_card_value
 
         # suspended_leech_card_value
         if (suspended_leech_card_value := get_float(self.config_target.get('suspended_leech_card_value'))) is not None:
-            self.target_corpus_data.suspended_leech_card_value = suspended_leech_card_value
+            self.corpus_data.suspended_leech_card_value = suspended_leech_card_value
 
         # corpus_segmentation_strategy
         if 'corpus_segmentation_strategy' in self.config_target:
             corpus_segmentation_strategy = self.config_target['corpus_segmentation_strategy'].lower()
             if corpus_segmentation_strategy == 'by_lang_data_id':
-                self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
+                self.corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
             elif corpus_segmentation_strategy == 'by_note_model_id_and_field_name':
-                self.target_corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME
+                self.corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME
 
         # create corpus data
-        self.target_corpus_data.create_data(target_cards, self.config_target.get_config_fields_per_note_type(), self.language_data, self.cacher)
+        self.corpus_data.create_data(target_cards, self.config_target.get_config_fields_per_note_type(), self.language_data, self.cacher)
 
         # done
-        return self.target_corpus_data
+        return self.corpus_data
 
     def __get_corpus_data_cached(self, target_cards: TargetCards) -> TargetCorpusData:
 

@@ -166,8 +166,8 @@ class TestTargetListReorder():
         assert len(result.reorder_result_list) == len(target_list) == result.num_targets_repositioned == 2
 
         # check result
-        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 2
-        assert target_list[1].target_corpus_data is not None and len(target_list[1].target_corpus_data.data_segments) == 2
+        assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
+        assert target_list[1].corpus_data is not None and len(target_list[1].corpus_data.segments_ids) == 2
 
         assert result.reorder_result_list[0].success and result.reorder_result_list[0].cards_repositioned
         assert result.reorder_result_list[0].error is None
@@ -206,8 +206,8 @@ class TestTargetListReorder():
         # check focus words in corpus data
         focus_words: dict[str, list] = {}
         for target in target_list.target_list:
-            if target.target_corpus_data and target.target_corpus_data.content_metrics:
-                for segment_id, segment_data in target.target_corpus_data.content_metrics.items():
+            if target.corpus_data and target.corpus_data.content_metrics:
+                for segment_id, segment_data in target.corpus_data.content_metrics.items():
                     focus_words[str(target.index_num)+'_'+str(segment_id)] = sorted(segment_data.words_post_focus)
         col.lock_and_assert_result('focus_words', focus_words)
 
@@ -238,7 +238,7 @@ class TestTargetListReorder():
         result = target_list.reorder_cards(col, event_logger)
 
         # check result
-        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 2
+        assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
 
         assert result.num_cards_repositioned == 11
         reorder_result = result.reorder_result_list[0]
@@ -292,8 +292,8 @@ class TestTargetListReorder():
         assert len(result.reorder_result_list) == len(target_list)
 
         # check result
-        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 2
-        assert target_list[1].target_corpus_data is None  # was cached
+        assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
+        assert target_list[1].corpus_data is None  # was cached
 
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success and reorder_result.cards_repositioned
@@ -357,7 +357,7 @@ class TestTargetListReorder():
         result = target_list.reorder_cards(col, event_logger)
 
         # check result
-        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 1
+        assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 1
 
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success and reorder_result.cards_repositioned
@@ -450,9 +450,9 @@ class TestTargetListReorder():
         result = target_list.reorder_cards(col, event_logger)
 
         # check result
-        assert target_list[0].target_corpus_data is not None
-        assert len(target_list[0].target_corpus_data.data_segments) == 2
-        assert len(target_list[0].target_corpus_data.content_metrics.keys()) == 2
+        assert target_list[0].corpus_data is not None
+        assert len(target_list[0].corpus_data.segments_ids) == 2
+        assert len(target_list[0].corpus_data.content_metrics.keys()) == 2
 
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success and reorder_result.cards_repositioned
@@ -490,7 +490,7 @@ class TestTargetListReorder():
         result = target_list.reorder_cards(col, event_logger)
 
         # check result
-        assert target_list[0].target_corpus_data is not None and len(target_list[0].target_corpus_data.data_segments) == 1
+        assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 1
 
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success and reorder_result.cards_repositioned

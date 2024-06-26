@@ -1,4 +1,5 @@
 import binascii
+from calendar import c
 from enum import Enum
 import hashlib
 import json
@@ -37,8 +38,7 @@ class PersistentCacher:
         self._items_preloaded = False
 
     def _create_table(self) -> None:
-        conn = self._get_connection()
-        cursor = conn.cursor()
+        cursor, conn = self._get_cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS cache_items (
                 id BLOB(16) PRIMARY KEY,
@@ -54,6 +54,10 @@ class PersistentCacher:
             self.__conn = sqlite3.connect(self._db_file_path)
             self._create_table()
         return self.__conn
+
+    def _get_cursor(self) -> tuple[sqlite3.Cursor, sqlite3.Connection]:
+        conn = self._get_connection()
+        return conn.cursor(), conn
 
     @staticmethod
     def _hash_id_bin(cache_id: str) -> bytes:
@@ -105,8 +109,8 @@ class PersistentCacher:
         if self._items_preloaded:
             return
 
-        conn = self._get_connection()
-        cursor = conn.cursor()
+        cursor, _ = self._get_cursor()
+
         cursor.execute('SELECT id, value, storage_type FROM cache_items')
         for row in cursor:
             hashed_cache_id = self.binary_to_hex(row[0])
@@ -127,8 +131,7 @@ class PersistentCacher:
         if (hashed_cache_id := self._hash_id_hex(cache_id)) in self._pre_loaded_cache:
             return self._pre_loaded_cache[hashed_cache_id]
 
-        conn = self._get_connection()
-        cursor = conn.cursor()
+        cursor, _ = self._get_cursor()
         cursor.execute('SELECT value, storage_type, created_at FROM cache_items WHERE id = ?', (self._hash_id_bin(cache_id),))
         row = cursor.fetchone()
 
@@ -141,8 +144,7 @@ class PersistentCacher:
 
     def delete_item(self, cache_id: str) -> None:
 
-        conn = self._get_connection()
-        cursor = conn.cursor()
+        cursor, conn = self._get_cursor()
         cursor.execute('DELETE FROM cache_items WHERE id = ?', (self._hash_id_bin(cache_id),))
         conn.commit()
         if (hashed_cache_id := self._hash_id_hex(cache_id)) in self._pre_loaded_cache:
@@ -167,8 +169,7 @@ class PersistentCacher:
         if not self._save_buffer:
             return
 
-        conn = self._get_connection()
-        cursor = conn.cursor()
+        cursor, conn = self._get_cursor()
         save_buffer_items = ((self._hash_id_bin(id), values[0], values[1].value, values[2]) for id, values in self._save_buffer.items())
         cursor.executemany('''
             INSERT OR REPLACE INTO cache_items (id, value, storage_type, created_at) VALUES (?, ?, ?, ?)

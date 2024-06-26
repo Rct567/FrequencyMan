@@ -8,6 +8,9 @@ import sqlite3
 from typing import Any, Callable, Optional, TypeVar
 from time import time
 
+from .sql_db_file import SqlDbFile
+from .utilities import override
+
 T = TypeVar('T')
 
 
@@ -17,29 +20,20 @@ class SerializationType(Enum):
     LIST_STR = 2
 
 
-class PersistentCacher:
+class PersistentCacher(SqlDbFile):
+
     def __init__(self, db_file_path: str, save_buffer_limit: int = 10_000) -> None:
 
-        if not os.path.isdir(os.path.dirname(db_file_path)):
-            raise ValueError("Directory for db_file_path {} does not exist!".format(db_file_path))
+        super().__init__(db_file_path)
 
-        if os.path.isdir(db_file_path):
-            raise ValueError("db_file_path {} is a directory, not a file!".format(db_file_path))
-
-        if os.path.exists(db_file_path):
-            if not os.access(db_file_path, os.R_OK | os.W_OK):
-                raise ValueError("db_file_path {} is not readable or writeable!".format(db_file_path))
-
-        self._db_file_path = db_file_path
-        self.__conn: Optional[sqlite3.Connection] = None
         self._save_buffer: dict[str, tuple[str, SerializationType, int]] = {}
         self._save_buffer_num_limit = save_buffer_limit
         self._pre_loaded_cache: dict[str, Any] = {}
         self._items_preloaded = False
 
-    def _create_table(self) -> None:
-        cursor, conn = self._get_cursor()
-        cursor.execute('''
+    @override
+    def _create_tables(self) -> None:
+        self.query('''
             CREATE TABLE IF NOT EXISTS cache_items (
                 id BLOB(16) PRIMARY KEY,
                 value TEXT,
@@ -47,17 +41,7 @@ class PersistentCacher:
                 created_at INTEGER
             )
         ''')
-        conn.commit()
-
-    def _get_connection(self) -> sqlite3.Connection:
-        if self.__conn is None:
-            self.__conn = sqlite3.connect(self._db_file_path)
-            self._create_table()
-        return self.__conn
-
-    def _get_cursor(self) -> tuple[sqlite3.Cursor, sqlite3.Connection]:
-        conn = self._get_connection()
-        return conn.cursor(), conn
+        self.commit()
 
     @staticmethod
     def _hash_id_bin(cache_id: str) -> bytes:
@@ -109,34 +93,28 @@ class PersistentCacher:
         if self._items_preloaded:
             return
 
-        cursor, _ = self._get_cursor()
-
-        cursor.execute('SELECT id, value, storage_type FROM cache_items')
-        for row in cursor:
-            hashed_cache_id = self.binary_to_hex(row[0])
+        result = self.query('SELECT id, value, storage_type FROM cache_items')
+        for row in result.fetch_rows():
+            hashed_cache_id = self.binary_to_hex(row['id'])
             assert len(hashed_cache_id) == 32
-            self._pre_loaded_cache[hashed_cache_id] = PersistentCacher.deserialize(row[1], SerializationType(row[2]))
+            self._pre_loaded_cache[hashed_cache_id] = PersistentCacher.deserialize(row['value'], SerializationType(row['storage_type']))
         self._items_preloaded = True
 
     def num_items_stored(self) -> int:
         if self._save_buffer:
             raise Exception("Cannot call num_items_stored() if save_buffer is not empty")
-        conn = self._get_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT COUNT(*) FROM cache_items')
-        return cursor.fetchone()[0]
+        return self.count_rows("cache_items")
 
     def get_item(self, cache_id: str, producer: Callable[..., T]) -> T:
 
         if (hashed_cache_id := self._hash_id_hex(cache_id)) in self._pre_loaded_cache:
             return self._pre_loaded_cache[hashed_cache_id]
 
-        cursor, _ = self._get_cursor()
-        cursor.execute('SELECT value, storage_type, created_at FROM cache_items WHERE id = ?', (self._hash_id_bin(cache_id),))
-        row = cursor.fetchone()
+        result = self.query('SELECT value, storage_type, created_at FROM cache_items WHERE id = ?', (self._hash_id_bin(cache_id),))
+        row = result.fetch_row()
 
         if row:
-            return PersistentCacher.deserialize(row[0], SerializationType(row[1]))
+            return PersistentCacher.deserialize(row['value'], SerializationType(row['storage_type']))
 
         result = producer()
         self.save_item(cache_id, result)
@@ -144,9 +122,8 @@ class PersistentCacher:
 
     def delete_item(self, cache_id: str) -> None:
 
-        cursor, conn = self._get_cursor()
-        cursor.execute('DELETE FROM cache_items WHERE id = ?', (self._hash_id_bin(cache_id),))
-        conn.commit()
+        self.query('DELETE FROM cache_items WHERE id = ?', (self._hash_id_bin(cache_id),)).fetch_row()
+        self.commit()
         if (hashed_cache_id := self._hash_id_hex(cache_id)) in self._pre_loaded_cache:
             del self._pre_loaded_cache[hashed_cache_id]
 
@@ -169,21 +146,11 @@ class PersistentCacher:
         if not self._save_buffer:
             return
 
-        cursor, conn = self._get_cursor()
         save_buffer_items = ((self._hash_id_bin(id), values[0], values[1].value, values[2]) for id, values in self._save_buffer.items())
-        cursor.executemany('''
+        self.query_many('''
             INSERT OR REPLACE INTO cache_items (id, value, storage_type, created_at) VALUES (?, ?, ?, ?)
         ''', save_buffer_items)
-        conn.commit()
+        self.commit()
 
         self._save_buffer.clear()
         self.clear_pre_loaded_cache()
-
-    def close(self) -> None:
-        self.flush_save_buffer()  # Ensure any buffered data is saved
-        if self.__conn is not None:
-            self.__conn.close()
-            self.__conn = None
-
-    def __del__(self) -> None:
-        self.close()

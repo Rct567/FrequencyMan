@@ -30,7 +30,7 @@ class TestTargetListReorder():
         ])
 
         assert len(target_list) == 1
-        pre_sort_cards = target_list[0].get_cards()
+        pre_sort_cards = target_list[0].get_cards_non_cached()
 
         # reorder cards
         event_logger = EventLogger()
@@ -49,7 +49,7 @@ class TestTargetListReorder():
         assert target_result.error is None
         assert len(target_result.sorted_cards_ids) == len(pre_sort_cards.new_cards_ids)
         assert target_result.sorted_cards_ids != pre_sort_cards.new_cards_ids
-        assert target_result.sorted_cards_ids == target_list[0].get_cards().new_cards_ids
+        assert target_result.sorted_cards_ids == target_list[0].get_cards_non_cached().new_cards_ids
         assert "Found 6566 new cards in a target collection of 15790 cards" in str(event_logger)
         assert "Repositioning 6566 cards" in str(event_logger)
         assert "Updating 7895 modified notes" in str(event_logger)
@@ -63,10 +63,10 @@ class TestTargetListReorder():
         col.lock_and_assert_result('notes_focus_words', notes_focus_words)
 
         # check acquired cards for each target
-        assert len(target_list[0].get_cards().all_cards_ids) == 15790
-        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 7895
-        assert len(target_list[0].get_cards().new_cards_ids) == 6566
-        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
+        assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 15790
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_all_cards()) == 7895
+        assert len(target_list[0].get_cards_non_cached().new_cards_ids) == 6566
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_new_cards()) == 4360
 
         # check order
         col.lock_and_assert_order('sorted_cards_ids', target_result.sorted_cards_ids)
@@ -96,7 +96,7 @@ class TestTargetListReorder():
         ])
 
         assert len(target_list) == 1
-        pre_sort_cards = target_list[0].get_cards()
+        pre_sort_cards = target_list[0].get_cards_non_cached()
 
         # reorder cards
         event_logger = EventLogger()
@@ -120,10 +120,10 @@ class TestTargetListReorder():
         assert "Updating 7895 modified notes" in str(event_logger)
 
         # check acquired cards
-        assert len(target_list[0].get_cards().all_cards_ids) == 15790
-        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 7895
-        assert len(target_list[0].get_cards().new_cards_ids) == 6566
-        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 4360
+        assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 15790
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_all_cards()) == 7895
+        assert len(target_list[0].get_cards_non_cached().new_cards_ids) == 6566
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_new_cards()) == 4360
 
         # check order
         col.lock_and_assert_order('sorted_cards_ids', target_result.sorted_cards_ids)
@@ -182,14 +182,14 @@ class TestTargetListReorder():
         assert result.reorder_result_list[1].num_cards_repositioned == 4
 
         # check acquired cards for each target
-        assert len(target_list[0].get_cards().all_cards_ids) == 10
-        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 10
-        assert len(target_list[0].get_cards().new_cards_ids) == 7
-        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 7
-        assert len(target_list[1].get_cards().all_cards_ids) == 6
-        assert len(target_list[1].get_cards().get_notes_from_all_cards()) == 6
-        assert len(target_list[1].get_cards().new_cards_ids) == 4
-        assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 4
+        assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 10
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_all_cards()) == 10
+        assert len(target_list[0].get_cards_non_cached().new_cards_ids) == 7
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_new_cards()) == 7
+        assert len(target_list[1].get_cards_non_cached().all_cards_ids) == 6
+        assert len(target_list[1].get_cards_non_cached().get_notes_from_all_cards()) == 6
+        assert len(target_list[1].get_cards_non_cached().new_cards_ids) == 4
+        assert len(target_list[1].get_cards_non_cached().get_notes_from_new_cards()) == 4
 
         # check order
         col.lock_and_assert_order('sorted_cards_ids_0', result.reorder_result_list[0].sorted_cards_ids)
@@ -313,14 +313,14 @@ class TestTargetListReorder():
         assert result.num_cards_repositioned == 11
 
         # check acquired cards for each target
-        assert len(target_list[0].get_cards().all_cards_ids) == 16
-        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 16
-        assert len(target_list[0].get_cards().new_cards_ids) == 11
-        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 11
-        assert len(target_list[1].get_cards().all_cards_ids) == 16
-        assert len(target_list[1].get_cards().get_notes_from_all_cards()) == 16
-        assert len(target_list[1].get_cards().new_cards_ids) == 11
-        assert len(target_list[1].get_cards().get_notes_from_new_cards()) == 11
+        assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 16
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_all_cards()) == 16
+        assert len(target_list[0].get_cards_non_cached().new_cards_ids) == 11
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_new_cards()) == 11
+        assert len(target_list[1].get_cards_non_cached().all_cards_ids) == 16
+        assert len(target_list[1].get_cards_non_cached().get_notes_from_all_cards()) == 16
+        assert len(target_list[1].get_cards_non_cached().new_cards_ids) == 11
+        assert len(target_list[1].get_cards_non_cached().get_notes_from_new_cards()) == 11
 
         # check order
         col.lock_and_assert_order('sorted_cards_ids_0', result.reorder_result_list[0].sorted_cards_ids)
@@ -371,10 +371,10 @@ class TestTargetListReorder():
         assert result.reorder_result_list[0].num_cards_repositioned == 10
         assert result.num_cards_repositioned == 10
 
-        assert len(target_list[0].get_cards().all_cards_ids) == 16
-        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 16
-        assert len(target_list[0].get_cards().new_cards_ids) == 16
-        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 16
+        assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 16
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_all_cards()) == 16
+        assert len(target_list[0].get_cards_non_cached().new_cards_ids) == 16
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_new_cards()) == 16
 
         # check order
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
@@ -418,10 +418,10 @@ class TestTargetListReorder():
         assert result.reorder_result_list[0].num_cards_repositioned == 0
         assert result.num_cards_repositioned == 0
 
-        assert len(target_list[0].get_cards().all_cards_ids) == 0
-        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 0
-        assert len(target_list[0].get_cards().new_cards_ids) == 0
-        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 0
+        assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 0
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_all_cards()) == 0
+        assert len(target_list[0].get_cards_non_cached().new_cards_ids) == 0
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_new_cards()) == 0
 
     def test_two_deck_collection_corpus_segmentation_by_note_field(self):
 
@@ -503,10 +503,10 @@ class TestTargetListReorder():
         assert result.reorder_result_list[0].num_cards_repositioned == 12
         assert result.num_cards_repositioned == 12
 
-        assert len(target_list[0].get_cards().all_cards_ids) == 16
-        assert len(target_list[0].get_cards().get_notes_from_all_cards()) == 16
-        assert len(target_list[0].get_cards().new_cards_ids) == 12
-        assert len(target_list[0].get_cards().get_notes_from_new_cards()) == 12
+        assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 16
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_all_cards()) == 16
+        assert len(target_list[0].get_cards_non_cached().new_cards_ids) == 12
+        assert len(target_list[0].get_cards_non_cached().get_notes_from_new_cards()) == 12
 
         # check order
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
@@ -540,8 +540,8 @@ class TestTargetListReorder():
             reorder_result = result.reorder_result_list[0]
             assert reorder_result.success and reorder_result.error is None
 
-            assert len(target_list[0].get_cards().all_cards_ids) == 16
+            assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 16
 
-            col.lock_and_assert_order('all_cards_ids_'+ranking_factor, target_list[0].get_cards().all_cards_ids)
+            col.lock_and_assert_order('all_cards_ids_'+ranking_factor, target_list[0].get_cards_non_cached().all_cards_ids)
 
             col.close()

@@ -153,6 +153,15 @@ class TargetList:
                     target_data['ranking_factors'][new_factor_name] = target_data['ranking_factors'][old_factor_name]
                     del target_data['ranking_factors'][old_factor_name]
 
+        # check id
+
+        if 'id' in target_data:
+            if not isinstance(target_data['id'], str):
+                return (False, "ID defined in target #{} is not a string (string expected).".format(index), None)
+            elif len(target_data['id']) == 0:
+                return (False, "ID defined in target #{} is empty.".format(index), None)
+            result['id'] = target_data['id']
+
         # check deck names
 
         if 'deck' in target_data:

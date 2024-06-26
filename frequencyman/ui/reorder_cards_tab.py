@@ -27,6 +27,7 @@ from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log, override
 
 from ..language_data import LanguageData
+from ..target_reorder_logger import TargetReorderLogger
 from ..target import ValidConfiguredTarget
 from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult, PersistentCacher
 
@@ -149,7 +150,7 @@ class ReorderCardsTab(FrequencyManTab):
     targets_input_textarea: TargetsDefiningTextArea
     reorder_button: QPushButton
 
-    def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
+    def __init__(self, fm_window: FrequencyManMainWindow, col: Collection, reorder_logger: TargetReorderLogger) -> None:
 
         super().__init__(fm_window)
 
@@ -158,6 +159,7 @@ class ReorderCardsTab(FrequencyManTab):
 
         self.fm_window = fm_window
         self.col = col
+        self.reorder_logger = reorder_logger
 
     @override
     def on_tab_painted(self, tab_layout: QLayout) -> None:
@@ -525,7 +527,9 @@ class ReorderCardsTab(FrequencyManTab):
             nonlocal ctrl_pressed
             schedule_cards_as_new = bool(ctrl_pressed)
 
-            return self.target_list.reorder_cards(col, event_logger, schedule_cards_as_new)
+            reorder_result = self.target_list.reorder_cards(col, event_logger, schedule_cards_as_new)
+
+            return reorder_result
 
         def reorder_show_results(reorder_cards_results: TargetListReorderResult) -> None:
 
@@ -549,14 +553,23 @@ class ReorderCardsTab(FrequencyManTab):
             if self.fm_window.addon_config.get('log_reorder_events', False):
                 event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))
 
+        def handle_results(reorder_cards_results: TargetListReorderResult) -> None:
+
+            num_entries_added = self.reorder_logger.log_reordering(self.target_list, reorder_cards_results)
+            reorder_show_results(reorder_cards_results)
+            if num_entries_added > 0:
+                self.fm_window.mw.deckBrowser.refresh()
+                self.fm_window.mw.toolbar.draw()
+
+
         shift_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
         ctrl_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier
 
         if shift_pressed and ctrl_pressed:  # for debugging purposes
-            reorder_show_results(reorder_operation(self.col))
+            handle_results(reorder_operation(self.col))
         else:
             QueryOp(
                 parent=self.fm_window,
                 op=reorder_operation,
-                success=reorder_show_results
+                success=handle_results
             ).with_progress(label="Reordering new cards...").run_in_background()

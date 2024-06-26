@@ -16,7 +16,7 @@ class ConfiguredTargetNote(TypedDict):
     fields: dict[str, str]
 
 
-ConfiguredTargetKeys = Literal['deck', 'decks', 'scope_query', 'reorder_scope_query', 'familiarity_sweetspot_point',
+ConfiguredTargetKeys = Literal['id', 'deck', 'decks', 'scope_query', 'reorder_scope_query', 'familiarity_sweetspot_point',
                                'focus_words_max_familiarity', 'suspended_card_value', 'suspended_leech_card_value',
                                'ideal_word_count', 'ranking_factors', 'corpus_segmentation_strategy', 'notes']
 
@@ -67,7 +67,7 @@ class ConfiguredTarget:
 class ConfiguredTargetTypedDict(dict):
 
     @overload
-    def __getitem__(self, key: Literal['deck', 'scope_query', 'reorder_scope_query', 'corpus_segmentation_strategy']) -> str:
+    def __getitem__(self, key: Literal['id', 'deck', 'scope_query', 'reorder_scope_query', 'corpus_segmentation_strategy']) -> str:
         ...
 
     @overload
@@ -103,7 +103,7 @@ class ConfiguredTargetTypedDict(dict):
         return super().__getitem__(key)
 
     @overload
-    def __setitem__(self, key: Literal['deck', 'scope_query', 'reorder_scope_query', 'corpus_segmentation_strategy'], value: str) -> None:
+    def __setitem__(self, key: Literal['id', 'deck', 'scope_query', 'reorder_scope_query', 'corpus_segmentation_strategy'], value: str) -> None:
         ...
 
     @overload

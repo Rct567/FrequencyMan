@@ -42,6 +42,7 @@ class NoteFieldContentData:
 @dataclass
 class SegmentContentMetrics:
 
+    lang_id: LangId
     focus_words_max_familiarity: float
     familiarity_sweetspot_point: Union[float, str]
     target_cards: TargetCards
@@ -231,7 +232,6 @@ class TargetCorpusData:
     """
 
     targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]] = field(default_factory=lambda: defaultdict(list))
-    target_cards: TargetCards
     content_metrics: dict[CorpusSegmentId, SegmentContentMetrics]
     focus_words_max_familiarity: float
     familiarity_sweetspot_point: Union[float, str]
@@ -239,12 +239,16 @@ class TargetCorpusData:
     suspended_leech_card_value: float
     segmentation_strategy: CorpusSegmentationStrategy
     segments_ids: set[CorpusSegmentId]
+
+    target_cards: TargetCards
+    target_fields_per_note_type: dict[str, dict[str, LangDataId]]
     language_data: LanguageData
     cacher: PersistentCacher
 
-    def __init__(self):
+    def __init__(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData, cacher: PersistentCacher):
 
         self.targeted_fields_per_note = {}
+        self.content_metrics = {}
         self.focus_words_max_familiarity = 0.28
         self.familiarity_sweetspot_point = "~0.5"
         self.suspended_card_value = 0.1
@@ -252,28 +256,29 @@ class TargetCorpusData:
         self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
         self.segments_ids = set()
 
-    def create_data(self, target_cards: TargetCards, target_fields_per_note_type: dict[str, dict[str, LangDataId]], language_data: LanguageData, cacher: PersistentCacher) -> None:
+        self.target_cards = target_cards
+        self.language_data = language_data
+        self.cacher = cacher
+        self.target_fields_per_note_type = target_fields_per_note_type
+
+    def create_data(self) -> None:
         """
         Create corpus data for the given target and its cards.
         """
 
-        if len(target_cards) == 0:
+        if len(self.target_cards) == 0:
             return
-
-        cards_familiarity_factor = self.__get_cards_familiarity_factor(target_cards.reviewed_cards, self.suspended_card_value, self.suspended_leech_card_value)
-        self.content_metrics = defaultdict(lambda: SegmentContentMetrics(self.focus_words_max_familiarity, self.familiarity_sweetspot_point, target_cards, language_data, cards_familiarity_factor))
 
         if len(self.content_metrics) > 0:
             raise Exception("Data already created by TargetCorpusData.")
 
-        self.target_cards = target_cards
-        self.cacher = cacher
+        self.__set_targeted_fields_data()
 
-        self.__set_targeted_fields_data(target_fields_per_note_type)
-
-    def __set_targeted_fields_data(self, target_fields_per_note_type: dict[str, dict[str, LangDataId]]):
+    def __set_targeted_fields_data(self):
 
         self.cacher.pre_load_all_items()
+
+        cards_familiarity_factor = self.__get_cards_familiarity_factor(self.target_cards.reviewed_cards, self.suspended_card_value, self.suspended_leech_card_value)
 
         for note in self.target_cards.get_notes_from_all_cards().values():
 
@@ -281,10 +286,10 @@ class TargetCorpusData:
 
             if (note_type is None):
                 raise Exception("Card note type not found for card.nid '{}'!".format(note.mid))
-            if note_type['name'] not in target_fields_per_note_type:  # note type name is not defined as target
+            if note_type['name'] not in self.target_fields_per_note_type:  # note type name is not defined as target
                 continue
 
-            target_note_fields = target_fields_per_note_type[note_type['name']]
+            target_note_fields = self.target_fields_per_note_type[note_type['name']]
 
             card_note_fields_in_target: list[NoteFieldContentData] = []
 
@@ -321,6 +326,12 @@ class TargetCorpusData:
                     )
 
                     card_note_fields_in_target.append(content_data)
+
+                    if corpus_segment_id not in self.content_metrics:
+                        segment_content_metrics = SegmentContentMetrics(lang_id, self.focus_words_max_familiarity, self.familiarity_sweetspot_point, self.target_cards, self.language_data, cards_familiarity_factor)
+                        self.content_metrics[corpus_segment_id] = segment_content_metrics
+                    elif self.content_metrics[corpus_segment_id].lang_id != lang_id:
+                        raise Exception("Language id mismatch for segment '{}' and lang_id '{}'!".format(corpus_segment_id, lang_id))
 
                     self.content_metrics[corpus_segment_id].targeted_fields_per_note[note.id].append(content_data)
 

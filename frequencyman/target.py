@@ -120,7 +120,7 @@ class Target:
         if not self.corpus_data is None:
             return self.corpus_data
 
-        self.corpus_data = TargetCorpusData()
+        self.corpus_data = TargetCorpusData(target_cards, self.config_target.get_config_fields_per_note_type(), self.language_data, self.cacher)
 
         # familiarity_sweetspot_point
         configured_familiarity_sweetspot_point = self.config_target.get('familiarity_sweetspot_point')
@@ -150,7 +150,7 @@ class Target:
                 self.corpus_data.segmentation_strategy = CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME
 
         # create corpus data
-        self.corpus_data.create_data(target_cards, self.config_target.get_config_fields_per_note_type(), self.language_data, self.cacher)
+        self.corpus_data.create_data()
 
         # done
         return self.corpus_data

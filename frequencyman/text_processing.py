@@ -75,7 +75,9 @@ class TextProcessing:
     def default_tokenizer(text: str) -> list[str]:
 
         text = str(text+" ").replace(". ", " ")
-        return re.split(r"[^\w\-\_\'\’\.]{1,}", text)
+        # Arabic diacritical marks: u0610-\u061A\u064B-\u065F
+        non_word_chars = r"[^\w\-\_\'\’\.\u0610-\u061A\u064B-\u065F]{1,}"
+        return re.split(non_word_chars, text)
 
     @staticmethod
     def default_tokenizer_removing_possessives(text: str) -> list[str]:

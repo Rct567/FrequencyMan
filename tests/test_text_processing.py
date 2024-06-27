@@ -49,7 +49,7 @@ def test_get_word_tokens_from_text_default_tokenizer_en():
 
     assert TextProcessing.get_word_tokens_from_text("Мне … лет.", LangId("en")) == ['мне', 'лет']
     assert TextProcessing.get_word_tokens_from_text("你跟我", LangId("en")) == ['你跟我']
-
+    assert TextProcessing.get_word_tokens_from_text("أنا بصدّقك وإحنا دايماً منقلكم", LangId("en")) == ['أنا', 'بصدّقك', 'وإحنا', 'دايماً', 'منقلكم']
 
 def test_get_word_tokens_from_text_user_tokenizer_ja():
 

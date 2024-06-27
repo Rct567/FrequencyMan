@@ -135,8 +135,7 @@ class TargetsDefiningTextArea(QTextEdit):
         if self.json_result is None or self.json_result.valid_targets_defined is None:
             showWarning("Can not save to config because the current list of targets is not valid!")
             return
-        self.fm_window.addon_config['reorder_target_list'] = self.json_result.valid_targets_defined
-        self.fm_window.addon_config_write(self.fm_window.addon_config)
+        self.fm_window.addon_config.update_setting('reorder_target_list', self.json_result.valid_targets_defined)
         self.handle_current_content()
 
 
@@ -223,8 +222,8 @@ class ReorderCardsTab(FrequencyManTab):
         def set_content_on_first_paint(_):
 
             # use stored target list (might not be valid, so set as text)
-            if self.fm_window.addon_config and "reorder_target_list" in self.fm_window.addon_config:
-                stored_reorder_target_list = self.fm_window.addon_config.get("reorder_target_list")
+            if "reorder_target_list" in self.fm_window.addon_config:
+                stored_reorder_target_list = self.fm_window.addon_config['reorder_target_list']
                 if isinstance(stored_reorder_target_list, list):
                     self.targets_input_textarea.set_content(stored_reorder_target_list)
 
@@ -348,7 +347,9 @@ class ReorderCardsTab(FrequencyManTab):
         @pyqtSlot()
         def user_clicked_reset_button():
 
-            if len(self.fm_window.addon_config['reorder_target_list']) == 0:
+            stored_target_list = self.fm_window.addon_config['reorder_target_list']
+
+            if isinstance(stored_target_list, list) and len(stored_target_list) == 0:
                 if askUser("Target list in config is empty. Resetting will result in an empty target list. Continue?"):
                     if askUserDialog("Currently defined targets will be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).exec() == 0:
                         self.targets_input_textarea.set_content([])
@@ -356,14 +357,14 @@ class ReorderCardsTab(FrequencyManTab):
 
             json_result = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
 
-            if self.fm_window.addon_config['reorder_target_list'] == json_result.targets_defined:
+            if stored_target_list == json_result.targets_defined:
                 showInfo("Defined targets are already the same as those stored in the config!")
                 return
 
             if askUser("Reset targets to those stored in the config?"):
                 if askUserDialog("Currently defined targets may be lost.", buttons=["Ok", "Cancel"], parent=self.fm_window).exec() == 0:
-                    stored_target_list = self.fm_window.addon_config['reorder_target_list']
-                    self.targets_input_textarea.set_content(stored_target_list)
+                    if isinstance(stored_target_list, list):
+                        self.targets_input_textarea.set_content(stored_target_list)
 
         def update_reset_button_state(new_json_result: JsonTargetsResult, _):
 
@@ -388,8 +389,7 @@ class ReorderCardsTab(FrequencyManTab):
             json_result = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
 
             if (json_result.valid_targets_defined is not None and json_result.validity_state == JsonTargetsValidity.VALID_TARGETS and self.fm_window.addon_config['reorder_target_list'] != json_result.valid_targets_defined):
-                self.fm_window.addon_config['reorder_target_list'] = [target for target in json_result.valid_targets_defined]
-                self.fm_window.addon_config_write(self.fm_window.addon_config)
+                self.targets_input_textarea.save_current_to_config()
                 reset_button.setDisabled(True)
 
             save_button.setDisabled(True)
@@ -550,7 +550,7 @@ class ReorderCardsTab(FrequencyManTab):
             else:
                 showInfo(result_info_str, parent=self.fm_window)
 
-            if self.fm_window.addon_config.get('log_reorder_events', False):
+            if self.fm_window.addon_config.is_enabled('log_reorder_events'):
                 event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))
 
         def handle_results(reorder_cards_results: TargetListReorderResult) -> None:
@@ -560,7 +560,6 @@ class ReorderCardsTab(FrequencyManTab):
             if num_entries_added > 0:
                 self.fm_window.mw.deckBrowser.refresh()
                 self.fm_window.mw.toolbar.draw()
-
 
         shift_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
         ctrl_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier

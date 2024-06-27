@@ -5,6 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from typing import Any, Optional, Tuple, Callable
 
+from ..lib.addon_config import AddonConfig
 from ..lib.utilities import var_dump_log, override
 
 from aqt import QAction
@@ -56,8 +57,7 @@ class FrequencyManMainWindow(QDialog):
 
     tab_menu_options: dict[str, QWidget]
 
-    addon_config: dict[str, Any]
-    addon_config_write: Callable[[dict[str, Any]], None]
+    addon_config: AddonConfig
 
     def __init__(self, mw: AnkiQt, root_dir: str, user_files_dir: str):
 
@@ -86,12 +86,13 @@ class FrequencyManMainWindow(QDialog):
         self.setLayout(window_layout)
 
         # Addon config
-        self.addon_config = {}
-        addon_config = mw.addonManager.getConfig(__name__)
-        if isinstance(addon_config, dict):
-            self.addon_config = addon_config
+        current_config = mw.addonManager.getConfig(__name__)
+        if current_config is None:
+            current_config = {}
 
-        self.addon_config_write = lambda config: mw.addonManager.writeConfig(__name__, config)
+        config_writer: Callable[[dict[str, Any]], None] = lambda config: mw.addonManager.writeConfig(__name__, config)
+
+        self.addon_config = AddonConfig(current_config, config_writer)
 
         # dirs
         self.root_dir = root_dir

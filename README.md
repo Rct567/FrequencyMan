@@ -218,7 +218,7 @@ For each defined target, the following setting are available:
 | `reorder_scope_query`   | string | Search query to reduce which cards get repositioned.  | Main scope as defined by `deck`, `decks` or  `scope_query`.       |
 | `ranking_factors`   | object |  | see '[Ranking factors](#default-ranking-factors)'      |
 | `familiarity_sweetspot_point`   | string \| float | Defines a specific 'sweetspot' of familiarity for  ranking factor `familiarity_sweetspot`.  |   `"~0.5"` (=50% of focus_words_max_familiarity)  |
-| `suspended_card_value`   | float |  |   `0.5`  |
+| `suspended_card_value`   | float |  |   `0.1`  |
 | `suspended_leech_card_value`   | float |  |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[1, 5]`   |
 | `focus_words_max_familiarity`   | float |  |  `0.28`   |

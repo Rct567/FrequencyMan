@@ -58,9 +58,39 @@ class TestTargetReorderLogger:
         event_logger = EventLogger()
         result = target_list.reorder_cards(col, event_logger)
 
-        reorder_logger.log_reordering(target_list, result)
+        num_entries_added = reorder_logger.log_reordering(target_list, result)
 
+        assert num_entries_added == 2
         assert reorder_logger.count_rows("reorders") == 1
-        assert reorder_logger.count_rows("targets") == 2
+        assert reorder_logger.count_rows("reordered_targets") == 2
         assert reorder_logger.count_rows("target_segments") == 4
         assert reorder_logger.count_rows("target_languages") == 4
+        assert reorder_logger.count_rows("target_mature_words") == 5
+        assert reorder_logger.count_rows("global_mature_words") == 5
+        assert reorder_logger.count_rows("global_languages") == 2
+
+        # check info
+
+        assert reorder_logger.get_info_global() == {'en': {'num_words_mature': 3}, 'es': {'num_words_mature': 2}}
+
+        per_target = reorder_logger.get_info_per_target()
+        assert per_target['target1']['en'] == {'num_words_mature': 2}
+        assert per_target['target1']['es'] == {'num_words_mature': 1}
+        assert per_target['target2']['en'] == {'num_words_mature': 1}
+        assert per_target['target2']['es'] == {'num_words_mature': 1}
+
+        # reorder again
+
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+
+        num_entries_added = reorder_logger.log_reordering(target_list, result)
+
+        assert num_entries_added == 0
+        assert reorder_logger.count_rows("reorders") == 1
+        assert reorder_logger.count_rows("reordered_targets") == 2
+        assert reorder_logger.count_rows("target_segments") == 4
+        assert reorder_logger.count_rows("target_languages") == 4
+        assert reorder_logger.count_rows("target_mature_words") == 5
+        assert reorder_logger.count_rows("global_mature_words") == 5
+        assert reorder_logger.count_rows("global_languages") == 2

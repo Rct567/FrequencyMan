@@ -8,8 +8,11 @@ import os
 import sqlite3
 from typing import Any, Iterable, Optional, Sequence
 
+from aqt import Union
+
 from .utilities import var_dump, var_dump_log
 
+QueryParameters = Union[Sequence[Union[int, float, str, bytes]], int, float, str, bytes]
 
 class QueryResults:
 
@@ -73,10 +76,14 @@ class SqlDbFile():
 
         self.__connection.commit()
 
-    def query(self, query: str, params: Optional[Sequence] = None) -> QueryResults:
+    def query(self, query: str, params: Optional[QueryParameters] = None) -> QueryResults:
         cursor = self.cursor()
+
+        if isinstance(params, str) or isinstance(params, int) or isinstance(params, float) or isinstance(params, bytes):
+            params = (params,)
+
         if params:
-           cursor.execute(query, params)
+            cursor.execute(query, params)
         else:
             cursor.execute(query)
         return QueryResults(self.connection(), cursor)
@@ -86,7 +93,7 @@ class SqlDbFile():
         cursor.executemany(query, params)
         return QueryResults(self.connection(), cursor)
 
-    def result(self, query: str, params: Optional[Sequence] = None) -> Any:
+    def result(self, query: str, params: Optional[QueryParameters] = None) -> Any:
         result = self.query(query, params)
         row = result.fetch_row()
         if not row:
@@ -94,7 +101,16 @@ class SqlDbFile():
         first_value = next(iter(row.values()))
         return first_value
 
-    def delete_row(self, table_name: str, where: str, params: Optional[Sequence] = None) -> int:
+    def create_table(self, table_name: str, columns: dict[str, str], constraints: Optional[str] = None) -> QueryResults:
+        columns_def = ', '.join('{} {}'.format(name, type_) for name, type_ in columns.items())
+        if constraints:
+            columns_def += ', ' + constraints
+        return self.query('CREATE TABLE IF NOT EXISTS {} ({})'.format(table_name, columns_def))
+
+    def create_index(self, table_name: str, index_name: str, columns: list[str]) -> QueryResults:
+        return self.query('CREATE INDEX IF NOT EXISTS {} ON {} ({})'.format(index_name, table_name, ', '.join(columns)))
+
+    def delete_row(self, table_name: str, where: str, params: Optional[QueryParameters] = None) -> int:
 
         result = self.query("DELETE FROM {} WHERE {}".format(table_name, where), params)
         return result.row_count()
@@ -106,8 +122,38 @@ class SqlDbFile():
 
         return self.result("SELECT COUNT(*) FROM {}".format(table_name))
 
+    def insert_row(self, table_name: str, row: dict[str, Any]) -> QueryResults:
+        columns = ', '.join(row.keys())
+        placeholders = ', '.join('?' for _ in row)
+        query = 'INSERT INTO {} ({}) VALUES ({})'.format(table_name, columns, placeholders)
+        params = tuple(row.values())
+        return self.query(query, params)
+
+    def insert_many_rows(self, table_name: str, rows: Iterable[dict[str, Any]]) -> QueryResults:
+        iterator = iter(rows)
+        first_row = next(iterator, None)
+        if first_row is None:
+            raise Exception("No rows to insert!")
+
+        columns = ', '.join(first_row.keys())
+        placeholders = ', '.join('?' for _ in first_row)
+        query = 'INSERT INTO {} ({}) VALUES ({})'.format(table_name, columns, placeholders)
+
+        params = [tuple(first_row.values())]
+        for row in iterator:
+            params.append(tuple(row.values()))
+
+        return self.query_many(query, params)
+
+    def in_transaction(self) -> bool:
+        if self.__connection is not None:
+            return self.__connection.in_transaction
+        return False
+
     def close(self) -> None:
         if self.__connection is not None:
+            if self.__connection.in_transaction:
+                raise Exception("Cannot close connection while in transaction!")
             self.__connection.close()
             self.__connection = None
 

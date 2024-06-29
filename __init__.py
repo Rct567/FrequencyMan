@@ -63,12 +63,12 @@ def add_frequencyman_to_toolbar_items(reorder_logger: TargetReorderLogger) -> No
 
     def init_toolbar_items(reorder_logger: TargetReorderLogger, links: list[str], toolbar: Toolbar) -> None:
 
-        for info in reorder_logger.get_latest_reorder_info():
+        for lang_id, lang_data in reorder_logger.get_info_global().items():
 
             links.append(
                 toolbar.create_link(
                     cmd="fm_lang_info_toolbar",
-                    label="{}: <b>{}</b>".format(info['lang_id'].upper(), info['num_word_mature']),
+                    label="{}: <b>{}</b>".format(lang_id.upper(), lang_data['num_words_mature']),
                     func=lambda: None,
                     tip=None,
                     id=None,
@@ -89,9 +89,9 @@ def add_frequencyman_info_to_deck_browser(reorder_logger: TargetReorderLogger) -
 
     def update_deck_browser(reorder_logger: TargetReorderLogger, deck_browser: DeckBrowser, content: "DeckBrowserContent") -> None:
 
-        for info in reorder_logger.get_latest_reorder_info():
+        for lang_id, lang_data in reorder_logger.get_info_global().items():
 
-            content.stats += "<p>{}: <b>{}</b></p>".format(info['lang_id'].upper(), info['num_word_mature'])
+            content.stats += "<p>{}: <b>{}</b></p>".format(lang_id.upper(), lang_data['num_words_mature'])
 
     gui_hooks.deck_browser_will_render_content.append(partial(update_deck_browser, reorder_logger))
 

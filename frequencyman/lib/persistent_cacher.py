@@ -1,10 +1,13 @@
+"""
+FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
+See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
+"""
+
+
 import binascii
-from calendar import c
 from enum import Enum
 import hashlib
 import json
-import os
-import sqlite3
 from typing import Any, Callable, Optional, TypeVar
 from time import time
 
@@ -110,7 +113,7 @@ class PersistentCacher(SqlDbFile):
         if (hashed_cache_id := self._hash_id_hex(cache_id)) in self._pre_loaded_cache:
             return self._pre_loaded_cache[hashed_cache_id]
 
-        result = self.query('SELECT value, storage_type, created_at FROM cache_items WHERE id = ?', (self._hash_id_bin(cache_id),))
+        result = self.query('SELECT value, storage_type, created_at FROM cache_items WHERE id = ?', self._hash_id_bin(cache_id))
         row = result.fetch_row()
 
         if row:
@@ -121,8 +124,7 @@ class PersistentCacher(SqlDbFile):
         return result
 
     def delete_item(self, cache_id: str) -> None:
-
-        self.query('DELETE FROM cache_items WHERE id = ?', (self._hash_id_bin(cache_id),)).fetch_row()
+        self.delete_row('cache_items', 'id = ?', self._hash_id_bin(cache_id))
         self.commit()
         if (hashed_cache_id := self._hash_id_hex(cache_id)) in self._pre_loaded_cache:
             del self._pre_loaded_cache[hashed_cache_id]

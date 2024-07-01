@@ -65,8 +65,8 @@ class TestTargetReorderLogger:
         assert reorder_logger.count_rows("reordered_targets") == 2
         assert reorder_logger.count_rows("target_segments") == 4
         assert reorder_logger.count_rows("target_languages") == 4
-        assert reorder_logger.count_rows("target_mature_words") == 5
-        assert reorder_logger.count_rows("global_mature_words") == 5
+        assert reorder_logger.count_rows("target_reviewed_words", "is_mature = 1") == 5
+        assert reorder_logger.count_rows("global_reviewed_words", "is_mature = 1") == 5
         assert reorder_logger.count_rows("global_languages") == 2
 
         # check info
@@ -91,6 +91,6 @@ class TestTargetReorderLogger:
         assert reorder_logger.count_rows("reordered_targets") == 2
         assert reorder_logger.count_rows("target_segments") == 4
         assert reorder_logger.count_rows("target_languages") == 4
-        assert reorder_logger.count_rows("target_mature_words") == 5
-        assert reorder_logger.count_rows("global_mature_words") == 5
+        assert reorder_logger.count_rows("target_reviewed_words", "is_mature = 1") == 5
+        assert reorder_logger.count_rows("global_reviewed_words", "is_mature = 1") == 5
         assert reorder_logger.count_rows("global_languages") == 2

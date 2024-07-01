@@ -8,7 +8,7 @@ from time import time
 
 from aqt import Union
 
-from .lib.utilities import override, var_dump, var_dump_log
+from .lib.utilities import batched, override, var_dump, var_dump_log
 from .lib.sql_db_file import SqlDbFile
 from .target_list import TargetList, TargetListReorderResult
 from .tokenizers import LangId
@@ -61,38 +61,42 @@ class TargetReorderLogger(SqlDbFile):
         }, constraints='UNIQUE(reorder_id, target_id, segment_id) ON CONFLICT FAIL')
         self.create_index('target_segments', 'target_segments_reorder_id', ['reorder_id'])
 
-        self.create_table('target_mature_words', {
+        self.create_table('target_reviewed_words', {
             'target_id': 'TEXT',
             'lang_id': 'TEXT',
             'word': 'TEXT',
-            'familiarity': 'FLOAT'
+            'familiarity': 'FLOAT',
+            'is_mature': 'INTEGER DEFAULT 0'
         }, constraints='UNIQUE(target_id, lang_id, word) ON CONFLICT REPLACE')
-        self.create_index('target_mature_words', 'target_mature_words_target_id', ['target_id'])
+        self.create_index('target_reviewed_words', 'target_reviewed_words_target_id', ['target_id'])
+        self.create_index('target_reviewed_words', 'target_reviewed_words_lang_id_words', ['lang_id', 'word'])
 
         self.create_table('target_languages', {
             'reorder_id': 'INTEGER',
             'target_id': 'TEXT',
             'lang_id': 'TEXT',
+            'num_words_reviewed': 'INTEGER',
             'num_words_mature': 'INTEGER'
         }, constraints='UNIQUE(reorder_id, target_id, lang_id) ON CONFLICT REPLACE')
         self.create_index('target_languages', 'target_languages_reorder_id', ['reorder_id'])
 
         self.create_table('global_languages', {
             'lang_id': 'TEXT',
+            'num_words_reviewed': 'INTEGER',
             'num_words_mature': 'INTEGER',
             'reorder_id': 'INTEGER',
             'date_created': 'INTEGER'
         }, constraints='UNIQUE(reorder_id, lang_id) ON CONFLICT FAIL')
 
-        self.create_table('global_mature_words', {
+        self.create_table('global_reviewed_words', {
             'lang_id': 'TEXT',
             'word': 'TEXT',
             'familiarity': 'FLOAT DEFAULT 0.0',
+            'is_mature': 'INTEGER DEFAULT 0',
             'date_created': 'INTEGER'
         }, constraints='UNIQUE(lang_id, word) ON CONFLICT IGNORE')
-        self.create_index('global_mature_words', 'global_mature_words_lang_id', ['lang_id'])
-
-        self.commit()
+        self.create_index('global_reviewed_words', 'global_reviewed_words_lang_id', ['lang_id'])
+        self.create_index('global_reviewed_words', 'global_reviewed_words_lang_id_words', ['lang_id', 'word'])
 
     def log_reordering(self, targets: TargetList, target_reorder_result_list: TargetListReorderResult) -> int:
 
@@ -130,15 +134,15 @@ class TargetReorderLogger(SqlDbFile):
             # update familiarity for each word
 
             languages_str = ', '.join(['"'+str(lang_id)+'"' for lang_id in self.targets_languages])
-            self.query('''UPDATE global_mature_words SET familiarity = (
-                SELECT MAX(target_mature_words.familiarity) FROM target_mature_words
-                WHERE target_mature_words.lang_id = global_mature_words.lang_id AND target_mature_words.word = global_mature_words.word
+            self.query('''UPDATE global_reviewed_words SET familiarity = (
+                SELECT MAX(target_reviewed_words.familiarity) FROM target_reviewed_words
+                WHERE target_reviewed_words.lang_id = global_reviewed_words.lang_id AND target_reviewed_words.word = global_reviewed_words.word
             ) WHERE lang_id IN ({})'''.format(languages_str))
 
-             # update num_words_mature for each language
+            # update num_words_mature for each language
 
             for lang_id in self.targets_languages:
-                num_words_mature = self.result('SELECT COUNT(*) FROM global_mature_words WHERE global_mature_words.lang_id = ?', str(lang_id))
+                num_words_mature = self.count_rows('global_reviewed_words', "lang_id = ? AND is_mature = 1", str(lang_id))
                 self.insert_row('global_languages', {'lang_id': str(lang_id), 'num_words_mature': num_words_mature, 'reorder_id': reorder_id, 'date_created': int(time())})
 
         if self.in_transaction():
@@ -153,8 +157,8 @@ class TargetReorderLogger(SqlDbFile):
             return False
 
         if target_reorder_result.num_cards_repositioned == 0:
-            num_entires_for_target = self.result("SELECT COUNT(*) FROM reordered_targets WHERE reorder_id = ?", reorder_id)
-            if num_entires_for_target > 0:
+            num_entries_for_target = self.count_rows("reordered_targets", "reorder_id = ?", reorder_id)
+            if num_entries_for_target > 0:
                 return False
 
         assert target.cache_data is not None
@@ -198,29 +202,37 @@ class TargetReorderLogger(SqlDbFile):
 
         # add entry for each language in target
 
+        target_reviewed_words_per_lang: dict[LangId, set[str]] = defaultdict(set)
         target_mature_words_per_lang: dict[LangId, set[str]] = defaultdict(set)
-        target_mature_words: list[tuple[str, str, str, float]] = []
+        target_reviewed_words: list[tuple[str, str, str, float, int]] = []
 
         for segment_id, segment_data in corpus_data.content_metrics.items():
 
+            target_reviewed_words_per_lang[segment_data.lang_id].update(segment_data.words_familiarity.keys())
             target_mature_words_per_lang[segment_data.lang_id].update(segment_data.words_post_focus)
+            mature_words = segment_data.words_post_focus
 
-            for word in segment_data.words_post_focus:
-                target_mature_words.append((target.id_str, str(segment_data.lang_id), word, segment_data.words_familiarity[word]))
+            for word in segment_data.words_familiarity.keys():
+                is_mature = 1 if word in mature_words else 0
+                target_reviewed_words.append((target.id_str, str(segment_data.lang_id), word, segment_data.words_familiarity[word], is_mature))
 
-        for lang_id, mature_words in target_mature_words_per_lang.items():
+            for mature_words_batch in batched(mature_words, 2000):
+                mature_words_batch_str = ', '.join('"'+word+'"' for word in mature_words_batch)
+                self.query('UPDATE global_reviewed_words SET is_mature = 1 WHERE lang_id = ? AND word IN ({})'.format(mature_words_batch_str), str(segment_data.lang_id))
+
+        for lang_id, reviewed_words in target_reviewed_words_per_lang.items():
+            num_mature_words = len(target_mature_words_per_lang[lang_id])
             self.insert_row('target_languages',
-                {'reorder_id': reorder_id, 'target_id': target.id_str, 'lang_id': str(lang_id), 'num_words_mature': len(mature_words)}
+                {'reorder_id': reorder_id, 'target_id': target.id_str, 'lang_id': str(lang_id), 'num_words_reviewed': len(reviewed_words), 'num_words_mature': num_mature_words}
             )
 
-        if target_mature_words:
-
-            self.insert_many_rows('target_mature_words',
-                ({'target_id': target.id_str, 'lang_id': word[1], 'word': word[2], 'familiarity': word[3]} for word in target_mature_words)
+        if target_reviewed_words:
+            self.insert_many_rows('target_reviewed_words',
+                ({'target_id': target.id_str, 'lang_id': word[1], 'word': word[2], 'familiarity': word[3], 'is_mature': word[4]} for word in target_reviewed_words)
             )
 
-            self.insert_many_rows('global_mature_words',
-                ({'lang_id': word[1], 'word': word[2], 'date_created': int(time())} for word in target_mature_words)
+            self.insert_many_rows('global_reviewed_words',
+                ({'lang_id': word[1], 'word': word[2], 'date_created': int(time()), 'is_mature': word[4]} for word in target_reviewed_words)
             )
 
         # done with entry for target

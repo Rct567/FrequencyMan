@@ -6,6 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 import os
 import sqlite3
+import time
 from typing import Any, Iterable, Optional, Sequence
 
 from aqt import Union
@@ -14,11 +15,13 @@ from .utilities import var_dump, var_dump_log
 
 QueryParameters = Union[Sequence[Union[int, float, str, bytes]], int, float, str, bytes]
 
+
 class QueryResults:
 
-    def __init__(self, connection: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
+    def __init__(self, connection: sqlite3.Connection, cursor: sqlite3.Cursor, time_started: float) -> None:
         self.connection = connection
         self.cursor = cursor
+        self.time_started = time_started
 
     def fetch_row(self) -> Optional[dict[str, Any]]:
         row = self.cursor.fetchone()
@@ -38,11 +41,16 @@ class QueryResults:
             raise Exception("No lastrowid for query!")
         return self.cursor.lastrowid
 
+    def get_query_duration(self) -> float:
+        self.connection.commit()
+        return time.perf_counter() - self.time_started
+
 
 class SqlDbFile():
 
     __connection: Optional[sqlite3.Connection] = None
     db_file_path: str
+    max_query_time: Optional[float] = None
 
     def __init__(self, db_file_path: str) -> None:
         self.db_file_path = db_file_path
@@ -82,16 +90,32 @@ class SqlDbFile():
         if isinstance(params, str) or isinstance(params, int) or isinstance(params, float) or isinstance(params, bytes):
             params = (params,)
 
+        time_started = time.perf_counter()
+
         if params:
             cursor.execute(query, params)
         else:
             cursor.execute(query)
-        return QueryResults(self.connection(), cursor)
+
+        if self.max_query_time is not None:
+            self.commit()
+            time_elapsed = time.perf_counter() - time_started
+            if time_elapsed > self.max_query_time:
+                raise Exception("Query {} took {:.5f} seconds, which is more than the max_query_time of {:.5f} seconds.".format(query, time_elapsed, self.max_query_time))
+
+        return QueryResults(self.connection(), cursor, time_started)
 
     def query_many(self, query: str, params: Iterable[Sequence]) -> QueryResults:
         cursor = self.cursor()
+        time_started = time.perf_counter()
         cursor.executemany(query, params)
-        return QueryResults(self.connection(), cursor)
+        if self.max_query_time is not None:
+            self.commit()
+            time_elapsed = time.perf_counter() - time_started
+            if time_elapsed > self.max_query_time:
+                raise Exception("Query {} took {:.5f} seconds, which is more than the max_query_time of {:.5f} seconds.".format(query, time_elapsed, self.max_query_time))
+
+        return QueryResults(self.connection(), cursor, time_started)
 
     def result(self, query: str, params: Optional[QueryParameters] = None) -> Any:
         result = self.query(query, params)
@@ -115,12 +139,15 @@ class SqlDbFile():
         result = self.query("DELETE FROM {} WHERE {}".format(table_name, where), params)
         return result.row_count()
 
-    def count_rows(self, table_name: str) -> int:
+    def count_rows(self, table_name: str, where: Optional[str] = None, params: Optional[QueryParameters] = None) -> int:
 
         if self.__connection is None and not os.path.exists(self.db_file_path):
             return 0
 
-        return self.result("SELECT COUNT(*) FROM {}".format(table_name))
+        if where:
+            return self.result("SELECT COUNT(*) FROM {} WHERE {}".format(table_name, where), params)
+        else:
+            return self.result("SELECT COUNT(*) FROM {}".format(table_name))
 
     def insert_row(self, table_name: str, row: dict[str, Any]) -> QueryResults:
         columns = ', '.join(row.keys())

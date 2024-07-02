@@ -57,12 +57,13 @@ class FrequencyManMainWindow(QDialog):
 
     tab_menu_options: dict[str, QWidget]
 
-    addon_config: AddonConfig
+    fm_config: AddonConfig
 
-    def __init__(self, mw: AnkiQt, root_dir: str, user_files_dir: str):
+    def __init__(self, mw: AnkiQt, fm_config: AddonConfig, root_dir: str, user_files_dir: str):
 
         super().__init__(mw)
         self.mw = mw
+        self.fm_config = fm_config
         self.is_dark_mode = mw.app.styleSheet().lower().find("dark") != -1
 
         if fm_version != "":
@@ -84,15 +85,6 @@ class FrequencyManMainWindow(QDialog):
 
         # Set the layout for the main window/dialog
         self.setLayout(window_layout)
-
-        # Addon config
-        current_config = mw.addonManager.getConfig(__name__)
-        if current_config is None:
-            current_config = {}
-
-        config_writer: Callable[[dict[str, Any]], None] = lambda config: mw.addonManager.writeConfig(__name__, config)
-
-        self.addon_config = AddonConfig(current_config, config_writer)
 
         # dirs
         self.root_dir = root_dir
@@ -122,5 +114,3 @@ class FrequencyManMainWindow(QDialog):
                 return
 
         a0.accept()
-
-

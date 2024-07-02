@@ -142,7 +142,7 @@ class TargetReorderLogger(SqlDbFile):
             # update num_words_mature for each language
 
             for lang_id in self.targets_languages:
-                num_words_mature = self.count_rows('global_reviewed_words', "lang_id = ? AND is_mature = 1", str(lang_id))
+                num_words_mature = self.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0", str(lang_id))
                 self.insert_row('global_languages', {'lang_id': str(lang_id), 'num_words_mature': num_words_mature, 'reorder_id': reorder_id, 'date_created': int(time())})
 
         if self.in_transaction():
@@ -213,12 +213,13 @@ class TargetReorderLogger(SqlDbFile):
             mature_words = segment_data.words_post_focus
 
             for word in segment_data.words_familiarity.keys():
-                is_mature = 1 if word in mature_words else 0
+                is_mature = int(time()) if word in mature_words else 0
                 target_reviewed_words.append((target.id_str, str(segment_data.lang_id), word, segment_data.words_familiarity[word], is_mature))
 
             for mature_words_batch in batched(mature_words, 2000):
                 mature_words_batch_str = ', '.join('"'+word+'"' for word in mature_words_batch)
-                self.query('UPDATE global_reviewed_words SET is_mature = 1 WHERE lang_id = ? AND word IN ({})'.format(mature_words_batch_str), str(segment_data.lang_id))
+                args = (int(time()), str(segment_data.lang_id))
+                self.query('UPDATE global_reviewed_words SET is_mature = ? WHERE lang_id = ? AND word IN ({}) AND is_mature = 0'.format(mature_words_batch_str), args)
 
         for lang_id, reviewed_words in target_reviewed_words_per_lang.items():
             num_mature_words = len(target_mature_words_per_lang[lang_id])

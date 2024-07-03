@@ -558,11 +558,20 @@ class ReorderCardsTab(FrequencyManTab):
 
         def handle_results(reorder_cards_results: TargetListReorderResult) -> None:
 
-            num_entries_added = self.reorder_logger.log_reordering(self.target_list, reorder_cards_results)
+            def log_reordering(_: Collection) -> int:
+                num_entries_added = self.reorder_logger.log_reordering(self.target_list, reorder_cards_results)
+                self.reorder_logger.close()
+                return num_entries_added
+
+            def log_reordering_success(num_entries_added: int) -> None:
+                if num_entries_added > 0:
+                    self.fm_window.mw.deckBrowser.refresh()
+                    self.fm_window.mw.toolbar.draw()
+
+            self.reorder_logger.close()
+            QueryOp(parent=self.fm_window, op=log_reordering, success=log_reordering_success).run_in_background()
+
             reorder_show_results(reorder_cards_results)
-            if num_entries_added > 0:
-                self.fm_window.mw.deckBrowser.refresh()
-                self.fm_window.mw.toolbar.draw()
 
         shift_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
         ctrl_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier

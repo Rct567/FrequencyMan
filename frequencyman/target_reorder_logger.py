@@ -5,6 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from collections import defaultdict
 from time import time
+from typing import TypedDict
 
 from aqt import Union
 
@@ -13,6 +14,14 @@ from .lib.sql_db_file import SqlDbFile
 from .target_list import TargetList, TargetListReorderResult
 from .tokenizers import LangId
 from .target import Target, TargetReorderResult
+
+
+class LanguageInfoData(TypedDict):
+    num_words_mature: int
+    num_words_reviewed: int
+    num_words_learning: int
+
+InfoPerLang = dict[str, LanguageInfoData]
 
 
 class TargetReorderLogger(SqlDbFile):
@@ -95,7 +104,6 @@ class TargetReorderLogger(SqlDbFile):
             'is_mature': 'INTEGER DEFAULT 0',
             'date_created': 'INTEGER'
         }, constraints='UNIQUE(lang_id, word) ON CONFLICT IGNORE')
-        self.create_index('global_reviewed_words', 'global_reviewed_words_lang_id', ['lang_id'])
         self.create_index('global_reviewed_words', 'global_reviewed_words_lang_id_words', ['lang_id', 'word'])
 
     def log_reordering(self, targets: TargetList, target_reorder_result_list: TargetListReorderResult) -> int:
@@ -142,8 +150,15 @@ class TargetReorderLogger(SqlDbFile):
             # update num_words_mature for each language
 
             for lang_id in self.targets_languages:
+                num_words_reviewed = self.count_rows('global_reviewed_words', "lang_id = ?", str(lang_id))
                 num_words_mature = self.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0", str(lang_id))
-                self.insert_row('global_languages', {'lang_id': str(lang_id), 'num_words_mature': num_words_mature, 'reorder_id': reorder_id, 'date_created': int(time())})
+                self.insert_row('global_languages', {
+                    'lang_id': str(lang_id),
+                    'num_words_mature': num_words_mature,
+                    'num_words_reviewed': num_words_reviewed,
+                    'reorder_id': reorder_id,
+                    'date_created': int(time())
+                })
 
         if self.in_transaction():
             self.commit()
@@ -240,20 +255,26 @@ class TargetReorderLogger(SqlDbFile):
 
         return True
 
-    def get_info_global(self) -> dict[str, dict[str, int]]:
+    def get_info_global(self) -> InfoPerLang:
 
-        info: dict[str, dict] = {}
+        info: InfoPerLang = {}
 
-        result = self.query('SELECT lang_id, num_words_mature FROM global_languages GROUP BY lang_id ORDER BY date_created DESC')
+        result = self.query('SELECT lang_id, num_words_mature, num_words_reviewed FROM global_languages GROUP BY lang_id ORDER BY date_created DESC')
 
         for row in result.fetch_rows():
-            info[row['lang_id']] = {'num_words_mature': row['num_words_mature']}
+            assert row['num_words_reviewed'] >= row['num_words_mature']
+            num_words_learning = row['num_words_reviewed'] - row['num_words_mature']
+            info[row['lang_id']] = {
+                'num_words_mature': row['num_words_mature'],
+                'num_words_reviewed': row['num_words_reviewed'],
+                'num_words_learning': num_words_learning
+            }
 
         return info
 
-    def get_info_per_target(self) -> dict[str, dict[str, dict[str, Union[int, str]]]]:
+    def get_info_per_target(self) -> dict[str, InfoPerLang]:
 
-        info_per_target = defaultdict(dict)
+        info_per_target: dict[str, InfoPerLang] = defaultdict(dict)
 
         result = self.query('''
             SELECT a.* FROM target_languages AS a
@@ -263,6 +284,11 @@ class TargetReorderLogger(SqlDbFile):
             ORDER BY reorders.created_at DESC''')
 
         for row in result.fetch_rows():
-            info_per_target[row['target_id']][row['lang_id']] = {'num_words_mature': row['num_words_mature']}
+            assert row['num_words_reviewed'] >= row['num_words_mature']
+            info_per_target[row['target_id']][row['lang_id']] = {
+                'num_words_mature': row['num_words_mature'],
+                'num_words_reviewed': row['num_words_reviewed'],
+                'num_words_learning': row['num_words_reviewed'] - row['num_words_mature']
+            }
 
         return info_per_target

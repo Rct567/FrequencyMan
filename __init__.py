@@ -12,7 +12,7 @@ from anki.collection import Collection
 from aqt.utils import showInfo, askUser, showWarning
 
 from .frequencyman.lib.addon_config import AddonConfig
-from .frequencyman.target_reorder_logger import TargetReorderLogger
+from .frequencyman.target_reorder_logger import LanguageInfoData, TargetReorderLogger
 
 from .frequencyman.ui.overview_tab import OverviewTab
 from .frequencyman.ui.reorder_cards_tab import ReorderCardsTab
@@ -35,7 +35,7 @@ FM_USER_FILES_DIR = os.path.join(FM_ROOT_DIR, 'user_files')
 if not os.path.isdir(FM_USER_FILES_DIR):
     os.mkdir(FM_USER_FILES_DIR)
 
-# menu option to main window
+# add menu option to main window
 
 def open_frequencyman_main_window(mw: AnkiQt, addon_config: AddonConfig):
     if not isinstance(mw.col, Collection):
@@ -54,13 +54,12 @@ def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt, addon_config: Ad
     action.triggered.connect(lambda: open_frequencyman_main_window(mw, addon_config))
     mw.form.menuTools.addAction(action)
 
-
-#
+# get language info helper function
 
 class InfoItem(NamedTuple):
     target_id: str
     lang_id: str
-    num_words_mature: int
+    data: LanguageInfoData
 
 def get_info_items_from_config(config: JSON_TYPE, reorder_logger: TargetReorderLogger) -> Optional[list[InfoItem]]:
 
@@ -82,12 +81,15 @@ def get_info_items_from_config(config: JSON_TYPE, reorder_logger: TargetReorderL
         if not isinstance(info_target_id, str) or not isinstance(info_lang_id, str):
             continue
 
-        if info_target_id == '*':
-            lang_data = reorder_logger.get_info_global()[info_lang_id.lower()]
-        else:
-            lang_data = reorder_logger.get_info_per_target()[info_target_id][info_lang_id.lower()]
+        try:
+            if info_target_id == '*':
+                lang_data = reorder_logger.get_info_global()[info_lang_id.lower()]
+            else:
+                lang_data = reorder_logger.get_info_per_target()[info_target_id][info_lang_id.lower()]
+        except KeyError:
+            continue
 
-        info_items.append(InfoItem(info_target_id, info_lang_id, int(lang_data['num_words_mature'])))
+        info_items.append(InfoItem(info_target_id, info_lang_id, lang_data))
 
     if not info_items:
         return None
@@ -110,7 +112,7 @@ def add_frequencyman_to_toolbar_items(reorder_logger: TargetReorderLogger, fm_co
             links.append(
                 toolbar.create_link(
                     cmd="fm_lang_info_toolbar",
-                    label="{}: <b>{}</b>".format(info_item.lang_id.upper(), info_item.num_words_mature),
+                    label="{}: <b>{}</b>".format(info_item.lang_id.upper(), info_item.data['num_words_mature']),
                     func=lambda: None,
                     tip=None,
                     id=None,
@@ -134,9 +136,10 @@ def add_frequencyman_info_to_deck_browser(reorder_logger: TargetReorderLogger, f
         return
 
     def update_deck_browser(deck_browser: DeckBrowser, content: "DeckBrowserContent") -> None:
-        content.stats += "<table cellspacing=0 cellpadding=5><tr><th>Language</th><th>Mature words</th></tr>"
+        content.stats += "<table cellspacing=0 cellpadding=5>"
+        content.stats += "<tr> <th>Language</th ><th>Learning words</th> <th>Mature words</th> </tr>"
         for info_item in info_items:
-            content.stats += "<tr><td>{}</td><td> <b>{}</b></td></tr>".format(info_item.lang_id.upper(), info_item.num_words_mature)
+            content.stats += "<tr> <td>{}</td> <td>{}</td> <td><b>{}</b></td> </tr>".format(info_item.lang_id.upper(), info_item.data['num_words_learning'], info_item.data['num_words_mature'])
         content.stats += "</table>"
 
     gui_hooks.deck_browser_will_render_content.append(update_deck_browser)

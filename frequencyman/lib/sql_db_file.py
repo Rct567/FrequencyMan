@@ -139,9 +139,15 @@ class SqlDbFile():
         result = self.query("DELETE FROM {} WHERE {}".format(table_name, where), params)
         return result.row_count()
 
+    def db_file_exists(self) -> bool:
+        return os.path.exists(self.db_file_path)
+
+    def db_exists(self) -> bool:
+        return self.__connection is not None or self.db_file_exists()
+
     def count_rows(self, table_name: str, where: Optional[str] = None, params: Optional[QueryParameters] = None) -> int:
 
-        if self.__connection is None and not os.path.exists(self.db_file_path):
+        if not self.db_exists():
             return 0
 
         if where:

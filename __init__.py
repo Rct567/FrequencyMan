@@ -102,12 +102,13 @@ def add_frequencyman_to_toolbar_items(reorder_logger: TargetReorderLogger, fm_co
 
     from aqt.toolbar import Toolbar
 
-    info_items = get_info_items_from_config(fm_config['show_info_toolbar'], reorder_logger)
-
-    if info_items is None:
-        return
-
     def init_toolbar_items(links: list[str], toolbar: Toolbar) -> None:
+
+        info_items = get_info_items_from_config(fm_config['show_info_toolbar'], reorder_logger)
+
+        if info_items is None:
+            return
+
         for info_item in info_items:
             links.append(
                 toolbar.create_link(
@@ -130,12 +131,13 @@ def add_frequencyman_info_to_deck_browser(reorder_logger: TargetReorderLogger, f
     if TYPE_CHECKING:
         from aqt.deckbrowser import DeckBrowserContent
 
-    info_items = get_info_items_from_config(fm_config['show_info_deck_browser'], reorder_logger)
-
-    if info_items is None:
-        return
-
     def update_deck_browser(deck_browser: DeckBrowser, content: "DeckBrowserContent") -> None:
+
+        info_items = get_info_items_from_config(fm_config['show_info_deck_browser'], reorder_logger)
+
+        if info_items is None:
+            return
+
         content.stats += "<table cellspacing=0 cellpadding=5>"
         content.stats += "<tr> <th>Language</th ><th>Learning words</th> <th>Mature words</th> </tr>"
         for info_item in info_items:

@@ -259,6 +259,9 @@ class TargetReorderLogger(SqlDbFile):
 
         info: InfoPerLang = {}
 
+        if not self.db_exists():
+            return info
+
         result = self.query('SELECT lang_id, num_words_mature, num_words_reviewed FROM global_languages GROUP BY lang_id ORDER BY date_created DESC')
 
         for row in result.fetch_rows():
@@ -275,6 +278,9 @@ class TargetReorderLogger(SqlDbFile):
     def get_info_per_target(self) -> dict[str, InfoPerLang]:
 
         info_per_target: dict[str, InfoPerLang] = defaultdict(dict)
+
+        if not self.db_exists():
+            return info_per_target
 
         result = self.query('''
             SELECT a.* FROM target_languages AS a

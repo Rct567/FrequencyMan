@@ -6,6 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from dataclasses import dataclass
 from enum import Enum
 import json
+import re
 from typing import Iterator, Optional, Any
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
@@ -115,6 +116,8 @@ class TargetList:
         elif len(targets_data) < 1:
             return (JsonTargetsValidity.INVALID_TARGETS, "Reorder target list is empty.", None)
 
+        # validate targets and create list of valid targets
+
         valid_target_list: list[ValidConfiguredTarget] = []
 
         for index, target_data in enumerate(targets_data):
@@ -123,6 +126,19 @@ class TargetList:
                 return (JsonTargetsValidity.INVALID_TARGETS, err_desc, None)
             elif valid_target is not None:
                 valid_target_list.append(valid_target)
+
+        # check uniqueness of target ids
+
+        target_ids: set[str] = set()
+
+        for index, target in enumerate(targets_data):
+            if not isinstance(target, dict) or 'id' not in target or not isinstance(target['id'], str):
+                continue
+            if target['id'] in target_ids:
+                return (JsonTargetsValidity.INVALID_TARGETS, "ID '{}' defined in target #{} is not unique.".format(target['id'], index), None)
+            target_ids.add(target['id'])
+
+        # targets are valid
 
         return (JsonTargetsValidity.VALID_TARGETS, "", valid_target_list)
 
@@ -160,6 +176,8 @@ class TargetList:
                 return (False, "ID defined in target #{} is not a string (string expected).".format(index), None)
             elif len(target_data['id']) == 0:
                 return (False, "ID defined in target #{} is empty.".format(index), None)
+            elif not re.match(r"^[a-zA-Z0-9_]+$", target_data['id']):
+                return (False, "ID defined in target #{} is not a valid identifier (only letters, numbers and underscores are allowed).".format(index), None)
             result['id'] = target_data['id']
 
         # check deck names

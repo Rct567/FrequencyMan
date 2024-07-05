@@ -28,9 +28,7 @@ class TestTargetReorderLogger:
 
         col = TestCollections.get_test_collection('two_deck_collection')
 
-        target_list = TargetList(col.lang_data, col.cacher, col)
-
-        target_list.set_targets([
+        targets: list = [
             {
                 'id': 'target1',
                 'decks': 'decka',
@@ -53,7 +51,11 @@ class TestTargetReorderLogger:
                     },
                 }]
             }
-        ])
+        ]
+
+        target_list = TargetList(col.lang_data, col.cacher, col)
+
+        target_list.set_targets(targets)
 
         event_logger = EventLogger()
         result = target_list.reorder_cards(col, event_logger)
@@ -80,13 +82,13 @@ class TestTargetReorderLogger:
         assert per_target['target2']['en'] == {'num_words_mature': 1, 'num_words_reviewed': 4, 'num_words_learning': 3}
         assert per_target['target2']['es'] == {'num_words_mature': 1, 'num_words_reviewed': 2, 'num_words_learning': 1}
 
-        # reorder again
+        # reorder again, test skipping of new log entry
 
-        event_logger = EventLogger()
-        result = target_list.reorder_cards(col, event_logger)
+        result = target_list.reorder_cards(col, EventLogger())
 
         num_entries_added = reorder_logger.log_reordering(target_list, result)
 
+        assert result.num_targets_repositioned == 0
         assert num_entries_added == 0
         assert reorder_logger.count_rows("reorders") == 1
         assert reorder_logger.count_rows("reordered_targets") == 2
@@ -95,3 +97,28 @@ class TestTargetReorderLogger:
         assert reorder_logger.count_rows("target_reviewed_words", "is_mature > 0") == 5
         assert reorder_logger.count_rows("global_reviewed_words", "is_mature > 0") == 5
         assert reorder_logger.count_rows("global_languages") == 2
+
+        # reorder again, force new log entry
+
+        targets[0]['ranking_word_frequency'] = 10.0
+        targets[1]['ranking_word_frequency'] = 10.0
+
+        target_list = TargetList(col.lang_data, col.cacher, col)
+
+        target_list.set_targets(targets)
+
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+        assert result.num_targets_repositioned == 2
+
+        num_entries_added = reorder_logger.log_reordering(target_list, result)
+
+        assert num_entries_added == 2
+        assert reorder_logger.count_rows("reorders") == 2
+        assert reorder_logger.count_rows("reordered_targets") == 4
+        assert reorder_logger.count_rows("target_segments") == 8
+        assert reorder_logger.count_rows("target_languages") == 8
+        assert reorder_logger.count_rows("target_reviewed_words", "is_mature > 0") == 5
+        assert reorder_logger.count_rows("global_reviewed_words", "is_mature > 0") == 5
+        assert reorder_logger.count_rows("global_languages") == 4
+

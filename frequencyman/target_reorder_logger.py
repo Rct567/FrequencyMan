@@ -7,7 +7,6 @@ from collections import defaultdict
 from time import time
 from typing import TypedDict
 
-from aqt import Union
 
 from .lib.utilities import batched, override, var_dump, var_dump_log
 from .lib.sql_db_file import SqlDbFile
@@ -26,7 +25,7 @@ InfoPerLang = dict[str, LanguageInfoData]
 
 class TargetReorderLogger(SqlDbFile):
 
-    targets_languages: set[LangId] = set()
+    targets_languages: set[LangId]
 
     @override
     def __init__(self, db_file: str):
@@ -137,7 +136,7 @@ class TargetReorderLogger(SqlDbFile):
 
         if num_entries_added == 0:
             self.delete_row("reorders", "id = ?", reorder_id)
-        else:
+        elif self.targets_languages:
 
             # update familiarity for each word
 
@@ -232,8 +231,8 @@ class TargetReorderLogger(SqlDbFile):
                 target_reviewed_words.append((target.id_str, str(segment_data.lang_id), word, segment_data.words_familiarity[word], is_mature))
 
             for mature_words_batch in batched(mature_words, 2000):
-                mature_words_batch_str = ', '.join('"'+word+'"' for word in mature_words_batch)
-                args = (int(time()), str(segment_data.lang_id))
+                mature_words_batch_str = ', '.join('?' for _ in mature_words_batch)
+                args = (int(time()), str(segment_data.lang_id)) + mature_words_batch
                 self.query('UPDATE global_reviewed_words SET is_mature = ? WHERE lang_id = ? AND word IN ({}) AND is_mature = 0'.format(mature_words_batch_str), args)
 
         for lang_id, reviewed_words in target_reviewed_words_per_lang.items():
@@ -262,7 +261,11 @@ class TargetReorderLogger(SqlDbFile):
         if not self.db_exists():
             return info
 
-        result = self.query('SELECT lang_id, num_words_mature, num_words_reviewed FROM global_languages GROUP BY lang_id ORDER BY date_created DESC')
+        result = self.query('''
+        SELECT a.lang_id, a.num_words_mature, a.num_words_reviewed
+        FROM global_languages a
+        WHERE a.reorder_id IN (SELECT MAX(b.reorder_id) FROM global_languages b WHERE b.lang_id = a.lang_id)
+        ORDER BY a.reorder_id DESC''')
 
         for row in result.fetch_rows():
             assert row['num_words_reviewed'] >= row['num_words_mature']
@@ -283,7 +286,7 @@ class TargetReorderLogger(SqlDbFile):
             return info_per_target
 
         result = self.query('''
-            SELECT a.* FROM target_languages AS a
+            SELECT a.* FROM target_languages a
             INNER JOIN reordered_targets ON reordered_targets.reorder_id = a.reorder_id
             INNER JOIN reorders ON reorders.id = a.reorder_id
 			WHERE a.reorder_id IN (SELECT MAX(b.reorder_id) FROM target_languages AS b WHERE b.lang_id = a.lang_id AND b.target_id = a.target_id)

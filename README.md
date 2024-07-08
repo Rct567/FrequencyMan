@@ -175,7 +175,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `no_new_words`: Promotes cards with no new words. Put differently, it promotes cards who's words have all been seen before during review.
 - `ideal_new_word_count`: Like `ideal_focus_word_count`, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
 - `proper_introduction`: Promotes cards that appear to be well suited to introduce a new word. Various factor are used, including the position of the new word and the word frequency + familiarity of the other words in the content. Cards without new words are not effected.
-- `proper_introduction_dispersed`: Disperses cards using the `proper_introduction` factor. This is done per word based select by 'lowest frequency of the least familiar word', thus dispersing cards with that same word selected. Cards with and without new word are effected.
+- `proper_introduction_dispersed`: Disperses cards using the `proper_introduction` factor. This is done per word select by `lowest_fr_least_familiar_word`, thus dispersing cards with that same word selected. Cards with and without new words are effected.
 
 ## Custom fields
 

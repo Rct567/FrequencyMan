@@ -20,10 +20,6 @@ from .language_data import LanguageData
 from .target_cards import TargetCards
 
 
-def sigmoid(x: float) -> float:
-    return 1 / (1 + exp(-x))
-
-
 @dataclass
 class FieldMetrics:
     words_fr_scores: dict[WordToken, float] = field(default_factory=dict)
@@ -52,6 +48,7 @@ class FieldMetrics:
     ideal_new_words_count_score: float = 0
     ideal_focus_words_count_score: float = 0
     ideal_words_count_score: float = 0
+    new_words_score: float = 0
     no_new_words_score: float = 0
     reinforce_focus_words_score: float = 0
     proper_introduction_score: float = 0
@@ -94,17 +91,18 @@ class CardRanker:
     def get_default_ranking_factors_span() -> dict[str, float]:
         return {
             "word_frequency": 1.0,
-            "familiarity": 2.5,
+            "familiarity": 1.0,
             "familiarity_sweetspot": 1.0,
             "lexical_underexposure": 0.25,
-            "ideal_focus_word_count": 1.0,
+            "ideal_focus_word_count": 2.0,
             "ideal_word_count": 1.0,
-            "reinforce_focus_words": 0.25,
+            "reinforce_focus_words": 0.5,
             "most_obscure_word": 0.5,
             "lowest_fr_least_familiar_word": 0.25,
-            "lowest_word_frequency": 0.25,
-            "lowest_familiarity": 0.25,
-            "no_new_words": 0.1,
+            "lowest_word_frequency": 1.0,
+            "lowest_familiarity": 1.0,
+            "new_words": 0.1,
+            "no_new_words": 0.0,
             "ideal_new_word_count": 0.0,
             "proper_introduction": 0.1,
             "proper_introduction_dispersed": 0.0
@@ -124,8 +122,8 @@ class CardRanker:
     @staticmethod
     def __calc_ideal_np1_score(num_new_words: int) -> float:
         if (num_new_words < 1):
-            return 0.9
-        score = min(1, abs(0-(1.4*1/min(num_new_words, 10))))
+            return 0.7
+        score = min(1, abs(0-(1.3*1/min(num_new_words, 10))))
         return score
 
     @staticmethod
@@ -231,7 +229,7 @@ class CardRanker:
 
         useable_factors: set[str] = set()
 
-        # perform Z-score standardization, use sigmoid and then 0 to 1 normalization
+        # perform Z-score standardization, then 0 to 1 normalization
 
         for attribute, notes_scores in notes_ranking_scores_normalized.items():
 
@@ -248,7 +246,6 @@ class CardRanker:
 
             for note_id in notes_scores.keys():
                 notes_scores[note_id] = (notes_scores[note_id] - mean_val) / std_dev
-                notes_scores[note_id] = sigmoid(notes_scores[note_id])
                 if lowest_val > notes_scores[note_id]:
                     lowest_val = notes_scores[note_id]
 
@@ -351,7 +348,9 @@ class CardRanker:
                 field_ideal_word_count_score = self.__calc_ideal_word_count_score(len(field_data.field_value_tokenized), self.ideal_word_count_min, self.ideal_word_count_max)
                 field_metrics.ideal_words_count_score = field_ideal_word_count_score
 
-                # no new words
+                # new words
+                field_new_words_score = 1 if len(field_metrics.new_words) > 0 else 0
+                field_metrics.new_words_score = field_new_words_score
                 field_no_new_words_score = 1 if len(field_metrics.new_words) == 0 else 0
                 field_metrics.no_new_words_score = field_no_new_words_score
 
@@ -511,6 +510,9 @@ class CardRanker:
 
             lowest_familiarity_scores = [field_metrics.lowest_familiarity_word[1] for field_metrics in note_metrics]
             notes_ranking_factors['lowest_familiarity'][note_id] = (median(lowest_familiarity_scores) + (min(lowest_familiarity_scores)*99)) / 100
+
+            new_words_scores = [field_metrics.new_words_score for field_metrics in note_metrics]
+            notes_ranking_factors['new_words'][note_id] = (median(new_words_scores) + (min(new_words_scores)*2)) / 3
 
             no_new_words_scores = [field_metrics.no_new_words_score for field_metrics in note_metrics]
             notes_ranking_factors['no_new_words'][note_id] = (median(no_new_words_scores) + (min(no_new_words_scores)*2)) / 3

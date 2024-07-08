@@ -137,20 +137,21 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 ```json
 "ranking_factors" : {
     "word_frequency": 1.0,
-    "familiarity": 2.5,
+    "familiarity": 1.0,
     "familiarity_sweetspot": 1.0,
     "lexical_underexposure": 0.25,
-    "ideal_focus_word_count": 1.0,
+    "ideal_focus_word_count": 2.0,
     "ideal_word_count": 1.0,
-    "reinforce_focus_words": 0.25,
+    "reinforce_focus_words": 0.5,
     "most_obscure_word": 0.5,
-    "lowest_fr_least_familiar_word": 0.5,
-    "lowest_word_frequency": 0.25,
-    "lowest_familiarity": 0.25,
-    "no_new_words": 0.1,
+    "lowest_fr_least_familiar_word": 0.25,
+    "lowest_word_frequency": 1.0,
+    "lowest_familiarity": 1.0,
+    "new_words": 0.1,
+    "no_new_words": 0.0,
     "ideal_new_word_count": 0.0,
     "proper_introduction": 0.1,
-    "proper_introduction_dispersed": 0.0,
+    "proper_introduction_dispersed": 0.0
 }
 ```
 
@@ -170,6 +171,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `lowest_fr_least_familiar_word`: Represents the lowest _word frequency_ among the words with the lowest familiarity score.
 - `lowest_word_frequency`: Represents the lowest _word frequency_ found in the content of any targeted field. This is different from `word_frequency`, which reflect the average _word frequency_ of all targeted fields.
 - `lowest_familiarity`: Represents the lowest _familiarity_ found in the content of any targeted field. This is different from `familiarity`, which reflect the average _familiarity_ of all targeted fields.
+- `new_words`: Promotes cards with one or more new words.
 - `no_new_words`: Promotes cards with no new words. Put differently, it promotes cards who's words have all been seen before during review.
 - `ideal_new_word_count`: Like `ideal_focus_word_count`, but promotes cards with only a single 'new word' (a word not found in any reviewed card).
 - `proper_introduction`: Promotes cards that appear to be well suited to introduce a new word. Various factor are used, including the position of the new word and the word frequency + familiarity of the other words in the content. Cards without new words are not effected.
@@ -221,11 +223,12 @@ For each defined target, the following setting are available:
 | `suspended_card_value`   | float |  |   `0.1`  |
 | `suspended_leech_card_value`   | float |  |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[1, 5]`   |
-| `focus_words_max_familiarity`   | float |  |  `0.28`   |
-| `corpus_segmentation_strategy`   | string | [Corpus data](#target-corpus-data) is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`.   |  `"by_lang_data_id"`   |
+| `focus_words_max_familiarity`   | float | Defined the maximal familiarity value of focus words. Words above this threshold are considered 'mature'.   |  `0.28`   |
+| `corpus_segmentation_strategy`   | string | [Corpus data](#target-corpus-data) of a target is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`.   |  `"by_lang_data_id"`   |
+| `id`   | string | Enables [reorder logging](#reorder-logging) for this target. | None, reorder logging is disabled by default.   |
 
 __Notes__:
- - `familiarity_sweetspot_point` accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the value of `focus_words_max_familiarity` value. In this case `"~0.5"` would result in a value of `0.14`. A string starting with `^` will make the number relative to the median word familiarity value.
+ - `familiarity_sweetspot_point` accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the value of `focus_words_max_familiarity` value. By default, `"~0.5"` would result in a value of `0.14` (50% of 0.28). A string starting with `^` will make the number relative to the median word familiarity value.
 
 # Language data id
 

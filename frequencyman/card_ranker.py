@@ -128,44 +128,36 @@ class CardRanker:
 
     @staticmethod
     def __calc_proper_introduction_score(field_metrics: FieldMetrics, field_data: NoteFieldContentData) -> tuple[Optional[WordToken], float]:
-        num_new_words = len(field_metrics.new_words)
-        if num_new_words == 0:
-            return (None, 1)
+
+        if len(field_data.field_value_tokenized) == 0:
+            return (None, 0)
 
         assert len(field_metrics.words_familiarity_positional_scores) == len(field_metrics.words_fr_scores)
+        assert len(field_metrics.lowest_fr_least_familiar_word[0]) > 0
 
-        # get new word (by lowest word frequency)
+        # get new word (by lowest_fr_least_familiar_word word frequency)
 
-        new_word = field_metrics.new_words[0]
-        if num_new_words > 1:
-            lowest_wf_new = None
-            for word in field_metrics.new_words:
-                if lowest_wf_new is None or field_metrics.words_fr_scores[word] < lowest_wf_new:
-                    new_word = word
-                    lowest_wf_new = field_metrics.words_fr_scores[word]
-                    if lowest_wf_new == 0:
-                        break
-            assert lowest_wf_new is not None
+        intro_word = field_metrics.lowest_fr_least_familiar_word[0]
 
         # position of new word in field
 
-        new_word_index = field_data.field_value_tokenized.index(new_word)
-        new_word_position_score = 1/(1+(new_word_index/4))
+        intro_word_index = field_data.field_value_tokenized.index(intro_word)
+        intro_word_position_score = 1/(1+(intro_word_index/4))
 
         # single new word factor
 
+        num_new_words = len(field_metrics.new_words)
         single_new_word_score = 0.0 if num_new_words > 1 else 1.0
 
         # no repeat factor
 
-        new_word_no_repeat_factor = 1 / field_data.field_value_tokenized.count(new_word)
+        intro_word_no_repeat_factor = 1 / field_data.field_value_tokenized.count(intro_word)
         general_no_repeat_factor = 1 / (1+(field_metrics.num_words-len(field_metrics.unique_words)))
-        no_repeat_score = (new_word_no_repeat_factor+general_no_repeat_factor+1)/3
+        no_repeat_score = (intro_word_no_repeat_factor+general_no_repeat_factor+1)/3
 
         # non obscurity of other words
 
-        other_words = [word for word in field_metrics.words_fr_scores.keys() if word != new_word]
-
+        other_words = [word for word in field_metrics.words_fr_scores.keys() if word != intro_word]
         non_obscurity_others_words_score = 0.0
 
         if len(other_words) > 0:
@@ -178,17 +170,16 @@ class CardRanker:
         # proper introduction score
 
         factors = [
-            field_metrics.ideal_new_words_count_score,
             field_metrics.ideal_focus_words_count_score,
             field_metrics.ideal_words_count_score,
-            new_word_position_score,
+            intro_word_position_score,
             single_new_word_score,
             non_obscurity_others_words_score,
             no_repeat_score,
         ]
 
         proper_introduction_score = fmean(factors)
-        return (new_word, proper_introduction_score)
+        return (intro_word, proper_introduction_score)
 
 
     def calc_cards_ranking(self, target_cards: TargetCards, reorder_scope_target_cards: TargetCards) -> dict[CardId, float]:
@@ -357,7 +348,10 @@ class CardRanker:
                 # proper introduction
                 if set_proper_introduction or set_proper_introduction_dispersed:
                     (new_word, proper_introduction_score) = self.__calc_proper_introduction_score(field_metrics, field_data)
-                    field_metrics.proper_introduction_score = proper_introduction_score
+                    if len(field_metrics.new_words) == 0:
+                        field_metrics.proper_introduction_score = 1
+                    else:
+                        field_metrics.proper_introduction_score = proper_introduction_score
                     field_metrics.proper_introduction_dispersed_score = proper_introduction_score
                     if new_word is not None and set_proper_introduction_dispersed:
                         if new_word not in top_introducing_notes or top_introducing_notes[new_word][1] < proper_introduction_score:
@@ -604,6 +598,18 @@ class CardRanker:
             else:
                 note_data['fm_new_words'] = ''
 
+        # set fm_unseen_words (deprecated, use fm_new_words)
+        if 'fm_unseen_words' in note:
+            new_words_per_field: list[str] = []
+            for field_index, field_metrics in enumerate(note_metrics):
+                if field_metrics.new_words:
+                    new_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(field_metrics.new_words).strip(", ")+'</span>')
+            if new_words_per_field:
+                words_lists = ' <span class="separator">/</span> '.join(new_words_per_field)
+                note_data['fm_unseen_words'] = '<span id="fm_new_words">'+words_lists+'</span>'
+            else:
+                note_data['fm_unseen_words'] = ''
+
         # set fm_focus_words
         if 'fm_focus_words' in note:
             focus_words_per_field: list[str] = []
@@ -661,7 +667,6 @@ class CardRanker:
                 'ue_scores': [field_metrics.ue_score for field_metrics in note_metrics],
                 'familiarity_scores': [field_metrics.familiarity_score for field_metrics in note_metrics],
                 'familiarity_sweetspot_scores': [field_metrics.familiarity_sweetspot_score for field_metrics in note_metrics],
-                'proper_introduction_scores': [field_metrics.proper_introduction_score for field_metrics in note_metrics],
                 'most_obscure_word': [field_metrics.most_obscure_word for field_metrics in note_metrics],
                 'highest_ue_word': [field_metrics.highest_ue_word for field_metrics in note_metrics],
                 'ideal_focus_word_count': [field_metrics.ideal_focus_words_count_score for field_metrics in note_metrics],
@@ -670,6 +675,10 @@ class CardRanker:
                 'lowest_fr_word': [field_metrics.lowest_fr_word for field_metrics in note_metrics],
                 'ideal_new_words_count_scores': [field_metrics.ideal_new_words_count_score for field_metrics in note_metrics],
             }
+            if self.__is_factor_used('proper_introduction') or self.__is_factor_used('proper_introduction_dispersed'):
+                debug_info['proper_introduction_scores'] = [field_metrics.proper_introduction_score for field_metrics in note_metrics]
+                debug_info['proper_introduction_dispersed_scores'] = [field_metrics.proper_introduction_dispersed_score for field_metrics in note_metrics]
+
             note_data['fm_debug_info'] = 'Target '+self.target_name+'<br />'
             for info_name, info_val in debug_info.items():
                 if info_val:

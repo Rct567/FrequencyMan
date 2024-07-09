@@ -306,7 +306,7 @@ class CardRanker:
         bucked_size = fmean([1, (self.ideal_word_count_min+self.ideal_word_count_max)/4])
         set_proper_introduction = self.__is_factor_used('proper_introduction')
         set_proper_introduction_dispersed = self.__is_factor_used('proper_introduction_dispersed')
-        top_introducing_notes: dict[WordToken, tuple[NoteId, float, int]] = {}
+        introducing_notes: dict[WordToken, list[tuple[NoteId, float, int]]] = defaultdict(list)
 
         for note_id, note in notes_all_card.items():
 
@@ -353,9 +353,8 @@ class CardRanker:
                     else:
                         field_metrics.proper_introduction_score = proper_introduction_score
                     field_metrics.proper_introduction_dispersed_score = proper_introduction_score
-                    if new_word is not None and set_proper_introduction_dispersed:
-                        if new_word not in top_introducing_notes or top_introducing_notes[new_word][1] < proper_introduction_score:
-                            top_introducing_notes[new_word] = (note_id, proper_introduction_score, notes_metrics_index)
+                    if set_proper_introduction_dispersed and new_word is not None:
+                        introducing_notes[new_word].append((note_id, proper_introduction_score, notes_metrics_index))
 
                 # reinforce focus words (note has focus word already familiar to user)
                 field_metrics.reinforce_focus_words_score = 0
@@ -387,15 +386,11 @@ class CardRanker:
                     field_metrics.ue_score = field_ue_score
 
         if set_proper_introduction_dispersed:
-
-            for (note_id, _, notes_metrics_index) in top_introducing_notes.values():
-                notes_metrics[note_id][notes_metrics_index].proper_introduction_dispersed_score = 1
-
-            fall_over_border = 0.75
-            for note_id, fields_metrics in notes_metrics.items():
-                for metric_index, field_metrics in enumerate(fields_metrics):
-                    if field_metrics.proper_introduction_dispersed_score < 1 and field_metrics.proper_introduction_dispersed_score > fall_over_border:
-                        notes_metrics[note_id][metric_index].proper_introduction_dispersed_score = (field_metrics.proper_introduction_dispersed_score+fall_over_border)/2
+            for introducing_notes_list in introducing_notes.values():
+                introducing_notes_list.sort(key=lambda x: x[1], reverse=True)
+                for position, (note_id, proper_introduction_score, metric_index) in enumerate(introducing_notes_list):
+                    new_proper_introduction_dispersed_score = 1 / (2**position)
+                    notes_metrics[note_id][metric_index].proper_introduction_dispersed_score = new_proper_introduction_dispersed_score
 
         # done
 

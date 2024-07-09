@@ -11,7 +11,7 @@ from typing import Iterable, Sequence
 from anki.collection import Collection
 from anki.decks import DeckNameId
 from anki.models import NotetypeNameIdUseCount
-from aqt.utils import askUser, showWarning, showInfo, getOnlyText
+from aqt.utils import askUser, showWarning, showInfo, getOnlyText as getOnlyTextDialog
 from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
 from aqt.qt import QDialog, QLabel, QSpacerItem, QSizePolicy, QPushButton, QVBoxLayout, QLineEdit, QStringListModel, QListView, QAbstractItemView
 
@@ -259,7 +259,7 @@ class SelectNewTargetWindow(QDialog):
         self.selected_fields = {field_name: '' for field_name in selected_fields}
         for field_name in self.selected_fields.keys():
             default_lang_data_id = self.get_lang_data_id_suggestion(field_name, self.selected_note_type, self.selected_deck)
-            field_lang_data_id = getOnlyText("Language id for field '{}' of note type '{}'?".format(field_name, self.selected_note_type), default=default_lang_data_id, parent=self)
+            field_lang_data_id = getOnlyTextDialog("Language id for field '{}' of note type '{}'?".format(field_name, self.selected_note_type), default=default_lang_data_id, parent=self)
             self.selected_fields[field_name] = field_lang_data_id
         self.accept()
 

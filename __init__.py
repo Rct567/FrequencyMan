@@ -5,12 +5,13 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from functools import partial
 from typing import NamedTuple
+
 from aqt import QAction
-from aqt.qt import *
+from aqt.qt import QTimer
 from aqt.main import AnkiQt
+from aqt.utils import showInfo, askUser, showWarning
 
 from anki.collection import Collection
-from aqt.utils import showInfo, askUser, showWarning
 
 from .frequencyman.lib.addon_config import AddonConfig
 from .frequencyman.target_reorder_logger import LanguageInfoData, TargetReorderLogger

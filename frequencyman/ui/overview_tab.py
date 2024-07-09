@@ -3,12 +3,10 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-import json
 from typing import Any, Tuple, Type
 from anki.collection import Collection
 
-from aqt import QAction
-from aqt.qt import *
+from aqt.qt import QVBoxLayout, QLabel, QSpacerItem, QSizePolicy
 from aqt.main import AnkiQt
 from aqt.utils import showInfo, askUser, showWarning
 

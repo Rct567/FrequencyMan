@@ -3,13 +3,12 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Any, Optional, Tuple, Callable
+from typing import Any, Optional, Tuple, Callable, Union
 
 from ..lib.addon_config import AddonConfig
 from ..lib.utilities import var_dump_log, override
 
-from aqt import QAction
-from aqt.qt import *
+from aqt.qt import QWidget, QVBoxLayout, QLayout, QPaintEvent, QCloseEvent, QDialog, QTabWidget
 from aqt.main import AnkiQt
 
 try:

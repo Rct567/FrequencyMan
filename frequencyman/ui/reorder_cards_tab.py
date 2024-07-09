@@ -4,18 +4,19 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import json
+import os
 import re
 import shutil
 import hashlib
 import time
-from typing import Any, Optional, Tuple, Callable
+from typing import Any, Optional, Tuple, Callable, Union
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from aqt.operations import QueryOp, CollectionOp
 
 from aqt.utils import askUser, showWarning, showInfo, askUserDialog
 from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
-from aqt.qt import *
+from aqt.qt import QWidget, QGridLayout, QLabel, QSpacerItem, QSizePolicy, QPushButton, QApplication, Qt, QColor, QPalette, QLayout, QPaintEvent, QTextEdit, pyqtSlot
 from aqt.main import AnkiQt
 
 from ..lib.addon_config import AddonConfig

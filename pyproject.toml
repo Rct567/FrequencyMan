@@ -17,3 +17,4 @@ reportUnnecessaryIsInstance = false
 reportMissingTypeArgument = false
 reportImplicitStringConcatenation = true
 reportImplicitOverride = true
+reportWildcardImportFromLibrary = true

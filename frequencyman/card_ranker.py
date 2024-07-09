@@ -114,7 +114,7 @@ class CardRanker:
             return 1
         middle = (ideal_num_min+ideal_num_max)/2
         difference = abs(middle-word_count)
-        score = 1 / (1 + (difference / middle) ** 7)
+        score = 1 / (1 + (difference / middle) ** 3.5)
         if (word_count > 0 and word_count < ideal_num_min):
             return (score + 1) / 2
         return score

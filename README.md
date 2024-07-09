@@ -276,6 +276,46 @@ Two different types of files can be placed in a **language data id** directory:
 - __word frequency lists__: A text or csv file with words sorted to reflect the word frequency (in descending order). Only the position is used, not the (optional) word frequency value.
 - __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore".
 
+## Reorder logging
+
+Reorder logging is an optional feature that can be enabled by defining an `id` for a target. When enabled, it logs information about the content of that target each time the cards are reordered.
+
+### Display the amount of mature words
+
+The information that is logged can be used to display the amount of 'mature' words a target has using the following settings:
+
+```json
+"show_info_deck_browser": [
+    {
+        "lang": "ES",
+        "target": "*"
+    },
+    {
+        "lang": "EN",
+        "target": "*"
+    },
+    {
+        "lang": "ES",
+        "target": "id_of_target"
+    },
+    {
+        "lang": "EN",
+        "target": "id_of_target"
+    }
+],
+"show_info_toolbar": [
+    {
+        "lang": "ES",
+        "target": "*"
+    }
+]
+```
+
+Notes:
+- `*` is used to show combined information about all logged targets.
+- `show_info_deck_browser` wil create a table below the deck browser (below where you normally see "Studied N cards in N minutes today.").
+- All logged information is stored in the file `user_files\reorder_log.sqlite`.
+
 ## Target Corpus data
 
 A '_corpus data set_' contains all the information related the the content of a note that is used to calculate the ranking of a card (such as the "familiarity" of a word).

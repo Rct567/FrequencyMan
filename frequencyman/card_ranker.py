@@ -50,7 +50,7 @@ class FieldMetrics:
     ideal_words_count_score: float = 0
     new_words_score: float = 0
     no_new_words_score: float = 0
-    reinforce_focus_words_score: float = 0
+    reinforce_learning_words_score: float = 0
     proper_introduction_score: float = 0
     proper_introduction_dispersed_score: float = 0
 
@@ -96,7 +96,7 @@ class CardRanker:
             "lexical_underexposure": 0.25,
             "ideal_focus_word_count": 2.0,
             "ideal_word_count": 1.0,
-            "reinforce_focus_words": 0.5,
+            "reinforce_learning_words": 0.5,
             "most_obscure_word": 0.5,
             "lowest_fr_least_familiar_word": 0.25,
             "lowest_word_frequency": 1.0,
@@ -356,10 +356,10 @@ class CardRanker:
                     if set_proper_introduction_dispersed and new_word is not None:
                         introducing_notes[new_word].append((note_id, proper_introduction_score, notes_metrics_index))
 
-                # reinforce focus words (note has focus word already familiar to user)
-                field_metrics.reinforce_focus_words_score = 0
+                # reinforce learning words (note has no new words, but has at least one learning / non-mature word)
+                field_metrics.reinforce_learning_words_score = 0
                 if len(field_metrics.new_words) == 0 and len(field_metrics.focus_words) > 0:
-                    field_metrics.reinforce_focus_words_score = 1
+                    field_metrics.reinforce_learning_words_score = 1
 
                 # familiarity scores (push down)
                 if len(field_metrics.words_familiarity_positional_scores) > 0:
@@ -485,7 +485,7 @@ class CardRanker:
 
             notes_ranking_factors['word_frequency'][note_id] = fmean(field_metrics.fr_score for field_metrics in note_metrics)
             notes_ranking_factors['familiarity'][note_id] = fmean(field_metrics.familiarity_score for field_metrics in note_metrics)
-            notes_ranking_factors['reinforce_focus_words'][note_id] = fmean(field_metrics.reinforce_focus_words_score for field_metrics in note_metrics)
+            notes_ranking_factors['reinforce_learning_words'][note_id] = fmean(field_metrics.reinforce_learning_words_score for field_metrics in note_metrics)
 
             most_obscure_word_scores = [field_metrics.most_obscure_word[1] for field_metrics in note_metrics]
             notes_ranking_factors['most_obscure_word'][note_id] = fmean(most_obscure_word_scores)

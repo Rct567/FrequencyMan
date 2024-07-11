@@ -142,7 +142,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
     "lexical_underexposure": 0.25,
     "ideal_focus_word_count": 2.0,
     "ideal_word_count": 1.0,
-    "reinforce_focus_words": 0.5,
+    "reinforce_learning_words": 0.5,
     "most_obscure_word": 0.5,
     "lowest_fr_least_familiar_word": 0.25,
     "lowest_word_frequency": 1.0,
@@ -166,7 +166,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
   ```json
   "ideal_word_count": [2, 8]
   ```
-- `reinforce_focus_words`: Promotes cards with one or more already seen '_focus word_', but only if there are no new words.
+- `reinforce_learning_words`: Promotes cards with one or more 'learning' word (a reviewed, but not yet mature word), but only if there are no new words present.
 - `most_obscure_word`: Represents the most obscure word. The non-obscurity of a word is defined by either _word_frequency_ or _word_familiarity_ (depending on which is higher, and thus less 'obscure').
 - `lowest_fr_least_familiar_word`: Represents the lowest _word frequency_ among the words with the lowest familiarity score.
 - `lowest_word_frequency`: Represents the lowest _word frequency_ found in the content of any targeted field. This is different from `word_frequency`, which reflect the average _word frequency_ of all targeted fields.

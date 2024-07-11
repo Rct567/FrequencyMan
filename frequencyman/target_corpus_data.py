@@ -52,16 +52,16 @@ class SegmentContentMetrics:
     targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]] = field(default_factory=lambda: defaultdict(list))
 
     @cached_property
-    def words_post_focus(self) -> set[WordToken]:
+    def mature_words(self) -> set[WordToken]:
 
-        words_post_focus: set[WordToken] = set()
+        mature_words: set[WordToken] = set()
 
         for word_token, word_familiarity in self.words_familiarity.items():
 
             if word_familiarity > self.focus_words_max_familiarity:
-                words_post_focus.add(word_token)
+                mature_words.add(word_token)
 
-        return words_post_focus
+        return mature_words
 
     @cached_property
     def words_underexposure(self) -> dict[WordToken, float]:

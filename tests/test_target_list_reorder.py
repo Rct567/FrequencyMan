@@ -208,7 +208,7 @@ class TestTargetListReorder():
         for target in target_list.target_list:
             if target.corpus_data and target.corpus_data.content_metrics:
                 for segment_id, segment_data in target.corpus_data.content_metrics.items():
-                    focus_words[str(target.index_num)+'_'+str(segment_id)] = sorted(segment_data.words_post_focus)
+                    focus_words[str(target.index_num)+'_'+str(segment_id)] = sorted(segment_data.mature_words)
         col.lock_and_assert_result('focus_words', focus_words)
 
     def test_two_deck_collection_with_ignore_list(self):

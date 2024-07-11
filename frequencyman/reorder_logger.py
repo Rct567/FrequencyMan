@@ -218,7 +218,7 @@ class ReorderLogger(SqlDbFile):
                 'lang_id': str(segment_data.lang_id),
                 'num_words_new': 0,
                 'num_words_reviewed': len(segment_data.reviewed_words.keys()),
-                'num_words_mature': len(segment_data.words_post_focus),
+                'num_words_mature': len(segment_data.mature_words),
                 'words_familiarity_mean': segment_data.words_familiarity_mean,
                 'words_familiarity_median': segment_data.words_familiarity_median,
                 'words_familiarity_max': segment_data.words_familiarity_max
@@ -235,8 +235,8 @@ class ReorderLogger(SqlDbFile):
             assert all(familiarity > 0 for familiarity in segment_data.words_familiarity.values())
 
             target_reviewed_words_per_lang[segment_data.lang_id].update(segment_data.words_familiarity.keys())
-            target_mature_words_per_lang[segment_data.lang_id].update(segment_data.words_post_focus)
-            mature_words = segment_data.words_post_focus
+            target_mature_words_per_lang[segment_data.lang_id].update(segment_data.mature_words)
+            mature_words = segment_data.mature_words
 
             for word in segment_data.words_familiarity.keys():
                 is_mature = int(time()) if word in mature_words else 0

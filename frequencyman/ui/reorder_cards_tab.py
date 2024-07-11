@@ -30,7 +30,7 @@ from ..lib.event_logger import EventLogger
 from ..lib.utilities import var_dump, var_dump_log, override
 
 from ..language_data import LanguageData
-from ..target_reorder_logger import TargetReorderLogger
+from ..reorder_logger import ReorderLogger
 from ..target import ValidConfiguredTarget
 from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult, PersistentCacher
 
@@ -153,7 +153,7 @@ class ReorderCardsTab(FrequencyManTab):
     targets_input_textarea: TargetsDefiningTextArea
     reorder_button: QPushButton
 
-    def __init__(self, fm_window: FrequencyManMainWindow, col: Collection, reorder_logger: TargetReorderLogger) -> None:
+    def __init__(self, fm_window: FrequencyManMainWindow, col: Collection, reorder_logger: ReorderLogger) -> None:
 
         super().__init__(fm_window)
 

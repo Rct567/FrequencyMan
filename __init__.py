@@ -14,7 +14,7 @@ from aqt.utils import showInfo, askUser, showWarning
 from anki.collection import Collection
 
 from .frequencyman.lib.addon_config import AddonConfig
-from .frequencyman.target_reorder_logger import LanguageInfoData, TargetReorderLogger
+from .frequencyman.reorder_logger import LanguageInfoData, ReorderLogger
 
 from .frequencyman.ui.overview_tab import OverviewTab
 from .frequencyman.ui.reorder_cards_tab import ReorderCardsTab
@@ -63,7 +63,7 @@ class InfoItem(NamedTuple):
     lang_id: str
     data: LanguageInfoData
 
-def get_info_items_from_config(config: JSON_TYPE, reorder_logger: TargetReorderLogger) -> Optional[list[InfoItem]]:
+def get_info_items_from_config(config: JSON_TYPE, reorder_logger: ReorderLogger) -> Optional[list[InfoItem]]:
 
     info_items: list[InfoItem] = []
 
@@ -101,7 +101,7 @@ def get_info_items_from_config(config: JSON_TYPE, reorder_logger: TargetReorderL
 
 # toolbar show_info_toolbar
 
-def add_frequencyman_info_to_toolbar_items(reorder_logger: TargetReorderLogger, fm_config: AddonConfig) -> None:
+def add_frequencyman_info_to_toolbar_items(reorder_logger: ReorderLogger, fm_config: AddonConfig) -> None:
 
     from aqt.toolbar import Toolbar
 
@@ -127,7 +127,7 @@ def add_frequencyman_info_to_toolbar_items(reorder_logger: TargetReorderLogger, 
 
 # deck browser show_info_deck_browser
 
-def add_frequencyman_info_to_deck_browser(reorder_logger: TargetReorderLogger, fm_config: AddonConfig) -> None:
+def add_frequencyman_info_to_deck_browser(reorder_logger: ReorderLogger, fm_config: AddonConfig) -> None:
 
     from aqt.deckbrowser import DeckBrowser
 
@@ -155,7 +155,7 @@ def add_frequencyman_info_to_deck_browser(reorder_logger: TargetReorderLogger, f
 
 if isinstance(mw, AnkiQt):
 
-    reorder_logger = TargetReorderLogger(os.path.join(FM_USER_FILES_DIR, 'reorder_log.sqlite'))
+    reorder_logger = ReorderLogger(os.path.join(FM_USER_FILES_DIR, 'reorder_log.sqlite'))
 
     addon_manager = mw.addonManager
     fm_config_loader: Callable[[], Optional[dict[str, Any]]] = lambda: addon_manager.getConfig(__name__)

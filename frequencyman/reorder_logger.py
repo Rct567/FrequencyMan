@@ -20,10 +20,11 @@ class LanguageInfoData(TypedDict):
     num_words_reviewed: int
     num_words_learning: int
 
+
 InfoPerLang = dict[str, LanguageInfoData]
 
 
-class TargetReorderLogger(SqlDbFile):
+class ReorderLogger(SqlDbFile):
 
     targets_languages: set[LangId]
 

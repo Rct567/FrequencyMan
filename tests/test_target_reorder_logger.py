@@ -6,25 +6,26 @@ import pytest
 from frequencyman.target_list import TargetList, TargetListReorderResult
 from frequencyman.lib.event_logger import EventLogger
 
-from frequencyman.target_reorder_logger import TargetReorderLogger
+from frequencyman.reorder_logger import ReorderLogger
 from tests.tools import TestCollections
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
 
 @pytest.fixture
-def reorder_logger(tmpdir: str) -> Generator[TargetReorderLogger, None, None]:
+def reorder_logger(tmpdir: str) -> Generator[ReorderLogger, None, None]:
     db_path = os.path.join(tmpdir, 'test_reorder_log.sqlite')
     # db_path = os.path.join(TEST_DATA_DIR, 'test_reorder_log.sqlite')
     if os.path.exists(db_path):
         os.remove(db_path)
-    reorder_logger = TargetReorderLogger(db_path)
+    reorder_logger = ReorderLogger(db_path)
     yield reorder_logger
     reorder_logger.close()
 
+
 class TestTargetReorderLogger:
 
-    def test_reorder_logger(self, reorder_logger: TargetReorderLogger) -> None:
+    def test_reorder_logger(self, reorder_logger: ReorderLogger) -> None:
 
         col = TestCollections.get_test_collection('two_deck_collection')
 
@@ -139,5 +140,3 @@ class TestTargetReorderLogger:
         assert per_target['target1']['es'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
         assert per_target['target2']['en'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
         assert per_target['target2']['es'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
-
-

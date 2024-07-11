@@ -54,11 +54,9 @@ class TestTargetReorderLogger:
         ]
 
         target_list = TargetList(col.lang_data, col.cacher, col)
-
         target_list.set_targets(targets)
 
-        event_logger = EventLogger()
-        result = target_list.reorder_cards(col, event_logger)
+        result = target_list.reorder_cards(col, EventLogger())
 
         num_entries_added = reorder_logger.log_reordering(target_list, result)
 
@@ -104,11 +102,9 @@ class TestTargetReorderLogger:
         targets[1]['ranking_word_frequency'] = 10.0
 
         target_list = TargetList(col.lang_data, col.cacher, col)
-
         target_list.set_targets(targets)
 
-        event_logger = EventLogger()
-        result = target_list.reorder_cards(col, event_logger)
+        result = target_list.reorder_cards(col, EventLogger())
         assert result.num_targets_repositioned == 2
 
         num_entries_added = reorder_logger.log_reordering(target_list, result)
@@ -121,4 +117,27 @@ class TestTargetReorderLogger:
         assert reorder_logger.count_rows("target_reviewed_words", "is_mature > 0") == 5
         assert reorder_logger.count_rows("global_reviewed_words", "is_mature > 0") == 5
         assert reorder_logger.count_rows("global_languages") == 4
+
+        # reset all cards, reorder and check results
+
+        all_card_ids = col.find_cards('*')
+        col.sched.reset_cards(list(all_card_ids))
+
+        target_list = TargetList(col.lang_data, col.cacher, col)
+        target_list.set_targets(targets)
+
+        result = target_list.reorder_cards(col, EventLogger())
+        assert result.num_targets_repositioned == 2
+
+        num_entries_added = reorder_logger.log_reordering(target_list, result)
+
+        assert num_entries_added == 2
+        assert reorder_logger.count_rows("reorders") == 3
+
+        per_target = reorder_logger.get_info_per_target()
+        assert per_target['target1']['en'] == {'num_words_mature': 0 , 'num_words_reviewed': 0, 'num_words_learning': 0}
+        assert per_target['target1']['es'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
+        assert per_target['target2']['en'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
+        assert per_target['target2']['es'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
+
 

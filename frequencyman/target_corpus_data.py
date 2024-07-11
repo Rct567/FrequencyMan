@@ -135,17 +135,29 @@ class SegmentContentMetrics:
     @cached_property
     def words_familiarity_mean(self) -> float:
 
-        return fmean(self.words_familiarity.values())
+        words_familiarity_values = self.words_familiarity.values()
+        if not words_familiarity_values:
+            return 0
+
+        return fmean(words_familiarity_values)
 
     @cached_property
     def words_familiarity_median(self) -> float:
+
+        words_familiarity_values = self.words_familiarity.values()
+        if not words_familiarity_values:
+            return 0
 
         return median(self.words_familiarity.values())
 
     @cached_property
     def words_familiarity_max(self) -> float:
 
-        return max(self.words_familiarity.values())
+        words_familiarity_values = self.words_familiarity.values()
+        if not words_familiarity_values:
+            return 0
+
+        return max(words_familiarity_values)
 
     @cached_property
     def words_familiarity_positional(self) -> dict[WordToken, float]:

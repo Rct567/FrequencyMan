@@ -146,11 +146,20 @@ class TargetReorderLogger(SqlDbFile):
                 WHERE target_reviewed_words.lang_id = global_reviewed_words.lang_id AND target_reviewed_words.word = global_reviewed_words.word
             ) WHERE lang_id IN ({})'''.format(languages_str))
 
+            # update words that have lost their maturity
+
+            self.query('''UPDATE global_reviewed_words AS a SET is_mature = 0
+            WHERE a.lang_id IN ({})
+            AND a.is_mature > 0
+            AND NOT EXISTS (
+                    SELECT 1 FROM target_reviewed_words AS b WHERE b.word = a.word AND b.lang_id = a.lang_id AND b.is_mature > 0
+            )'''.format(languages_str))
+
             # update num_words_mature for each language
 
             for lang_id in self.targets_languages:
-                num_words_reviewed = self.count_rows('global_reviewed_words', "lang_id = ?", str(lang_id))
-                num_words_mature = self.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0", str(lang_id))
+                num_words_reviewed = self.count_rows('global_reviewed_words', "lang_id = ? AND familiarity > 0", str(lang_id))
+                num_words_mature = self.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0 AND familiarity > 0", str(lang_id))
                 self.insert_row('global_languages', {
                     'lang_id': str(lang_id),
                     'num_words_mature': num_words_mature,
@@ -222,13 +231,15 @@ class TargetReorderLogger(SqlDbFile):
 
         for segment_id, segment_data in corpus_data.content_metrics.items():
 
+            assert all(familiarity > 0 for familiarity in segment_data.words_familiarity.values())
+
             target_reviewed_words_per_lang[segment_data.lang_id].update(segment_data.words_familiarity.keys())
             target_mature_words_per_lang[segment_data.lang_id].update(segment_data.words_post_focus)
             mature_words = segment_data.words_post_focus
 
             for word in segment_data.words_familiarity.keys():
                 is_mature = int(time()) if word in mature_words else 0
-                target_reviewed_words.append((target.id_str, str(segment_data.lang_id), word, segment_data.words_familiarity[word], is_mature))
+                target_reviewed_words.append((target.id_str, str(segment_data.lang_id), str(word), segment_data.words_familiarity[word], is_mature))
 
             for mature_words_batch in batched(mature_words, 2000):
                 mature_words_batch_str = ', '.join('?' for _ in mature_words_batch)

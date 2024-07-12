@@ -24,6 +24,7 @@ class TargetCard:
     reps: int
     factor: int
     is_leech: bool
+    is_suspended: bool
 
 
 class TargetCards:
@@ -79,8 +80,9 @@ class TargetCards:
         leech_cards_ids = self.get_leech_cards_ids()
 
         for card_row in cards:
-            card = TargetCard(*card_row, is_leech=False)
+            card = TargetCard(*card_row, is_leech=False, is_suspended=False)
             card.is_leech = card.id in leech_cards_ids
+            card.is_suspended = card.queue == -1
             all_cards.append(card)
             all_cards_notes_ids.append(card.nid)
             if card.queue == 0:

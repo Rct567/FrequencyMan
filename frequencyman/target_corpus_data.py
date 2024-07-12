@@ -389,7 +389,7 @@ class TargetCorpusData:
         cards_familiarity_value = TargetCorpusData.__get_cards_familiarity_score(cards)
 
         for card in cards:
-            if card.queue == -1:  # suspended card
+            if card.is_suspended:
                 if card.is_leech:
                     cards_familiarity_value[card.id] = cards_familiarity_value[card.id]*suspended_leech_card_value
                 else:

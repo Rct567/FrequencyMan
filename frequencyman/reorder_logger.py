@@ -75,7 +75,8 @@ class ReorderLogger(SqlDbFile):
             'lang_id': 'TEXT',
             'word': 'TEXT',
             'familiarity': 'FLOAT',
-            'is_mature': 'INTEGER DEFAULT 0'
+            'is_mature': 'INTEGER DEFAULT 0',
+            'is_present': 'INTEGER DEFAULT 0'
         }, constraints='UNIQUE(target_id, lang_id, word) ON CONFLICT REPLACE')
         self.create_index('target_reviewed_words', 'target_reviewed_words_target_id', ['target_id'])
         self.create_index('target_reviewed_words', 'target_reviewed_words_lang_id_words', ['lang_id', 'word'])
@@ -102,6 +103,7 @@ class ReorderLogger(SqlDbFile):
             'word': 'TEXT',
             'familiarity': 'FLOAT DEFAULT 0.0',
             'is_mature': 'INTEGER DEFAULT 0',
+            'is_present': 'INTEGER DEFAULT 0',
             'date_created': 'INTEGER'
         }, constraints='UNIQUE(lang_id, word) ON CONFLICT IGNORE')
         self.create_index('global_reviewed_words', 'global_reviewed_words_lang_id_words', ['lang_id', 'word'])
@@ -139,13 +141,22 @@ class ReorderLogger(SqlDbFile):
             self.delete_row("reorders", "id = ?", reorder_id)
         elif self.targets_languages:
 
+            targets_languages_str = ', '.join(['"'+str(lang_id)+'"' for lang_id in self.targets_languages])
+
             # update familiarity for each word
 
-            languages_str = ', '.join(['"'+str(lang_id)+'"' for lang_id in self.targets_languages])
-            self.query('''UPDATE global_reviewed_words SET familiarity = (
+            self.query('''UPDATE global_reviewed_words AS a SET familiarity = (
                 SELECT MAX(target_reviewed_words.familiarity) FROM target_reviewed_words
-                WHERE target_reviewed_words.lang_id = global_reviewed_words.lang_id AND target_reviewed_words.word = global_reviewed_words.word
-            ) WHERE lang_id IN ({})'''.format(languages_str))
+                WHERE target_reviewed_words.lang_id = a.lang_id AND target_reviewed_words.word = a.word
+            )
+            WHERE lang_id IN ({})'''.format(targets_languages_str))
+
+            # update is_present for each word
+
+            self.query('''UPDATE global_reviewed_words AS a SET is_present = (
+                SELECT MAX(target_reviewed_words.is_present) FROM target_reviewed_words
+                WHERE target_reviewed_words.lang_id = a.lang_id AND target_reviewed_words.word = a.word
+            ) WHERE lang_id IN ({})'''.format(targets_languages_str))
 
             # update words that have lost their maturity
 
@@ -154,13 +165,13 @@ class ReorderLogger(SqlDbFile):
             AND a.is_mature > 0
             AND NOT EXISTS (
                     SELECT 1 FROM target_reviewed_words AS b WHERE b.word = a.word AND b.lang_id = a.lang_id AND b.is_mature > 0
-            )'''.format(languages_str))
+            )'''.format(targets_languages_str))
 
             # update num_words_mature for each language
 
             for lang_id in self.targets_languages:
-                num_words_reviewed = self.count_rows('global_reviewed_words', "lang_id = ? AND familiarity > 0", str(lang_id))
-                num_words_mature = self.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0 AND familiarity > 0", str(lang_id))
+                num_words_reviewed = self.count_rows('global_reviewed_words', "lang_id = ? AND is_present > 0", str(lang_id))
+                num_words_mature = self.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0 AND is_present > 0", str(lang_id))
                 self.insert_row('global_languages', {
                     'lang_id': str(lang_id),
                     'num_words_mature': num_words_mature,
@@ -232,8 +243,6 @@ class ReorderLogger(SqlDbFile):
 
         for segment_id, segment_data in corpus_data.content_metrics.items():
 
-            assert all(familiarity > 0 for familiarity in segment_data.words_familiarity.values())
-
             target_reviewed_words_per_lang[segment_data.lang_id].update(segment_data.words_familiarity.keys())
             target_mature_words_per_lang[segment_data.lang_id].update(segment_data.mature_words)
             mature_words = segment_data.mature_words
@@ -253,9 +262,11 @@ class ReorderLogger(SqlDbFile):
                 {'reorder_id': reorder_id, 'target_id': target.id_str, 'lang_id': str(lang_id), 'num_words_reviewed': len(reviewed_words), 'num_words_mature': num_mature_words}
             )
 
+        self.query('UPDATE target_reviewed_words SET is_present = 0 WHERE target_id = ?', target.id_str)
+
         if target_reviewed_words:
             self.insert_many_rows('target_reviewed_words',
-                ({'target_id': target.id_str, 'lang_id': word[1], 'word': word[2], 'familiarity': word[3], 'is_mature': word[4]} for word in target_reviewed_words)
+                ({'target_id': target.id_str, 'lang_id': word[1], 'word': word[2], 'familiarity': word[3], 'is_mature': word[4], 'is_present': 1} for word in target_reviewed_words)
             )
 
             self.insert_many_rows('global_reviewed_words',

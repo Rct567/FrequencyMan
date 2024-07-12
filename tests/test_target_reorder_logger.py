@@ -140,3 +140,7 @@ class TestTargetReorderLogger:
         assert per_target['target1']['es'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
         assert per_target['target2']['en'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
         assert per_target['target2']['es'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
+
+        global_info = reorder_logger.get_info_global()
+        assert global_info['en'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
+        assert global_info['es'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}

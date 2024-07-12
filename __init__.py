@@ -118,7 +118,7 @@ def add_frequencyman_info_to_toolbar_items(reorder_logger: ReorderLogger, fm_con
                     cmd="fm_lang_info_toolbar_{}".format(info_item.target_id),
                     label="{}: <b>{}</b>".format(info_item.lang_id.upper(), info_item.data['num_words_mature']),
                     func=lambda: None,
-                    tip="Target: {}".format(info_item.target_display_id),
+                    tip="Target: {}\nLearning: {}, Mature: {}".format(info_item.target_display_id, info_item.data['num_words_learning'], info_item.data['num_words_mature']),
                     id=None,
                 )
             )

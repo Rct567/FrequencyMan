@@ -10,6 +10,7 @@ from anki.collection import Collection
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 from anki.models import NotetypeId, NotetypeDict
+from anki.utils import int_time
 
 from .lib.utilities import var_dump, var_dump_log
 
@@ -23,8 +24,30 @@ class TargetCard:
     ivl: int
     reps: int
     factor: int
+    due: int
     is_leech: bool
     is_suspended: bool
+    days_overdue: Optional[int] = None
+
+    @staticmethod
+    def get_days_overdue(card: 'TargetCard', col: Collection) -> Optional[int]:
+
+        if card.queue != 2:
+            return None
+        if card.type != 2:
+             return None
+
+        now = int_time()
+        collection_time = col.crt
+        due_date = collection_time + (card.due * 86400)  # Convert days to seconds
+
+
+        is_due = due_date < now
+
+        if not is_due:
+            return None # returning None, because returning 0 would mean due today
+
+        return (now-due_date) // 86400
 
 
 class TargetCards:
@@ -69,7 +92,7 @@ class TargetCards:
             raise Exception("No database connection found when trying to get cards from database!")
 
         card_ids_str = ",".join(map(str, self.all_cards_ids))
-        cards = self.col.db.execute("SELECT id, nid, type, queue, ivl, reps, factor FROM cards WHERE id IN ({}) ORDER BY due ASC".format(card_ids_str))
+        cards = self.col.db.execute("SELECT id, nid, type, queue, ivl, reps, factor, due FROM cards WHERE id IN ({}) ORDER BY due ASC".format(card_ids_str))
 
         all_cards: list[TargetCard] = []
         new_cards: list[TargetCard] = []
@@ -83,14 +106,15 @@ class TargetCards:
             card = TargetCard(*card_row, is_leech=False, is_suspended=False)
             card.is_leech = card.id in leech_cards_ids
             card.is_suspended = card.queue == -1
-            all_cards.append(card)
-            all_cards_notes_ids.append(card.nid)
             if card.queue == 0:
                 new_cards.append(card)
                 new_cards_ids.append(card.id)
                 new_cards_notes_ids.append(card.nid)
             if card.queue != 0 and card.type == 2:
+                card.days_overdue = TargetCard.get_days_overdue(card, self.col)
                 reviewed_cards.append(card)
+            all_cards.append(card)
+            all_cards_notes_ids.append(card.nid)
 
         self.all_cards = all_cards
         self.new_cards = new_cards

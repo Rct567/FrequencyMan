@@ -1,4 +1,5 @@
 import pytest
+from freezegun import freeze_time
 
 from frequencyman.card_ranker import CardRanker
 from frequencyman.target_list import TargetList, TargetListReorderResult
@@ -9,6 +10,7 @@ from tests.tools import TestCollections
 
 class TestTargetListReorder():
 
+    @freeze_time("2023-12-01")
     def test_reorder_cards_big_collection_es(self):
 
         col = TestCollections.get_test_collection('big_collection_es')
@@ -71,6 +73,7 @@ class TestTargetListReorder():
         # check order
         col.lock_and_assert_order('sorted_cards_ids', target_result.sorted_cards_ids)
 
+    @freeze_time("2023-12-01")
     def test_reorder_cards_big_collection_es_with_reorder_scope(self):
 
         col = TestCollections.get_test_collection('big_collection_es')
@@ -128,6 +131,7 @@ class TestTargetListReorder():
         # check order
         col.lock_and_assert_order('sorted_cards_ids', target_result.sorted_cards_ids)
 
+    @freeze_time("2023-12-01")
     def test_two_deck_collection(self):
 
         col = TestCollections.get_test_collection('two_deck_collection')
@@ -211,6 +215,7 @@ class TestTargetListReorder():
                     focus_words[str(target.index_num)+'_'+str(segment_id)] = sorted(segment_data.mature_words)
         col.lock_and_assert_result('focus_words', focus_words)
 
+    @freeze_time("2023-12-01")
     def test_two_deck_collection_with_ignore_list(self):
 
         col = TestCollections.get_test_collection('two_deck_collection')
@@ -252,6 +257,7 @@ class TestTargetListReorder():
         # check order
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
+    @freeze_time("2023-12-01")
     def test_two_deck_collection_with_reorder_scope(self):
 
         col = TestCollections.get_test_collection('two_deck_collection')
@@ -326,6 +332,7 @@ class TestTargetListReorder():
         col.lock_and_assert_order('sorted_cards_ids_0', result.reorder_result_list[0].sorted_cards_ids)
         col.lock_and_assert_order('sorted_cards_ids_1', result.reorder_result_list[1].sorted_cards_ids)
 
+    @freeze_time("2023-12-01")
     def test_two_deck_collection_no_reviewed_cards(self):
 
         col = TestCollections.get_test_collection('two_deck_collection')
@@ -379,6 +386,7 @@ class TestTargetListReorder():
         # check order
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
+    @freeze_time("2023-12-01")
     def test_two_deck_collection_no_cards(self):
 
         col = TestCollections.get_test_collection('two_deck_collection')
@@ -423,6 +431,7 @@ class TestTargetListReorder():
         assert len(target_list[0].get_cards_non_cached().new_cards_ids) == 0
         assert len(target_list[0].get_cards_non_cached().get_notes_from_new_cards()) == 0
 
+    @freeze_time("2023-12-01")
     def test_two_deck_collection_corpus_segmentation_by_note_field(self):
 
         col = TestCollections.get_test_collection('two_deck_collection')
@@ -466,6 +475,7 @@ class TestTargetListReorder():
         # check order
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
+    @freeze_time("2023-12-01")
     def test_two_deck_collection_low_familiarity(self):
 
         col = TestCollections.get_test_collection('two_deck_collection_low_fam')
@@ -511,6 +521,7 @@ class TestTargetListReorder():
         # check order
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
+    @freeze_time("2023-12-01")
     def test_two_deck_collection_every_factor(self):
 
         for ranking_factor in CardRanker. get_default_ranking_factors_span().keys():

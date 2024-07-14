@@ -1,0 +1,5 @@
+anki
+aqt
+pytest
+pytest-sugar
+freezegun

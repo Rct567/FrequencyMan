@@ -378,6 +378,10 @@ class TargetCorpusData:
             card_reps = fall_of_value(cards_reps[card.id] / 12)
             card_ease = fall_of_value(cards_ease[card.id] / 2500)
             card_score = (card_interval + (card_ease/4) + (card_reps/4)) / 1.5
+            if card.days_overdue is not None and card.days_overdue > 0:
+                relative_overdue = card.days_overdue/card.ivl
+                dev = (1+relative_overdue)**3
+                card_score = card_score/dev
             cards_familiarity[card.id] = card_score
 
         # done

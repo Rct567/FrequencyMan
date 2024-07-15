@@ -10,7 +10,7 @@ from tests.tools import TestCollections
 
 class TestTargetListReorder():
 
-    @freeze_time("2023-12-01")
+    @freeze_time("2023-12-05")
     def test_reorder_cards_big_collection_es(self):
 
         col = TestCollections.get_test_collection('big_collection_es')

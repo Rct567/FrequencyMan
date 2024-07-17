@@ -5,6 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from dataclasses import dataclass
 from enum import Enum
+from functools import cache
 import json
 import re
 from typing import Iterator, Optional, Any
@@ -143,6 +144,30 @@ class TargetList:
         return (JsonTargetsValidity.VALID_TARGETS, "", valid_target_list)
 
     @staticmethod
+    @cache
+    def __query_is_validly_executing(query: str, col: Collection) -> bool:
+
+        if len(query.strip()) == 0:
+            return True
+
+        try:
+            col.find_cards("deck:NoneExisting AND ({})".format(query))
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def is_valid_query(query: Any, col: Collection) -> bool:
+
+        if not isinstance(query, str):
+            return False
+
+        if re.match(r"^[a-zA-Z0-9_\s]+$", query):
+            return True
+
+        return TargetList.__query_is_validly_executing(query, col)
+
+    @staticmethod
     def __validate_target_data(target_data: JSON_TYPE, index: int, col: Collection, language_data: LanguageData) -> tuple[bool, str, Optional[ValidConfiguredTarget]]:
 
         if not isinstance(target_data, dict):
@@ -207,6 +232,10 @@ class TargetList:
         if 'scope_query' in target_data:
             if not isinstance(target_data['scope_query'], str):
                 return (False, "Scope query defined in target #{} is not a string (string expected).".format(index), None)
+            if len(target_data['scope_query'].strip()) == 0:
+                return (False, "Scope query defined in target #{} is empty.".format(index), None)
+            if not TargetList.is_valid_query(target_data['scope_query'], col):
+                return (False, "Scope query defined in target #{} is not a valid query.".format(index), None)
             result['scope_query'] = target_data['scope_query']
 
         defined_decks = ConfiguredTarget.get_deck_names_from_config_target(target_data.get('deck'), target_data.get('decks'))
@@ -222,6 +251,10 @@ class TargetList:
         if 'reorder_scope_query' in target_data:
             if not isinstance(target_data['reorder_scope_query'], str):
                 return (False, "Reorder scope query defined in target #{} is not a string (string expected).".format(index), None)
+            if len(target_data['reorder_scope_query'].strip()) == 0:
+                return (False, "Reorder scope query defined in target #{} is empty.".format(index), None)
+            if not TargetList.is_valid_query(target_data['reorder_scope_query'], col):
+                return (False, "Reorder scope query defined in target #{} is not a valid query.".format(index), None)
             result['reorder_scope_query'] = target_data['reorder_scope_query']
 
         # check all keys

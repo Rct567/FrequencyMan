@@ -4,6 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Optional, Sequence
 
 from anki.collection import Collection
@@ -39,15 +40,20 @@ class TargetCard:
 
         now = int_time()
         collection_time = col.crt
-        due_date = collection_time + (card.due * 86400)  # Convert days to seconds
+        due_date = collection_time + (card.due * 86400)
 
+        rollover = col.conf['rollover']
+
+        if datetime.fromtimestamp(now).hour < rollover:
+            now -= 60*60*(rollover-1) # adjust for 'next day starts at'
 
         is_due = due_date < now
 
         if not is_due:
-            return None # returning None, because returning 0 would mean due today
+            return None
 
-        return (now-due_date) // 86400
+        days_overdue = (now-due_date) // 86400
+        return days_overdue # if days_overdue is 0 then its also just due
 
 
 class TargetCards:

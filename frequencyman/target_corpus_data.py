@@ -75,7 +75,8 @@ class SegmentContentMetrics:
             word_underexposure_rating = (word_fr - word_familiarity)
 
             if (word_underexposure_rating > 0):
-                word_underexposure_rating = word_underexposure_rating * ((1 + word_familiarity) ** 1.5)
+                if self.words_familiarity.get(word_token, 0) < 1.9:
+                    word_underexposure_rating = word_underexposure_rating * ((1 + word_familiarity) ** 1.5)
                 if word_familiarity == 0:
                     word_underexposure_rating = word_underexposure_rating*0.75
                 words_underexposure[word_token] = word_underexposure_rating

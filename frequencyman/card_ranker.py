@@ -5,7 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from math import fsum, exp
+from math import fsum, log
 from statistics import fmean, median
 from typing import Optional, Tuple
 
@@ -383,6 +383,8 @@ class CardRanker:
                 if (len(field_metrics.ue_scores) > 0):
                     bucked_score = min([bucked_size, fsum(field_metrics.ue_scores)]) / bucked_size
                     field_ue_score = ((bucked_score*2) + fmean(field_metrics.ue_scores) + max(field_metrics.ue_scores)) / 4
+                    if field_ue_score > 0 and field_metrics.lowest_familiarity_word[1] > 2.5 and (ue_devalue := log(field_metrics.lowest_familiarity_word[1])) > 1.0:
+                        field_ue_score = field_ue_score / ue_devalue
                     field_metrics.ue_score = field_ue_score
 
         if set_proper_introduction_dispersed:

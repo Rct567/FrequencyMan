@@ -145,7 +145,7 @@ class TargetList:
 
     @staticmethod
     @cache
-    def __query_is_validly_executing(query: str, col: Collection) -> bool:
+    def __query_executes_validly(query: str, col: Collection) -> bool:
 
         if len(query.strip()) == 0:
             return True
@@ -165,7 +165,7 @@ class TargetList:
         if re.match(r"^[a-zA-Z0-9_\s]+$", query):
             return True
 
-        return TargetList.__query_is_validly_executing(query, col)
+        return TargetList.__query_executes_validly(query, col)
 
     @staticmethod
     def __validate_target_data(target_data: JSON_TYPE, index: int, col: Collection, language_data: LanguageData) -> tuple[bool, str, Optional[ValidConfiguredTarget]]:
@@ -259,7 +259,7 @@ class TargetList:
 
         # check all keys
 
-        known_keys = ValidConfiguredTarget.getValidKeys()
+        known_keys = ValidConfiguredTarget.get_valid_keys()
 
         for key in target_data.keys():
             if key == "":

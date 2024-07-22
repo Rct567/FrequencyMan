@@ -653,7 +653,7 @@ class CardRanker:
         return note_data
 
     def __get_new_debug_info_for_note(self, note: Note, note_metrics: list[FieldMetrics], notes_ranking_scores: dict[str, dict[NoteId, float]],
-                                      notes_new_card: dict[NoteId, Note], reorder_scope_note_ids: set[NoteId]) -> dict[str, str]:
+                                      notes_new_card: dict[NoteId, Note], reorder_scope_notes_ids: set[NoteId]) -> dict[str, str]:
 
         note_data: dict[str, str] = {}
 
@@ -689,7 +689,7 @@ class CardRanker:
         # set fm_debug_ranking_info
         if 'fm_debug_ranking_info' in note:
             if note.id in notes_new_card:
-                if not note.id in reorder_scope_note_ids:
+                if not note.id in reorder_scope_notes_ids:
                     note_data['fm_debug_ranking_info'] = '<< Not in reorder scope of target '+self.target_name+' >>'
                 else:
                     note_data['fm_debug_ranking_info'] = 'Target '+self.target_name+'<br />'

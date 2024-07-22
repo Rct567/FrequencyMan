@@ -83,16 +83,16 @@ class TargetCards:
             TargetCards.notes_from_cards_cached.clear()
             TargetCards.leech_card_ids_cached.clear()
 
-        self.get_cards_from_db()
+        self.__get_cards_from_db()
 
-    def get_leech_cards_ids(self) -> set[CardId]:
+    def __get_leech_cards_ids(self) -> set[CardId]:
 
         if len(self.leech_card_ids_cached) == 0:
             self.leech_card_ids_cached.update(self.col.find_cards('tag:leech'))
 
         return self.leech_card_ids_cached
 
-    def get_cards_from_db(self) -> None:
+    def __get_cards_from_db(self) -> None:
 
         if not self.col.db:
             raise Exception("No database connection found when trying to get cards from database!")
@@ -106,7 +106,7 @@ class TargetCards:
         reviewed_cards: list[TargetCard] = []
         all_cards_notes_ids: list[NoteId] = []
         new_cards_notes_ids: list[NoteId] = []
-        leech_cards_ids = self.get_leech_cards_ids()
+        leech_cards_ids = self.__get_leech_cards_ids()
 
         for card_row in cards:
             card = TargetCard(*card_row, is_leech=False, is_suspended=False)

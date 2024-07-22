@@ -154,7 +154,7 @@ class ValidConfiguredTarget(ConfiguredTargetTypedDict):
     # notes: list[ConfiguredTargetNote]
 
     @staticmethod
-    def getValidKeys() -> set[str]:
+    def get_valid_keys() -> set[str]:
         valid_keys = set()
         for key in getattr(ConfiguredTargetKeys, '__args__'):
             valid_keys.add(key)
@@ -210,6 +210,3 @@ class ValidConfiguredTarget(ConfiguredTargetTypedDict):
 
         if 'reorder_scope_query' in self and len(self['reorder_scope_query']) > 0:
             return self.construct_main_scope_query()+" AND ("+self['reorder_scope_query']+")"
-
-
-

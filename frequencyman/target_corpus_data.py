@@ -341,7 +341,14 @@ class TargetCorpusData:
                     card_note_fields_in_target.append(content_data)
 
                     if corpus_segment_id not in self.content_metrics:
-                        segment_content_metrics = SegmentContentMetrics(lang_id, self.focus_words_max_familiarity, self.familiarity_sweetspot_point, self.target_cards, self.language_data, cards_familiarity_factor)
+                        segment_content_metrics = SegmentContentMetrics(
+                            lang_id,
+                            self.focus_words_max_familiarity,
+                            self.familiarity_sweetspot_point,
+                            self.target_cards,
+                            self.language_data,
+                            cards_familiarity_factor
+                        )
                         self.content_metrics[corpus_segment_id] = segment_content_metrics
                     elif self.content_metrics[corpus_segment_id].lang_id != lang_id:
                         raise Exception("Language id mismatch for segment '{}' and lang_id '{}'!".format(corpus_segment_id, lang_id))

@@ -1,15 +1,12 @@
 import os
-import re
-from typing import Generator
-
+from typing import Any, Callable, Generator
 import pytest
-from freezegun import freeze_time
 
 from frequencyman.target_list import TargetList, TargetListReorderResult
 from frequencyman.lib.event_logger import EventLogger
 from frequencyman.reorder_logger import ReorderLogger
 
-from tests.tools import TestCollections
+from tests.tools import TestCollections, freeze_time_anki
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -27,7 +24,7 @@ def reorder_logger(tmpdir: str) -> Generator[ReorderLogger, None, None]:
 
 class TestTargetReorderLogger:
 
-    @freeze_time("2023-12-01")
+    @freeze_time_anki("2023-12-01")
     def test_reorder_logger(self, reorder_logger: ReorderLogger) -> None:
 
         col = TestCollections.get_test_collection('two_deck_collection')

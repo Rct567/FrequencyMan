@@ -1,9 +1,11 @@
-from ast import TypeAlias
+from contextlib import contextmanager
 import inspect
 import os
 import shutil
-from typing import Any, AnyStr, Callable, Generator, Optional, Sequence, Tuple, TypeVar, override
+from typing import Any, Generator, Optional, Sequence, Tuple, TypeVar, override
 import pprint
+import time
+from dateutil.parser import parse
 
 from anki.collection import Collection
 
@@ -123,3 +125,22 @@ class TestCollections:
         caller_frame = inspect.stack()[1]
 
         return TestCollection(test_collection_name, collection_dir, lang_data, caller_frame)
+
+
+@contextmanager
+def freeze_time_anki(target_time_str: str) -> Generator[None, None, None]:
+    """
+    A context manager to mock time.time() to return a specific target time based on a string input.
+
+    :param target_time_str: The target time as a string (e.g., "2023-12-05" or "2023-12-05 13:00").
+    :yield: None
+    """
+    target_datetime = parse(target_time_str)
+    target_timestamp = target_datetime.timestamp()
+
+    original_time = time.time
+    time.time = lambda: target_timestamp
+    try:
+        yield
+    finally:
+        time.time = original_time

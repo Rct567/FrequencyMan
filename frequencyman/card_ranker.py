@@ -92,11 +92,11 @@ class CardRanker:
         return {
             "word_frequency": 1.0,
             "familiarity": 1.0,
-            "familiarity_sweetspot": 1.0,
+            "familiarity_sweetspot": 0.5,
             "lexical_underexposure": 0.25,
-            "ideal_focus_word_count": 2.0,
+            "ideal_focus_word_count": 4.0,
             "ideal_word_count": 1.0,
-            "reinforce_learning_words": 0.5,
+            "reinforce_learning_words": 2.0,
             "most_obscure_word": 0.5,
             "lowest_fr_least_familiar_word": 0.25,
             "lowest_word_frequency": 1.0,
@@ -487,20 +487,21 @@ class CardRanker:
 
             notes_ranking_factors['word_frequency'][note_id] = fmean(field_metrics.fr_score for field_metrics in note_metrics)
             notes_ranking_factors['familiarity'][note_id] = fmean(field_metrics.familiarity_score for field_metrics in note_metrics)
-            notes_ranking_factors['reinforce_learning_words'][note_id] = fmean(field_metrics.reinforce_learning_words_score for field_metrics in note_metrics)
 
             most_obscure_word_scores = [field_metrics.most_obscure_word[1] for field_metrics in note_metrics]
             notes_ranking_factors['most_obscure_word'][note_id] = fmean(most_obscure_word_scores)
 
-            lowest_fr_least_familiar_word = [field_metrics.lowest_fr_least_familiar_word[1] for field_metrics in note_metrics]
-
-            notes_ranking_factors['lowest_fr_least_familiar_word'][note_id] = fmean(lowest_fr_least_familiar_word)
+            lowest_fr_least_familiar_word_scores = [field_metrics.lowest_fr_least_familiar_word[1] for field_metrics in note_metrics]
+            notes_ranking_factors['lowest_fr_least_familiar_word'][note_id] = (median(lowest_fr_least_familiar_word_scores) + (min(lowest_fr_least_familiar_word_scores)*99)) / 100
 
             lowest_word_frequency_scores = [field_metrics.lowest_fr_word[1] for field_metrics in note_metrics]
             notes_ranking_factors['lowest_word_frequency'][note_id] = (median(lowest_word_frequency_scores) + (min(lowest_word_frequency_scores)*99)) / 100
 
             lowest_familiarity_scores = [field_metrics.lowest_familiarity_word[1] for field_metrics in note_metrics]
             notes_ranking_factors['lowest_familiarity'][note_id] = (median(lowest_familiarity_scores) + (min(lowest_familiarity_scores)*99)) / 100
+
+            reinforce_learning_words_scores = [field_metrics.reinforce_learning_words_score for field_metrics in note_metrics]
+            notes_ranking_factors['reinforce_learning_words'][note_id] = (median(reinforce_learning_words_scores) + (min(reinforce_learning_words_scores)*2)) / 3
 
             new_words_scores = [field_metrics.new_words_score for field_metrics in note_metrics]
             notes_ranking_factors['new_words'][note_id] = (median(new_words_scores) + (min(new_words_scores)*2)) / 3

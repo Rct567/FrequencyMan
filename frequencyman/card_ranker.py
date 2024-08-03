@@ -184,7 +184,12 @@ class CardRanker:
 
     def calc_cards_ranking(self, target_cards: TargetCards, reorder_scope_target_cards: TargetCards) -> dict[CardId, float]:
 
-        # card ranking is calculates per note (which may have different card, but same ranking)
+        # boost weight of lowest_word_frequency if there are less than 100 reviewed cards
+
+        if len(target_cards.reviewed_cards) < 100 and len(self.ranking_factors_span) == len(self.get_default_ranking_factors_span()):
+            self.ranking_factors_span['lowest_word_frequency'] = max(fsum(self.ranking_factors_span.values()), self.ranking_factors_span['lowest_word_frequency'])
+
+        # card ranking is calculates per note (which may have different cards, but same ranking)
 
         notes_from_new_cards = target_cards.get_notes_from_new_cards()
         notes_all_card = target_cards.get_notes_from_all_cards()
@@ -199,9 +204,11 @@ class CardRanker:
         notes_ranking_scores_normalized, notes_rankings = self.__calc_notes_ranking(notes_ranking_factors, reorder_scope_target_cards)
 
         # set meta data that will be saved in note fields
+
         self.__set_fields_meta_data_for_notes(notes_all_card, notes_from_new_cards, notes_ranking_scores_normalized, notes_metrics)
 
         # cards ranking based on note ranking
+        
         card_rankings: dict[CardId, float] = {}
         for card in reorder_scope_target_cards.new_cards:
             card_rankings[card.id] = notes_rankings[card.nid]

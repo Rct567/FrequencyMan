@@ -536,7 +536,7 @@ class TestTargetListReorder():
                         "name": "Basic",
                         "fields": {
                             "Front": "EN",
-                            "Back": "EN"
+                            "Back": "ES"
                         },
                     }],
                     'ranking_factors': {ranking_factor: 1}
@@ -549,6 +549,7 @@ class TestTargetListReorder():
 
             reorder_result = result.reorder_result_list[0]
             assert reorder_result.success and reorder_result.error is None
+            assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
 
             assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 16
 

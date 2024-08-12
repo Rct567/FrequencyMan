@@ -6,6 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from typing import Any, Callable, Optional
 from aqt import Union
+from aqt.main import AnkiQt
 
 from .utilities import JSON_TYPE
 
@@ -59,3 +60,14 @@ class AddonConfig():
             raise ValueError("Config not loaded!")
         self.__config[key] = value
         self.__config_save(self.__config)
+
+    @staticmethod
+    def from_anki_main_window(mw: AnkiQt) -> 'AddonConfig':
+
+        addon_manager = mw.addonManager
+        config_loader: Callable[[], Optional[dict[str, Any]]] = lambda: addon_manager.getConfig(__name__)
+        config_saver: Callable[[dict[str, Any]], None] = lambda config: addon_manager.writeConfig(__name__, config)
+
+        addon_config = AddonConfig(config_loader, config_saver)
+        addon_config.load()
+        return addon_config

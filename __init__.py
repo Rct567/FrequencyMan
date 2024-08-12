@@ -39,7 +39,7 @@ if not os.path.isdir(FM_USER_FILES_DIR):
 
 # add menu option to main window
 
-def open_frequencyman_main_window(mw: AnkiQt, addon_config: AddonConfig):
+def open_frequencyman_main_window(mw: AnkiQt, addon_config: AddonConfig, reorder_logger: ReorderLogger):
     if not isinstance(mw.col, Collection):
         return
 
@@ -50,9 +50,9 @@ def open_frequencyman_main_window(mw: AnkiQt, addon_config: AddonConfig):
 
     fm_window.exec()
 
-def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt, addon_config: AddonConfig):
+def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt, addon_config: AddonConfig, reorder_logger: ReorderLogger):
     action = QAction("FrequencyMan", mw)
-    action.triggered.connect(lambda: open_frequencyman_main_window(mw, addon_config))
+    action.triggered.connect(lambda: open_frequencyman_main_window(mw, addon_config, reorder_logger))
     mw.form.menuTools.addAction(action)
 
 # get language info helper function
@@ -156,15 +156,9 @@ def add_frequencyman_info_to_deck_browser(reorder_logger: ReorderLogger, fm_conf
 if isinstance(mw, AnkiQt):
 
     reorder_logger = ReorderLogger(os.path.join(FM_USER_FILES_DIR, 'reorder_log.sqlite'))
+    fm_config = AddonConfig.from_anki_main_window(mw)
 
-    addon_manager = mw.addonManager
-    fm_config_loader: Callable[[], Optional[dict[str, Any]]] = lambda: addon_manager.getConfig(__name__)
-    fm_config_saver: Callable[[dict[str, Any]], None] = lambda config: addon_manager.writeConfig(__name__, config)
-
-    fm_config = AddonConfig(fm_config_loader, fm_config_saver)
-    fm_config.load()
-
-    add_frequencyman_menu_option_to_anki_tools_menu(mw, fm_config)
+    add_frequencyman_menu_option_to_anki_tools_menu(mw, fm_config, reorder_logger)
 
     if 'show_info_deck_browser' in fm_config:
         add_frequencyman_info_to_deck_browser(reorder_logger, fm_config)

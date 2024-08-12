@@ -69,27 +69,38 @@ class Target:
     index_num: int
     col: Collection
 
+    name: str
     main_scope_query: str
     reorder_scope_query: Optional[str]
     corpus_data: Optional[TargetCorpusData]
 
     cache_data: Optional[ReorderCacheData]
 
-    def __init__(self, target: ValidConfiguredTarget, index_num: int, col: Collection, language_data: LanguageData, cacher: PersistentCacher) -> None:
+    def __init__(self, config_target: ValidConfiguredTarget, index_num: int, col: Collection, language_data: LanguageData, cacher: PersistentCacher) -> None:
 
-        self.config_target = target
-        self.id_str = target['id'] if 'id' in target else None
+        self.config_target = config_target
+        self.id_str = config_target['id'] if 'id' in config_target else None
 
         self.index_num = index_num
         self.col = col
         self.language_data = language_data
         self.cacher = cacher
 
+        self.name = self.__get_name()
         self.corpus_data = None
         self.cache_data = None
 
         self.main_scope_query = self.config_target.construct_main_scope_query()
         self.reorder_scope_query = self.config_target.get_reorder_scope_query()
+
+    def __get_name(self) -> str:
+
+        name = '#'+str(self.index_num)
+
+        if self.id_str != None:
+            name += ' ('+self.id_str+')'
+
+        return name
 
     def get_cards_non_cached(self, search_query: Optional[str] = None) -> TargetCards:
 
@@ -253,8 +264,7 @@ class Target:
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
 
-            card_ranker = CardRanker(target_corpus_data, self.language_data, self.col, modified_dirty_notes)
-            card_ranker.target_name = '#'+str(self.index_num)
+            card_ranker = CardRanker(target_corpus_data, self.name, self.language_data, self.col, modified_dirty_notes)
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():

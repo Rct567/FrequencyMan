@@ -73,7 +73,7 @@ class CardRanker:
 
     field_all_empty: dict[str, bool]
 
-    def __init__(self, target_corpus_data: TargetCorpusData, language_data: LanguageData,
+    def __init__(self, target_corpus_data: TargetCorpusData, target_name: str, language_data: LanguageData,
                  col: Collection, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> None:
 
         self.corpus_data = target_corpus_data
@@ -82,7 +82,7 @@ class CardRanker:
         self.modified_dirty_notes = modified_dirty_notes
         self.ranking_factors_stats = None
         self.ranking_factors_span = self.get_default_ranking_factors_span()
-        self.target_name = 'undefined'
+        self.target_name = target_name
         self.ideal_word_count_min = 1
         self.ideal_word_count_max = 5
         self.field_all_empty = {}
@@ -208,7 +208,7 @@ class CardRanker:
         self.__set_fields_meta_data_for_notes(notes_all_card, notes_from_new_cards, notes_ranking_scores_normalized, notes_metrics)
 
         # cards ranking based on note ranking
-        
+
         card_rankings: dict[CardId, float] = {}
         for card in reorder_scope_target_cards.new_cards:
             card_rankings[card.id] = notes_rankings[card.nid]
@@ -660,10 +660,13 @@ class CardRanker:
 
         return note_data
 
+
+
     def __get_new_debug_info_for_note(self, note: Note, note_metrics: list[FieldMetrics], notes_ranking_scores: dict[str, dict[NoteId, float]],
                                       notes_new_card: dict[NoteId, Note], reorder_scope_notes_ids: set[NoteId]) -> dict[str, str]:
 
         note_data: dict[str, str] = {}
+        target_title_html = "<i style=\"opacity:0.5\">Target {}</i><br />".format(self.target_name)
 
         # set fm_debug_info
         if 'fm_debug_info' in note:
@@ -688,7 +691,7 @@ class CardRanker:
             if self.__is_factor_used('proper_introduction_dispersed'):
                 debug_info['proper_introduction_dispersed_scores'] = [field_metrics.proper_introduction_dispersed_score for field_metrics in note_metrics]
 
-            note_data['fm_debug_info'] = 'Target '+self.target_name+'<br />'
+            note_data['fm_debug_info'] = target_title_html
             for info_name, info_val in debug_info.items():
                 if info_val:
                     fields_info = " | ".join(str(field_info) for field_info in info_val).strip("| ")
@@ -700,7 +703,7 @@ class CardRanker:
                 if not note.id in reorder_scope_notes_ids:
                     note_data['fm_debug_ranking_info'] = '<< Not in reorder scope of target '+self.target_name+' >>'
                 else:
-                    note_data['fm_debug_ranking_info'] = 'Target '+self.target_name+'<br />'
+                    note_data['fm_debug_ranking_info'] = target_title_html
                     used_ranking_factors = {k: v for k, v in notes_ranking_scores.items() if k in self.ranking_factors_span and self.ranking_factors_span[k] > 0}
                     ranking_scores = dict(sorted(used_ranking_factors.items(), key=lambda item: (item[1][note.id]*self.ranking_factors_span[item[0]]), reverse=True))
                     for factor_name, factor_values in ranking_scores.items():
@@ -713,7 +716,7 @@ class CardRanker:
 
         # set fm_debug_words_info
         if 'fm_debug_words_info' in note:
-            note_data['fm_debug_words_info'] = 'Target '+self.target_name+'<br />'
+            note_data['fm_debug_words_info'] = target_title_html
             fields_words_ue_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in [field_metrics.words_ue_scores for field_metrics in note_metrics]]
             note_data['fm_debug_words_info'] += 'words_ue_scores: '+str(fields_words_ue_scores_sorted)+"<br />\n"
             fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in [field_metrics.words_fr_scores for field_metrics in note_metrics]]

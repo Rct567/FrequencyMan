@@ -57,6 +57,9 @@ def test_get_word_frequency_from_combined_files(lang_data: LanguageData):
     frequency = lang_data.get_word_frequency(LangDataId('jp'), 'bbbb', default=-1.0)
     assert frequency == 7/8
 
+    frequency = lang_data.get_word_frequency(LangDataId('jp'), 'hhhh', default=-1.0)
+    assert frequency == 1/8
+
     frequency = lang_data.get_word_frequency(LangDataId('en'), 'none_existing', default=-1.0)
     assert frequency == -1.0
 

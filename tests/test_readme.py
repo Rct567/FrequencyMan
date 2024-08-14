@@ -22,4 +22,3 @@ class TestReadme:
             if target_property.startswith('ranking_'):
                 continue
             assert "`"+target_property+"`" in readme_content
-            print(target_property)

@@ -1,3 +1,4 @@
+from math import exp
 import os
 import pytest
 from frequencyman.language_data import LangDataId, LanguageData
@@ -31,17 +32,16 @@ def test_get_word_frequency(lang_data: LanguageData):
 
     lang_data.load_data({LangDataId('en'), LangDataId('es')})
 
-    frequency = lang_data.get_word_frequency(LangDataId('en'), 'aaa', default=-1.0)
-    assert frequency == 1
+    expected_fr_values = {
+        'aaa': 1,
+        'bbb': 2/3,
+        'ccc': 1/3,
+        'none_existing': -1.0
+    }
 
-    frequency = lang_data.get_word_frequency(LangDataId('en'), 'bbb', default=-1.0)
-    assert frequency == 2/3
-
-    frequency = lang_data.get_word_frequency(LangDataId('en'), 'ccc', default=-1.0)
-    assert frequency == 1/3
-
-    frequency = lang_data.get_word_frequency(LangDataId('en'), 'none_existing', default=-1.0)
-    assert frequency == -1.0
+    for word, expected_value in expected_fr_values.items():
+        value = lang_data.get_word_frequency(LangDataId('en'), word, default=-1.0)
+        assert value == expected_value, f"Expected '{word}' to have frequency '{expected_value}' but got '{value}'"
 
 
 def test_get_word_frequency_from_combined_files(lang_data: LanguageData):
@@ -51,17 +51,21 @@ def test_get_word_frequency_from_combined_files(lang_data: LanguageData):
     assert lang_data.word_frequency_lists.word_frequency_lists is not None
     assert len(lang_data.word_frequency_lists.get_files_by_id(LangDataId('jp'))) == 2
 
-    frequency = lang_data.get_word_frequency(LangDataId('jp'), 'aaaa', default=-1.0)
-    assert frequency == 1
+    expected_fr_values = {
+        'aaaa': 1,
+        'cccc': 1,
+        'bbbb': 6/7,
+        'dddd': 5/7,
+        'eeee': 4/7,
+        'ffff': 3/7,
+        'gggg': 2/7,
+        'hhhh': 1/7,
+        'none_existing': -1.0
+    }
 
-    frequency = lang_data.get_word_frequency(LangDataId('jp'), 'bbbb', default=-1.0)
-    assert frequency == 7/8
-
-    frequency = lang_data.get_word_frequency(LangDataId('jp'), 'hhhh', default=-1.0)
-    assert frequency == 1/8
-
-    frequency = lang_data.get_word_frequency(LangDataId('en'), 'none_existing', default=-1.0)
-    assert frequency == -1.0
+    for word, expected_value in expected_fr_values.items():
+        value = lang_data.get_word_frequency(LangDataId('jp'), word, default=-1.0)
+        assert value == expected_value, f"Expected '{word}' to have frequency '{expected_value}' but got '{value}'"
 
 
 def test_id_has_frequency_list_file(lang_data: LanguageData):

@@ -66,20 +66,24 @@ class WordFrequencyLists:
 
     def __produce_combined_list(self, files: set[str], lang_data_id: LangDataId) -> dict[str, float]:
 
-        words_positions_combined: dict[str, int] = {}
+        words_positions_combined: dict[str, float] = {}
         lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
 
         for file_path in files:
             for word, line_number in self.get_words_from_file(file_path, lang_id):
-                position = line_number-1
-                if word not in words_positions_combined or position < words_positions_combined[word]:  # highest position among lists (lowest line number)
-                    words_positions_combined[word] = position
+                position_value = 1/line_number
+                if word not in words_positions_combined or position_value > words_positions_combined[word]:  # highest position among lists (lowest line number)
+                    words_positions_combined[word] = position_value
 
         if not words_positions_combined:
             return {}
 
-        max_position = len(words_positions_combined.values())
-        return {word: (max_position-position)/max_position for (word, position) in words_positions_combined.items()}
+        words_positions_combined = sort_dict_floats_values(words_positions_combined)
+        words_positions_combined = normalize_dict_positional_floats_values(words_positions_combined)
+
+        return words_positions_combined
+
+
 
     @staticmethod
     def get_words_from_file(file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:

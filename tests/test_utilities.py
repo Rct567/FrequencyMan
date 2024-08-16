@@ -1,6 +1,6 @@
 import pytest
 
-from frequencyman.lib.utilities import get_float, normalize_dict_floats_values, normalize_positional_dict_floats_values, remove_bottom_percent_dict, remove_trailing_commas_from_json
+from frequencyman.lib.utilities import get_float, normalize_dict_floats_values, normalize_dict_positional_floats_values, remove_bottom_percent_dict, remove_trailing_commas_from_json
 
 def test_normalize_dict_floats_values():
 
@@ -69,19 +69,29 @@ def test_get_float_string_non_numeric():
     assert get_float("3.14a") is None
     assert get_float("a3.14") is None
 
-def test_normalize_positional_dict_floats_values_empty_dict():
 
-    assert normalize_positional_dict_floats_values({}) == {}
+def test_normalize_dict_positional_floats_values_empty_dict():
 
-def test_normalize_positional_dict_floats_values_dict():
+    assert normalize_dict_positional_floats_values({}) == {}
 
-    assert normalize_positional_dict_floats_values({'a': 1.0}) == {'a': 1.0}
-    assert normalize_positional_dict_floats_values({'a': 2.0, 'b': 1.0, 'c': 0.5}) == {'a': 1.0, 'b': 2/3, 'c': 1/3}
+def test_normalize_dict_positional_floats_values_dict():
 
-def test_normalize_positional_dict_floats_values_input_dict_not_desc_sorted():
+    assert normalize_dict_positional_floats_values({'a': 1.0}) == {'a': 1.0}
+    assert normalize_dict_positional_floats_values({'a': 2.0, 'b': 1.0, 'c': 0.5}) == {'a': 1.0, 'b': 2/3, 'c': 1/3}
+    assert normalize_dict_positional_floats_values({'a': 2.0, 'b': 1.1, 'c': 1.0, 'd': 0.5}) == {'a': 1.0, 'b': 3/4, 'c': 2/4, 'd': 1/4}
+
+
+def test_normalize_dict_positional_floats_values_same_values():
+
+    assert normalize_dict_positional_floats_values({'a': 2.0, 'b': 1.0, 'c': 1.0, 'd': 0.5}) == {'a': 1.0, 'b': 2/3, 'c': 2/3, 'd': 1/3}
+    assert normalize_dict_positional_floats_values({'a': 1.0, 'b': 1.0}) == {'a': 1.0, 'b': 1.0}
+    assert normalize_dict_positional_floats_values({'a': 1.0, 'b': 1.0, 'c': 0.1}) == {'a': 1.0, 'b': 1.0, 'c': 1/2}
+
+
+def test_normalize_dict_positional_floats_values_not_desc_sorted():
 
     with pytest.raises(AssertionError):
-        normalize_positional_dict_floats_values({'a': 1.0, 'b': 2.0, 'c': 3.0})
+        normalize_dict_positional_floats_values({'a': 1.0, 'b': 2.0, 'c': 3.0})
 
 def test_remove_bottom_percent_dict():
 

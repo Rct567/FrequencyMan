@@ -163,7 +163,7 @@ class SegmentContentMetrics:
     @cached_property
     def words_familiarity_positional(self) -> dict[WordToken, float]:
 
-        return normalize_positional_dict_floats_values(self.words_familiarity)
+        return normalize_dict_positional_floats_values(self.words_familiarity)
 
     @cached_property
     def reviewed_words_presence(self) -> dict[WordToken, list[float]]:
@@ -235,7 +235,7 @@ class SegmentContentMetrics:
                         new_word_frequency[word_token] = word_frequency
 
         new_word_frequency = sort_dict_floats_values(new_word_frequency)
-        new_word_frequency = normalize_positional_dict_floats_values(new_word_frequency)
+        new_word_frequency = normalize_dict_positional_floats_values(new_word_frequency)
         return new_word_frequency
 
 

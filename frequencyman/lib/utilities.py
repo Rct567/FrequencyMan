@@ -29,7 +29,6 @@ def var_dump(var: Any) -> None:
         var_dump_count += 1
 
 
-
 var_dump_log_size = 0
 var_dump_log_count = 0
 
@@ -65,6 +64,7 @@ def get_float(val: Any) -> Optional[float]:
     except ValueError:
         return None
 
+
 def remove_trailing_commas_from_json(json_str: str) -> str:
 
     return re.sub(r'("(?:\\?.)*?")|,(\s*)([]}])', r'\1\2\3', json_str)
@@ -93,7 +93,7 @@ def load_json(json_data: str) -> JSON_TYPE:
 
 
 @contextmanager
-def profile_context(amount:int=40) -> Iterator[cProfile.Profile]:
+def profile_context(amount: int = 40) -> Iterator[cProfile.Profile]:
 
     profiler = cProfile.Profile()
     profiler.enable()
@@ -166,7 +166,7 @@ def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
     return new_dict
 
 
-def normalize_positional_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
+def normalize_dict_positional_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
     new_dict = input_dict.copy()
 
@@ -175,10 +175,18 @@ def normalize_positional_dict_floats_values(input_dict: dict[K, float]) -> dict[
 
     assert repr(input_dict) == repr(sort_dict_floats_values(input_dict)), "Input dictionary must be in descending order."
 
-    max_rank = len(new_dict)
+    max_rank = len(set(new_dict.values()))
 
-    for index, key in enumerate(new_dict.keys()):
-        positional_val = (max_rank-(index))/max_rank
+    value_index = 0
+    last_value = None
+
+    for key, value in new_dict.items():
+
+        if value != last_value:
+            value_index += 1
+        last_value = value
+
+        positional_val = (max_rank-(value_index-1))/max_rank
         new_dict[key] = positional_val
 
     return new_dict

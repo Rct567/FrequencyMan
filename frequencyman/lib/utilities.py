@@ -8,6 +8,7 @@ import cProfile
 from contextlib import contextmanager
 import itertools
 import json
+import math
 import os
 import pprint
 import pstats
@@ -166,16 +167,36 @@ def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
     return new_dict
 
 
-def normalize_dict_positional_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
+def positional_value_absolute(position: int) -> float:
+
+    positional_val_a = (1 / ((position) ** 0.125))
+
+    positional_val_b = 1-(1/(10_000) * (position-1))
+    if positional_val_b < 0:
+        positional_val_b = 0
+
+    decay_rate = 0.00007
+    positional_val_c = math.exp(-decay_rate * (position - 1))
+
+    return (positional_val_a + positional_val_b + (positional_val_c*1.9)) / 3.9
+
+
+def normalize_dict_positional_floats_values(input_dict: dict[K, float], absolute_values: bool = False) -> dict[K, float]:
 
     new_dict = input_dict.copy()
 
     if len(input_dict) == 0:
         return new_dict
 
+    get_position_value: Callable[[int], float]
+
     assert repr(input_dict) == repr(sort_dict_floats_values(input_dict)), "Input dictionary must be in descending order."
 
-    max_rank = len(set(new_dict.values()))
+    if absolute_values:
+        get_position_value = positional_value_absolute
+    else:
+        max_rank = len(set(new_dict.values()))
+        get_position_value = lambda value_index: (max_rank-(value_index-1))/max_rank
 
     value_index = 0
     last_value = None
@@ -186,8 +207,7 @@ def normalize_dict_positional_floats_values(input_dict: dict[K, float]) -> dict[
             value_index += 1
         last_value = value
 
-        positional_val = (max_rank-(value_index-1))/max_rank
-        new_dict[key] = positional_val
+        new_dict[key] = get_position_value(value_index)
 
     return new_dict
 

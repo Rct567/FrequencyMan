@@ -1,6 +1,6 @@
 import pytest
 
-from frequencyman.lib.utilities import get_float, normalize_dict_floats_values, normalize_dict_positional_floats_values, remove_bottom_percent_dict, remove_trailing_commas_from_json
+from frequencyman.lib.utilities import get_float, normalize_dict_floats_values, normalize_dict_positional_floats_values, positional_value_absolute, remove_bottom_percent_dict, remove_trailing_commas_from_json, sort_dict_floats_values
 
 def test_normalize_dict_floats_values():
 
@@ -88,10 +88,42 @@ def test_normalize_dict_positional_floats_values_same_values():
     assert normalize_dict_positional_floats_values({'a': 1.0, 'b': 1.0, 'c': 0.1}) == {'a': 1.0, 'b': 1.0, 'c': 1/2}
 
 
+def test_normalize_dict_positional_floats_values_absolute_values():
+
+    test_dict = {str(i): float(i) for i in range(0, 11_000)}
+    test_dict = sort_dict_floats_values(test_dict)
+    abs_values_dict = normalize_dict_positional_floats_values(test_dict, absolute_values=True)
+    abs_values_dict_list = list(abs_values_dict.items())
+
+    assert abs_values_dict_list[0][1] == 1
+    assert abs_values_dict_list[1_000][1] > 0.5
+    assert abs_values_dict_list[5_000][1] > 0.1
+
+    assert abs_values_dict_list[5_000][1] < 0.75
+    assert abs_values_dict_list[10_000][1] < 0.5
+
+
 def test_normalize_dict_positional_floats_values_not_desc_sorted():
 
     with pytest.raises(AssertionError):
         normalize_dict_positional_floats_values({'a': 1.0, 'b': 2.0, 'c': 3.0})
+
+
+def test_positional_value():
+
+    assert positional_value_absolute(1) == 1
+    assert positional_value_absolute(100) > 0.85
+    assert positional_value_absolute(500) > 0.75
+    assert positional_value_absolute(1_000) > 0.5
+    assert positional_value_absolute(2_000) > 0.25
+    assert positional_value_absolute(5_000) > 0.1
+
+    assert positional_value_absolute(5_000) < 0.75
+    assert positional_value_absolute(10_000) < 0.5
+    assert positional_value_absolute(50_000) < 0.5
+    assert positional_value_absolute(100_000) < 0.1
+    assert positional_value_absolute(500_000) < 0.05
+
 
 def test_remove_bottom_percent_dict():
 

@@ -51,7 +51,11 @@ def open_frequencyman_main_window(mw: AnkiQt, addon_config: AddonConfig, reorder
     fm_window.exec()
 
 def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt, addon_config: AddonConfig, reorder_logger: ReorderLogger):
-    action = QAction("FrequencyMan", mw)
+    menu_option_title = "FrequencyMan"
+    has_git_directory = os.path.isdir(os.path.join(FM_ROOT_DIR, '.git'))
+    if has_git_directory:
+        menu_option_title += " (dev)"
+    action = QAction(menu_option_title, mw)
     action.triggered.connect(lambda: open_frequencyman_main_window(mw, addon_config, reorder_logger))
     mw.form.menuTools.addAction(action)
 

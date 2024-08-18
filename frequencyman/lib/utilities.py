@@ -19,6 +19,7 @@ from aqt.utils import showInfo
 
 var_dump_count = 0
 
+
 def var_dump(var: Any) -> None:
 
     global var_dump_count
@@ -33,6 +34,7 @@ def var_dump(var: Any) -> None:
 var_dump_log_size = 0
 var_dump_log_count = 0
 
+
 def var_dump_log(var: Any) -> None:
 
     global var_dump_log_size
@@ -42,7 +44,7 @@ def var_dump_log(var: Any) -> None:
         dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
         with open(dump_log_file, 'a', encoding='utf-8') as file:
             log_entry = pprint.pformat(var, sort_dicts=False, width=160)
-            file.write(log_entry+ "\n\n=================================================================\n\n")
+            file.write(log_entry + "\n\n=================================================================\n\n")
         var_dump_log_size += len(log_entry)
         var_dump_log_count += 1
 
@@ -119,7 +121,9 @@ def profile_context(amount: int = 40) -> Iterator[cProfile.Profile]:
         with open(dump_file, 'w') as f:
             f.write(profiling_results)
 
+
 T = TypeVar('T')
+
 
 def batched(iterable: Iterable[T], n: int) -> Iterator[tuple[T, ...]]:
     """
@@ -139,6 +143,7 @@ def batched(iterable: Iterable[T], n: int) -> Iterator[tuple[T, ...]]:
         if not batch:
             return
         yield batch
+
 
 K = TypeVar('K')
 
@@ -229,12 +234,10 @@ def remove_bottom_percent_dict(input_dict: dict[K, float], percent_remove: float
     return dict(list(input_dict.items())[0:keep_offset_end])
 
 
-
 # Check Python version and import override if available, else use a dummy
-
 if sys.version_info >= (3, 12):
     from typing import override as override
-else: # A dummy 'override' decorator for Python < 3.12
+else:  # A dummy 'override' decorator for Python < 3.12
     T_CALLABLE = TypeVar('T_CALLABLE', bound=Callable)
 
     def dummy_override(method: T_CALLABLE) -> T_CALLABLE:

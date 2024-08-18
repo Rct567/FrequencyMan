@@ -3,6 +3,7 @@ from frequencyman.target_list import JsonTargetsValidity, TargetList
 
 from tests.tools import TestCollections
 
+
 class TestTargetList:
 
     def test_get_targets_from_json_valid_json(self):
@@ -61,7 +62,6 @@ class TestTargetList:
         assert not TargetList.is_valid_query("deck:Spanish)", col)
         assert not TargetList.is_valid_query(")", col)
         assert not TargetList.is_valid_query(":missing_pre", col)
-
 
     def test_get_targets_from_json_invalid_json(self):
 

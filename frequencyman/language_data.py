@@ -83,8 +83,6 @@ class WordFrequencyLists:
 
         return words_positions_combined
 
-
-
     @staticmethod
     def get_words_from_file(file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:
 

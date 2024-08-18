@@ -5,6 +5,7 @@ from frequencyman.configured_target import ValidConfiguredTarget
 
 README_FILE_PATH = 'README.md'
 
+
 class TestReadme:
 
     def test_readme_content(self):

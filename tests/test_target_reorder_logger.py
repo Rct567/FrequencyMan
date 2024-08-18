@@ -76,7 +76,7 @@ class TestTargetReorderLogger:
         assert reorder_logger.get_info_global()['es'] == {'num_words_mature': 2, 'num_words_reviewed': 3, 'num_words_learning': 1}
 
         per_target = reorder_logger.get_info_per_target()
-        assert per_target['target1']['en'] == {'num_words_mature': 2 , 'num_words_reviewed': 4, 'num_words_learning': 2}
+        assert per_target['target1']['en'] == {'num_words_mature': 2, 'num_words_reviewed': 4, 'num_words_learning': 2}
         assert per_target['target1']['es'] == {'num_words_mature': 1, 'num_words_reviewed': 1, 'num_words_learning': 0}
         assert per_target['target2']['en'] == {'num_words_mature': 1, 'num_words_reviewed': 4, 'num_words_learning': 3}
         assert per_target['target2']['es'] == {'num_words_mature': 1, 'num_words_reviewed': 2, 'num_words_learning': 1}
@@ -136,7 +136,7 @@ class TestTargetReorderLogger:
         assert reorder_logger.count_rows("reorders") == 3
 
         per_target = reorder_logger.get_info_per_target()
-        assert per_target['target1']['en'] == {'num_words_mature': 0 , 'num_words_reviewed': 0, 'num_words_learning': 0}
+        assert per_target['target1']['en'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
         assert per_target['target1']['es'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
         assert per_target['target2']['en'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}
         assert per_target['target2']['es'] == {'num_words_mature': 0, 'num_words_reviewed': 0, 'num_words_learning': 0}

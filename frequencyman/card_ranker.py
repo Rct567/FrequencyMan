@@ -121,9 +121,15 @@ class CardRanker:
 
     @staticmethod
     def __calc_ideal_np1_score(num_new_words: int) -> float:
-        if (num_new_words < 1):
-            return 0.7
-        score = min(1, abs(0-(1.3*1/min(num_new_words, 10))))
+        if num_new_words == 0:
+            score_devalue_factor = 0.25
+        elif num_new_words == 1:
+            score_devalue_factor = 0
+        else:
+            score_devalue_factor = num_new_words
+
+        score = 1 / (2**score_devalue_factor)
+
         return score
 
     @staticmethod

@@ -84,18 +84,18 @@ def test_normalize_dict_positional_floats_values_empty_dict():
     assert normalize_dict_positional_floats_values({}) == {}
 
 
-def test_normalize_dict_positional_floats_values_dict():
+def test_normalize_dict_positional_floats_values_relative():
 
-    assert normalize_dict_positional_floats_values({'a': 1.0}) == {'a': 1.0}
-    assert normalize_dict_positional_floats_values({'a': 2.0, 'b': 1.0, 'c': 0.5}) == {'a': 1.0, 'b': 2/3, 'c': 1/3}
-    assert normalize_dict_positional_floats_values({'a': 2.0, 'b': 1.1, 'c': 1.0, 'd': 0.5}) == {'a': 1.0, 'b': 3/4, 'c': 2/4, 'd': 1/4}
+    assert normalize_dict_positional_floats_values({'a': 1.0}, absolute_values=False) == {'a': 1.0}
+    assert normalize_dict_positional_floats_values({'a': 2.0, 'b': 1.0, 'c': 0.5}, absolute_values=False) == {'a': 1.0, 'b': 2/3, 'c': 1/3}
+    assert normalize_dict_positional_floats_values({'a': 2.0, 'b': 1.1, 'c': 1.0, 'd': 0.5}, absolute_values=False) == {'a': 1.0, 'b': 3/4, 'c': 2/4, 'd': 1/4}
 
 
-def test_normalize_dict_positional_floats_values_same_values():
+def test_normalize_dict_positional_floats_values_relative_same_values():
 
-    assert normalize_dict_positional_floats_values({'a': 2.0, 'b': 1.0, 'c': 1.0, 'd': 0.5}) == {'a': 1.0, 'b': 2/3, 'c': 2/3, 'd': 1/3}
-    assert normalize_dict_positional_floats_values({'a': 1.0, 'b': 1.0}) == {'a': 1.0, 'b': 1.0}
-    assert normalize_dict_positional_floats_values({'a': 1.0, 'b': 1.0, 'c': 0.1}) == {'a': 1.0, 'b': 1.0, 'c': 1/2}
+    assert normalize_dict_positional_floats_values({'a': 2.0, 'b': 1.0, 'c': 1.0, 'd': 0.5}, absolute_values=False) == {'a': 1.0, 'b': 2/3, 'c': 2/3, 'd': 1/3}
+    assert normalize_dict_positional_floats_values({'a': 1.0, 'b': 1.0}, absolute_values=False) == {'a': 1.0, 'b': 1.0}
+    assert normalize_dict_positional_floats_values({'a': 1.0, 'b': 1.0, 'c': 0.1}, absolute_values=False) == {'a': 1.0, 'b': 1.0, 'c': 1/2}
 
 
 def test_normalize_dict_positional_floats_values_absolute_values():

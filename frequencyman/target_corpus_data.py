@@ -72,7 +72,7 @@ class SegmentContentMetrics:
 
             assert word_fr > 0
             word_familiarity = self.words_familiarity_positional.get(word_token, 0)
-            word_underexposure_rating = (word_fr - word_familiarity)
+            word_underexposure_rating = (word_fr ** 3) - (word_familiarity ** 3)
 
             if (word_underexposure_rating > 0):
                 if self.words_familiarity.get(word_token, 0) < 1.9:

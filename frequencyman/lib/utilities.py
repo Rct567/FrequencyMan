@@ -186,7 +186,7 @@ def positional_value_absolute(position: int) -> float:
     return (positional_val_a + positional_val_b + (positional_val_c*1.9)) / 3.9
 
 
-def normalize_dict_positional_floats_values(input_dict: dict[K, float], absolute_values: bool = False) -> dict[K, float]:
+def normalize_dict_positional_floats_values(input_dict: dict[K, float], absolute_values: bool = True) -> dict[K, float]:
 
     new_dict = input_dict.copy()
 

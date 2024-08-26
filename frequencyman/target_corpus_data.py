@@ -43,6 +43,7 @@ class NoteFieldContentData:
 class SegmentContentMetrics:
 
     lang_id: LangId
+    lang_data_id: LangDataId
     focus_words_max_familiarity: float
     familiarity_sweetspot_point: Union[float, str]
     target_cards: TargetCards
@@ -219,20 +220,28 @@ class SegmentContentMetrics:
         return reviewed_words
 
     @cached_property
-    def word_frequency(self) -> dict[WordToken, float]:
+    def all_words(self) -> set[WordToken]:
 
-        new_word_frequency: dict[WordToken, float] = {}
+        all_words: set[WordToken] = set()
 
         for note_id in self.targeted_fields_per_note.keys():
 
             for field_data in self.targeted_fields_per_note[note_id]:
 
-                lang_data_id = field_data.target_language_data_id
-
                 for word_token in field_data.field_value_tokenized:
-                    word_frequency = self.language_data.get_word_frequency(lang_data_id, word_token, 0)
-                    if word_frequency > 0:
-                        new_word_frequency[word_token] = word_frequency
+                    all_words.add(word_token)
+
+        return all_words
+
+    @cached_property
+    def word_frequency(self) -> dict[WordToken, float]:
+
+        new_word_frequency: dict[WordToken, float] = {}
+
+        for word_token in self.all_words:
+            word_frequency = self.language_data.get_word_frequency(self.lang_data_id, word_token, 0)
+            if word_frequency > 0:
+                new_word_frequency[word_token] = word_frequency
 
         new_word_frequency = sort_dict_floats_values(new_word_frequency)
         new_word_frequency = normalize_dict_positional_floats_values(new_word_frequency)
@@ -343,6 +352,7 @@ class TargetCorpusData:
                     if corpus_segment_id not in self.content_metrics:
                         segment_content_metrics = SegmentContentMetrics(
                             lang_id,
+                            lang_data_id,
                             self.focus_words_max_familiarity,
                             self.familiarity_sweetspot_point,
                             self.target_cards,
@@ -352,6 +362,8 @@ class TargetCorpusData:
                         self.content_metrics[corpus_segment_id] = segment_content_metrics
                     elif self.content_metrics[corpus_segment_id].lang_id != lang_id:
                         raise Exception("Language id mismatch for segment '{}' and lang_id '{}'!".format(corpus_segment_id, lang_id))
+                    elif self.content_metrics[corpus_segment_id].lang_data_id != lang_data_id:
+                        raise Exception("Language data id mismatch for segment '{}' and lang_data_id '{}'!".format(corpus_segment_id, lang_data_id))
 
                     self.content_metrics[corpus_segment_id].targeted_fields_per_note[note.id].append(content_data)
 

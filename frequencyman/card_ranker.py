@@ -502,16 +502,16 @@ class CardRanker:
             notes_ranking_factors['familiarity'][note_id] = fmean(field_metrics.familiarity_score for field_metrics in note_metrics)
 
             most_obscure_word_scores = [field_metrics.most_obscure_word[1] for field_metrics in note_metrics]
-            notes_ranking_factors['most_obscure_word'][note_id] = (median(most_obscure_word_scores) + (min(most_obscure_word_scores)*99)) / 100
+            notes_ranking_factors['most_obscure_word'][note_id] = (median(most_obscure_word_scores) + (min(most_obscure_word_scores)*9_999)) / 10_000
 
             lowest_fr_least_familiar_word_scores = [field_metrics.lowest_fr_least_familiar_word[1] for field_metrics in note_metrics]
-            notes_ranking_factors['lowest_fr_least_familiar_word'][note_id] = (median(lowest_fr_least_familiar_word_scores) + (min(lowest_fr_least_familiar_word_scores)*99)) / 100
+            notes_ranking_factors['lowest_fr_least_familiar_word'][note_id] = (median(lowest_fr_least_familiar_word_scores) + (min(lowest_fr_least_familiar_word_scores)*9_999)) / 10_000
 
             lowest_word_frequency_scores = [field_metrics.lowest_fr_word[1] for field_metrics in note_metrics]
-            notes_ranking_factors['lowest_word_frequency'][note_id] = (median(lowest_word_frequency_scores) + (min(lowest_word_frequency_scores)*99)) / 100
+            notes_ranking_factors['lowest_word_frequency'][note_id] = (median(lowest_word_frequency_scores) + (min(lowest_word_frequency_scores)*9_999)) / 10_000
 
             lowest_familiarity_scores = [field_metrics.lowest_familiarity_word[1] for field_metrics in note_metrics]
-            notes_ranking_factors['lowest_familiarity'][note_id] = (median(lowest_familiarity_scores) + (min(lowest_familiarity_scores)*99)) / 100
+            notes_ranking_factors['lowest_familiarity'][note_id] = (median(lowest_familiarity_scores) + (min(lowest_familiarity_scores)*9_999)) / 10_000
 
             new_words_scores = [field_metrics.new_words_score for field_metrics in note_metrics]
             notes_ranking_factors['new_words'][note_id] = (median(new_words_scores) + (min(new_words_scores)*2)) / 3

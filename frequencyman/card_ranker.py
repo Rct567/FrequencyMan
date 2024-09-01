@@ -96,12 +96,12 @@ class CardRanker:
             "lexical_underexposure": 0.25,
             "ideal_focus_word_count": 4.0,
             "ideal_word_count": 1.0,
-            "reinforce_learning_words": 2.0,
+            "reinforce_learning_words": 1.5,
             "most_obscure_word": 0.5,
             "lowest_fr_least_familiar_word": 0.25,
             "lowest_word_frequency": 1.0,
             "lowest_familiarity": 1.0,
-            "new_words": 0.1,
+            "new_words": 0.5,
             "no_new_words": 0.0,
             "ideal_new_word_count": 0.0,
             "proper_introduction": 0.1,
@@ -513,9 +513,6 @@ class CardRanker:
             lowest_familiarity_scores = [field_metrics.lowest_familiarity_word[1] for field_metrics in note_metrics]
             notes_ranking_factors['lowest_familiarity'][note_id] = (median(lowest_familiarity_scores) + (min(lowest_familiarity_scores)*99)) / 100
 
-            reinforce_learning_words_scores = [field_metrics.reinforce_learning_words_score for field_metrics in note_metrics]
-            notes_ranking_factors['reinforce_learning_words'][note_id] = (median(reinforce_learning_words_scores) + (min(reinforce_learning_words_scores)*2)) / 3
-
             new_words_scores = [field_metrics.new_words_score for field_metrics in note_metrics]
             notes_ranking_factors['new_words'][note_id] = (median(new_words_scores) + (min(new_words_scores)*2)) / 3
 
@@ -531,6 +528,12 @@ class CardRanker:
 
             notes_ranking_factors['lexical_underexposure'][note_id] = fmean(field_metrics.ue_score for field_metrics in note_metrics)
             notes_ranking_factors['familiarity_sweetspot'][note_id] = fmean(field_metrics.familiarity_sweetspot_score for field_metrics in note_metrics)
+
+            has_new_words = any(len(field_metrics.new_words) > 0 for field_metrics in note_metrics)
+            if has_new_words:
+                notes_ranking_factors['reinforce_learning_words'][note_id] = 0
+            else:
+                notes_ranking_factors['reinforce_learning_words'][note_id] = fmean(field_metrics.reinforce_learning_words_score for field_metrics in note_metrics)
 
         return notes_ranking_factors
 

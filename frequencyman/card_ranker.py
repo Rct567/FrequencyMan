@@ -502,7 +502,7 @@ class CardRanker:
             notes_ranking_factors['familiarity'][note_id] = fmean(field_metrics.familiarity_score for field_metrics in note_metrics)
 
             most_obscure_word_scores = [field_metrics.most_obscure_word[1] for field_metrics in note_metrics]
-            notes_ranking_factors['most_obscure_word'][note_id] = fmean(most_obscure_word_scores)
+            notes_ranking_factors['most_obscure_word'][note_id] = (median(most_obscure_word_scores) + (min(most_obscure_word_scores)*99)) / 100
 
             lowest_fr_least_familiar_word_scores = [field_metrics.lowest_fr_least_familiar_word[1] for field_metrics in note_metrics]
             notes_ranking_factors['lowest_fr_least_familiar_word'][note_id] = (median(lowest_fr_least_familiar_word_scores) + (min(lowest_fr_least_familiar_word_scores)*99)) / 100

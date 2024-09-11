@@ -375,15 +375,6 @@ class TargetCorpusData:
         if not cards:
             return {}
 
-        cards_interval: dict[CardId, float] = {}
-        cards_reps: dict[CardId, float] = {}
-        cards_ease: dict[CardId, float] = {}
-
-        for card in cards:
-            cards_interval[card.id] = card.ivl
-            cards_reps[card.id] = card.reps
-            cards_ease[card.id] = card.factor
-
         # get scores
 
         cards_familiarity: dict[CardId, float] = {}
@@ -394,10 +385,10 @@ class TargetCorpusData:
             return val
 
         for card in cards:
-            card_interval = fall_of_value(cards_interval[card.id] / 300)
-            card_reps = fall_of_value(cards_reps[card.id] / 12)
-            card_ease = fall_of_value(cards_ease[card.id] / 2500)
-            card_score = (card_interval + (card_ease/4) + (card_reps/4)) / 1.5
+            card_interval_score = fall_of_value(card.ivl / 300)
+            card_reps_score = fall_of_value(card.reps / 12)
+            card_ease_score = fall_of_value(card.ease_factor / 2500)
+            card_score = (card_interval_score + (card_ease_score/4) + (card_reps_score/8)) / 1.375
             if card.days_overdue is not None and card.days_overdue > 0:
                 relative_overdue = card.days_overdue/card.ivl
                 dev = (1+relative_overdue)**3

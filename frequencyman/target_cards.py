@@ -24,7 +24,7 @@ class TargetCard:
     queue: int
     ivl: int
     reps: int
-    factor: int
+    ease_factor: int
     due: int
     is_leech: bool
     is_suspended: bool
@@ -36,7 +36,7 @@ class TargetCard:
         if card.queue != 2:
             return None
         if card.type != 2:
-             return None
+            return None
 
         now = int_time()
         collection_time = col.crt
@@ -45,7 +45,7 @@ class TargetCard:
         rollover = col.conf['rollover']
 
         if datetime.fromtimestamp(now).hour < rollover:
-            now -= 60*60*(rollover-1) # adjust for 'next day starts at'
+            now -= 60*60*(rollover-1)  # adjust for 'next day starts at'
 
         is_due = due_date < now
 
@@ -53,7 +53,7 @@ class TargetCard:
             return None
 
         days_overdue = (now-due_date) // 86400
-        return days_overdue # if days_overdue is 0 then its also just due
+        return days_overdue  # if days_overdue is 0 then its also just due
 
 
 class TargetCards:

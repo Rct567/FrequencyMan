@@ -122,14 +122,13 @@ class CardRanker:
     @staticmethod
     def __calc_ideal_np1_score(num_new_words: int) -> float:
         if num_new_words == 0:
-            score_devalue_factor = 0.25
+            score_devalue_factor = 0.5
         elif num_new_words == 1:
             score_devalue_factor = 0
         else:
             score_devalue_factor = num_new_words
 
         score = 1 / (2**score_devalue_factor)
-
         return score
 
     @staticmethod
@@ -534,6 +533,8 @@ class CardRanker:
                 notes_ranking_factors['reinforce_learning_words'][note_id] = 0
             else:
                 notes_ranking_factors['reinforce_learning_words'][note_id] = fmean(field_metrics.reinforce_learning_words_score for field_metrics in note_metrics)
+                if notes_ranking_factors['reinforce_learning_words'][note_id] > 0:
+                    notes_ranking_factors['reinforce_learning_words'][note_id] = (1+notes_ranking_factors['reinforce_learning_words'][note_id])/2
 
         return notes_ranking_factors
 

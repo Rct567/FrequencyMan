@@ -117,8 +117,8 @@ def load_user_provided_tokenizers() -> Tokenizers:
 
     if os.path.exists(jieba_anki_morphs_plugin_path):
 
-        sys.path.append(jieba_anki_morphs_plugin_path)
-        jieba_anki_morphs_module = importlib.import_module("jieba.posseg")
+        sys.path.append(anki_plugins_dir)
+        jieba_anki_morphs_module = importlib.import_module("1857311956.jieba.posseg")
 
         def anki_morphs_jieba_tokenizer(txt: str) -> list[str]:
             return list(token for (token, _) in jieba_anki_morphs_module.lcut(txt) if token is not None)

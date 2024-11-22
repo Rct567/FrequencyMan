@@ -49,6 +49,13 @@ def test_delete_item(cacher: PersistentCacher) -> None:
     assert cacher.num_items_stored() == 2
 
 
+def test_flush_save_buffer_on_close(cacher: PersistentCacher) -> None:
+    assert cacher.get_item("new_key", dummy_producer) == "dummy_value"
+    cacher.close()
+    assert cacher.num_items_stored() == 1
+    assert cacher.get_item("new_key", lambda: 'not_dummy') == "dummy_value"
+
+
 def test_pre_load_all_items(cacher: PersistentCacher) -> None:
     cacher.save_item("preload_key", "preloaded_value")
     cacher.flush_save_buffer()  # Make sure data is saved to DB

@@ -156,3 +156,8 @@ class PersistentCacher(SqlDbFile):
 
         self._save_buffer.clear()
         self.clear_pre_loaded_cache()
+
+    @override
+    def close(self) -> None:
+        self.flush_save_buffer()
+        super().close()

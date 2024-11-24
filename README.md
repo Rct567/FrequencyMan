@@ -283,7 +283,7 @@ Reorder logging is an optional feature that can be enabled by defining an `id` f
 
 ### Display the amount of mature words
 
-The information that is logged can be used to display the amount of 'mature' words a target has using the following settings:
+The information that is logged can be used to display the amount of 'mature' words a target has using the following plugin settings (**Tools > Add-ons > (Select Frequencyman) > Config**):
 
 ```json
 "show_info_deck_browser": [
@@ -312,9 +312,12 @@ The information that is logged can be used to display the amount of 'mature' wor
 ]
 ```
 
+![FrequencyMan](frequencyman_display_info_example.png)
+
 Notes:
 - `*` is used to show combined information about all logged targets.
 - `show_info_deck_browser` wil create a table below the deck browser (below where you normally see "Studied N cards in N minutes today.").
+- If there is no target with an `id` defined, nothing will be logged and thus no information will be shown.
 - All logged information is stored in the file `user_files\reorder_log.sqlite`.
 
 ## Target Corpus data

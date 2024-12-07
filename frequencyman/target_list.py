@@ -291,17 +291,23 @@ class TargetList:
             else:
                 return (False, "Familiarity sweetspot point defined in target #{} is not a number of string.".format(index), None)
 
+        if 'focus_words_max_familiarity' in target_data:
+            if isinstance(target_data['focus_words_max_familiarity'], float) or isinstance(target_data['focus_words_max_familiarity'], int):
+                result['focus_words_max_familiarity'] = float(target_data['focus_words_max_familiarity'])
+            else:
+                return (False, "Maximum familiarity for focus words defined in target #{} is not a number.".format(index), None)
+
         if 'suspended_card_value' in target_data:
             if isinstance(target_data['suspended_card_value'], float) or isinstance(target_data['suspended_card_value'], int):
                 result['suspended_card_value'] = float(target_data['suspended_card_value'])
             else:
-                return (False, "Suspended card value defined in target #{} is not a float (float expected).".format(index), None)
+                return (False, "Suspended card value defined in target #{} is not a number.".format(index), None)
 
         if 'suspended_leech_card_value' in target_data:
             if isinstance(target_data['suspended_leech_card_value'], float) or isinstance(target_data['suspended_leech_card_value'], int):
                 result['suspended_leech_card_value'] = float(target_data['suspended_leech_card_value'])
             else:
-                return (False, "Suspended leech card value defined in target #{} is not a float (float expected).".format(index), None)
+                return (False, "Suspended leech card value defined in target #{} is not a number.".format(index), None)
 
         if 'corpus_segmentation_strategy' in target_data:
             if not isinstance(target_data['corpus_segmentation_strategy'], str):

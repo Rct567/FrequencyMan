@@ -221,15 +221,15 @@ For each defined target, the following setting are available:
 | `reorder_scope_query`   | string | Search query to reduce which cards get repositioned.  | Main scope as defined by `deck`, `decks` or  `scope_query`.       |
 | `ranking_factors`   | object |  | see '[Ranking factors](#default-ranking-factors)'      |
 | `familiarity_sweetspot_point`   | string \| float | Defines a specific 'sweetspot' of familiarity for  ranking factor `familiarity_sweetspot`.  |   `"~0.5"` (=50% of focus_words_max_familiarity)  |
-| `suspended_card_value`   | float |  |   `0.1`  |
-| `suspended_leech_card_value`   | float |  |   `0.0`  |
+| `suspended_card_value`   | number |  |   `0.1`  |
+| `suspended_leech_card_value`   | number |  |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[1, 5]`   |
-| `focus_words_max_familiarity`   | float | Defined the maximal familiarity value of focus words. Words above this threshold are considered 'mature'.   |  `0.28`   |
+| `focus_words_max_familiarity`   | number | Defined the maximal familiarity value of focus words. Words above this threshold are considered 'mature'.   |  `0.28`   |
 | `corpus_segmentation_strategy`   | string | [Corpus data](#target-corpus-data) of a target is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`.   |  `"by_lang_data_id"`   |
 | `id`   | string | Enables [reorder logging](#reorder-logging) for this target. | None, reorder logging is disabled by default.   |
 
 __Notes__:
- - `familiarity_sweetspot_point` accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the value of `focus_words_max_familiarity` value. By default, `"~0.5"` would result in a value of `0.14` (50% of 0.28). A string starting with `^` will make the number relative to the median word familiarity value.
+ - `familiarity_sweetspot_point` accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the value of `focus_words_max_familiarity` value. With the default settings, `"~0.5"` would result in a value of `0.14` (50% of 0.28). A string starting with `^` will make the number relative to the median word familiarity value.
 
 # Language data id
 

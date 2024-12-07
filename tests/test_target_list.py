@@ -12,9 +12,14 @@ class TestTargetList:
 
         targets = TargetList.get_targets_from_json("""[
             {
+                "id": "spanish_audio_only",
                 "deck": "Spanish",
                 "decks": ["Spanish"],
                 "ranking_word_frequency": 0,
+                "suspended_card_value": 0.1,
+                "suspended_leech_card_value": 0.2,
+                "ideal_word_count": [1, 10],
+                "focus_words_max_familiarity": 0.5,
                 "notes": [
                     {
                         "name": "-- My spanish --",
@@ -32,9 +37,14 @@ class TestTargetList:
         assert targets.valid_targets_defined is not None and len(targets.valid_targets_defined) == 1
 
         assert targets.valid_targets_defined[0] == ValidConfiguredTarget(
+            id="spanish_audio_only",
             deck="Spanish",
             decks=["Spanish"],
             ranking_word_frequency=0.0,
+            suspended_card_value=0.1,
+            suspended_leech_card_value=0.2,
+            ideal_word_count=[1, 10],
+            focus_words_max_familiarity=0.5,
             notes=[
                 {
                     "name": "-- My spanish --",

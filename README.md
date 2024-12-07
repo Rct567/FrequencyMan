@@ -210,7 +210,7 @@ For debug purposes:
 
 # Target settings
 
-For each defined target, the following setting are available:
+For each defined target, the following settings are available:
 
 | Setting | Type | Description | Default value      |
 |---------|------|-------------|-------|

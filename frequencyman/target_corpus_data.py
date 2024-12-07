@@ -379,15 +379,15 @@ class TargetCorpusData:
 
         cards_familiarity: dict[CardId, float] = {}
 
-        def fall_of_value(val: float) -> float:
+        def normalized_factor_value(val: float) -> float:
             if val > 1:
                 val = 1+(val/10)
             return val
 
         for card in cards:
-            card_interval_score = fall_of_value(card.ivl / 300)
-            card_reps_score = fall_of_value(card.reps / 12)
-            card_ease_score = fall_of_value(card.ease_factor / 2500)
+            card_interval_score = normalized_factor_value(card.ivl / 300)
+            card_ease_score = normalized_factor_value(card.ease_factor / 2500)
+            card_reps_score = normalized_factor_value(card.reps / 12)
             card_score = (card_interval_score + (card_ease_score/4) + (card_reps_score/8)) / 1.375
             if card.days_overdue is not None and card.days_overdue > 0:
                 relative_overdue = card.days_overdue/card.ivl

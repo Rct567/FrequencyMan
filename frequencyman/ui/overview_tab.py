@@ -3,7 +3,6 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Any, Tuple, Type
 from anki.collection import Collection
 
 from aqt.qt import QVBoxLayout, QLabel, QSpacerItem, QSizePolicy
@@ -12,23 +11,15 @@ from aqt.utils import showInfo, askUser, showWarning
 
 from .main_window import FrequencyManMainWindow, FrequencyManTab
 
-from ..card_ranker import CardRanker
-from ..target_corpus_data import TargetCorpusData
-from ..language_data import LanguageData
-
 from ..lib.utilities import var_dump_log, override
-from ..lib.event_logger import EventLogger
 
 
 class OverviewTab(FrequencyManTab):
 
-    fm_window: FrequencyManMainWindow
-
-    def __init__(self, fm_window: FrequencyManMainWindow) -> None:
-        super().__init__(fm_window)
+    def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
+        super().__init__(fm_window, col)
         self.id = 'word_overview'
         self.name = 'Word overview'
-        self.fm_window = fm_window
 
     @override
     def on_tab_created(self, tab_layout: QVBoxLayout) -> None:

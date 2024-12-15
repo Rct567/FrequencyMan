@@ -3,13 +3,21 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Any, Optional, Tuple, Callable, Union
+from functools import cached_property
+import os
+from typing import Collection, Optional, Union
 
+from ..language_data import LanguageData
+from ..target_list import TargetList
+
+from ..lib.persistent_cacher import PersistentCacher
 from ..lib.addon_config import AddonConfig
 from ..lib.utilities import var_dump_log, override
 
 from aqt.qt import QWidget, QVBoxLayout, QLayout, QPaintEvent, QCloseEvent, QDialog, QTabWidget
 from aqt.main import AnkiQt
+
+from anki.collection import Collection
 
 try:
     from ..version import FREQUENCYMAN_VERSION
@@ -23,10 +31,14 @@ class FrequencyManTab(QWidget):
     id: str
     name: str
     first_paint_done: bool
+    col: Collection
+    fm_window: 'FrequencyManMainWindow'
 
-    def __init__(self, parent: QWidget):
+    def __init__(self, parent: 'FrequencyManMainWindow', col: Collection):
         super().__init__(parent)
         self.first_paint_done = False
+        self.col = col
+        self.fm_window = parent
 
     def on_tab_created(self, tab_layout: QVBoxLayout):
         pass
@@ -36,6 +48,21 @@ class FrequencyManTab(QWidget):
 
     def on_window_closing(self) -> Optional[int]:
         pass
+
+    @cached_property
+    def language_data(self) -> LanguageData:
+
+        lang_data_dir = os.path.join(self.fm_window.user_files_dir, 'lang_data')
+        if not os.path.isdir(lang_data_dir):
+            os.makedirs(lang_data_dir)
+
+        return LanguageData(lang_data_dir)
+
+    @cached_property
+    def target_list(self) -> TargetList:
+
+        cacher = PersistentCacher(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite'))
+        return TargetList(self.language_data, cacher, self.col)
 
     @override
     def paintEvent(self, a0: Optional[QPaintEvent]):
@@ -52,11 +79,10 @@ class FrequencyManMainWindow(QDialog):
     user_files_dir: str
 
     mw: AnkiQt
+    fm_config: AddonConfig
     is_dark_mode: bool
 
     tab_menu_options: dict[str, QWidget]
-
-    fm_config: AddonConfig
 
     def __init__(self, mw: AnkiQt, fm_config: AddonConfig, root_dir: str, user_files_dir: str):
 

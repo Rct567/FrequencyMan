@@ -145,38 +145,20 @@ class TargetsDefiningTextArea(QTextEdit):
 
 class ReorderCardsTab(FrequencyManTab):
 
-    fm_window: FrequencyManMainWindow
-    col: Collection
-    target_list: TargetList
-    language_data: LanguageData
-
     targets_input_textarea: TargetsDefiningTextArea
     reorder_button: QPushButton
 
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection, reorder_logger: ReorderLogger) -> None:
 
-        super().__init__(fm_window)
+        super().__init__(fm_window, col)
 
         self.id = 'reorder_cards'
         self.name = 'Reorder cards'
 
-        self.fm_window = fm_window
-        self.col = col
         self.reorder_logger = reorder_logger
 
     @override
     def on_tab_painted(self, tab_layout: QLayout) -> None:
-
-        # language data
-        lang_data_dir = os.path.join(self.fm_window.user_files_dir, 'lang_data')
-        if not os.path.isdir(lang_data_dir):
-            os.makedirs(lang_data_dir)
-
-        self.language_data = LanguageData(lang_data_dir)
-        cacher = PersistentCacher(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite'))
-
-        # target data (list of targets for reordering)
-        self.target_list = TargetList(self.language_data, cacher, self.col)
 
         # textarea (user can input json to define targets)
         self.targets_input_textarea = self.__create_targets_input_textarea()

@@ -34,9 +34,21 @@ CorpusSegmentId = NewType('CorpusSegmentId', str)
 class NoteFieldContentData:
     corpus_segment_id: CorpusSegmentId
     field_name: str
-    field_value_tokenized: list[WordToken]
+    field_value: str
     target_language_data_id: LangDataId
     target_language_id: LangId
+    cacher: PersistentCacher
+
+    @cached_property
+    def field_value_tokenized(self) -> list[WordToken]:
+
+        if self.field_value == "":
+            field_value_tokenized = []
+        else:
+            cache_key = str(self.target_language_id)+self.field_value
+            field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(self.field_value), self.target_language_id))
+
+        return field_value_tokenized
 
 
 @dataclass
@@ -333,18 +345,13 @@ class TargetCorpusData:
                     corpus_segment_id = CorpusSegmentId(corpus_segment_id)
                     self.segments_ids.add(corpus_segment_id)
 
-                    if field_val == "":
-                        field_value_tokenized = []
-                    else:
-                        cache_key = str(lang_id)+field_val
-                        field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(field_val), lang_id))
-
                     content_data = NoteFieldContentData(
                         corpus_segment_id=corpus_segment_id,
                         field_name=field_name,
-                        field_value_tokenized=field_value_tokenized,
+                        field_value=field_val,
                         target_language_data_id=lang_data_id,
-                        target_language_id=lang_id
+                        target_language_id=lang_id,
+                        cacher=self.cacher
                     )
 
                     card_note_fields_in_target.append(content_data)

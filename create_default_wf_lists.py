@@ -30,7 +30,7 @@ def download_default_wf_lists():
 
             wf_list: list[str] = []
             wf_list_size = 0
-            for word, _ in WordFrequencyLists.get_words_from_file(temp_file, LangId(lang_id)):
+            for word, _ in WordFrequencyLists.get_words_from_file(temp_file, LangId(lang_id[:2])):
 
                 wf_list.append(word)
                 wf_list_size += len(word.encode("utf-8"))
@@ -38,7 +38,7 @@ def download_default_wf_lists():
                 if len(wf_list) > 50_000:
                     break
                 if wf_list_size > 80_000:
-                     break
+                    break
 
             if wf_list:
                 with open(target_file, "w", encoding="utf-8") as f:

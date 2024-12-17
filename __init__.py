@@ -16,7 +16,7 @@ from anki.collection import Collection
 from .frequencyman.lib.addon_config import AddonConfig
 from .frequencyman.reorder_logger import LanguageInfoData, ReorderLogger
 
-from .frequencyman.ui.overview_tab import OverviewTab
+from .frequencyman.ui.words_overview_tab import WordsOverviewTab
 from .frequencyman.ui.reorder_cards_tab import ReorderCardsTab
 from .frequencyman.ui.main_window import FrequencyManMainWindow
 
@@ -46,7 +46,7 @@ def open_frequencyman_main_window(mw: AnkiQt, addon_config: AddonConfig, reorder
     fm_window = FrequencyManMainWindow(mw, addon_config, FM_ROOT_DIR, FM_USER_FILES_DIR)
 
     fm_window.add_tab(ReorderCardsTab(fm_window, mw.col, reorder_logger))
-    #fm_window.add_tab(OverviewTab(fm_window, mw.col))
+    fm_window.add_tab(WordsOverviewTab(fm_window, mw.col))
 
     fm_window.exec()
 

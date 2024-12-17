@@ -248,6 +248,8 @@ class SegmentContentMetrics:
     @cached_property
     def word_frequency(self) -> dict[WordToken, float]:
 
+        self.language_data.load_data({self.lang_data_id})
+
         new_word_frequency: dict[WordToken, float] = {}
 
         for word_token in self.all_words:

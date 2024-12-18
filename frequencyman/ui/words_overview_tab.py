@@ -95,6 +95,7 @@ class WordFrequencyOverview(WordsOverviewOption):
 
 class WordsOverviewTab(FrequencyManTab):
 
+    target_list: TargetList
     selected_target_index: int
     target_corpus_segment_dropdown: QComboBox
     overview_options: list[type[WordsOverviewOption]] = [WordFamiliarityOverview, WordFrequencyOverview]
@@ -112,20 +113,27 @@ class WordsOverviewTab(FrequencyManTab):
     @override
     def on_tab_painted(self, tab_layout: QLayout) -> None:
 
+        self.target_list = self.init_new_target_list()
+
+        defined_target_list = self.fm_window.fm_config['reorder_target_list']
+        if not isinstance(defined_target_list, list):
+            return
+
+        try:
+            self.target_list.set_targets(defined_target_list)
+        except Exception as e:
+            showWarning("Error loading target list: "+str(e))
+            return
+
         # Target selection
 
         label = QLabel("Target:")
         tab_layout.addWidget(label)
 
-        defined_target_list = self.fm_window.fm_config['reorder_target_list']
-        if not isinstance(defined_target_list, list):
-            return
-        self.target_list.set_targets(defined_target_list)
-
-        target_dropdown = QComboBox()
-        target_dropdown.addItems([target.name for target in self.target_list])
-        target_dropdown.currentIndexChanged.connect(self.__set_selected_target)
-        tab_layout.addWidget(target_dropdown)
+        targets_dropdown = QComboBox()
+        targets_dropdown.addItems([target.name for target in self.target_list])
+        targets_dropdown.currentIndexChanged.connect(self.__set_selected_target)
+        tab_layout.addWidget(targets_dropdown)
 
         # Target corpus segment selection
 
@@ -141,10 +149,10 @@ class WordsOverviewTab(FrequencyManTab):
         label = QLabel("Overview option:")
         label.setStyleSheet("margin-top:8px;")
         tab_layout.addWidget(label)
-        self.overview_option_dropdown = QComboBox()
-        self.overview_option_dropdown.addItems([option.title for option in self.overview_options])
-        self.overview_option_dropdown.currentIndexChanged.connect(self.__set_selected_overview_option)
-        tab_layout.addWidget(self.overview_option_dropdown)
+        self.overview_options_dropdown = QComboBox()
+        self.overview_options_dropdown.addItems([option.title for option in self.overview_options])
+        self.overview_options_dropdown.currentIndexChanged.connect(self.__set_selected_overview_option)
+        tab_layout.addWidget(self.overview_options_dropdown)
 
         # table
         self.table_label = QLabel("")
@@ -161,7 +169,7 @@ class WordsOverviewTab(FrequencyManTab):
 
     def __get_selected_target_corpus_data(self) -> TargetCorpusData:
         selected_target = self.__get_selected_target()
-        return selected_target.get_corpus_data_non_cached(selected_target.get_cards_non_cached())
+        return selected_target.get_corpus_data(selected_target.get_cards())
 
     def __set_selected_target(self, index: int) -> None:
         self.selected_target_index = index

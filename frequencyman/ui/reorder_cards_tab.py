@@ -147,6 +147,7 @@ class ReorderCardsTab(FrequencyManTab):
 
     targets_input_textarea: TargetsDefiningTextArea
     reorder_button: QPushButton
+    target_list: TargetList
 
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection, reorder_logger: ReorderLogger) -> None:
 
@@ -159,6 +160,8 @@ class ReorderCardsTab(FrequencyManTab):
 
     @override
     def on_tab_painted(self, tab_layout: QLayout) -> None:
+
+        self.target_list = self.init_new_target_list()
 
         # textarea (user can input json to define targets)
         self.targets_input_textarea = self.__create_targets_input_textarea()

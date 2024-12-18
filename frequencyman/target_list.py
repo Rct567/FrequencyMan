@@ -19,7 +19,7 @@ from .configured_target import ConfiguredTarget
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
 from .lib.utilities import JSON_TYPE, batched, get_float, load_json, profile_context, var_dump_log
-from .target import ConfiguredTargetNote, ReorderCacheData, TargetReorderResult, Target, ValidConfiguredTarget, CardRanker
+from .target import ConfiguredTargetNote, TargetCacheData, TargetReorderResult, Target, ValidConfiguredTarget, CardRanker
 from .language_data import LangDataId, LanguageData
 from .lib.event_logger import EventLogger
 
@@ -68,9 +68,17 @@ class TargetList:
     def __getitem__(self, index: int) -> Target:
         return self.target_list[index]
 
+    def __set_new_targets_data_cache(self) -> None:
+
+        cache_data: TargetCacheData = {'corpus': {}, 'target_cards': {}}
+
+        for target in self.target_list:
+            target.cache_data = cache_data
+
     def set_valid_targets(self, valid_target_list: list[ValidConfiguredTarget]) -> None:
 
         self.target_list = [Target(target, target_num, self.col, self.language_data, self.cacher) for target_num, target in enumerate(valid_target_list)]
+        self.__set_new_targets_data_cache()
 
     def set_targets(self, target_list_data: list[JSON_TYPE]) -> None:
 
@@ -416,11 +424,9 @@ class TargetList:
         modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
         num_cards_repositioned = 0
         num_targets_repositioned = 0
-        cache_data: ReorderCacheData = {'corpus': {}, 'target_cards': {}}
 
         # Reposition cards for each target
         for target in self.target_list:
-            target.cache_data = cache_data
             with event_logger.add_benchmarked_entry("Reordering target #{}.".format(target.index_num)):
                 reorder_result = target.reorder_cards(num_cards_repositioned, event_logger, modified_dirty_notes, schedule_cards_as_new)
                 reorder_result_list.append(reorder_result)
@@ -436,6 +442,7 @@ class TargetList:
         # Clear cache
         TargetCards.notes_from_cards_cached.clear()
         TargetCards.leech_card_ids_cached.clear()
+        self.__set_new_targets_data_cache()
 
         # Update notes that have been modifies (field values for example)
         update_notes_anki_op_changes: list[OpChanges] = []

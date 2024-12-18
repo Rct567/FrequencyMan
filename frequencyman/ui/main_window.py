@@ -59,10 +59,13 @@ class FrequencyManTab(QWidget):
         return LanguageData(lang_data_dir)
 
     @cached_property
-    def target_list(self) -> TargetList:
+    def cacher(self) -> PersistentCacher:
 
-        cacher = PersistentCacher(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite'))
-        return TargetList(self.language_data, cacher, self.col)
+        return PersistentCacher(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite'))
+
+    def init_new_target_list(self) -> TargetList:
+        
+        return TargetList(self.language_data, self.cacher, self.col)
 
     @override
     def paintEvent(self, a0: Optional[QPaintEvent]):

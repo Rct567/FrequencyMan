@@ -57,7 +57,7 @@ class TargetReorderResult():
         return f"{self.__class__.__name__}({', '.join(f'{k}={v}' for k, v in vars(self).items())})"
 
 
-class ReorderCacheData(TypedDict):
+class TargetCacheData(TypedDict):
     target_cards: dict[Tuple, TargetCards]
     corpus: dict[Tuple, TargetCorpusData]
 
@@ -67,21 +67,25 @@ class Target:
     config_target: ValidConfiguredTarget
     id_str: Optional[str]
     index_num: int
+
     col: Collection
+    language_data: LanguageData
+    cacher: PersistentCacher
 
     name: str
+    corpus_data: Optional[TargetCorpusData]
+    cache_data: Optional[TargetCacheData]
+
     main_scope_query: str
     reorder_scope_query: Optional[str]
-    corpus_data: Optional[TargetCorpusData]
 
-    cache_data: Optional[ReorderCacheData]
 
     def __init__(self, config_target: ValidConfiguredTarget, index_num: int, col: Collection, language_data: LanguageData, cacher: PersistentCacher) -> None:
 
         self.config_target = config_target
         self.id_str = config_target['id'] if 'id' in config_target else None
-
         self.index_num = index_num
+
         self.col = col
         self.language_data = language_data
         self.cacher = cacher
@@ -94,6 +98,8 @@ class Target:
         self.reorder_scope_query = self.config_target.get_reorder_scope_query()
 
     def __get_name(self) -> str:
+
+        assert isinstance(self.index_num, int)
 
         name = '#'+str(self.index_num)
 

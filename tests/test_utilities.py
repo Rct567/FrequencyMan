@@ -122,17 +122,16 @@ def test_normalize_dict_positional_floats_values_not_desc_sorted():
 def test_positional_value():
 
     assert positional_value_absolute(1) == 1
-    assert positional_value_absolute(100) > 0.85
-    assert positional_value_absolute(500) > 0.75
-    assert positional_value_absolute(1_000) > 0.5
-    assert positional_value_absolute(2_000) > 0.25
-    assert positional_value_absolute(5_000) > 0.1
+    assert positional_value_absolute(100) > 0.9
+    assert positional_value_absolute(500) > 0.8
+    assert positional_value_absolute(1_000) > 0.75
+    assert positional_value_absolute(2_000) > 0.5
+    assert positional_value_absolute(5_000) > 0.3
 
-    assert positional_value_absolute(5_000) < 0.75
-    assert positional_value_absolute(10_000) < 0.5
-    assert positional_value_absolute(50_000) < 0.5
-    assert positional_value_absolute(100_000) < 0.1
-    assert positional_value_absolute(500_000) < 0.05
+    assert positional_value_absolute(5_000) < 0.5
+    assert positional_value_absolute(10_000) < 0.25
+    assert positional_value_absolute(50_000) < 0.1
+    assert positional_value_absolute(100_000) < 0.05
 
 
 def test_remove_bottom_percent_dict():

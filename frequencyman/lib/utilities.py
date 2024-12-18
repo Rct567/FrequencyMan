@@ -180,10 +180,10 @@ def positional_value_absolute(position: int) -> float:
     if positional_val_b < 0:
         positional_val_b = 0
 
-    decay_rate = 0.00007
+    decay_rate = 0.00016
     positional_val_c = math.exp(-decay_rate * (position - 1))
 
-    return (positional_val_a + positional_val_b + (positional_val_c*1.9)) / 3.9
+    return (positional_val_a + positional_val_b + (positional_val_c*3)) / 5
 
 
 def normalize_dict_positional_floats_values(input_dict: dict[K, float], absolute_values: bool = True) -> dict[K, float]:

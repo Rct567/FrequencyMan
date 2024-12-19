@@ -115,12 +115,14 @@ class WordsOverviewTab(FrequencyManTab):
 
         self.target_list = self.init_new_target_list()
 
-        defined_target_list = self.fm_window.fm_config['reorder_target_list']
-        if not isinstance(defined_target_list, list):
+        if 'reorder_target_list' not in self.fm_window.fm_config:
+            showWarning("Error loading target list: 'reorder_target_list' is not defined.")
             return
 
+        defined_target_list = self.fm_window.fm_config['reorder_target_list']
+
         try:
-            self.target_list.set_targets(defined_target_list)
+            self.target_list.set_targets_from_json(defined_target_list)
         except Exception as e:
             showWarning("Error loading target list: "+str(e))
             return

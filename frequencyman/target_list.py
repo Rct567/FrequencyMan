@@ -80,7 +80,7 @@ class TargetList:
         self.target_list = [Target(target, target_num, self.col, self.language_data, self.cacher) for target_num, target in enumerate(valid_target_list)]
         self.__set_new_targets_data_cache()
 
-    def set_targets(self, target_list_data: list[JSON_TYPE]) -> None:
+    def set_targets_from_json(self, target_list_data: JSON_TYPE) -> None:
 
         (validity_state, err_desc, valid_target_list) = TargetList.validate_target_list(target_list_data, self.col, self.language_data)
 
@@ -88,6 +88,9 @@ class TargetList:
             raise Exception(err_desc)
 
         self.set_valid_targets(valid_target_list)
+
+    def set_targets(self, target_list_data: list[JSON_TYPE]) -> None:
+        return self.set_targets_from_json(target_list_data)
 
     def has_targets(self) -> bool:
         return len(self.target_list) > 0

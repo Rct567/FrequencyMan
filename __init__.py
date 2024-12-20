@@ -111,6 +111,9 @@ def add_frequencyman_info_to_toolbar_items(reorder_logger: ReorderLogger, fm_con
 
     def init_toolbar_items(links: list[str], toolbar: Toolbar) -> None:
 
+        if 'show_info_toolbar' not in fm_config:
+            return
+
         info_items = get_info_items_from_config(fm_config['show_info_toolbar'], reorder_logger)
 
         if info_items is None:
@@ -140,6 +143,9 @@ def add_frequencyman_info_to_deck_browser(reorder_logger: ReorderLogger, fm_conf
 
     def update_deck_browser(deck_browser: DeckBrowser, content: "DeckBrowserContent") -> None:
 
+        if 'show_info_deck_browser' not in fm_config:
+            return
+
         info_items = get_info_items_from_config(fm_config['show_info_deck_browser'], reorder_logger)
 
         if info_items is None:
@@ -164,10 +170,8 @@ if isinstance(mw, AnkiQt):
 
     add_frequencyman_menu_option_to_anki_tools_menu(mw, fm_config, reorder_logger)
 
-    if 'show_info_deck_browser' in fm_config:
-        add_frequencyman_info_to_deck_browser(reorder_logger, fm_config)
-    if 'show_info_toolbar' in fm_config:
-        add_frequencyman_info_to_toolbar_items(reorder_logger, fm_config)
+    add_frequencyman_info_to_deck_browser(reorder_logger, fm_config)
+    add_frequencyman_info_to_toolbar_items(reorder_logger, fm_config)
 
     # handle config editor (reload info elements after config is saved)
 
@@ -182,5 +186,5 @@ if isinstance(mw, AnkiQt):
         QTimer.singleShot(800, partial(reload_info_elements, fm_config, mw))  # wait for config to be saved
         return text
 
-    if 'show_info_deck_browser' in fm_config or 'show_info_toolbar' in fm_config:
-        gui_hooks.addon_config_editor_will_update_json.append(partial(handle_addon_config_editor_update, mw, fm_config))
+
+    gui_hooks.addon_config_editor_will_update_json.append(partial(handle_addon_config_editor_update, mw, fm_config))

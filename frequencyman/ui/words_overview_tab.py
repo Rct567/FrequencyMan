@@ -25,7 +25,7 @@ from ..lib.utilities import var_dump_log, override
 class NumericTableWidgetItem(QTableWidgetItem):
     def __init__(self, number: float):
         super().__init__(str(number))
-        self._numeric_value = number
+        self._numeric_value = float(number)
 
     @override
     def __lt__(self, other: QTableWidgetItem) -> bool:
@@ -51,7 +51,7 @@ class WordsOverviewOption(ABC):
         pass
 
     @abstractmethod
-    def data(self) -> list[tuple[Union[str, float], ...]]:
+    def data(self) -> list[tuple[Union[str, float, int], ...]]:
         pass
 
     @abstractmethod
@@ -68,7 +68,7 @@ class WordFamiliarityOverview(WordsOverviewOption):
         return "Word familiarity for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[Union[str, float], ...]]:
+    def data(self) -> list[tuple[str, float]]:
         return [(str(word), familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items()]
 
     @override
@@ -85,7 +85,7 @@ class WordFrequencyOverview(WordsOverviewOption):
         return "Word frequency for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[Union[str, float], ...]]:
+    def data(self) -> list[tuple[str, float]]:
         return [(str(word), frequency) for word, frequency in self.selected_corpus_content_metrics.word_frequency.items()]
 
     @override
@@ -93,12 +93,126 @@ class WordFrequencyOverview(WordsOverviewOption):
         return ["Word", "Word frequency"]
 
 
+class WordUnderexposureOverview(WordsOverviewOption):
+
+    title = "Word underexposure"
+
+    @override
+    def data_description(self) -> str:
+        return "Word underexposure for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[str, float]]:
+        return [(str(word), underexposure) for word, underexposure in self.selected_corpus_content_metrics.words_underexposure.items()]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Underexposure"]
+
+class WordFamiliaritySweetspotOverview(WordsOverviewOption):
+
+    title = "Word familiarity sweetspot"
+
+    @override
+    def data_description(self) -> str:
+        return "Word familiarity sweetspot for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[str, float]]:
+        return [(str(word), sweetspot) for word, sweetspot in self.selected_corpus_content_metrics.words_familiarity_sweetspot.items()]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Sweetspot score"]
+
+class MatureWordsOverview(WordsOverviewOption):
+
+    title = "Mature words"
+
+    @override
+    def data_description(self) -> str:
+        return "Mature words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[str, float]]:
+        return [(str(word), familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items() if word in self.selected_corpus_content_metrics.mature_words]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Familiarity"]
+
+class NotInWordFrequencyListsOverview(WordsOverviewOption):
+
+    title = "Not in word frequency lists"
+
+    @override
+    def data_description(self) -> str:
+        return "Words not in word frequency lists for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple]:
+
+        no_fr_words = set(word for word in self.selected_corpus_content_metrics.all_words if word not in self.selected_corpus_content_metrics.word_frequency)
+        num_cards = {word: len(cards) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items() if word in no_fr_words}
+        data: list[tuple[str, int]] = []
+
+        for word in no_fr_words:
+            word_num_cards = num_cards[word]
+            data.append((str(word), word_num_cards))
+
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Number of cards"]
+
+class NotInTargetCardsOverview(WordsOverviewOption):
+
+    title = "Not in target cards"
+
+    @override
+    def data_description(self) -> str:
+        return "Words not in target cards for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple]:
+
+        self.selected_corpus_content_metrics.language_data.load_data({self.selected_corpus_content_metrics.lang_data_id})
+
+        if self.selected_corpus_content_metrics.language_data.word_frequency_lists.word_frequency_lists is None:
+            showWarning("No word frequency lists loaded.")
+            return []
+
+        words_in_frequency_lists = self.selected_corpus_content_metrics.language_data.word_frequency_lists.word_frequency_lists[self.selected_corpus_content_metrics.lang_data_id].keys()
+        words_in_frequency_lists_with_position = {word: position+1 for position, word in enumerate(words_in_frequency_lists)}
+
+        words_without_cards = [(word, position) for word, position in words_in_frequency_lists_with_position.items() if word not in self.selected_corpus_content_metrics.all_words]
+
+        words_without_cards = sorted(words_without_cards, key=lambda x: x[1], reverse=False)
+
+        return words_without_cards
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Word frequency list position"]
+
+
 class WordsOverviewTab(FrequencyManTab):
 
     target_list: TargetList
     selected_target_index: int
     target_corpus_segment_dropdown: QComboBox
-    overview_options: list[type[WordsOverviewOption]] = [WordFamiliarityOverview, WordFrequencyOverview]
+    overview_options: list[type[WordsOverviewOption]] = [
+        WordFamiliarityOverview,
+        WordFrequencyOverview,
+        WordUnderexposureOverview,
+        WordFamiliaritySweetspotOverview,
+        MatureWordsOverview,
+        NotInWordFrequencyListsOverview,
+        NotInTargetCardsOverview
+    ]
     overview_options_available: list[WordsOverviewOption]
     table_label: QLabel
     table: QTableWidget
@@ -214,7 +328,7 @@ class WordsOverviewTab(FrequencyManTab):
         # Populate the table
         for row_index, row_data in enumerate(data):
             for col_index, value in enumerate(row_data):
-                if isinstance(value, float):
+                if isinstance(value, float) or isinstance(value, int):
                     self.table.setItem(row_index, col_index, NumericTableWidgetItem(value))
                 else:
                     self.table.setItem(row_index, col_index, QTableWidgetItem(str(value)))

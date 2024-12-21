@@ -198,6 +198,24 @@ class SegmentContentMetrics:
         return reviewed_words_presence
 
     @cached_property
+    def cards_per_word(self) -> dict[WordToken, list[TargetCard]]:
+
+        cards_per_word: dict[WordToken, list[TargetCard]] = {}
+
+        for card in self.target_cards.all_cards:
+
+            for field_data in self.targeted_fields_per_note[card.nid]:
+
+                for word_token in field_data.field_value_tokenized:
+
+                    if word_token not in cards_per_word:
+                        cards_per_word[word_token] = []
+
+                    cards_per_word[word_token].append(card)
+
+        return cards_per_word
+
+    @cached_property
     def reviewed_words_cards_familiarity_factor(self) -> dict[WordToken, list[float]]:
 
         reviewed_words_cards_familiarity_factor: dict[WordToken, list[float]] = {}

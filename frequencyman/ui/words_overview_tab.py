@@ -196,6 +196,28 @@ class NotInTargetCardsOverview(WordsOverviewOption):
     def labels(self) -> list[str]:
         return ["Word", "Word frequency list position"]
 
+class LonelyWordsOverview(WordsOverviewOption):
+
+    title = "Lonely words"
+
+    @override
+    def data_description(self) -> str:
+        return "Lonely words (words with only one note) for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[str, float]]:
+
+        num_notes = {word: len(set(card.nid for card in cards)) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items()}
+        lonely_words = set(word for word, num_notes in num_notes.items() if num_notes == 1)
+
+        data = [(str(word), self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0)) for word in lonely_words]
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Familiarity"]
+
 
 class NewWordsOverview(WordsOverviewOption):
 
@@ -211,7 +233,7 @@ class NewWordsOverview(WordsOverviewOption):
         new_words = self.selected_corpus_content_metrics.new_words
         new_words_num_notes = {word: len(set(card.nid for card in cards)) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items() if word in new_words}
 
-        data = [(str(word), self.selected_corpus_content_metrics.word_frequency.get(word, 0), new_words_num_notes[word]) for word in new_words]
+        data = [(str(word), self.selected_corpus_content_metrics.word_frequency.get(word, 0.0), new_words_num_notes[word]) for word in new_words]
         data = sorted(data, key=lambda x: x[1], reverse=True)
         return data
 
@@ -232,6 +254,7 @@ class WordsOverviewTab(FrequencyManTab):
         WordFamiliaritySweetspotOverview,
         NewWordsOverview,
         MatureWordsOverview,
+        LonelyWordsOverview,
         NotInWordFrequencyListsOverview,
         NotInTargetCardsOverview,
     ]

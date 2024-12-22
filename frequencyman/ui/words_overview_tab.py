@@ -189,14 +189,35 @@ class NotInTargetCardsOverview(WordsOverviewOption):
         words_in_frequency_lists_with_position = {word: position+1 for position, word in enumerate(words_in_frequency_lists)}
 
         words_without_cards = [(word, position) for word, position in words_in_frequency_lists_with_position.items() if word not in self.selected_corpus_content_metrics.all_words]
-
         words_without_cards = sorted(words_without_cards, key=lambda x: x[1], reverse=False)
-
         return words_without_cards
 
     @override
     def labels(self) -> list[str]:
         return ["Word", "Word frequency list position"]
+
+
+class NewWordsOverview(WordsOverviewOption):
+
+    title = "New words"
+
+    @override
+    def data_description(self) -> str:
+        return "New words (words not yet reviewed) for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[str, float, int]]:
+
+        new_words = self.selected_corpus_content_metrics.new_words
+        new_words_num_notes = {word: len(set(card.nid for card in cards)) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items() if word in new_words}
+
+        data = [(str(word), self.selected_corpus_content_metrics.word_frequency.get(word, 0), new_words_num_notes[word]) for word in new_words]
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Word frequency", "Number of notes"]
 
 
 class WordsOverviewTab(FrequencyManTab):
@@ -209,9 +230,10 @@ class WordsOverviewTab(FrequencyManTab):
         WordFrequencyOverview,
         WordUnderexposureOverview,
         WordFamiliaritySweetspotOverview,
+        NewWordsOverview,
         MatureWordsOverview,
         NotInWordFrequencyListsOverview,
-        NotInTargetCardsOverview
+        NotInTargetCardsOverview,
     ]
     overview_options_available: list[WordsOverviewOption]
     table_label: QLabel

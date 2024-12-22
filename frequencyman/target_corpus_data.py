@@ -264,6 +264,11 @@ class SegmentContentMetrics:
         return all_words
 
     @cached_property
+    def new_words(self) -> set[WordToken]:
+
+        return set(word for word in self.all_words if word not in self.reviewed_words)
+
+    @cached_property
     def word_frequency(self) -> dict[WordToken, float]:
 
         self.language_data.load_data({self.lang_data_id})

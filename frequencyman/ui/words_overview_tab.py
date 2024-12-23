@@ -242,6 +242,30 @@ class NewWordsOverview(WordsOverviewOption):
         return ["Word", "Word frequency", "Number of notes"]
 
 
+class FocusWordsOverview(WordsOverviewOption):
+
+    title = "Focus words"
+
+    @override
+    def data_description(self) -> str:
+        return "Focus words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[str, float, float]]:
+
+        focus_words = {word for word in self.selected_corpus_content_metrics.all_words if word not in self.selected_corpus_content_metrics.mature_words}
+        focus_words_frequency = {word: self.selected_corpus_content_metrics.word_frequency.get(word, 0.0) for word in focus_words}
+        focus_words_familiarity = {word: self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0) for word in focus_words}
+
+        data = [(str(word), focus_words_frequency[word], focus_words_familiarity[word]) for word in focus_words]
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Word frequency", "Familiarity"]
+
+
 class WordsOverviewTab(FrequencyManTab):
 
     target_list: TargetList
@@ -253,6 +277,7 @@ class WordsOverviewTab(FrequencyManTab):
         WordUnderexposureOverview,
         WordFamiliaritySweetspotOverview,
         NewWordsOverview,
+        FocusWordsOverview,
         MatureWordsOverview,
         LonelyWordsOverview,
         NotInWordFrequencyListsOverview,

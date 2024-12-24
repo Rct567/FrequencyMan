@@ -411,15 +411,23 @@ class TargetCorpusData:
 
         cards_familiarity: dict[CardId, float] = {}
 
-        def normalized_factor_value(val: float) -> float:
-            if val > 1:
-                val = 1+(val/10)
-            return val
+        def normalize_against_baseline(value: float, baseline: int) -> float:
+
+            normalized = value / baseline
+            if normalized > 1:
+                normalized = 1+(normalized/10)
+
+            # Soft cap (as normalized grows beyond 1.5, we heavily dampen additional growth):
+            if normalized > 1.5:
+                excess = normalized - 1.5
+                normalized = 1.5 + (excess / (1 + excess))
+
+            return normalized
 
         for card in cards:
-            card_interval_score = normalized_factor_value(card.ivl / 300)
-            card_ease_score = normalized_factor_value(card.ease_factor / 2500)
-            card_reps_score = normalized_factor_value(card.reps / 12)
+            card_interval_score = normalize_against_baseline(card.ivl, 300)
+            card_ease_score = normalize_against_baseline(card.ease_factor, 2500)
+            card_reps_score = normalize_against_baseline(card.reps, 12)
             card_score = (card_interval_score + (card_ease_score/4) + (card_reps_score/8)) / 1.375
             if card.days_overdue is not None and card.days_overdue > 0:
                 relative_overdue = card.days_overdue/card.ivl

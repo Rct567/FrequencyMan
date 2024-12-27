@@ -323,6 +323,23 @@ class WordFamiliarityColumn(AdditionalColumn):
         return [metrics.words_familiarity.get(word, 0.0) for word in words]
 
 
+class NumberOfCardsColumn(AdditionalColumn):
+
+    title = "Number of cards"
+
+    @override
+    def get_values(self, words: list[WordToken], metrics: SegmentContentMetrics) -> list[Union[float, int, str]]:
+        return [len(set(card.id for card in metrics.cards_per_word.get(word, []))) for word in words]
+
+class NumberOfNotesColumn(AdditionalColumn):
+
+    title = "Number of notes"
+
+    @override
+    def get_values(self, words: list[WordToken], metrics: SegmentContentMetrics) -> list[Union[float, int, str]]:
+        return [len(set(card.nid for card in metrics.cards_per_word.get(word, []))) for word in words]
+
+
 class WordsOverviewTab(FrequencyManTab):
 
     target_list: TargetList
@@ -356,7 +373,9 @@ class WordsOverviewTab(FrequencyManTab):
         self.selected_overview_option_index = 0
         self.additional_columns = [
             WordFrequencyColumn(),
-            WordFamiliarityColumn()
+            WordFamiliarityColumn(),
+            NumberOfCardsColumn(),
+            NumberOfNotesColumn()
         ]
         self.additional_column_checkboxes = {}
 
@@ -483,8 +502,13 @@ class WordsOverviewTab(FrequencyManTab):
         for column in self.additional_columns:
             checkbox = self.additional_column_checkboxes[column.title]
             if checkbox.isChecked() and not column.should_hide(labels):
+                additional_column_values = column.get_values([row_data[0] for row_data in data if isinstance(row_data[0], str)], overview_options.selected_corpus_content_metrics)
+
+                if len(additional_column_values) != len(data):
+                    raise Exception("Number of rows for additional column does not match the number of rows already in table.")
+
                 additional_labels.append(column.title)
-                additional_data[column.title] = column.get_values([row_data[0] for row_data in data if isinstance(row_data[0], str)], overview_options.selected_corpus_content_metrics)
+                additional_data[column.title] = additional_column_values
 
 
         # Set up table with combined columns

@@ -7,11 +7,11 @@ from abc import ABC, abstractmethod
 from typing import Optional, Union
 from anki.collection import Collection
 
-from aqt import QComboBox, QTableWidget, QTableWidgetItem, QCheckBox
+from aqt import QComboBox, QKeyEvent, QKeySequence, QTableWidget, QTableWidgetItem, QCheckBox
 from aqt.qt import (
     QVBoxLayout, QLabel, QSpacerItem, QSizePolicy, QWidget, QColor,
     QPalette, QLayout, QPaintEvent, QTextEdit, pyqtSlot, QTimer,
-    QHBoxLayout, QFrame
+    QHBoxLayout, QFrame, Qt, QApplication
 )
 from aqt.main import AnkiQt
 from aqt.utils import showInfo, askUser, showWarning
@@ -428,6 +428,7 @@ class WordsOverviewTab(FrequencyManTab):
         tab_layout.addWidget(self.table_label)
         self.table = QTableWidget()
         tab_layout.addWidget(self.table)
+        self.table.keyPressEvent = self.handle_key_press
 
         # Additional columns options
         additional_columns_frame = QFrame()
@@ -477,6 +478,44 @@ class WordsOverviewTab(FrequencyManTab):
         self.selected_overview_option_index = index
         self.update_table()
 
+
+    def handle_key_press(self, e: Optional[QKeyEvent]) -> None:
+        if not e:
+            return
+        # Check for Ctrl+C (Cmd+C on Mac)
+        if e.matches(QKeySequence.StandardKey.Copy):
+            self.copy_selection_to_clipboard()
+        else:
+            # Handle all other key events normally
+            QTableWidget.keyPressEvent(self.table, e)
+
+    def copy_selection_to_clipboard(self) -> None:
+
+        selected_ranges = self.table.selectedRanges()
+        if not selected_ranges:
+            return
+
+        clipboard_text = []
+        for range_idx in range(len(selected_ranges)):
+            selected_range = selected_ranges[range_idx]
+            rows = []
+            for row in range(selected_range.topRow(), selected_range.bottomRow() + 1):
+                columns = []
+                for col in range(selected_range.leftColumn(), selected_range.rightColumn() + 1):
+                    item = self.table.item(row, col)
+                    if item is not None:
+                        columns.append(item.text())
+                    else:
+                        columns.append("")
+                rows.append("\t".join(columns))
+            clipboard_text.append("\n".join(rows))
+
+        final_text = "\n".join(clipboard_text)
+
+        clipboard = QApplication.clipboard()
+        if clipboard:
+            clipboard.setText(final_text)
+
     def update_table(self) -> None:
 
         overview_options = self.overview_options_available[self.selected_overview_option_index]
@@ -486,6 +525,8 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setDisabled(True)
         self.table.setSortingEnabled(False)
         self.table.setUpdatesEnabled(False)
+
+        self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
 
         data = overview_options.data()
         labels = overview_options.labels()
@@ -522,27 +563,33 @@ class WordsOverviewTab(FrequencyManTab):
         for row_index, row_data in enumerate(data):
             # Original columns
             for col_index, value in enumerate(row_data):
-                if isinstance(value, (float, int)):
-                    self.table.setItem(row_index, col_index, NumericTableWidgetItem(value))
-                else:
-                    self.table.setItem(row_index, col_index, QTableWidgetItem(str(value)))
+                item = NumericTableWidgetItem(value) if isinstance(value, (float, int)) else QTableWidgetItem(str(value))
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsSelectable)
+                self.table.setItem(row_index, col_index, item)
 
             # Additional columns
             for col_index, column_title in enumerate(additional_labels, start=len(labels)):
                 value = additional_data[column_title][row_index]
-                if isinstance(value, (float, int)):
-                    self.table.setItem(row_index, col_index, NumericTableWidgetItem(value))
-                else:
-                    self.table.setItem(row_index, col_index, QTableWidgetItem(str(value)))
+                item = NumericTableWidgetItem(value) if isinstance(value, (float, int)) else QTableWidgetItem(str(value))
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsSelectable)
+                self.table.setItem(row_index, col_index, item)
 
         # Configure table header
         horizontal_header = self.table.horizontalHeader()
         if horizontal_header is not None:
             horizontal_header.setStretchLastSection(True)
             for col_index in range(len(combined_labels)):
-                horizontal_header.setSectionResizeMode(
-                    col_index, horizontal_header.ResizeMode.Stretch
-                )
+                horizontal_header.setSectionResizeMode(col_index, horizontal_header.ResizeMode.Interactive)
+
+            # Set default column widths
+            if table_viewport := self.table.viewport():
+                table_width = table_viewport.width()
+                default_column_width = table_width // len(combined_labels)
+                for col_index in range(len(combined_labels)):
+                    self.table.setColumnWidth(col_index, default_column_width)
+
+            # Make the last column stretch to fill remaining space
+            horizontal_header.setStretchLastSection(True)
 
         # Allow sorting and updates again
         self.table.setSortingEnabled(True)

@@ -7,15 +7,19 @@ from abc import ABC, abstractmethod
 from typing import Optional, Union
 from anki.collection import Collection
 
-from aqt import QComboBox, QTableWidget, QTableWidgetItem
-from aqt.qt import QVBoxLayout, QLabel, QSpacerItem, QSizePolicy, QWidget, QColor, QPalette, QLayout, QPaintEvent, QTextEdit, pyqtSlot, QTimer
+from aqt import QComboBox, QTableWidget, QTableWidgetItem, QCheckBox
+from aqt.qt import (
+    QVBoxLayout, QLabel, QSpacerItem, QSizePolicy, QWidget, QColor,
+    QPalette, QLayout, QPaintEvent, QTextEdit, pyqtSlot, QTimer,
+    QHBoxLayout, QFrame
+)
 from aqt.main import AnkiQt
 from aqt.utils import showInfo, askUser, showWarning
 
+from ..text_processing import WordToken
 from ..target_corpus_data import TargetCorpusData, SegmentContentMetrics, CorpusSegmentId
 from ..target_list import TargetList
 from ..target import Target
-
 
 from .main_window import FrequencyManMainWindow, FrequencyManTab
 
@@ -51,7 +55,7 @@ class WordsOverviewOption(ABC):
         pass
 
     @abstractmethod
-    def data(self) -> list[tuple[Union[str, float, int], ...]]:
+    def data(self) -> list[tuple[Union[WordToken, float, int], ...]]:
         pass
 
     @abstractmethod
@@ -68,8 +72,8 @@ class WordFamiliarityOverview(WordsOverviewOption):
         return "Word familiarity for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[str, float]]:
-        return [(str(word), familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items()]
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items()]
 
     @override
     def labels(self) -> list[str]:
@@ -85,8 +89,8 @@ class WordFrequencyOverview(WordsOverviewOption):
         return "Word frequency for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[str, float]]:
-        return [(str(word), frequency) for word, frequency in self.selected_corpus_content_metrics.word_frequency.items()]
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, frequency) for word, frequency in self.selected_corpus_content_metrics.word_frequency.items()]
 
     @override
     def labels(self) -> list[str]:
@@ -102,8 +106,8 @@ class WordUnderexposureOverview(WordsOverviewOption):
         return "Word underexposure for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[str, float]]:
-        return [(str(word), underexposure) for word, underexposure in self.selected_corpus_content_metrics.words_underexposure.items()]
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, underexposure) for word, underexposure in self.selected_corpus_content_metrics.words_underexposure.items()]
 
     @override
     def labels(self) -> list[str]:
@@ -118,8 +122,8 @@ class WordFamiliaritySweetspotOverview(WordsOverviewOption):
         return "Word familiarity sweetspot for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[str, float]]:
-        return [(str(word), sweetspot) for word, sweetspot in self.selected_corpus_content_metrics.words_familiarity_sweetspot.items()]
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, sweetspot) for word, sweetspot in self.selected_corpus_content_metrics.words_familiarity_sweetspot.items()]
 
     @override
     def labels(self) -> list[str]:
@@ -134,8 +138,8 @@ class MatureWordsOverview(WordsOverviewOption):
         return "Mature words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[str, float]]:
-        return [(str(word), familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items() if word in self.selected_corpus_content_metrics.mature_words]
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items() if word in self.selected_corpus_content_metrics.mature_words]
 
     @override
     def labels(self) -> list[str]:
@@ -205,12 +209,12 @@ class LonelyWordsOverview(WordsOverviewOption):
         return "Lonely words (words with only one note) for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[str, float]]:
+    def data(self) -> list[tuple[WordToken, float]]:
 
         num_notes = {word: len(set(card.nid for card in cards)) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items()}
         lonely_words = set(word for word, num_notes in num_notes.items() if num_notes == 1)
 
-        data = [(str(word), self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0)) for word in lonely_words]
+        data = [(word, self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0)) for word in lonely_words]
         data = sorted(data, key=lambda x: x[1], reverse=True)
         return data
 
@@ -228,11 +232,11 @@ class WordPresenceOverview(WordsOverviewOption):
         return "Word presence for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[str, float]]:
+    def data(self) -> list[tuple[WordToken, float]]:
 
         word_presence_scores = {word: max(presence) for word, presence in self.selected_corpus_content_metrics.all_words_presence.items()}
 
-        data = [(str(word), presence) for word, presence in word_presence_scores.items()]
+        data = [(word, presence) for word, presence in word_presence_scores.items()]
         data = sorted(data, key=lambda x: x[1], reverse=True)
 
         return data
@@ -251,12 +255,12 @@ class NewWordsOverview(WordsOverviewOption):
         return "New words (words not yet reviewed) for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[str, float, int]]:
+    def data(self) -> list[tuple[WordToken, float, int]]:
 
         new_words = self.selected_corpus_content_metrics.new_words
         new_words_num_notes = {word: len(set(card.nid for card in cards)) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items() if word in new_words}
 
-        data = [(str(word), self.selected_corpus_content_metrics.word_frequency.get(word, 0.0), new_words_num_notes[word]) for word in new_words]
+        data = [(word, self.selected_corpus_content_metrics.word_frequency.get(word, 0.0), new_words_num_notes[word]) for word in new_words]
         data = sorted(data, key=lambda x: x[1], reverse=True)
         return data
 
@@ -274,19 +278,49 @@ class FocusWordsOverview(WordsOverviewOption):
         return "Focus words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[str, float, float]]:
+    def data(self) -> list[tuple[WordToken, float, float]]:
 
         focus_words = {word for word in self.selected_corpus_content_metrics.all_words if word not in self.selected_corpus_content_metrics.mature_words}
         focus_words_frequency = {word: self.selected_corpus_content_metrics.word_frequency.get(word, 0.0) for word in focus_words}
         focus_words_familiarity = {word: self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0) for word in focus_words}
 
-        data = [(str(word), focus_words_frequency[word], focus_words_familiarity[word]) for word in focus_words]
+        data = [(word, focus_words_frequency[word], focus_words_familiarity[word]) for word in focus_words]
         data = sorted(data, key=lambda x: x[1], reverse=True)
         return data
 
     @override
     def labels(self) -> list[str]:
         return ["Word", "Word frequency", "Familiarity"]
+
+
+class AdditionalColumn(ABC):
+
+    title: str
+
+    @abstractmethod
+    def get_values(self, words: list[WordToken], metrics: SegmentContentMetrics) -> list[Union[float, int, str]]:
+        pass
+
+    def should_hide(self, current_labels: list[str]) -> bool:
+        return self.title in current_labels
+
+
+class WordFrequencyColumn(AdditionalColumn):
+
+    title = "Word frequency"
+
+    @override
+    def get_values(self, words: list[WordToken], metrics: SegmentContentMetrics) -> list[Union[float, int, str]]:
+        return [metrics.word_frequency.get(word, 0.0) for word in words]
+
+
+class WordFamiliarityColumn(AdditionalColumn):
+
+    title = "Familiarity"
+
+    @override
+    def get_values(self, words: list[WordToken], metrics: SegmentContentMetrics) -> list[Union[float, int, str]]:
+        return [metrics.words_familiarity.get(word, 0.0) for word in words]
 
 
 class WordsOverviewTab(FrequencyManTab):
@@ -311,12 +345,20 @@ class WordsOverviewTab(FrequencyManTab):
     table_label: QLabel
     table: QTableWidget
 
+    additional_columns: list[AdditionalColumn]
+    additional_column_checkboxes: dict[str, QCheckBox]
+
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
         super().__init__(fm_window, col)
         self.id = 'words_overview'
         self.name = 'Words overview'
         self.selected_target_index = 0
         self.selected_overview_option_index = 0
+        self.additional_columns = [
+            WordFrequencyColumn(),
+            WordFamiliarityColumn()
+        ]
+        self.additional_column_checkboxes = {}
 
     @override
     def on_tab_painted(self, tab_layout: QLayout) -> None:
@@ -336,7 +378,6 @@ class WordsOverviewTab(FrequencyManTab):
             return
 
         # Target selection
-
         label = QLabel("Target:")
         tab_layout.addWidget(label)
 
@@ -346,7 +387,6 @@ class WordsOverviewTab(FrequencyManTab):
         tab_layout.addWidget(targets_dropdown)
 
         # Target corpus segment selection
-
         label = QLabel("Target corpus segment:")
         label.setStyleSheet("margin-top:8px;")
         tab_layout.addWidget(label)
@@ -355,7 +395,6 @@ class WordsOverviewTab(FrequencyManTab):
         tab_layout.addWidget(self.target_corpus_segment_dropdown)
 
         # Overview options
-
         label = QLabel("Overview option:")
         label.setStyleSheet("margin-top:8px;")
         tab_layout.addWidget(label)
@@ -364,12 +403,29 @@ class WordsOverviewTab(FrequencyManTab):
         self.overview_options_dropdown.currentIndexChanged.connect(self.__set_selected_overview_option)
         tab_layout.addWidget(self.overview_options_dropdown)
 
-        # table
+        # Table
         self.table_label = QLabel("")
         self.table_label.setStyleSheet("margin-top:8px;")
         tab_layout.addWidget(self.table_label)
         self.table = QTableWidget()
         tab_layout.addWidget(self.table)
+
+        # Additional columns options
+        additional_columns_frame = QFrame()
+        additional_columns_layout = QHBoxLayout()
+        additional_columns_layout.setContentsMargins(0, 0, 0, 0)
+        additional_columns_frame.setLayout(additional_columns_layout)
+
+        spacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        additional_columns_layout.addItem(spacer)
+
+        for column in self.additional_columns:
+            checkbox = QCheckBox(column.title)
+            checkbox.stateChanged.connect(self.update_table)
+            self.additional_column_checkboxes[column.title] = checkbox
+            additional_columns_layout.addWidget(checkbox)
+
+        tab_layout.addWidget(additional_columns_frame)
 
         # Set first target as default
         QTimer.singleShot(1, lambda: self.__set_selected_target(0))
@@ -400,10 +456,11 @@ class WordsOverviewTab(FrequencyManTab):
 
     def __set_selected_overview_option(self, index: int) -> None:
         self.selected_overview_option_index = index
-        selected_overview_option = self.overview_options_available[self.selected_overview_option_index]
-        self.update_table(selected_overview_option)
+        self.update_table()
 
-    def update_table(self, overview_options: WordsOverviewOption) -> None:
+    def update_table(self) -> None:
+
+        overview_options = self.overview_options_available[self.selected_overview_option_index]
 
         self.table_label.setText(overview_options.data_description())
 
@@ -414,15 +471,42 @@ class WordsOverviewTab(FrequencyManTab):
         data = overview_options.data()
         labels = overview_options.labels()
 
+        # Update visibility of checkboxes based on current labels
+        for column in self.additional_columns:
+            checkbox = self.additional_column_checkboxes[column.title]
+            checkbox.setVisible(not column.should_hide(labels))
+
+        # Add additional columns if checked
+        additional_labels: list[str] = []
+        additional_data: dict[str, list[Union[float, int, str]]] = {}
+
+        for column in self.additional_columns:
+            checkbox = self.additional_column_checkboxes[column.title]
+            if checkbox.isChecked() and not column.should_hide(labels):
+                additional_labels.append(column.title)
+                additional_data[column.title] = column.get_values([row_data[0] for row_data in data if isinstance(row_data[0], str)], overview_options.selected_corpus_content_metrics)
+
+
+        # Set up table with combined columns
+        combined_labels = labels + additional_labels
         self.table.clearContents()
         self.table.setRowCount(len(data))
-        self.table.setColumnCount(len(labels))
-        self.table.setHorizontalHeaderLabels(labels)
+        self.table.setColumnCount(len(combined_labels))
+        self.table.setHorizontalHeaderLabels(combined_labels)
 
         # Populate the table
         for row_index, row_data in enumerate(data):
+            # Original columns
             for col_index, value in enumerate(row_data):
-                if isinstance(value, float) or isinstance(value, int):
+                if isinstance(value, (float, int)):
+                    self.table.setItem(row_index, col_index, NumericTableWidgetItem(value))
+                else:
+                    self.table.setItem(row_index, col_index, QTableWidgetItem(str(value)))
+
+            # Additional columns
+            for col_index, column_title in enumerate(additional_labels, start=len(labels)):
+                value = additional_data[column_title][row_index]
+                if isinstance(value, (float, int)):
                     self.table.setItem(row_index, col_index, NumericTableWidgetItem(value))
                 else:
                     self.table.setItem(row_index, col_index, QTableWidgetItem(str(value)))
@@ -431,7 +515,7 @@ class WordsOverviewTab(FrequencyManTab):
         horizontal_header = self.table.horizontalHeader()
         if horizontal_header is not None:
             horizontal_header.setStretchLastSection(True)
-            for col_index in range(len(labels)):
+            for col_index in range(len(combined_labels)):
                 horizontal_header.setSectionResizeMode(
                     col_index, horizontal_header.ResizeMode.Stretch
                 )

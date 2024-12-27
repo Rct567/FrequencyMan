@@ -198,6 +198,25 @@ class SegmentContentMetrics:
         return reviewed_words_presence
 
     @cached_property
+    def all_words_presence(self) -> dict[WordToken, list[float]]:
+
+        words_presence: dict[WordToken, list[float]] = {}
+
+        for card in self.target_cards.all_cards:
+
+            for field_data in self.targeted_fields_per_note[card.nid]:
+
+                for index, word_token in enumerate(field_data.field_value_tokenized):
+
+                    if word_token not in words_presence:
+                        words_presence[word_token] = []
+
+                    word_presence_score = TextProcessing.calc_word_presence_score(word_token, field_data.field_value_tokenized, index)
+                    words_presence[word_token].append(word_presence_score)
+
+        return words_presence
+
+    @cached_property
     def cards_per_word(self) -> dict[WordToken, list[TargetCard]]:
 
         cards_per_word: dict[WordToken, list[TargetCard]] = {}

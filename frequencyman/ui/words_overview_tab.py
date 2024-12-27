@@ -219,6 +219,29 @@ class LonelyWordsOverview(WordsOverviewOption):
         return ["Word", "Familiarity"]
 
 
+class WordPresenceOverview(WordsOverviewOption):
+
+    title = "Word presence"
+
+    @override
+    def data_description(self) -> str:
+        return "Word presence for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[str, float]]:
+
+        word_presence_scores = {word: max(presence) for word, presence in self.selected_corpus_content_metrics.all_words_presence.items()}
+
+        data = [(str(word), presence) for word, presence in word_presence_scores.items()]
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Presence score"]
+
+
 class NewWordsOverview(WordsOverviewOption):
 
     title = "New words"
@@ -276,6 +299,7 @@ class WordsOverviewTab(FrequencyManTab):
         WordFrequencyOverview,
         WordUnderexposureOverview,
         WordFamiliaritySweetspotOverview,
+        WordPresenceOverview,
         NewWordsOverview,
         FocusWordsOverview,
         MatureWordsOverview,

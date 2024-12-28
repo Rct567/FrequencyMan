@@ -20,7 +20,7 @@ from ..target import Target
 from .words_overview_tab_additional_columns import (
     AdditionalColumn, WordFrequencyColumn, WordFamiliarityColumn, NumberOfCardsColumn, NumberOfNotesColumn)
 from .words_overview_tab_overview_options import (
-    WordsOverviewOption, WordFamiliarityOverview, WordFrequencyOverview, WordUnderexposureOverview,
+    WordsOverviewOption, LearningWordsOverview, WordFamiliarityOverview, WordFrequencyOverview, WordUnderexposureOverview,
     WordFamiliaritySweetspotOverview, MatureWordsOverview, NotInWordFrequencyListsOverview,
     NotInTargetCardsOverview, LonelyWordsOverview, WordPresenceOverview, NewWordsOverview, FocusWordsOverview)
 from .main_window import FrequencyManMainWindow, FrequencyManTab
@@ -55,6 +55,7 @@ class WordsOverviewTab(FrequencyManTab):
         NewWordsOverview,
         FocusWordsOverview,
         MatureWordsOverview,
+        LearningWordsOverview,
         LonelyWordsOverview,
         NotInWordFrequencyListsOverview,
         NotInTargetCardsOverview,

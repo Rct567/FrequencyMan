@@ -267,3 +267,20 @@ class FocusWordsOverview(WordsOverviewOption):
     @override
     def labels(self) -> list[str]:
         return ["Word", "Word frequency", "Familiarity"]
+
+
+class LearningWordsOverview(WordsOverviewOption):
+
+    title = "Learning words"
+
+    @override
+    def data_description(self) -> str:
+        return "Learning words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items() if word not in self.selected_corpus_content_metrics.mature_words]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Familiarity"]

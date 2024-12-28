@@ -159,7 +159,7 @@ class ReorderCardsTab(FrequencyManTab):
         self.reorder_logger = reorder_logger
 
     @override
-    def on_tab_painted(self, tab_layout: QLayout) -> None:
+    def on_tab_first_paint(self, tab_layout: QLayout) -> None:
 
         self.target_list = self.init_new_target_list()
 

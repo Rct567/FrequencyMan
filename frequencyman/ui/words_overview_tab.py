@@ -13,7 +13,6 @@ from aqt.qt import (
     QPalette, QLayout, QPaintEvent, QTextEdit, pyqtSlot, QTimer,
     QHBoxLayout, QFrame, Qt, QApplication
 )
-from aqt.main import AnkiQt
 from aqt.utils import showInfo, askUser, showWarning
 
 from ..text_processing import WordToken
@@ -379,8 +378,7 @@ class WordsOverviewTab(FrequencyManTab):
         ]
         self.additional_column_checkboxes = {}
 
-    @override
-    def on_tab_painted(self, tab_layout: QLayout) -> None:
+    def __load_target_list(self) -> None:
 
         self.target_list = self.init_new_target_list()
 
@@ -395,6 +393,16 @@ class WordsOverviewTab(FrequencyManTab):
         except Exception as e:
             showWarning("Error loading target list: "+str(e))
             return
+
+    @override
+    def on_tab_focus(self, tab_layout: QLayout) -> None:
+
+        self.clear_layout(tab_layout)
+        self.__init_words_overview(tab_layout)
+
+    def __init_words_overview(self, tab_layout: QLayout) -> None:
+
+        self.__load_target_list()
 
         # Target selection
         label = QLabel("Target:")

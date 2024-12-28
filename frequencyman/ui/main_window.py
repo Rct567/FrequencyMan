@@ -14,7 +14,7 @@ from ..lib.persistent_cacher import PersistentCacher
 from ..lib.addon_config import AddonConfig
 from ..lib.utilities import var_dump_log, override
 
-from aqt.qt import QWidget, QVBoxLayout, QLayout, QPaintEvent, QCloseEvent, QDialog, QTabWidget
+from aqt.qt import QWidget, QVBoxLayout, QLayout, QPaintEvent, QCloseEvent, QDialog, QTabWidget, QHideEvent
 from aqt.main import AnkiQt
 
 from anki.collection import Collection
@@ -30,24 +30,40 @@ class FrequencyManTab(QWidget):
 
     id: str
     name: str
-    first_paint_done: bool
+    first_paint_event_done: bool
+    focus_event_done: bool
     col: Collection
     fm_window: 'FrequencyManMainWindow'
 
     def __init__(self, parent: 'FrequencyManMainWindow', col: Collection):
         super().__init__(parent)
-        self.first_paint_done = False
+        self.first_paint_event_done = False
+        self.focus_event_done = False
         self.col = col
         self.fm_window = parent
 
     def on_tab_created(self, tab_layout: QVBoxLayout):
         pass
 
-    def on_tab_painted(self, tab_layout: QLayout):
+    def on_tab_first_paint(self, tab_layout: QLayout):
         pass
 
     def on_window_closing(self) -> Optional[int]:
         pass
+
+    def on_tab_focus(self, tab_layout: QLayout) -> None:
+        pass
+
+    @staticmethod
+    def clear_layout(layout: QLayout) -> None:
+        while layout.count():
+            child = layout.takeAt(0)
+            if not child:
+                return
+            widget = child.widget()
+            if not widget:
+                return
+            widget.deleteLater()
 
     @cached_property
     def language_data(self) -> LanguageData:
@@ -64,14 +80,24 @@ class FrequencyManTab(QWidget):
         return PersistentCacher(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite'))
 
     def init_new_target_list(self) -> TargetList:
-        
+
         return TargetList(self.language_data, self.cacher, self.col)
 
     @override
     def paintEvent(self, a0: Optional[QPaintEvent]):
-        if not self.first_paint_done and (layout := self.layout()) is not None:
-            self.first_paint_done = True
-            self.on_tab_painted(layout)
+        if (layout := self.layout()) is None:
+            return
+        if not self.first_paint_event_done:
+            self.first_paint_event_done = True
+            self.on_tab_first_paint(layout)
+        if not self.focus_event_done:
+            self.focus_event_done = True
+            self.on_tab_focus(layout)
+
+    @override
+    def hideEvent(self, a0: Optional[QHideEvent]):
+        self.focus_event_done = False
+        super().hideEvent(a0)
 
 
 # FrequencyMan Main Window class

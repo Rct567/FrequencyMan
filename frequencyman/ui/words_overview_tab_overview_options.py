@@ -1,0 +1,269 @@
+"""
+FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
+See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
+"""
+
+from abc import ABC, abstractmethod
+from typing import Optional, Union
+
+from aqt.utils import showInfo, askUser, showWarning
+
+from ..text_processing import WordToken
+from ..target_corpus_data import TargetCorpusData, SegmentContentMetrics, CorpusSegmentId
+from ..target import Target
+
+from ..lib.utilities import var_dump_log, override
+
+class WordsOverviewOption(ABC):
+
+    title: str
+    selected_target: Target
+    selected_corpus_segment_id: CorpusSegmentId
+    selected_corpus_content_metrics: SegmentContentMetrics
+
+    def __init__(self, selected_target: Target, selected_corpus_segment_id: CorpusSegmentId, selected_corpus_content_metrics: SegmentContentMetrics):
+        self.selected_target = selected_target
+        self.selected_corpus_segment_id = selected_corpus_segment_id
+        self.selected_corpus_content_metrics = selected_corpus_content_metrics
+
+    @abstractmethod
+    def data_description(self) -> str:
+        pass
+
+    @abstractmethod
+    def data(self) -> list[tuple[Union[WordToken, float, int], ...]]:
+        pass
+
+    @abstractmethod
+    def labels(self) -> list[str]:
+        pass
+
+
+class WordFamiliarityOverview(WordsOverviewOption):
+
+    title = "Word familiarity"
+
+    @override
+    def data_description(self) -> str:
+        return "Word familiarity for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items()]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Familiarity"]
+
+
+class WordFrequencyOverview(WordsOverviewOption):
+
+    title = "Word frequency"
+
+    @override
+    def data_description(self) -> str:
+        return "Word frequency for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, frequency) for word, frequency in self.selected_corpus_content_metrics.word_frequency.items()]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Word frequency"]
+
+
+class WordUnderexposureOverview(WordsOverviewOption):
+
+    title = "Word underexposure"
+
+    @override
+    def data_description(self) -> str:
+        return "Word underexposure for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, underexposure) for word, underexposure in self.selected_corpus_content_metrics.words_underexposure.items()]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Underexposure"]
+
+class WordFamiliaritySweetspotOverview(WordsOverviewOption):
+
+    title = "Word familiarity sweetspot"
+
+    @override
+    def data_description(self) -> str:
+        return "Word familiarity sweetspot for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, sweetspot) for word, sweetspot in self.selected_corpus_content_metrics.words_familiarity_sweetspot.items()]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Sweetspot score"]
+
+class MatureWordsOverview(WordsOverviewOption):
+
+    title = "Mature words"
+
+    @override
+    def data_description(self) -> str:
+        return "Mature words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float]]:
+        return [(word, familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items() if word in self.selected_corpus_content_metrics.mature_words]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Familiarity"]
+
+class NotInWordFrequencyListsOverview(WordsOverviewOption):
+
+    title = "Not in word frequency lists"
+
+    @override
+    def data_description(self) -> str:
+        return "Words not in word frequency lists for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple]:
+
+        no_fr_words = set(word for word in self.selected_corpus_content_metrics.all_words if word not in self.selected_corpus_content_metrics.word_frequency)
+        num_cards = {word: len(cards) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items() if word in no_fr_words}
+        data: list[tuple[str, int]] = []
+
+        for word in no_fr_words:
+            word_num_cards = num_cards[word]
+            data.append((str(word), word_num_cards))
+
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Number of cards"]
+
+class NotInTargetCardsOverview(WordsOverviewOption):
+
+    title = "Not in target cards"
+
+    @override
+    def data_description(self) -> str:
+        return "Words not in target cards for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple]:
+
+        self.selected_corpus_content_metrics.language_data.load_data({self.selected_corpus_content_metrics.lang_data_id})
+
+        if self.selected_corpus_content_metrics.language_data.word_frequency_lists.word_frequency_lists is None:
+            showWarning("No word frequency lists loaded.")
+            return []
+
+        words_in_frequency_lists = self.selected_corpus_content_metrics.language_data.word_frequency_lists.word_frequency_lists[self.selected_corpus_content_metrics.lang_data_id].keys()
+        words_in_frequency_lists_with_position = {word: position+1 for position, word in enumerate(words_in_frequency_lists)}
+
+        words_without_cards = [(word, position) for word, position in words_in_frequency_lists_with_position.items() if word not in self.selected_corpus_content_metrics.all_words]
+        words_without_cards = sorted(words_without_cards, key=lambda x: x[1], reverse=False)
+        return words_without_cards
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Word frequency list position"]
+
+class LonelyWordsOverview(WordsOverviewOption):
+
+    title = "Lonely words"
+
+    @override
+    def data_description(self) -> str:
+        return "Lonely words (words with only one note) for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float]]:
+
+        num_notes = {word: len(set(card.nid for card in cards)) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items()}
+        lonely_words = set(word for word, num_notes in num_notes.items() if num_notes == 1)
+
+        data = [(word, self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0)) for word in lonely_words]
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Familiarity"]
+
+
+class WordPresenceOverview(WordsOverviewOption):
+
+    title = "Word presence"
+
+    @override
+    def data_description(self) -> str:
+        return "Word presence for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float]]:
+
+        word_presence_scores = {word: max(presence) for word, presence in self.selected_corpus_content_metrics.all_words_presence.items()}
+
+        data = [(word, presence) for word, presence in word_presence_scores.items()]
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Presence score"]
+
+
+class NewWordsOverview(WordsOverviewOption):
+
+    title = "New words"
+
+    @override
+    def data_description(self) -> str:
+        return "New words (words not yet reviewed) for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float, int]]:
+
+        new_words = self.selected_corpus_content_metrics.new_words
+        new_words_num_notes = {word: len(set(card.nid for card in cards)) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items() if word in new_words}
+
+        data = [(word, self.selected_corpus_content_metrics.word_frequency.get(word, 0.0), new_words_num_notes[word]) for word in new_words]
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Word frequency", "Number of notes"]
+
+
+class FocusWordsOverview(WordsOverviewOption):
+
+    title = "Focus words"
+
+    @override
+    def data_description(self) -> str:
+        return "Focus words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> list[tuple[WordToken, float, float]]:
+
+        focus_words = {word for word in self.selected_corpus_content_metrics.all_words if word not in self.selected_corpus_content_metrics.mature_words}
+        focus_words_frequency = {word: self.selected_corpus_content_metrics.word_frequency.get(word, 0.0) for word in focus_words}
+        focus_words_familiarity = {word: self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0) for word in focus_words}
+
+        data = [(word, focus_words_frequency[word], focus_words_familiarity[word]) for word in focus_words]
+        data = sorted(data, key=lambda x: x[1], reverse=True)
+        return data
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Word frequency", "Familiarity"]

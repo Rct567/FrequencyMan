@@ -14,7 +14,7 @@ from ..lib.persistent_cacher import PersistentCacher
 from ..lib.addon_config import AddonConfig
 from ..lib.utilities import var_dump_log, override
 
-from aqt.qt import QWidget, QVBoxLayout, QLayout, QPaintEvent, QCloseEvent, QDialog, QTabWidget, QHideEvent
+from aqt.qt import QMainWindow, QWidget, QVBoxLayout, QLayout, QPaintEvent, QCloseEvent, QTabWidget, QHideEvent
 from aqt.main import AnkiQt
 
 from anki.collection import Collection
@@ -102,21 +102,23 @@ class FrequencyManTab(QWidget):
 
 # FrequencyMan Main Window class
 
-class FrequencyManMainWindow(QDialog):
+class FrequencyManMainWindow(QMainWindow):
 
     root_dir: str
     user_files_dir: str
 
     mw: AnkiQt
+    col: Collection
     fm_config: AddonConfig
     is_dark_mode: bool
 
     tab_menu_options: dict[str, QWidget]
 
-    def __init__(self, mw: AnkiQt, fm_config: AddonConfig, root_dir: str, user_files_dir: str):
+    def __init__(self, mw: AnkiQt, col: Collection, fm_config: AddonConfig, root_dir: str, user_files_dir: str):
 
         super().__init__(mw)
         self.mw = mw
+        self.col = col
         self.fm_config = fm_config
         self.is_dark_mode = mw.app.styleSheet().lower().find("dark") != -1
 
@@ -127,18 +129,16 @@ class FrequencyManMainWindow(QDialog):
 
         self.setMinimumSize(650, 600)
 
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+        window_layout = QVBoxLayout()
+        central_widget.setLayout(window_layout)
+
         # Create a tab widget
         self.tab_widget = QTabWidget()
-
         self.tab_menu_options = {}
         self.tab_menu_options['main'] = self.tab_widget
-
-        # Create layout for main window/dialog, and add the tab widget to it
-        window_layout = QVBoxLayout()
         window_layout.addWidget(self.tab_widget)
-
-        # Set the layout for the main window/dialog
-        self.setLayout(window_layout)
 
         # dirs
         self.root_dir = root_dir

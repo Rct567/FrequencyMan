@@ -7,13 +7,14 @@ from abc import ABC, abstractmethod
 from typing import Optional, Union
 from anki.collection import Collection
 
-from aqt import QComboBox, QKeyEvent, QKeySequence, QTableWidget, QTableWidgetItem, QCheckBox
+from aqt import QComboBox, QCursor, QKeyEvent, QKeySequence, QMenu, QPoint, QTableWidget, QTableWidgetItem, QCheckBox, dialogs
 from aqt.qt import (
     QLabel, QSpacerItem, QSizePolicy, QLayout, QTimer, QHBoxLayout, QFrame, Qt, QApplication
 )
 from aqt.utils import showInfo, askUser, showWarning
+from aqt.browser.browser import Browser
 
-from ..target_corpus_data import TargetCorpusData
+from ..target_corpus_data import SegmentContentMetrics, TargetCorpusData, CorpusSegmentId
 from ..target_list import TargetList
 from ..target import Target
 
@@ -25,7 +26,8 @@ from .words_overview_tab_overview_options import (
     NotInTargetCardsOverview, LonelyWordsOverview, WordPresenceOverview, NewWordsOverview, FocusWordsOverview)
 from .main_window import FrequencyManMainWindow, FrequencyManTab
 
-from ..lib.utilities import var_dump_log, override
+from ..lib.utilities import batched, var_dump_log, override
+from ..text_processing import WordToken
 
 
 class NumericTableWidgetItem(QTableWidgetItem):
@@ -40,11 +42,11 @@ class NumericTableWidgetItem(QTableWidgetItem):
         return self._numeric_value < other._numeric_value
 
 
-
 class WordsOverviewTab(FrequencyManTab):
 
     target_list: TargetList
     selected_target_index: int
+    selected_corpus_segment_id: CorpusSegmentId
     target_corpus_segment_dropdown: QComboBox
     overview_options: list[type[WordsOverviewOption]] = [
         WordFamiliarityOverview,
@@ -63,6 +65,7 @@ class WordsOverviewTab(FrequencyManTab):
     overview_options_available: list[WordsOverviewOption]
     table_label: QLabel
     table: QTableWidget
+    table_data: list[tuple[Union[WordToken, float, int], ...]]
 
     additional_columns: list[AdditionalColumn]
     additional_column_checkboxes: dict[str, QCheckBox]
@@ -141,6 +144,10 @@ class WordsOverviewTab(FrequencyManTab):
         tab_layout.addWidget(self.table)
         self.table.keyPressEvent = self.handle_key_press
 
+        # Add context menu to table
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.show_context_menu)
+
         # Additional columns options
         additional_columns_frame = QFrame()
         additional_columns_layout = QHBoxLayout()
@@ -178,11 +185,11 @@ class WordsOverviewTab(FrequencyManTab):
 
         selected_target = self.__get_selected_target()
         target_corpus_data = self.__get_selected_target_corpus_data()
-        selected_corpus_segment_id = list(target_corpus_data.segments_ids)[index]
+        selected_corpus_segment_id: CorpusSegmentId = list(target_corpus_data.segments_ids)[index]
         content_metrics = target_corpus_data.content_metrics[selected_corpus_segment_id]
 
+        self.selected_corpus_segment_id = selected_corpus_segment_id
         self.overview_options_available = [option(selected_target, selected_corpus_segment_id, content_metrics) for option in self.overview_options]
-
         self.__set_selected_overview_option(self.selected_overview_option_index)
 
     def __set_selected_overview_option(self, index: int) -> None:
@@ -240,6 +247,7 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
 
         data = overview_options.data()
+        self.table_data = data
         labels = overview_options.labels()
 
         # Update visibility of checkboxes based on current labels
@@ -306,3 +314,56 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setSortingEnabled(True)
         self.table.setUpdatesEnabled(True)
         self.table.setDisabled(False)
+
+    def show_context_menu(self, position: QPoint) -> None:
+        menu = QMenu()
+
+        # Get the row under the cursor
+        row = self.table.rowAt(position.y())
+        if row < 0:
+            return
+
+        word_token = self.table_data[row][0]
+        assert not isinstance(word_token, float) and not isinstance(word_token, int)
+
+        target_corpus_data = self.__get_selected_target_corpus_data()
+        content_metrics = target_corpus_data.content_metrics[self.selected_corpus_segment_id]
+
+        # Add menu items
+        show_cards_action = None
+        if word_token in content_metrics.cards_per_word:
+            show_cards_action = menu.addAction("Show cards")
+            menu.addSeparator()
+        copy_word_action = menu.addAction("Copy word")
+
+        # Show the menu at cursor position
+        action = menu.exec(QCursor.pos())
+
+        # Handle menu actions
+        if show_cards_action is not None and action == show_cards_action:
+            self.on_menu_word_show_cards(word_token, content_metrics)
+        elif action == copy_word_action:
+            self.on_menu_word_copy(word_token)
+
+    def on_menu_word_show_cards(self, word: WordToken, content_metrics: SegmentContentMetrics) -> None:
+
+        note_ids = set(card.nid for card in content_metrics.cards_per_word[word])
+        batched_note_ids = batched(note_ids, 300) # prevent "Expression tree is too large" error
+        queries = []
+        for note_ids in batched_note_ids:
+            search_query = " OR ".join("nid:{}".format(note_id) for note_id in note_ids)
+            search_query = "({})".format(search_query)
+            queries.append(search_query)
+        search_query = " OR ".join(queries)
+
+        browser: Browser = dialogs.open('Browser', self.fm_window.mw)
+        browser.form.searchEdit.lineEdit().setText(search_query) # type: ignore
+        browser.onSearchActivated()
+
+
+    def on_menu_word_copy(self, word: str) -> None:
+
+        clipboard = QApplication.clipboard()
+        if clipboard:
+            clipboard.setText(word)
+

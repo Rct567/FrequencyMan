@@ -43,12 +43,12 @@ def open_frequencyman_main_window(mw: AnkiQt, addon_config: AddonConfig, reorder
     if not isinstance(mw.col, Collection):
         return
 
-    fm_window = FrequencyManMainWindow(mw, addon_config, FM_ROOT_DIR, FM_USER_FILES_DIR)
+    fm_window = FrequencyManMainWindow(mw, mw.col, addon_config, FM_ROOT_DIR, FM_USER_FILES_DIR)
 
     fm_window.add_tab(ReorderCardsTab(fm_window, mw.col, reorder_logger))
     fm_window.add_tab(WordsOverviewTab(fm_window, mw.col))
 
-    fm_window.exec()
+    fm_window.show()
 
 def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt, addon_config: AddonConfig, reorder_logger: ReorderLogger):
     menu_option_title = "FrequencyMan"

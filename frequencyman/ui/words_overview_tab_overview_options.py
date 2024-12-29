@@ -231,18 +231,16 @@ class NewWordsOverview(WordsOverviewOption):
         return "New words (words not yet reviewed) for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float, int]]:
+    def data(self) -> list[tuple[WordToken, float]]:
 
         new_words = self.selected_corpus_content_metrics.new_words
-        new_words_num_notes = {word: len(set(card.nid for card in cards)) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items() if word in new_words}
-
-        data = [(word, self.selected_corpus_content_metrics.word_frequency.get(word, 0.0), new_words_num_notes[word]) for word in new_words]
+        data = [(word, self.selected_corpus_content_metrics.word_frequency.get(word, 0.0)) for word in new_words]
         data = sorted(data, key=lambda x: x[1], reverse=True)
         return data
 
     @override
     def labels(self) -> list[str]:
-        return ["Word", "Word frequency", "Number of notes"]
+        return ["Word", "Word frequency"]
 
 
 class FocusWordsOverview(WordsOverviewOption):

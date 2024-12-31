@@ -64,11 +64,15 @@ class TextProcessing:
         return val.strip()
 
     @staticmethod
-    def create_word_token(text: str, lang_id: Optional[LangId] = None) -> WordToken:
+    def create_word_token(text: str, lang_id: LangId) -> WordToken:
 
         assert "\t" not in text and "\n" not in text and "\r" not in text
 
         token = text.strip(".,'’\"' \t\n\r!@#$%^&*()_-=+{}:\"<>?/;")
+
+        if '’' in token and lang_id in {LangId("en"), LangId("fr"), LangId("it"), LangId("de"), LangId("es")}:
+            token = token.replace("’", "'")
+
         return WordToken(token.lower())
 
     @staticmethod

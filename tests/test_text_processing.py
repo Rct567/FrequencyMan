@@ -84,9 +84,10 @@ def test_get_word_tokens_from_text_user_tokenizer_zh():
 
 def test_create_word_token():
 
-    assert TextProcessing.create_word_token("$$hellO") == "hello"
-    assert TextProcessing.create_word_token("hello!") == "hello"
-    assert TextProcessing.create_word_token("Iñtërnâtiônàlizætiøn") == "iñtërnâtiônàlizætiøn"
+    assert TextProcessing.create_word_token("$$hellO", LangId('en')) == "hello"
+    assert TextProcessing.create_word_token("hello!", LangId('en')) == "hello"
+    assert TextProcessing.create_word_token("we’ll", LangId('en')) == "we'll"
+    assert TextProcessing.create_word_token("Iñtërnâtiônàlizætiøn", LangId('en')) == "iñtërnâtiônàlizætiøn"
 
 
 def test_calc_word_presence_score():

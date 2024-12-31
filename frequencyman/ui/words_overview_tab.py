@@ -65,7 +65,6 @@ class WordsOverviewTab(FrequencyManTab):
     overview_options_available: list[WordsOverviewOption]
     table_label: QLabel
     table: QTableWidget
-    table_data: list[tuple[Union[WordToken, float, int], ...]]
 
     additional_columns: list[AdditionalColumn]
     additional_column_checkboxes: dict[str, QCheckBox]
@@ -247,7 +246,6 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
 
         data = overview_options.data()
-        self.table_data = data
         labels = overview_options.labels()
 
         # Update visibility of checkboxes based on current labels
@@ -323,9 +321,11 @@ class WordsOverviewTab(FrequencyManTab):
         if row < 0:
             return
 
-        word_token = self.table_data[row][0]
-        assert not isinstance(word_token, float) and not isinstance(word_token, int)
+        word_token_item = self.table.item(row, 0)
+        if not word_token_item:
+            return
 
+        word_token = WordToken(word_token_item.text())
         target_corpus_data = self.__get_selected_target_corpus_data()
         content_metrics = target_corpus_data.content_metrics[self.selected_corpus_segment_id]
 
@@ -338,9 +338,11 @@ class WordsOverviewTab(FrequencyManTab):
 
         # Show the menu at cursor position
         action = menu.exec(QCursor.pos())
+        if action is None:
+            return
 
         # Handle menu actions
-        if show_cards_action is not None and action == show_cards_action:
+        if action == show_cards_action:
             self.on_menu_word_show_cards(word_token, content_metrics)
         elif action == copy_word_action:
             self.on_menu_word_copy(word_token)

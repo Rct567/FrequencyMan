@@ -44,6 +44,15 @@ class WordFamiliarityColumn(AdditionalColumn):
         return [metrics.words_familiarity.get(word, 0.0) for word in words]
 
 
+class WordPresenceColumn(AdditionalColumn):
+
+    title = "Presence score"
+
+    @override
+    def get_values(self, words: list[WordToken], metrics: SegmentContentMetrics) -> list[Union[float, int, str]]:
+        return [max(metrics.all_words_presence.get(word, [0.0])) for word in words]
+
+
 class NumberOfCardsColumn(AdditionalColumn):
 
     title = "Number of cards"

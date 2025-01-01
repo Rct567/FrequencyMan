@@ -3,7 +3,6 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from abc import ABC, abstractmethod
 from typing import Optional, Union
 from anki.collection import Collection
 
@@ -19,11 +18,13 @@ from ..target_list import TargetList
 from ..target import Target
 
 from .words_overview_tab_additional_columns import (
-    AdditionalColumn, WordFrequencyColumn, WordFamiliarityColumn, NumberOfCardsColumn, NumberOfNotesColumn)
+    AdditionalColumn, WordFrequencyColumn, WordFamiliarityColumn, NumberOfCardsColumn, NumberOfNotesColumn, WordPresenceColumn)
 from .words_overview_tab_overview_options import (
-    WordsOverviewOption, LearningWordsOverview, WordFamiliarityOverview, WordFrequencyOverview, WordUnderexposureOverview,
-    WordFamiliaritySweetspotOverview, MatureWordsOverview, NotInWordFrequencyListsOverview,
-    NotInTargetCardsOverview, LonelyWordsOverview, WordPresenceOverview, NewWordsOverview, FocusWordsOverview)
+    AllWordsOverview, LearningWordsOverview, MatureWordsOverview, WordsOverviewOption, WordFamiliarityOverview, WordFrequencyOverview, WordUnderexposureOverview,
+    WordFamiliaritySweetspotOverview, NotInWordFrequencyListsOverview,
+    NotInTargetCardsOverview, LonelyWordsOverview, NewWordsOverview, FocusWordsOverview)
+from .words_overview_filters import FilterOption, LearningWordsFilter, MatureWordsFilter
+
 from .main_window import FrequencyManMainWindow, FrequencyManTab
 
 from ..lib.utilities import batched, var_dump_log, override
@@ -53,11 +54,11 @@ class WordsOverviewTab(FrequencyManTab):
         WordFrequencyOverview,
         WordUnderexposureOverview,
         WordFamiliaritySweetspotOverview,
-        WordPresenceOverview,
         NewWordsOverview,
+        AllWordsOverview,
         FocusWordsOverview,
-        MatureWordsOverview,
         LearningWordsOverview,
+        MatureWordsOverview,
         LonelyWordsOverview,
         NotInWordFrequencyListsOverview,
         NotInTargetCardsOverview,
@@ -69,6 +70,9 @@ class WordsOverviewTab(FrequencyManTab):
     additional_columns: list[AdditionalColumn]
     additional_column_checkboxes: dict[str, QCheckBox]
 
+    filters: list[FilterOption]
+    filter_checkboxes: dict[str, QCheckBox]
+
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
         super().__init__(fm_window, col)
         self.id = 'words_overview'
@@ -78,10 +82,16 @@ class WordsOverviewTab(FrequencyManTab):
         self.additional_columns = [
             WordFrequencyColumn(),
             WordFamiliarityColumn(),
+            WordPresenceColumn(),
             NumberOfCardsColumn(),
             NumberOfNotesColumn()
         ]
         self.additional_column_checkboxes = {}
+        self.filters = [
+            LearningWordsFilter(),
+            MatureWordsFilter()
+        ]
+        self.filter_checkboxes = {}
 
     def __load_target_list(self) -> None:
 
@@ -164,6 +174,23 @@ class WordsOverviewTab(FrequencyManTab):
 
         tab_layout.addWidget(additional_columns_frame)
 
+        # Filter options
+        filter_frame = QFrame()
+        filter_layout = QHBoxLayout()
+        filter_layout.setContentsMargins(0, 0, 0, 0)
+        filter_frame.setLayout(filter_layout)
+
+        spacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        filter_layout.addItem(spacer)
+
+        for filter_option in self.filters:
+            checkbox = QCheckBox(filter_option.title)
+            checkbox.stateChanged.connect(self.update_table)
+            self.filter_checkboxes[filter_option.title] = checkbox
+            filter_layout.addWidget(checkbox)
+
+        tab_layout.addWidget(filter_frame)
+
         # Set first target as default
         QTimer.singleShot(1, lambda: self.__set_selected_target(0))
 
@@ -235,9 +262,9 @@ class WordsOverviewTab(FrequencyManTab):
 
     def update_table(self) -> None:
 
-        overview_options = self.overview_options_available[self.selected_overview_option_index]
+        overview_option_selected = self.overview_options_available[self.selected_overview_option_index]
 
-        self.table_label.setText(overview_options.data_description())
+        self.table_label.setText(overview_option_selected.data_description())
 
         self.table.setDisabled(True)
         self.table.setSortingEnabled(False)
@@ -245,8 +272,20 @@ class WordsOverviewTab(FrequencyManTab):
 
         self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
 
-        data = overview_options.data()
-        labels = overview_options.labels()
+        data = overview_option_selected.data()
+        labels = overview_option_selected.labels()
+
+        # Apply active filters
+        for filter_option in self.filters:
+            if filter_option.should_hide(overview_option_selected):
+                self.filter_checkboxes[filter_option.title].hide()
+                continue
+            self.filter_checkboxes[filter_option.title].show()
+            is_enabled = filter_option.is_enabled(data, overview_option_selected.selected_corpus_content_metrics)
+            self.filter_checkboxes[filter_option.title].setDisabled(is_enabled == False)
+
+            if is_enabled and self.filter_checkboxes[filter_option.title].isChecked():
+                data = filter_option.filter_data(data, overview_option_selected.selected_corpus_content_metrics)
 
         # Update visibility of checkboxes based on current labels
         for column in self.additional_columns:
@@ -260,7 +299,7 @@ class WordsOverviewTab(FrequencyManTab):
         for column in self.additional_columns:
             checkbox = self.additional_column_checkboxes[column.title]
             if checkbox.isChecked() and not column.should_hide(labels):
-                additional_column_values = column.get_values([row_data[0] for row_data in data if isinstance(row_data[0], str)], overview_options.selected_corpus_content_metrics)
+                additional_column_values = column.get_values([row_data[0] for row_data in data if isinstance(row_data[0], str)], overview_option_selected.selected_corpus_content_metrics)
 
                 if len(additional_column_values) != len(data):
                     raise Exception("Number of rows for additional column does not match the number of rows already in table.")

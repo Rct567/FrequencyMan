@@ -199,27 +199,23 @@ class LonelyWordsOverview(WordsOverviewOption):
         return ["Word", "Familiarity"]
 
 
-class WordPresenceOverview(WordsOverviewOption):
+class AllWordsOverview(WordsOverviewOption):
 
-    title = "Word presence"
+    title = "All words"
 
     @override
     def data_description(self) -> str:
-        return "Word presence for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+        return "All words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
     def data(self) -> list[tuple[WordToken, float]]:
-
-        word_presence_scores = {word: max(presence) for word, presence in self.selected_corpus_content_metrics.all_words_presence.items()}
-
-        data = [(word, presence) for word, presence in word_presence_scores.items()]
+        data = [(word, self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0)) for word in self.selected_corpus_content_metrics.all_words]
         data = sorted(data, key=lambda x: x[1], reverse=True)
-
         return data
 
     @override
     def labels(self) -> list[str]:
-        return ["Word", "Presence score"]
+        return ["Word", "Familiarity"]
 
 
 class NewWordsOverview(WordsOverviewOption):

@@ -398,8 +398,7 @@ class WordsOverviewTab(FrequencyManTab):
         search_query = " OR ".join(queries)
 
         browser: Browser = dialogs.open('Browser', self.fm_window.mw)
-        browser.form.searchEdit.lineEdit().setText(search_query) # type: ignore
-        browser.onSearchActivated()
+        browser.search_for(self.col.build_search_string(search_query))
 
 
     def on_menu_word_copy(self, word: str) -> None:

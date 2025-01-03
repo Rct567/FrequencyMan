@@ -98,16 +98,11 @@ class WordsOverviewTab(FrequencyManTab):
         self.target_list = self.init_new_target_list()
 
         if 'reorder_target_list' not in self.fm_window.fm_config:
-            showWarning("Error loading target list: 'reorder_target_list' is not defined.")
-            return
+            raise Exception("'reorder_target_list' is not defined.")
 
         defined_target_list = self.fm_window.fm_config['reorder_target_list']
+        self.target_list.set_targets_from_json(defined_target_list)
 
-        try:
-            self.target_list.set_targets_from_json(defined_target_list)
-        except Exception as e:
-            showWarning("Error loading target list: "+str(e))
-            return
 
     @override
     def on_tab_focus(self, tab_layout: QLayout) -> None:
@@ -117,7 +112,11 @@ class WordsOverviewTab(FrequencyManTab):
 
     def __init_words_overview(self, tab_layout: QLayout) -> None:
 
-        self.__load_target_list()
+        try:
+            self.__load_target_list()
+        except Exception as e:
+            showWarning("Error loading target list: "+str(e))
+            return
 
         # Target selection
         label = QLabel("Target:")

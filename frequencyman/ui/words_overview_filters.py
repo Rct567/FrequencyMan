@@ -27,7 +27,7 @@ class FilterOption(ABC):
         pass
 
     @abstractmethod
-    def should_hide(self, overview_option: WordsOverviewOption) -> bool:
+    def is_hidden(self, overview_option: WordsOverviewOption) -> bool:
         pass
 
 
@@ -44,7 +44,7 @@ class MatureWordsFilter(FilterOption):
         return any(row for row in data if isinstance(row[0], str) and row[0] in metrics.mature_words)
 
     @override
-    def should_hide(self, overview_option: WordsOverviewOption) -> bool:
+    def is_hidden(self, overview_option: WordsOverviewOption) -> bool:
         return overview_option.title in {"Learning words", "Mature words"}
 
 
@@ -61,5 +61,5 @@ class LearningWordsFilter(FilterOption):
         return any(row for row in data if isinstance(row[0], str) and row[0] in metrics.words_familiarity and row[0] not in metrics.mature_words)
 
     @override
-    def should_hide(self, overview_option: WordsOverviewOption) -> bool:
+    def is_hidden(self, overview_option: WordsOverviewOption) -> bool:
         return overview_option.title in {"Learning words", "Mature words"}

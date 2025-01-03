@@ -103,7 +103,6 @@ class WordsOverviewTab(FrequencyManTab):
         defined_target_list = self.fm_window.fm_config['reorder_target_list']
         self.target_list.set_targets_from_json(defined_target_list)
 
-
     @override
     def on_tab_focus(self, tab_layout: QLayout) -> None:
 
@@ -221,7 +220,6 @@ class WordsOverviewTab(FrequencyManTab):
         self.selected_overview_option_index = index
         self.update_table()
 
-
     def handle_key_press(self, e: Optional[QKeyEvent]) -> None:
         if not e:
             return
@@ -276,7 +274,7 @@ class WordsOverviewTab(FrequencyManTab):
 
         # Apply active filters
         for filter_option in self.filters:
-            if filter_option.should_hide(overview_option_selected):
+            if filter_option.is_hidden(overview_option_selected):
                 self.filter_checkboxes[filter_option.title].hide()
                 continue
             self.filter_checkboxes[filter_option.title].show()
@@ -305,7 +303,6 @@ class WordsOverviewTab(FrequencyManTab):
 
                 additional_labels.append(column.title)
                 additional_data[column.title] = additional_column_values
-
 
         # Set up table with combined columns
         combined_labels = labels + additional_labels
@@ -388,7 +385,7 @@ class WordsOverviewTab(FrequencyManTab):
     def on_menu_word_show_cards(self, word: WordToken, content_metrics: SegmentContentMetrics) -> None:
 
         note_ids = set(card.nid for card in content_metrics.cards_per_word[word])
-        batched_note_ids = batched(note_ids, 300) # prevent "Expression tree is too large" error
+        batched_note_ids = batched(note_ids, 300)  # prevent "Expression tree is too large" error
         queries = []
         for note_ids in batched_note_ids:
             search_query = " OR ".join("nid:{}".format(note_id) for note_id in note_ids)
@@ -399,10 +396,8 @@ class WordsOverviewTab(FrequencyManTab):
         browser: Browser = dialogs.open('Browser', self.fm_window.mw)
         browser.search_for(self.col.build_search_string(search_query))
 
-
     def on_menu_word_copy(self, word: str) -> None:
 
         clipboard = QApplication.clipboard()
         if clipboard:
             clipboard.setText(word)
-

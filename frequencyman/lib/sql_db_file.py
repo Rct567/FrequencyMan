@@ -7,9 +7,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 import os
 import sqlite3
 import time
-from typing import Any, Iterable, Optional, Sequence
-
-from aqt import Union
+from typing import Any, Iterable, Optional, Sequence, Union
 
 from .utilities import var_dump, var_dump_log
 

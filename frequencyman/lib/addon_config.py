@@ -4,8 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 
-from typing import Any, Callable, Optional
-from aqt import Union
+from typing import Any, Callable, Optional, Union
 from aqt.main import AnkiQt
 
 from .utilities import JSON_TYPE

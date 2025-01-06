@@ -98,6 +98,8 @@ def get_info_items_from_config(config: JSON_TYPE, reorder_logger: ReorderLogger)
         target_display_id = "Global (all logged targets)" if info_target_id == "*" else info_target_id
         info_items.append(InfoItem(info_target_id, target_display_id, info_lang_id, lang_data))
 
+    reorder_logger.close()
+
     if not info_items:
         return None
 

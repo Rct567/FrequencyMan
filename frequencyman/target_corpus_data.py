@@ -316,7 +316,6 @@ class TargetCorpusData:
     suspended_card_value: float
     suspended_leech_card_value: float
     segmentation_strategy: CorpusSegmentationStrategy
-    segments_ids: set[CorpusSegmentId]
 
     target_cards: TargetCards
     target_fields_per_note_type: dict[str, dict[str, LangDataId]]
@@ -332,7 +331,6 @@ class TargetCorpusData:
         self.suspended_card_value = 0.1
         self.suspended_leech_card_value = 0.0
         self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
-        self.segments_ids = set()
 
         self.target_cards = target_cards
         self.language_data = language_data
@@ -387,7 +385,6 @@ class TargetCorpusData:
                         raise Exception("Invalid segmentation_strategy set!")
 
                     corpus_segment_id = CorpusSegmentId(corpus_segment_id)
-                    self.segments_ids.add(corpus_segment_id)
 
                     content_data = NoteFieldContentData(
                         corpus_segment_id=corpus_segment_id,
@@ -419,6 +416,10 @@ class TargetCorpusData:
                     self.content_metrics[corpus_segment_id].targeted_fields_per_note[note.id].append(content_data)
 
             self.targeted_fields_per_note[note.id] = card_note_fields_in_target
+
+    @cached_property
+    def segments_ids(self) -> Sequence[CorpusSegmentId]:
+        return list(self.content_metrics.keys())
 
     @staticmethod
     def __get_cards_familiarity_score(cards: Sequence[TargetCard]) -> dict[CardId, float]:

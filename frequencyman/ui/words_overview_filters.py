@@ -14,16 +14,19 @@ from ..lib.utilities import var_dump_log, override
 from ..text_processing import WordToken
 
 
+TableDataType = list[tuple[WordToken, list[Union[float, int]]]]
+
+
 class FilterOption(ABC):
 
     title: str
 
     @abstractmethod
-    def filter_data(self, data: list[tuple[Union[WordToken, float, int], ...]], metrics: SegmentContentMetrics) -> list[tuple[Union[WordToken, float, int], ...]]:
+    def filter_data(self, data: TableDataType, metrics: SegmentContentMetrics) -> TableDataType:
         pass
 
     @abstractmethod
-    def is_enabled(self, data: list[tuple[Union[WordToken, float, int], ...]], metrics: SegmentContentMetrics) -> bool:
+    def is_enabled(self, data: TableDataType, metrics: SegmentContentMetrics) -> bool:
         pass
 
     @abstractmethod
@@ -36,11 +39,11 @@ class MatureWordsFilter(FilterOption):
     title = "Mature words"
 
     @override
-    def filter_data(self, data: list[tuple[Union[WordToken, float, int], ...]], metrics: SegmentContentMetrics) -> list[tuple[Union[WordToken, float, int], ...]]:
+    def filter_data(self, data: TableDataType, metrics: SegmentContentMetrics) -> TableDataType:
         return [row for row in data if isinstance(row[0], str) and row[0] in metrics.mature_words]
 
     @override
-    def is_enabled(self, data: list[tuple[Union[WordToken, float, int], ...]], metrics: SegmentContentMetrics) -> bool:
+    def is_enabled(self, data: TableDataType, metrics: SegmentContentMetrics) -> bool:
         return any(row for row in data if isinstance(row[0], str) and row[0] in metrics.mature_words)
 
     @override
@@ -53,11 +56,11 @@ class LearningWordsFilter(FilterOption):
     title = "Learning words"
 
     @override
-    def filter_data(self, data: list[tuple[Union[WordToken, float, int], ...]], metrics: SegmentContentMetrics) -> list[tuple[Union[WordToken, float, int], ...]]:
+    def filter_data(self, data: TableDataType, metrics: SegmentContentMetrics) -> TableDataType:
         return [row for row in data if isinstance(row[0], str) and row[0] in metrics.words_familiarity and row[0] not in metrics.mature_words]
 
     @override
-    def is_enabled(self, data: list[tuple[Union[WordToken, float, int], ...]], metrics: SegmentContentMetrics) -> bool:
+    def is_enabled(self, data: TableDataType, metrics: SegmentContentMetrics) -> bool:
         return any(row for row in data if isinstance(row[0], str) and row[0] in metrics.words_familiarity and row[0] not in metrics.mature_words)
 
     @override

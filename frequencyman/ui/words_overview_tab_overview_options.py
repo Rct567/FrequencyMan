@@ -14,6 +14,9 @@ from ..target import Target
 
 from ..lib.utilities import var_dump_log, override
 
+
+TableDataType = list[tuple[WordToken, list[Union[float, int]]]]
+
 class WordsOverviewOption(ABC):
 
     title: str
@@ -31,7 +34,7 @@ class WordsOverviewOption(ABC):
         pass
 
     @abstractmethod
-    def data(self) -> list[tuple[Union[WordToken, float, int], ...]]:
+    def data(self) -> TableDataType:
         pass
 
     @abstractmethod
@@ -48,8 +51,8 @@ class WordFamiliarityOverview(WordsOverviewOption):
         return "Word familiarity for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float]]:
-        return [(word, familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items()]
+    def data(self) -> TableDataType:
+        return [(word, [familiarity]) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items()]
 
     @override
     def labels(self) -> list[str]:
@@ -65,8 +68,8 @@ class WordFrequencyOverview(WordsOverviewOption):
         return "Word frequency for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float]]:
-        return [(word, frequency) for word, frequency in self.selected_corpus_content_metrics.word_frequency.items()]
+    def data(self) -> TableDataType:
+        return [(word, [frequency]) for word, frequency in self.selected_corpus_content_metrics.word_frequency.items()]
 
     @override
     def labels(self) -> list[str]:
@@ -82,8 +85,8 @@ class WordUnderexposureOverview(WordsOverviewOption):
         return "Word underexposure for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float]]:
-        return [(word, underexposure) for word, underexposure in self.selected_corpus_content_metrics.words_underexposure.items()]
+    def data(self) -> TableDataType:
+        return [(word, [underexposure]) for word, underexposure in self.selected_corpus_content_metrics.words_underexposure.items()]
 
     @override
     def labels(self) -> list[str]:
@@ -98,8 +101,8 @@ class WordFamiliaritySweetspotOverview(WordsOverviewOption):
         return "Word familiarity sweetspot for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float]]:
-        return [(word, sweetspot) for word, sweetspot in self.selected_corpus_content_metrics.words_familiarity_sweetspot.items()]
+    def data(self) -> TableDataType:
+        return [(word, [sweetspot]) for word, sweetspot in self.selected_corpus_content_metrics.words_familiarity_sweetspot.items()]
 
     @override
     def labels(self) -> list[str]:
@@ -114,8 +117,8 @@ class MatureWordsOverview(WordsOverviewOption):
         return "Mature words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float]]:
-        return [(word, familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items() if word in self.selected_corpus_content_metrics.mature_words]
+    def data(self) -> TableDataType:
+        return [(word, [familiarity]) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items() if word in self.selected_corpus_content_metrics.mature_words]
 
     @override
     def labels(self) -> list[str]:
@@ -130,18 +133,11 @@ class NotInWordFrequencyListsOverview(WordsOverviewOption):
         return "Words not in word frequency lists for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple]:
+    def data(self) -> TableDataType:
 
         no_fr_words = set(word for word in self.selected_corpus_content_metrics.all_words if word not in self.selected_corpus_content_metrics.word_frequency)
-        num_cards = {word: len(cards) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items() if word in no_fr_words}
-        data: list[tuple[str, int]] = []
-
-        for word in no_fr_words:
-            word_num_cards = num_cards[word]
-            data.append((str(word), word_num_cards))
-
-        data = sorted(data, key=lambda x: x[1], reverse=True)
-
+        data: TableDataType = [(word, [len(cards)]) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items() if word in no_fr_words]
+        data = sorted(data, key=lambda x: x[1][0], reverse=True)
         return data
 
     @override
@@ -157,7 +153,7 @@ class NotInTargetCardsOverview(WordsOverviewOption):
         return "Words not in target cards for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple]:
+    def data(self) -> TableDataType:
 
         self.selected_corpus_content_metrics.language_data.load_data({self.selected_corpus_content_metrics.lang_data_id})
 
@@ -168,8 +164,8 @@ class NotInTargetCardsOverview(WordsOverviewOption):
         words_in_frequency_lists = self.selected_corpus_content_metrics.language_data.word_frequency_lists.word_frequency_lists[self.selected_corpus_content_metrics.lang_data_id].keys()
         words_in_frequency_lists_with_position = {word: position+1 for position, word in enumerate(words_in_frequency_lists)}
 
-        words_without_cards = [(word, position) for word, position in words_in_frequency_lists_with_position.items() if word not in self.selected_corpus_content_metrics.all_words]
-        words_without_cards = sorted(words_without_cards, key=lambda x: x[1], reverse=False)
+        words_without_cards: TableDataType = [(WordToken(word), [position]) for word, position in words_in_frequency_lists_with_position.items() if word not in self.selected_corpus_content_metrics.all_words]
+        words_without_cards = sorted(words_without_cards, key=lambda x: x[1][0], reverse=False)
         return words_without_cards
 
     @override
@@ -185,13 +181,13 @@ class LonelyWordsOverview(WordsOverviewOption):
         return "Lonely words (words with only one note) for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float]]:
+    def data(self) -> TableDataType:
 
         num_notes = {word: len(set(card.nid for card in cards)) for word, cards in self.selected_corpus_content_metrics.cards_per_word.items()}
         lonely_words = set(word for word, num_notes in num_notes.items() if num_notes == 1)
 
-        data = [(word, self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0)) for word in lonely_words]
-        data = sorted(data, key=lambda x: x[1], reverse=True)
+        data = [(word, [self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0)]) for word in lonely_words]
+        data = sorted(data, key=lambda x: x[1][0], reverse=True)
         return data
 
     @override
@@ -208,9 +204,9 @@ class AllWordsOverview(WordsOverviewOption):
         return "All words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float]]:
-        data = [(word, self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0)) for word in self.selected_corpus_content_metrics.all_words]
-        data = sorted(data, key=lambda x: x[1], reverse=True)
+    def data(self) -> TableDataType:
+        data = [(word, [self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0)]) for word in self.selected_corpus_content_metrics.all_words]
+        data = sorted(data, key=lambda x: x[1][0], reverse=True)
         return data
 
     @override
@@ -227,11 +223,11 @@ class NewWordsOverview(WordsOverviewOption):
         return "New words (words not yet reviewed) for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float]]:
+    def data(self) -> TableDataType:
 
         new_words = self.selected_corpus_content_metrics.new_words
-        data = [(word, self.selected_corpus_content_metrics.word_frequency.get(word, 0.0)) for word in new_words]
-        data = sorted(data, key=lambda x: x[1], reverse=True)
+        data = [(word, [self.selected_corpus_content_metrics.word_frequency.get(word, 0.0)]) for word in new_words]
+        data = sorted(data, key=lambda x: x[1][0], reverse=True)
         return data
 
     @override
@@ -248,14 +244,14 @@ class FocusWordsOverview(WordsOverviewOption):
         return "Focus words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float, float]]:
+    def data(self) -> TableDataType:
 
         focus_words = {word for word in self.selected_corpus_content_metrics.all_words if word not in self.selected_corpus_content_metrics.mature_words}
         focus_words_frequency = {word: self.selected_corpus_content_metrics.word_frequency.get(word, 0.0) for word in focus_words}
         focus_words_familiarity = {word: self.selected_corpus_content_metrics.words_familiarity.get(word, 0.0) for word in focus_words}
 
-        data = [(word, focus_words_frequency[word], focus_words_familiarity[word]) for word in focus_words]
-        data = sorted(data, key=lambda x: x[1], reverse=True)
+        data = [(word, [focus_words_frequency[word], focus_words_familiarity[word]]) for word in focus_words]
+        data = sorted(data, key=lambda x: x[1][0], reverse=True)
         return data
 
     @override
@@ -272,8 +268,8 @@ class LearningWordsOverview(WordsOverviewOption):
         return "Learning words for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
 
     @override
-    def data(self) -> list[tuple[WordToken, float]]:
-        return [(word, familiarity) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items() if word not in self.selected_corpus_content_metrics.mature_words]
+    def data(self) -> TableDataType:
+        return [(word, [familiarity]) for word, familiarity in self.selected_corpus_content_metrics.words_familiarity.items() if word not in self.selected_corpus_content_metrics.mature_words]
 
     @override
     def labels(self) -> list[str]:

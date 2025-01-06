@@ -257,6 +257,12 @@ class WordsOverviewTab(FrequencyManTab):
         if clipboard:
             clipboard.setText(final_text)
 
+
+    def __set_table_item(self, row_index: int, col_index: int, value: Union[float, int, str]) -> None:
+        item = NumericTableWidgetItem(value) if isinstance(value, (float, int)) else QTableWidgetItem(str(value))
+        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsSelectable)
+        self.table.setItem(row_index, col_index, item)
+
     def update_table(self) -> None:
 
         overview_option_selected = self.overview_options_available[self.selected_overview_option_index]
@@ -292,11 +298,14 @@ class WordsOverviewTab(FrequencyManTab):
         # Add additional columns if checked
         additional_labels: list[str] = []
         additional_data: dict[str, list[Union[float, int, str]]] = {}
+        words: Optional[list[WordToken]] = None
 
         for column in self.additional_columns:
             checkbox = self.additional_column_checkboxes[column.title]
             if checkbox.isChecked() and not column.should_hide(labels):
-                additional_column_values = column.get_values([row_data[0] for row_data in data if isinstance(row_data[0], str)], overview_option_selected.selected_corpus_content_metrics)
+                if words is None:
+                    words = [row_data[0] for row_data in data if isinstance(row_data[0], str)]
+                additional_column_values = column.get_values(words, overview_option_selected.selected_corpus_content_metrics)
 
                 if len(additional_column_values) != len(data):
                     raise Exception("Number of rows for additional column does not match the number of rows already in table.")
@@ -312,19 +321,19 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setHorizontalHeaderLabels(combined_labels)
 
         # Populate the table
-        for row_index, row_data in enumerate(data):
+        for row_index, (row_word, row_data) in enumerate(data):
+
+            # Column for word of row
+            self.__set_table_item(row_index, 0, str(row_word))
+
             # Original columns
-            for col_index, value in enumerate(row_data):
-                item = NumericTableWidgetItem(value) if isinstance(value, (float, int)) else QTableWidgetItem(str(value))
-                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsSelectable)
-                self.table.setItem(row_index, col_index, item)
+            for col_index, value in enumerate(row_data, start=1):
+                self.__set_table_item(row_index, col_index, value)
 
             # Additional columns
-            for col_index, column_title in enumerate(additional_labels, start=len(labels)):
+            for col_index, column_title in enumerate(additional_labels, start=len(row_data)+1):
                 value = additional_data[column_title][row_index]
-                item = NumericTableWidgetItem(value) if isinstance(value, (float, int)) else QTableWidgetItem(str(value))
-                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsSelectable)
-                self.table.setItem(row_index, col_index, item)
+                self.__set_table_item(row_index, col_index, value)
 
         # Configure table header
         horizontal_header = self.table.horizontalHeader()

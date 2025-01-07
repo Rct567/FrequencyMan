@@ -149,11 +149,11 @@ class WordsOverviewTab(FrequencyManTab):
         tab_layout.addWidget(self.table_label)
         self.table = QTableWidget()
         tab_layout.addWidget(self.table)
-        self.table.keyPressEvent = self.handle_key_press
+        self.table.keyPressEvent = self.__handle_key_press
 
         # Add context menu to table
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.table.customContextMenuRequested.connect(self.show_context_menu)
+        self.table.customContextMenuRequested.connect(self.__show_context_menu)
 
         # Additional columns options
         additional_columns_frame = QFrame()
@@ -166,7 +166,7 @@ class WordsOverviewTab(FrequencyManTab):
 
         for column in self.additional_columns:
             checkbox = QCheckBox(column.title)
-            checkbox.stateChanged.connect(self.update_table)
+            checkbox.stateChanged.connect(self.__update_table)
             self.additional_column_checkboxes[column.title] = checkbox
             additional_columns_layout.addWidget(checkbox)
 
@@ -183,7 +183,7 @@ class WordsOverviewTab(FrequencyManTab):
 
         for filter_option in self.filters:
             checkbox = QCheckBox(filter_option.title)
-            checkbox.stateChanged.connect(self.update_table)
+            checkbox.stateChanged.connect(self.__update_table)
             self.filter_checkboxes[filter_option.title] = checkbox
             filter_layout.addWidget(checkbox)
 
@@ -218,19 +218,19 @@ class WordsOverviewTab(FrequencyManTab):
 
     def __set_selected_overview_option(self, index: int) -> None:
         self.selected_overview_option_index = index
-        self.update_table()
+        self.__update_table()
 
-    def handle_key_press(self, e: Optional[QKeyEvent]) -> None:
+    def __handle_key_press(self, e: Optional[QKeyEvent]) -> None:
         if not e:
             return
         # Check for Ctrl+C (Cmd+C on Mac)
         if e.matches(QKeySequence.StandardKey.Copy):
-            self.copy_selection_to_clipboard()
+            self.__copy_selection_to_clipboard()
         else:
             # Handle all other key events normally
             QTableWidget.keyPressEvent(self.table, e)
 
-    def copy_selection_to_clipboard(self) -> None:
+    def __copy_selection_to_clipboard(self) -> None:
 
         selected_ranges = self.table.selectedRanges()
         if not selected_ranges:
@@ -270,7 +270,7 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setItem(row_index, col_index, item)
         return item
 
-    def update_table(self) -> None:
+    def __update_table(self) -> None:
 
         overview_option_selected = self.overview_options_available[self.selected_overview_option_index]
 
@@ -370,7 +370,7 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setUpdatesEnabled(True)
         self.table.setDisabled(False)
 
-    def show_context_menu(self, position: QPoint) -> None:
+    def __show_context_menu(self, position: QPoint) -> None:
         menu = QMenu()
 
         # Get the row under the cursor
@@ -400,11 +400,11 @@ class WordsOverviewTab(FrequencyManTab):
 
         # Handle menu actions
         if action == show_cards_action:
-            self.on_menu_word_show_cards(word_token, content_metrics)
+            self.__on_menu_word_show_cards(word_token, content_metrics)
         elif action == copy_word_action:
-            self.on_menu_word_copy(word_token)
+            self.__on_menu_word_copy(word_token)
 
-    def on_menu_word_show_cards(self, word: WordToken, content_metrics: SegmentContentMetrics) -> None:
+    def __on_menu_word_show_cards(self, word: WordToken, content_metrics: SegmentContentMetrics) -> None:
 
         note_ids = set(card.nid for card in content_metrics.cards_per_word[word])
         batched_note_ids = batched(note_ids, 300)  # prevent "Expression tree is too large" error
@@ -418,7 +418,7 @@ class WordsOverviewTab(FrequencyManTab):
         browser: Browser = dialogs.open('Browser', self.fm_window.mw)
         browser.search_for(self.col.build_search_string(search_query))
 
-    def on_menu_word_copy(self, word: str) -> None:
+    def __on_menu_word_copy(self, word: str) -> None:
 
         clipboard = QApplication.clipboard()
         if clipboard:

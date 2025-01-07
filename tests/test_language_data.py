@@ -119,10 +119,9 @@ def test_is_ignore_word(lang_data: LanguageData):
     assert lang_data.ignore_lists.ignore_lists is not None
     assert len(lang_data.ignore_lists.get_files_by_id(LangDataId('jp'))) == 2
 
-    assert lang_data.is_ignore_word(LangDataId('jp'), 'yes')
-    assert lang_data.is_ignore_word(LangDataId('jp'), 'yes_with_trailing_space')
-    assert lang_data.is_ignore_word(LangDataId('jp'), 'from_second_file')
-    assert not lang_data.is_ignore_word(LangDataId('jp'), 'no')
+    ignore_list = lang_data.get_ignore_list(LangDataId('jp'))
+
+    assert ignore_list == {'yes', 'yes_with_trailing_space', 'from_second_file'}
 
 
 def test_invalid_lists_directory():

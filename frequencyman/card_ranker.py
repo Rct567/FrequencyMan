@@ -416,11 +416,12 @@ class CardRanker:
         content_metrics = self.corpus_data.content_metrics[corpus_segment_id]
         set_lexical_underexposure = self.__is_factor_used('lexical_underexposure')
         set_familiarity_sweetspot = self.__is_factor_used('familiarity_sweetspot')
+        ignore_words = self.language_data.get_ignore_list(field_data.target_language_data_id)
 
         for word in field_data.field_value_tokenized:
 
             # skip if word is in ignore list
-            if self.language_data.is_ignore_word(field_data.target_language_data_id, word):
+            if word in ignore_words:
                 continue
 
             # word frequency

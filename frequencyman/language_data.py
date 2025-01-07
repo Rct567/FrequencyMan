@@ -226,15 +226,16 @@ class LanguageData:
         except KeyError:
             return default
 
-    def is_ignore_word(self, lang_data_id: LangDataId, word: str) -> bool:
+    def get_ignore_list(self, lang_data_id: LangDataId) -> set[str]:
 
         if self.ignore_lists.ignore_lists is None:
             raise Exception("No ignore lists loaded.")
 
         try:
-            return word in self.ignore_lists.ignore_lists[lang_data_id]
+            return self.ignore_lists.ignore_lists[lang_data_id]
         except KeyError:
-            return False
+            return set()
+
 
     @staticmethod
     def get_lang_id_from_data_id(lang_data_id: LangDataId) -> LangId:

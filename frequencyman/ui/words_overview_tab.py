@@ -6,7 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from typing import Optional, Union
 from anki.collection import Collection
 
-from aqt import QComboBox, QCursor, QKeyEvent, QKeySequence, QMenu, QPoint, QTableWidget, QTableWidgetItem, QCheckBox, dialogs
+from aqt import QColor, QComboBox, QCursor, QKeyEvent, QKeySequence, QMenu, QPoint, QTableWidget, QTableWidgetItem, QCheckBox, dialogs
 from aqt.qt import (
     QLabel, QSpacerItem, QSizePolicy, QLayout, QTimer, QHBoxLayout, QFrame, Qt, QApplication
 )
@@ -258,10 +258,17 @@ class WordsOverviewTab(FrequencyManTab):
             clipboard.setText(final_text)
 
 
-    def __set_table_item(self, row_index: int, col_index: int, value: Union[float, int, str]) -> None:
+    def __set_opacity(self, item: QTableWidgetItem, opacity: float) -> None:
+        default_color = self.table.palette().color(self.table.foregroundRole())
+        color = QColor(default_color)
+        color.setAlpha(int(opacity * 255))
+        item.setForeground(color)
+
+    def __set_table_item(self, row_index: int, col_index: int, value: Union[float, int, str]) -> QTableWidgetItem:
         item = NumericTableWidgetItem(value) if isinstance(value, (float, int)) else QTableWidgetItem(str(value))
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsSelectable)
         self.table.setItem(row_index, col_index, item)
+        return item
 
     def update_table(self) -> None:
 
@@ -320,11 +327,17 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setColumnCount(len(combined_labels))
         self.table.setHorizontalHeaderLabels(combined_labels)
 
+        # ignore list
+        overview_option_selected.selected_corpus_content_metrics.language_data.load_data({overview_option_selected.selected_corpus_content_metrics.lang_data_id})
+        ignore_list = overview_option_selected.selected_corpus_content_metrics.language_data.get_ignore_list(overview_option_selected.selected_corpus_content_metrics.lang_data_id)
+
         # Populate the table
         for row_index, (row_word, row_data) in enumerate(data):
 
             # Column for word of row
-            self.__set_table_item(row_index, 0, str(row_word))
+            first_column_item = self.__set_table_item(row_index, 0, str(row_word))
+            if row_word in ignore_list:
+                self.__set_opacity(first_column_item, 0.5)
 
             # Original columns
             for col_index, value in enumerate(row_data, start=1):

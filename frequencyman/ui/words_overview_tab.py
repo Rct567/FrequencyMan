@@ -329,14 +329,14 @@ class WordsOverviewTab(FrequencyManTab):
 
         # ignore list
         overview_option_selected.selected_corpus_content_metrics.language_data.load_data({overview_option_selected.selected_corpus_content_metrics.lang_data_id})
-        ignore_list = overview_option_selected.selected_corpus_content_metrics.language_data.get_ignore_list(overview_option_selected.selected_corpus_content_metrics.lang_data_id)
+        ignored_words = overview_option_selected.selected_corpus_content_metrics.language_data.get_ignored_words(overview_option_selected.selected_corpus_content_metrics.lang_data_id)
 
         # Populate the table
         for row_index, (row_word, row_data) in enumerate(data):
 
             # Column for word of row
             first_column_item = self.__set_table_item(row_index, 0, str(row_word))
-            if row_word in ignore_list:
+            if row_word in ignored_words:
                 self.__set_opacity(first_column_item, 0.5)
 
             # Original columns

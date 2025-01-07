@@ -188,11 +188,62 @@ class IgnoreLists:
         return self.ignore_lists is not None and lang_data_id in self.ignore_lists
 
 
+class NamesLists:
+
+    lang_data_dir: str
+    names_lists: Optional[list[set[str]]]
+    names_list: Optional[set[str]]
+
+    def __init__(self, lang_data_dir: str) -> None:
+
+        self.lang_data_dir = lang_data_dir
+        self.names_lists = None
+        self.names_list = None
+
+    def __get_files(self) -> set[str]:
+
+        files: set[str] = set()
+
+        if os.path.isdir(self.lang_data_dir):
+            for file_name in os.listdir(self.lang_data_dir):
+                if not file_name.endswith('.txt'):
+                    continue
+                if not file_name.startswith('names'):
+                    continue
+
+                files.add(os.path.join(self.lang_data_dir, file_name))
+
+        return files
+
+    def load_lists(self) -> None:
+
+        if self.names_list is not None and self.names_lists is not None:
+            return
+
+        self.names_list = set()
+        self.names_lists = []
+
+        for names_file in self.__get_files():
+            self.__load_list(names_file)
+
+    def __load_list(self, names_file: str) -> None:
+
+        assert self.names_list is not None and self.names_lists is not None
+
+        words = set(IgnoreLists.get_words_from_file(names_file))
+
+        self.names_list.update(words)
+        self.names_lists.append(words)
+
+        self.lists_loaded = True
+
+
 class LanguageData:
 
     data_dir: str
     word_frequency_lists: WordFrequencyLists
     ignore_lists: IgnoreLists
+    names_lists: NamesLists
 
     def __init__(self, lang_data_dir: str) -> None:
 
@@ -202,6 +253,7 @@ class LanguageData:
         self.data_dir = lang_data_dir
         self.word_frequency_lists = WordFrequencyLists(self.data_dir)
         self.ignore_lists = IgnoreLists(self.data_dir)
+        self.names_lists = NamesLists(self.data_dir)
 
     def id_has_directory(self, lang_data_id: LangDataId) -> bool:
 
@@ -215,6 +267,7 @@ class LanguageData:
 
         self.word_frequency_lists.load_lists(lang_data_ids)
         self.ignore_lists.load_lists(lang_data_ids)
+        self.names_lists.load_lists()
 
     def get_word_frequency(self, lang_data_id: LangDataId, word: str, default: float) -> float:
 
@@ -236,6 +289,16 @@ class LanguageData:
         except KeyError:
             return set()
 
+    def get_names_list(self) -> set[str]:
+
+        if self.names_lists.names_list is None:
+            raise Exception("No names list loaded.")
+
+        return self.names_lists.names_list
+
+    def get_ignored_words(self, lang_data_id: LangDataId) -> set[str]:
+
+        return self.get_ignore_list(lang_data_id).union(self.get_names_list())
 
     @staticmethod
     def get_lang_id_from_data_id(lang_data_id: LangDataId) -> LangId:

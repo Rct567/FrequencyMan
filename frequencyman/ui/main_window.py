@@ -18,6 +18,8 @@ from aqt.qt import QMainWindow, QWidget, QVBoxLayout, QLayout, QPaintEvent, QClo
 from aqt.main import AnkiQt
 
 from anki.collection import Collection
+from aqt import dialogs
+from aqt.utils import restoreGeom, saveGeom
 
 try:
     from ..version import FREQUENCYMAN_VERSION
@@ -104,6 +106,9 @@ class FrequencyManTab(QWidget):
 
 class FrequencyManMainWindow(QMainWindow):
 
+    key = "FrequencyMan"
+    silentlyClose = True
+
     root_dir: str
     user_files_dir: str
 
@@ -128,6 +133,7 @@ class FrequencyManMainWindow(QMainWindow):
             self.setWindowTitle("FrequencyMan")
 
         self.setMinimumSize(650, 600)
+        restoreGeom(self, FrequencyManMainWindow.key)
 
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
@@ -166,5 +172,8 @@ class FrequencyManMainWindow(QMainWindow):
             if result is not None and result == 1:
                 a0.ignore()
                 return
+
+        saveGeom(self, self.key)
+        dialogs.markClosed(FrequencyManMainWindow.key)
 
         a0.accept()

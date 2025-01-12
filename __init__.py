@@ -22,8 +22,7 @@ from .frequencyman.ui.main_window import FrequencyManMainWindow
 
 from .frequencyman.lib.utilities import *
 
-from aqt import mw, gui_hooks
-from aqt.utils import tooltip
+from aqt import mw, gui_hooks, dialogs
 
 
 def get_mw():
@@ -37,27 +36,32 @@ FM_USER_FILES_DIR = os.path.join(FM_ROOT_DIR, 'user_files')
 if not os.path.isdir(FM_USER_FILES_DIR):
     os.mkdir(FM_USER_FILES_DIR)
 
-# add menu option to main window
 
-def open_frequencyman_main_window(mw: AnkiQt, addon_config: AddonConfig, reorder_logger: ReorderLogger):
+def register_frequencyman_dialogs(fm_config: AddonConfig, reorder_logger: ReorderLogger) -> None:
+
+    register_dialog: Callable[[str, Callable[[AnkiQt], Optional[FrequencyManMainWindow]]], None] = dialogs.register_dialog
+    register_dialog(FrequencyManMainWindow.key, lambda mw: frequencyman_window_creator(mw, fm_config, reorder_logger))
+
+def frequencyman_window_creator(mw: AnkiQt, fm_config: AddonConfig, reorder_logger: ReorderLogger) -> Optional[FrequencyManMainWindow]:
+
     if not isinstance(mw.col, Collection):
-        return
+        return None
 
-    fm_window = FrequencyManMainWindow(mw, mw.col, addon_config, FM_ROOT_DIR, FM_USER_FILES_DIR)
-
+    fm_window = FrequencyManMainWindow(mw, mw.col, fm_config, FM_ROOT_DIR, FM_USER_FILES_DIR)
     fm_window.add_tab(ReorderCardsTab(fm_window, mw.col, reorder_logger))
     fm_window.add_tab(WordsOverviewTab(fm_window, mw.col))
-
     fm_window.show()
+    return fm_window
 
-def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt, addon_config: AddonConfig, reorder_logger: ReorderLogger):
+def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt):
     menu_option_title = "FrequencyMan"
     has_git_directory = os.path.isdir(os.path.join(FM_ROOT_DIR, '.git'))
     if has_git_directory:
         menu_option_title += " (dev)"
     action = QAction(menu_option_title, mw)
-    action.triggered.connect(lambda: open_frequencyman_main_window(mw, addon_config, reorder_logger))
+    action.triggered.connect(lambda: dialogs.open(FrequencyManMainWindow.key, mw))
     mw.form.menuTools.addAction(action)
+
 
 # get language info helper function
 
@@ -170,7 +174,8 @@ if isinstance(mw, AnkiQt):
     reorder_logger = ReorderLogger(os.path.join(FM_USER_FILES_DIR, 'reorder_log.sqlite'))
     fm_config = AddonConfig.from_anki_main_window(mw)
 
-    add_frequencyman_menu_option_to_anki_tools_menu(mw, fm_config, reorder_logger)
+    register_frequencyman_dialogs(fm_config, reorder_logger)
+    add_frequencyman_menu_option_to_anki_tools_menu(mw)
 
     add_frequencyman_info_to_deck_browser(reorder_logger, fm_config)
     add_frequencyman_info_to_toolbar_items(reorder_logger, fm_config)

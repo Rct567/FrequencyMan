@@ -235,7 +235,6 @@ class ReorderCardsTab(FrequencyManTab):
         tab_layout.addWidget(self.__create_targets_input_options_row_widget())
         tab_layout.addWidget(self.__create_targets_input_validation_info_row_widget())
         tab_layout.addWidget(self.reorder_button)
-        tab_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))  # Add an empty spacer row to compress the rows above
 
     def __create_targets_input_textarea(self) -> TargetsDefiningTextArea:
 
@@ -462,7 +461,7 @@ class ReorderCardsTab(FrequencyManTab):
                 ask_to_save_new_targets_to_config(self.targets_input_textarea.json_result.valid_targets_defined)
                 self.__execute_reorder_request()
 
-        normal_style = "QPushButton { font-size: 16px; font-weight: bold; margin-top:15px; padding-top:5px; padding-bottom:5px; }"
+        normal_style = "QPushButton { font-size: 16px; font-weight: bold; margin-top:20px; margin-bottom:5px; padding-top:5px; padding-bottom:5px; }"
         enabled_style = 'QPushButton:enabled { background-color:#23b442; border:2px solid #23a03e; color:white; }'
         reorder_button.setStyleSheet(normal_style+" "+enabled_style)
 

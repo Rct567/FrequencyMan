@@ -277,6 +277,12 @@ Two different types of files can be placed in a **language data id** directory:
 - __word frequency lists__: A text or csv file with words sorted to reflect the word frequency (in descending order). Only the position is used, not the (optional) word frequency value.
 - __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore".
 
+### Language data folder
+
+In the language data folder itself (`\user_files\lang_data`) the following type of files can be placed:
+
+- __names lists__: A text file with names/words that will not be used to calculate the rankings. It will basically functions like a 'global' ignore list. The file name should start with "names", such as `names_to_ignore.txt`.
+
 ## Reorder logging
 
 Reorder logging is an optional feature that can be enabled by defining an `id` for a target. When enabled, it logs information about the content of that target each time the cards are reordered.

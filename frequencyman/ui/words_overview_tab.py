@@ -45,9 +45,17 @@ class NumericTableWidgetItem(QTableWidgetItem):
 
 class WordsOverviewTab(FrequencyManTab):
 
+    id = 'words_overview'
+    name = 'Words overview'
+
     target_list: TargetList
     selected_target_index: int
+    selected_overview_option_index: int
+    selected_overview_option: Optional[type[WordsOverviewOption]]
+    selected_target_by_id_str: Optional[str]
+    selected_lang_id: Optional[str]
     selected_corpus_segment_id: CorpusSegmentId
+    targets_dropdown: QComboBox
     target_corpus_segment_dropdown: QComboBox
     overview_options: list[type[WordsOverviewOption]] = [
         WordFamiliarityOverview,
@@ -75,8 +83,6 @@ class WordsOverviewTab(FrequencyManTab):
 
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
         super().__init__(fm_window, col)
-        self.id = 'words_overview'
-        self.name = 'Words overview'
         self.selected_target_index = 0
         self.selected_overview_option_index = 0
         self.additional_columns = [
@@ -121,10 +127,16 @@ class WordsOverviewTab(FrequencyManTab):
         label = QLabel("Target:")
         tab_layout.addWidget(label)
 
-        targets_dropdown = QComboBox()
-        targets_dropdown.addItems([target.name for target in self.target_list])
-        targets_dropdown.currentIndexChanged.connect(self.__set_selected_target)
-        tab_layout.addWidget(targets_dropdown)
+        self.targets_dropdown = QComboBox()
+        self.targets_dropdown.addItems([target.name for target in self.target_list])
+        if hasattr(self, 'selected_target_by_id_str') and isinstance(self.selected_target_by_id_str, str):
+            if (selected_target_index := self.get_target_index_by_id(self.selected_target_by_id_str)) is not None:
+                self.selected_target_index = selected_target_index
+                self.targets_dropdown.setCurrentIndex(selected_target_index)
+            self.selected_target_by_id_str = None
+
+        self.targets_dropdown.currentIndexChanged.connect(self.__set_selected_target)
+        tab_layout.addWidget(self.targets_dropdown)
 
         # Target corpus segment selection
         label = QLabel("Target corpus segment:")
@@ -190,7 +202,12 @@ class WordsOverviewTab(FrequencyManTab):
         tab_layout.addWidget(filter_frame)
 
         # Set first target as default
-        QTimer.singleShot(1, lambda: self.__set_selected_target(0))
+        QTimer.singleShot(1, lambda: self.__set_selected_target(self.selected_target_index))
+
+    def get_target_index_by_id(self, target_id: str) -> Optional[int]:
+        for target_index, target in enumerate(self.target_list):
+            if target.id_str == target_id:
+                return target_index
 
     def __get_selected_target(self) -> Target:
         return self.target_list[self.selected_target_index]
@@ -200,12 +217,30 @@ class WordsOverviewTab(FrequencyManTab):
         return selected_target.get_corpus_data(selected_target.get_cards())
 
     def __set_selected_target(self, index: int) -> None:
+
         self.selected_target_index = index
         selected_target_corpus_data = self.__get_selected_target_corpus_data()
+
+        self.target_corpus_segment_dropdown.blockSignals(True)
         self.target_corpus_segment_dropdown.clear()
         self.target_corpus_segment_dropdown.addItems([segment_id for segment_id in selected_target_corpus_data.segments_ids])
+        self.target_corpus_segment_dropdown.blockSignals(False)
+
+        if hasattr(self, 'selected_lang_id') and isinstance(self.selected_lang_id, str):
+            for index, segment_id in enumerate(selected_target_corpus_data.segments_ids):
+                if self.selected_lang_id.lower() == segment_id.lower():
+                    self.target_corpus_segment_dropdown.setCurrentIndex(index)
+                    self.selected_lang_id = None
+                    break
+        else:
+            self.__set_selected_target_corpus_segment(0)
+
 
     def __set_selected_target_corpus_segment(self, index: int) -> None:
+
+        if self.target_corpus_segment_dropdown.currentIndex() != index:
+            self.target_corpus_segment_dropdown.setCurrentIndex(index)
+            return
 
         selected_target = self.__get_selected_target()
         target_corpus_data = self.__get_selected_target_corpus_data()
@@ -214,9 +249,17 @@ class WordsOverviewTab(FrequencyManTab):
 
         self.selected_corpus_segment_id = selected_corpus_segment_id
         self.overview_options_available = [option(selected_target, selected_corpus_segment_id, content_metrics) for option in self.overview_options]
+
+        if hasattr(self, 'selected_overview_option') and self.selected_overview_option is not None and issubclass(self.selected_overview_option, WordsOverviewOption):
+            self.selected_overview_option_index = self.overview_options.index(self.selected_overview_option)
+            self.selected_overview_option = None
+            
         self.__set_selected_overview_option(self.selected_overview_option_index)
 
     def __set_selected_overview_option(self, index: int) -> None:
+        if self.overview_options_dropdown.currentIndex() != index:
+            self.overview_options_dropdown.setCurrentIndex(index)
+            return
         self.selected_overview_option_index = index
         self.__update_table()
 

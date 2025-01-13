@@ -145,6 +145,9 @@ class TargetsDefiningTextArea(QTextEdit):
 
 class ReorderCardsTab(FrequencyManTab):
 
+    id = 'reorder_cards'
+    name = 'Reorder cards'
+
     targets_input_textarea: TargetsDefiningTextArea
     reorder_button: QPushButton
     target_list: TargetList
@@ -152,9 +155,6 @@ class ReorderCardsTab(FrequencyManTab):
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection, reorder_logger: ReorderLogger) -> None:
 
         super().__init__(fm_window, col)
-
-        self.id = 'reorder_cards'
-        self.name = 'Reorder cards'
 
         self.reorder_logger = reorder_logger
 
@@ -264,6 +264,8 @@ class ReorderCardsTab(FrequencyManTab):
 
     @override
     def on_window_closing(self) -> Optional[int]:
+        if not self.first_paint_event_done:
+            return
         # empty list
         if self.targets_input_textarea.json_result is None:
             return

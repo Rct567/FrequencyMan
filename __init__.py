@@ -16,7 +16,7 @@ from anki.collection import Collection
 from .frequencyman.lib.addon_config import AddonConfig
 from .frequencyman.reorder_logger import LanguageInfoData, ReorderLogger
 
-from .frequencyman.ui.words_overview_tab import WordsOverviewTab
+from .frequencyman.ui.words_overview_tab import WordsOverviewTab, MatureWordsOverview
 from .frequencyman.ui.reorder_cards_tab import ReorderCardsTab
 from .frequencyman.ui.main_window import FrequencyManMainWindow
 
@@ -53,6 +53,29 @@ def frequencyman_window_creator(mw: AnkiQt, fm_config: AddonConfig, reorder_logg
     fm_window.show()
     return fm_window
 
+
+def open_frequencyman_word_overview(mw: AnkiQt, target_id: str, lang_id: str) -> None:
+
+    fm_window: FrequencyManMainWindow = dialogs.open(FrequencyManMainWindow.key, mw)
+
+    overview_tab = fm_window.tab_menu_options[WordsOverviewTab.id]
+
+    if not isinstance(overview_tab, WordsOverviewTab):
+        return
+
+    overview_tab.selected_overview_option = MatureWordsOverview
+    overview_tab.selected_lang_id = lang_id
+
+    if target_id != "*":
+        if not overview_tab.first_paint_event_done:
+            overview_tab.selected_target_by_id_str = target_id
+        else:
+            if (selected_target_index := overview_tab.get_target_index_by_id(target_id)) is not None:
+                overview_tab.targets_dropdown.setCurrentIndex(selected_target_index)
+
+    fm_window.show_tab(WordsOverviewTab.id)
+
+
 def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt):
     menu_option_title = "FrequencyMan"
     has_git_directory = os.path.isdir(os.path.join(FM_ROOT_DIR, '.git'))
@@ -70,8 +93,9 @@ class InfoItem(NamedTuple):
     target_display_id: str
     lang_id: str
     data: LanguageInfoData
+    open_words_overview_tab: Callable[[], None]
 
-def get_info_items_from_config(config: JSON_TYPE, reorder_logger: ReorderLogger) -> Optional[list[InfoItem]]:
+def get_info_items_from_config(mw: AnkiQt, config: JSON_TYPE, reorder_logger: ReorderLogger) -> Optional[list[InfoItem]]:
 
     info_items: list[InfoItem] = []
 
@@ -100,7 +124,8 @@ def get_info_items_from_config(config: JSON_TYPE, reorder_logger: ReorderLogger)
             continue
 
         target_display_id = "Global (all logged targets)" if info_target_id == "*" else info_target_id
-        info_items.append(InfoItem(info_target_id, target_display_id, info_lang_id, lang_data))
+        open_words_overview_tab = lambda: open_frequencyman_word_overview(mw, str(info_target_id), str(info_lang_id))
+        info_items.append(InfoItem(info_target_id, target_display_id, info_lang_id, lang_data, open_words_overview_tab))
 
     reorder_logger.close()
 
@@ -111,7 +136,7 @@ def get_info_items_from_config(config: JSON_TYPE, reorder_logger: ReorderLogger)
 
 # toolbar show_info_toolbar
 
-def add_frequencyman_info_to_toolbar_items(reorder_logger: ReorderLogger, fm_config: AddonConfig) -> None:
+def add_frequencyman_info_to_toolbar_items(mw: AnkiQt, reorder_logger: ReorderLogger, fm_config: AddonConfig) -> None:
 
     from aqt.toolbar import Toolbar
 
@@ -120,7 +145,7 @@ def add_frequencyman_info_to_toolbar_items(reorder_logger: ReorderLogger, fm_con
         if 'show_info_toolbar' not in fm_config:
             return
 
-        info_items = get_info_items_from_config(fm_config['show_info_toolbar'], reorder_logger)
+        info_items = get_info_items_from_config(mw, fm_config['show_info_toolbar'], reorder_logger)
 
         if info_items is None:
             return
@@ -130,7 +155,7 @@ def add_frequencyman_info_to_toolbar_items(reorder_logger: ReorderLogger, fm_con
                 toolbar.create_link(
                     cmd="fm_lang_info_toolbar_{}".format(info_item.target_id),
                     label="{}: <b>{}</b>".format(info_item.lang_id.upper(), info_item.data['num_words_mature']),
-                    func=lambda: None,
+                    func=lambda: info_item.open_words_overview_tab(),
                     tip="Target: {}\nLearning: {}, Mature: {}".format(info_item.target_display_id, info_item.data['num_words_learning'], info_item.data['num_words_mature']),
                     id=None,
                 )
@@ -140,7 +165,7 @@ def add_frequencyman_info_to_toolbar_items(reorder_logger: ReorderLogger, fm_con
 
 # deck browser show_info_deck_browser
 
-def add_frequencyman_info_to_deck_browser(reorder_logger: ReorderLogger, fm_config: AddonConfig) -> None:
+def add_frequencyman_info_to_deck_browser(mw: AnkiQt, reorder_logger: ReorderLogger, fm_config: AddonConfig) -> None:
 
     from aqt.deckbrowser import DeckBrowser
 
@@ -152,7 +177,7 @@ def add_frequencyman_info_to_deck_browser(reorder_logger: ReorderLogger, fm_conf
         if 'show_info_deck_browser' not in fm_config:
             return
 
-        info_items = get_info_items_from_config(fm_config['show_info_deck_browser'], reorder_logger)
+        info_items = get_info_items_from_config(mw, fm_config['show_info_deck_browser'], reorder_logger)
 
         if info_items is None:
             return
@@ -177,8 +202,8 @@ if isinstance(mw, AnkiQt):
     register_frequencyman_dialogs(fm_config, reorder_logger)
     add_frequencyman_menu_option_to_anki_tools_menu(mw)
 
-    add_frequencyman_info_to_deck_browser(reorder_logger, fm_config)
-    add_frequencyman_info_to_toolbar_items(reorder_logger, fm_config)
+    add_frequencyman_info_to_deck_browser(mw, reorder_logger, fm_config)
+    add_frequencyman_info_to_toolbar_items(mw, reorder_logger, fm_config)
 
     # handle config editor (reload info elements after config is saved)
 

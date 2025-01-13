@@ -161,6 +161,10 @@ class FrequencyManMainWindow(QMainWindow):
 
         new_tab.on_tab_created(tab_layout)
 
+    def show_tab(self, tab_id: str) -> QWidget:
+        self.tab_widget.setCurrentWidget(self.tab_menu_options[tab_id])
+        return self.tab_menu_options[tab_id]
+
     @override
     def closeEvent(self, a0: Union[QCloseEvent, None]) -> None:
 

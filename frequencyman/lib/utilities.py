@@ -14,7 +14,8 @@ import pprint
 import pstats
 import re
 import sys
-from typing import IO, TYPE_CHECKING, Any, Callable, Iterable, Iterator, Optional, TypeVar
+from typing import IO, TYPE_CHECKING, Any, Callable, Iterable, Iterator, Literal, Optional, TypeVar
+from aqt import Qt, QDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStyle, QVBoxLayout, QWidget
 from aqt.utils import showInfo
 
 var_dump_count = 0
@@ -244,3 +245,56 @@ else:  # A dummy 'override' decorator for Python < 3.12
         return method
 
     override = dummy_override
+
+
+def show_result(message: str, title: str, type: Literal['information', 'warning', 'error'], parent: QWidget) -> bool:
+
+    dialog = QDialog(parent)
+    dialog.setWindowTitle(title)
+
+    # Main layout
+    layout = QVBoxLayout()
+    content_layout = QHBoxLayout()
+    content_layout.setSpacing(15)  # Add spacing between icon and text
+
+    # Icon
+    if type == 'information':
+        style_icon = QStyle.StandardPixmap.SP_MessageBoxInformation
+    elif type == 'warning':
+        style_icon = QStyle.StandardPixmap.SP_MessageBoxWarning
+    elif type == 'error':
+        style_icon = QStyle.StandardPixmap.SP_MessageBoxCritical
+    else:
+        raise ValueError("Invalid type!")
+
+    icon_label = QLabel()
+    icon_label.setPixmap(dialog.style().standardIcon(style_icon).pixmap(32, 32))  # type: ignore
+
+    icon_label.setAlignment(Qt.AlignmentFlag.AlignTop)  # Align icon to top
+    icon_label.setContentsMargins(0, 0, 5, 0)
+    content_layout.addWidget(icon_label)
+
+    # Message
+    label = QLabel(message)
+    label.setWordWrap(False)
+    label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+    content_layout.addWidget(label)
+    layout.addLayout(content_layout)
+
+    # Button
+    button_layout = QHBoxLayout()
+    ok_button = QPushButton("OK")
+    ok_button.clicked.connect(dialog.accept)
+
+    button_layout.addStretch()
+    button_layout.addWidget(ok_button)
+    layout.addLayout(button_layout)
+
+    # Dialog
+    dialog.setLayout(layout)
+    dialog.setMinimumWidth(300)
+    dialog.adjustSize()
+    dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowType.WindowMaximizeButtonHint)
+    dialog.setFixedSize(dialog.sizeHint())
+
+    return dialog.exec() == QDialog.DialogCode.Accepted

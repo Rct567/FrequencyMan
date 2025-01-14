@@ -14,7 +14,7 @@ from typing import Any, Optional, Tuple, Callable, Union
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from aqt.operations import QueryOp, CollectionOp
 
-from aqt.utils import askUser, showWarning, showInfo, askUserDialog
+from aqt.utils import askUser, showWarning, showInfo, askUserDialog, showText
 from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
 from aqt.qt import QWidget, QGridLayout, QLabel, QSpacerItem, QSizePolicy, QPushButton, QApplication, Qt, QColor, QPalette, QLayout, QPaintEvent, QTextEdit, pyqtSlot
 from aqt.main import AnkiQt
@@ -27,7 +27,7 @@ from .main_window import FrequencyManMainWindow, FrequencyManTab
 from .select_new_target_window import SelectNewTargetWindow
 
 from ..lib.event_logger import EventLogger
-from ..lib.utilities import var_dump, var_dump_log, override
+from ..lib.utilities import show_result, var_dump, var_dump_log, override
 
 from ..language_data import LanguageData
 from ..reorder_logger import ReorderLogger
@@ -534,10 +534,9 @@ class ReorderCardsTab(FrequencyManTab):
 
             result_info_str += "\n\n"+str(event_logger)
 
-            if num_errors > 0:
-                showWarning(result_info_str, parent=self.fm_window)
-            else:
-                showInfo(result_info_str, parent=self.fm_window)
+            msg_type = "warning" if num_errors > 0 else "information"
+            show_result(result_info_str, "Result", msg_type, self.fm_window)
+            # showText(result_info_str, self.fm_window, geomKey="ReorderResult")
 
             if self.fm_window.fm_config.is_enabled('log_reorder_events'):
                 event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))

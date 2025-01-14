@@ -48,7 +48,6 @@ class TargetsDefiningTextArea(QTextEdit):
     def __init__(self, parent: QWidget, fm_config: AddonConfig):
         super().__init__(parent)
         self.fm_config = fm_config
-        self.setMinimumHeight(330)
         self.setAcceptRichText(False)
         self.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2; font-family: 'Consolas', 'Courier New', monospace;")
         self.textChanged.connect(self.__handle_content_change)

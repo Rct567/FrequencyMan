@@ -132,7 +132,7 @@ class FrequencyManMainWindow(QMainWindow):
         else:
             self.setWindowTitle("FrequencyMan")
 
-        self.setMinimumSize(650, 600)
+        self.setMinimumSize(650, 550)
         restoreGeom(self, FrequencyManMainWindow.key)
 
         central_widget = QWidget(self)

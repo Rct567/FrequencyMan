@@ -227,9 +227,9 @@ class WordsOverviewTab(FrequencyManTab):
         self.target_corpus_segment_dropdown.blockSignals(False)
 
         if hasattr(self, 'selected_lang_id') and isinstance(self.selected_lang_id, str):
-            for index, segment_id in enumerate(selected_target_corpus_data.segments_ids):
+            for segment_index, segment_id in enumerate(selected_target_corpus_data.segments_ids):
                 if self.selected_lang_id.lower() == segment_id.lower():
-                    self.target_corpus_segment_dropdown.setCurrentIndex(index)
+                    self.__set_selected_target_corpus_segment(segment_index)
                     self.selected_lang_id = None
                     break
         else:
@@ -253,7 +253,7 @@ class WordsOverviewTab(FrequencyManTab):
         if hasattr(self, 'selected_overview_option') and self.selected_overview_option is not None and issubclass(self.selected_overview_option, WordsOverviewOption):
             self.selected_overview_option_index = self.overview_options.index(self.selected_overview_option)
             self.selected_overview_option = None
-            
+
         self.__set_selected_overview_option(self.selected_overview_option_index)
 
     def __set_selected_overview_option(self, index: int) -> None:

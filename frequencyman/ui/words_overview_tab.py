@@ -227,11 +227,16 @@ class WordsOverviewTab(FrequencyManTab):
         self.target_corpus_segment_dropdown.blockSignals(False)
 
         if hasattr(self, 'selected_lang_id') and isinstance(self.selected_lang_id, str):
+            lang_id_matched = False
             for segment_index, segment_id in enumerate(selected_target_corpus_data.segments_ids):
                 if self.selected_lang_id.lower() == segment_id.lower():
+                    lang_id_matched = True
                     self.__set_selected_target_corpus_segment(segment_index)
-                    self.selected_lang_id = None
                     break
+            if not lang_id_matched:
+                showWarning("Language id '{}' not found as segment in corpus data of target #{}.".format(self.selected_lang_id, self.selected_target_index))
+                self.__set_selected_target_corpus_segment(0)
+            self.selected_lang_id = None
         else:
             self.__set_selected_target_corpus_segment(0)
 

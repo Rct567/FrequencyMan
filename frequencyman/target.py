@@ -244,7 +244,7 @@ class Target:
             for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.config_target.get_language_data_ids()]:
                 tokenizer = TextProcessing.get_tokenizer(lang_id)
                 if hasattr(tokenizer, "__name__") and "default_tokenizer" not in tokenizer.__name__:
-                    event_logger.add_entry("Used tokenizer '{}' for '{}'.".format(tokenizer.__name__, lang_id.upper()))
+                    event_logger.add_entry("Used tokenizer '{}' for '{}'.".format(tokenizer.__name__, lang_id))
 
         # If reorder scope is defined, use it for reordering
         reorder_scope_query = self.reorder_scope_query

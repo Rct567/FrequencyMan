@@ -40,10 +40,10 @@ class TargetsDefiningTextArea(QTextEdit):
     fm_config: AddonConfig
     json_result: Optional[JsonTargetsResult]
     json_interpreter: Callable[[str], JsonTargetsResult]
-    validity_change_callbacks: list[Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]]
-    change_callbacks: list[Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]]
+    on_validity_change_callbacks: list[Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]]
+    on_change_callbacks: list[Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]]
+    on_first_paint_callbacks: list[Callable[['TargetsDefiningTextArea'], None]]
     error_interceptors: list[Callable[[JsonTargetsResult], bool]]
-    first_paint_callbacks: list[Callable[['TargetsDefiningTextArea'], None]]
 
     def __init__(self, parent: QWidget, fm_config: AddonConfig):
         super().__init__(parent)
@@ -52,9 +52,9 @@ class TargetsDefiningTextArea(QTextEdit):
         self.setStyleSheet("font-weight: bolder; font-size: 14px; line-height: 1.2; font-family: 'Consolas', 'Courier New', monospace;")
         self.textChanged.connect(self.__handle_content_change)
 
-        self.validity_change_callbacks = []
-        self.change_callbacks = []
-        self.first_paint_callbacks = []
+        self.on_validity_change_callbacks = []
+        self.on_change_callbacks = []
+        self.on_first_paint_callbacks = []
         self.error_interceptors = []
 
         self.first_paint_done = False
@@ -69,7 +69,8 @@ class TargetsDefiningTextArea(QTextEdit):
         super().paintEvent(e)
         if not self.first_paint_done:
             self.first_paint_done = True
-            self.__call_first_paint_listeners()
+            for callback in self.on_first_paint_callbacks:
+                callback(self)
 
     def handle_current_content(self, allow_error_interception: int = 5):
 
@@ -84,38 +85,28 @@ class TargetsDefiningTextArea(QTextEdit):
                     self.handle_current_content(allow_error_interception-1)
                     return
 
-        self.__call_change_listeners(new_json_result)
+        for callback in self.on_change_callbacks:
+            callback(new_json_result, self)
 
         json_validity_state_has_changed = self.json_result is None or new_json_result.validity_state != self.json_result.validity_state
 
         if json_validity_state_has_changed:
-            self.__call_validity_change_listeners(new_json_result)
+            for callback in self.on_validity_change_callbacks:
+                callback(new_json_result, self)
 
         self.json_result = new_json_result
-
-    def __call_validity_change_listeners(self, new_json_result: JsonTargetsResult):
-        for callback in self.validity_change_callbacks:
-            callback(new_json_result, self)
-
-    def __call_change_listeners(self, new_json_result: JsonTargetsResult):
-        for callback in self.change_callbacks:
-            callback(new_json_result, self)
-
-    def __call_first_paint_listeners(self):
-        for callback in self.first_paint_callbacks:
-            callback(self)
 
     def set_interpreter(self, callback: Callable[[str], JsonTargetsResult]):
         self.json_interpreter = callback
 
     def on_validity_change(self, callback: Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]):
-        self.validity_change_callbacks.append(callback)
+        self.on_validity_change_callbacks.append(callback)
 
     def on_change(self, callback: Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]):
-        self.change_callbacks.append(callback)
+        self.on_change_callbacks.append(callback)
 
     def on_first_paint(self, callback: Callable[['TargetsDefiningTextArea'], None]):
-        self.first_paint_callbacks.append(callback)
+        self.on_first_paint_callbacks.append(callback)
 
     def set_content(self, target_list: Union[list[ValidConfiguredTarget], list[JSON_TYPE], TargetList]):
         if isinstance(target_list, TargetList):

@@ -285,7 +285,7 @@ In the language data folder itself (`\user_files\lang_data`) the following type 
 
 ## Reorder logging
 
-Reorder logging is an optional feature that can be enabled by defining an `id` for a target. When enabled, it logs information about the content of that target each time the cards are reordered.
+Reorder logging is an optional feature that can be enabled by [defining](#target-settings) an `id` on a target. When enabled, information about the content of that target is logged each time the cards are reordered.
 
 ### Display the amount of mature words
 

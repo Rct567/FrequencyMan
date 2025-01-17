@@ -7,7 +7,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 import os
 import sqlite3
 import time
-from typing import Any, Iterable, Optional, Sequence, Union
+from typing import Any, Callable, Iterable, Optional, Sequence, Union
 
 from .utilities import var_dump, var_dump_log
 
@@ -50,6 +50,9 @@ class SqlDbFile():
     db_file_path: str
     max_query_time: Optional[float] = None
 
+    on_connect_callbacks: list[Callable[[], None]]
+    on_close_callbacks: list[Callable[[], None]]
+
     def __init__(self, db_file_path: str) -> None:
         self.db_file_path = db_file_path
 
@@ -63,14 +66,21 @@ class SqlDbFile():
             if not os.access(db_file_path, os.R_OK | os.W_OK):
                 raise ValueError("db_file_path {} is not readable or writeable!".format(db_file_path))
 
-    def _create_tables(self) -> None:
-        raise NotImplementedError()
+        self.on_connect_callbacks = []
+        self.on_close_callbacks = []
 
     def connection(self) -> sqlite3.Connection:
         if self.__connection is None:
             self.__connection = sqlite3.connect(self.db_file_path)
-            self._create_tables()
+            for callback in self.on_connect_callbacks:
+                callback()
         return self.__connection
+
+    def on_connect(self, callback: Callable[[], None]) -> None:
+        self.on_connect_callbacks.append(callback)
+
+    def on_close(self, callback: Callable[[], None]) -> None:
+        self.on_close_callbacks.append(callback)
 
     def cursor(self) -> sqlite3.Cursor:
         return self.connection().cursor()
@@ -183,6 +193,8 @@ class SqlDbFile():
 
     def close(self) -> None:
         if self.__connection is not None:
+            for callback in self.on_close_callbacks:
+                callback()
             if self.__connection.in_transaction:
                 raise Exception("Cannot close connection while in transaction!")
             self.__connection.close()

@@ -14,7 +14,7 @@ from aqt.utils import showInfo, askUser, showWarning
 from anki.collection import Collection
 
 from .frequencyman.lib.addon_config import AddonConfig
-from .frequencyman.reorder_logger import LanguageInfoData, ReorderLogger
+from .frequencyman.reorder_logger import LanguageInfoData, SqlDbFile, ReorderLogger
 
 from .frequencyman.ui.words_overview_tab import WordsOverviewTab, MatureWordsOverview
 from .frequencyman.ui.reorder_cards_tab import ReorderCardsTab
@@ -127,7 +127,7 @@ def get_info_items_from_config(mw: AnkiQt, config: JSON_TYPE, reorder_logger: Re
         open_words_overview_tab = lambda: open_frequencyman_word_overview(mw, str(info_target_id), str(info_lang_id))
         info_items.append(InfoItem(info_target_id, target_display_id, info_lang_id, lang_data, open_words_overview_tab))
 
-    reorder_logger.close()
+    reorder_logger.db.close()
 
     if not info_items:
         return None
@@ -196,7 +196,7 @@ def add_frequencyman_info_to_deck_browser(mw: AnkiQt, reorder_logger: ReorderLog
 
 if isinstance(mw, AnkiQt):
 
-    reorder_logger = ReorderLogger(os.path.join(FM_USER_FILES_DIR, 'reorder_log.sqlite'))
+    reorder_logger = ReorderLogger(SqlDbFile(os.path.join(FM_USER_FILES_DIR, 'reorder_log.sqlite')))
     fm_config = AddonConfig.from_anki_main_window(mw)
 
     register_frequencyman_dialogs(fm_config, reorder_logger)

@@ -437,7 +437,7 @@ class TargetList:
                     num_cards_repositioned += reorder_result.num_cards_repositioned
                     num_targets_repositioned += 1
 
-        self.cacher.close()
+        self.cacher.db.close()
 
         if num_cards_repositioned == 0:
             event_logger.add_entry("Order of cards from targets was already up-to-date!")

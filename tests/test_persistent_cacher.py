@@ -1,10 +1,10 @@
 import pytest
 import os
 from typing import Any, Generator
-from frequencyman.lib.persistent_cacher import PersistentCacher
+
+from frequencyman.lib.persistent_cacher import PersistentCacher, SqlDbFile
 
 # Utility function for producing a dummy value
-
 
 def dummy_producer() -> str:
     return "dummy_value"
@@ -13,7 +13,7 @@ def dummy_producer() -> str:
 @pytest.fixture
 def cacher(tmpdir: str) -> Generator[PersistentCacher, None, None]:
     db_path = os.path.join(tmpdir, "test_cache.db")
-    cacher = PersistentCacher(db_path, save_buffer_limit=2)
+    cacher = PersistentCacher(SqlDbFile(db_path), save_buffer_limit=2)
     yield cacher
     cacher.close()
 

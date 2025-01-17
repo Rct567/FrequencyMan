@@ -24,26 +24,27 @@ class LanguageInfoData(TypedDict):
 InfoPerLang = dict[str, LanguageInfoData]
 
 
-class ReorderLogger(SqlDbFile):
+class ReorderLogger():
 
+    db: SqlDbFile
     targets_languages: set[LangId]
 
     @override
-    def __init__(self, db_file: str):
-        super().__init__(db_file)
+    def __init__(self, db: SqlDbFile):
+        self.db = db
+        self.db.on_connect(self.__on_db_connect)
         self.targets_languages = set()
 
-    @override
-    def _create_tables(self) -> None:
+    def __on_db_connect(self) -> None:
 
-        self.create_table('reorders', {
+        self.db.create_table('reorders', {
             'id': 'INTEGER PRIMARY KEY',
             'num_targets': 'INTEGER',
             'num_targets_reordered': 'INTEGER',
             'created_at': 'INTEGER'
         })
 
-        self.create_table('reordered_targets', {
+        self.db.create_table('reordered_targets', {
             'id': 'TEXT',
             'reorder_id': 'INTEGER',
             'target_index': 'INTEGER',
@@ -53,9 +54,9 @@ class ReorderLogger(SqlDbFile):
             'num_notes': 'INTEGER',
             'num_new_notes': 'INTEGER'
         }, constraints='UNIQUE(reorder_id, id) ON CONFLICT FAIL')
-        self.create_index('reordered_targets', 'reordered_targets_reorder_id', ['reorder_id'])
+        self.db.create_index('reordered_targets', 'reordered_targets_reorder_id', ['reorder_id'])
 
-        self.create_table('target_segments', {
+        self.db.create_table('target_segments', {
             'id': 'INTEGER PRIMARY KEY',
             'reorder_id': 'INTEGER',
             'target_id': 'TEXT',
@@ -68,9 +69,9 @@ class ReorderLogger(SqlDbFile):
             'words_familiarity_median': 'FLOAT',
             'words_familiarity_max': 'FLOAT'
         }, constraints='UNIQUE(reorder_id, target_id, segment_id) ON CONFLICT FAIL')
-        self.create_index('target_segments', 'target_segments_reorder_id', ['reorder_id'])
+        self.db.create_index('target_segments', 'target_segments_reorder_id', ['reorder_id'])
 
-        self.create_table('target_reviewed_words', {
+        self.db.create_table('target_reviewed_words', {
             'target_id': 'TEXT',
             'lang_id': 'TEXT',
             'word': 'TEXT',
@@ -78,19 +79,19 @@ class ReorderLogger(SqlDbFile):
             'is_mature': 'INTEGER DEFAULT 0',
             'is_present': 'INTEGER DEFAULT 0'
         }, constraints='UNIQUE(target_id, lang_id, word) ON CONFLICT REPLACE')
-        self.create_index('target_reviewed_words', 'target_reviewed_words_target_id', ['target_id'])
-        self.create_index('target_reviewed_words', 'target_reviewed_words_lang_id_words', ['lang_id', 'word'])
+        self.db.create_index('target_reviewed_words', 'target_reviewed_words_target_id', ['target_id'])
+        self.db.create_index('target_reviewed_words', 'target_reviewed_words_lang_id_words', ['lang_id', 'word'])
 
-        self.create_table('target_languages', {
+        self.db.create_table('target_languages', {
             'reorder_id': 'INTEGER',
             'target_id': 'TEXT',
             'lang_id': 'TEXT',
             'num_words_reviewed': 'INTEGER',
             'num_words_mature': 'INTEGER'
         }, constraints='UNIQUE(reorder_id, target_id, lang_id) ON CONFLICT REPLACE')
-        self.create_index('target_languages', 'target_languages_reorder_id', ['reorder_id'])
+        self.db.create_index('target_languages', 'target_languages_reorder_id', ['reorder_id'])
 
-        self.create_table('global_languages', {
+        self.db.create_table('global_languages', {
             'lang_id': 'TEXT',
             'num_words_reviewed': 'INTEGER',
             'num_words_mature': 'INTEGER',
@@ -98,7 +99,7 @@ class ReorderLogger(SqlDbFile):
             'date_created': 'INTEGER'
         }, constraints='UNIQUE(reorder_id, lang_id) ON CONFLICT FAIL')
 
-        self.create_table('global_reviewed_words', {
+        self.db.create_table('global_reviewed_words', {
             'lang_id': 'TEXT',
             'word': 'TEXT',
             'familiarity': 'FLOAT DEFAULT 0.0',
@@ -106,7 +107,7 @@ class ReorderLogger(SqlDbFile):
             'is_present': 'INTEGER DEFAULT 0',
             'date_created': 'INTEGER'
         }, constraints='UNIQUE(lang_id, word) ON CONFLICT IGNORE')
-        self.create_index('global_reviewed_words', 'global_reviewed_words_lang_id_words', ['lang_id', 'word'])
+        self.db.create_index('global_reviewed_words', 'global_reviewed_words_lang_id_words', ['lang_id', 'word'])
 
     def log_reordering(self, targets: TargetList, target_reorder_result_list: TargetListReorderResult) -> int:
 
@@ -119,10 +120,10 @@ class ReorderLogger(SqlDbFile):
         if len(targets_with_id_str) == 0:
             return 0
 
-        if num_targets_reordered == 0 and self.count_rows("reorders") > 0:
+        if num_targets_reordered == 0 and self.db.count_rows("reorders") > 0:
             return 0
 
-        result = self.insert_row('reorders', {
+        result = self.db.insert_row('reorders', {
             'num_targets': len(targets.target_list),
             'num_targets_reordered': num_targets_reordered,
             'created_at': int(time())
@@ -138,14 +139,14 @@ class ReorderLogger(SqlDbFile):
                 num_entries_added += 1
 
         if num_entries_added == 0:
-            self.delete_row("reorders", "id = ?", reorder_id)
+            self.db.delete_row("reorders", "id = ?", reorder_id)
         elif self.targets_languages:
 
             targets_languages_str = ', '.join(['"'+str(lang_id)+'"' for lang_id in self.targets_languages])
 
             # update familiarity for each word
 
-            self.query('''UPDATE global_reviewed_words AS a SET familiarity = (
+            self.db.query('''UPDATE global_reviewed_words AS a SET familiarity = (
                 SELECT MAX(target_reviewed_words.familiarity) FROM target_reviewed_words
                 WHERE target_reviewed_words.lang_id = a.lang_id AND target_reviewed_words.word = a.word
             )
@@ -153,14 +154,14 @@ class ReorderLogger(SqlDbFile):
 
             # update is_present for each word
 
-            self.query('''UPDATE global_reviewed_words AS a SET is_present = (
+            self.db.query('''UPDATE global_reviewed_words AS a SET is_present = (
                 SELECT MAX(target_reviewed_words.is_present) FROM target_reviewed_words
                 WHERE target_reviewed_words.lang_id = a.lang_id AND target_reviewed_words.word = a.word
             ) WHERE lang_id IN ({})'''.format(targets_languages_str))
 
             # update words that have lost their maturity
 
-            self.query('''UPDATE global_reviewed_words AS a SET is_mature = 0
+            self.db.query('''UPDATE global_reviewed_words AS a SET is_mature = 0
             WHERE a.lang_id IN ({})
             AND a.is_mature > 0
             AND NOT EXISTS (
@@ -170,9 +171,9 @@ class ReorderLogger(SqlDbFile):
             # update num_words_mature for each language
 
             for lang_id in self.targets_languages:
-                num_words_reviewed = self.count_rows('global_reviewed_words', "lang_id = ? AND is_present > 0", str(lang_id))
-                num_words_mature = self.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0 AND is_present > 0", str(lang_id))
-                self.insert_row('global_languages', {
+                num_words_reviewed = self.db.count_rows('global_reviewed_words', "lang_id = ? AND is_present > 0", str(lang_id))
+                num_words_mature = self.db.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0 AND is_present > 0", str(lang_id))
+                self.db.insert_row('global_languages', {
                     'lang_id': str(lang_id),
                     'num_words_mature': num_words_mature,
                     'num_words_reviewed': num_words_reviewed,
@@ -180,10 +181,10 @@ class ReorderLogger(SqlDbFile):
                     'date_created': int(time())
                 })
 
-        if self.in_transaction():
-            self.commit()
+        if self.db.in_transaction():
+            self.db.commit()
 
-        self.close()
+        self.db.close()
         return num_entries_added
 
     def __add_entry(self, reorder_id: int, target: Target, target_reorder_result: TargetReorderResult) -> bool:
@@ -192,7 +193,7 @@ class ReorderLogger(SqlDbFile):
             return False
 
         if target_reorder_result.num_cards_repositioned == 0:
-            num_entries_for_target = self.count_rows("reordered_targets", "reorder_id = ?", reorder_id)
+            num_entries_for_target = self.db.count_rows("reordered_targets", "reorder_id = ?", reorder_id)
             if num_entries_for_target > 0:
                 return False
 
@@ -205,7 +206,7 @@ class ReorderLogger(SqlDbFile):
 
         # add entry for reordered target
 
-        self.insert_row('reordered_targets', {
+        self.db.insert_row('reordered_targets', {
             'id': target.id_str,
             'reorder_id': reorder_id,
             'target_index': target.index_num,
@@ -222,7 +223,7 @@ class ReorderLogger(SqlDbFile):
 
             self.targets_languages.add(segment_data.lang_id)
 
-            self.insert_row('target_segments', {
+            self.db.insert_row('target_segments', {
                 'reorder_id': reorder_id,
                 'target_id': target.id_str,
                 'segment_id': segment_id,
@@ -254,22 +255,22 @@ class ReorderLogger(SqlDbFile):
             for mature_words_batch in batched(mature_words, 2000):
                 mature_words_batch_str = ', '.join('?' for _ in mature_words_batch)
                 args = (int(time()), str(segment_data.lang_id)) + mature_words_batch
-                self.query('UPDATE global_reviewed_words SET is_mature = ? WHERE lang_id = ? AND word IN ({}) AND is_mature = 0'.format(mature_words_batch_str), args)
+                self.db.query('UPDATE global_reviewed_words SET is_mature = ? WHERE lang_id = ? AND word IN ({}) AND is_mature = 0'.format(mature_words_batch_str), args)
 
         for lang_id, reviewed_words in target_reviewed_words_per_lang.items():
             num_mature_words = len(target_mature_words_per_lang[lang_id])
-            self.insert_row('target_languages',
+            self.db.insert_row('target_languages',
                 {'reorder_id': reorder_id, 'target_id': target.id_str, 'lang_id': str(lang_id), 'num_words_reviewed': len(reviewed_words), 'num_words_mature': num_mature_words}
             )
 
-        self.query('UPDATE target_reviewed_words SET is_present = 0 WHERE target_id = ?', target.id_str)
+        self.db.query('UPDATE target_reviewed_words SET is_present = 0 WHERE target_id = ?', target.id_str)
 
         if target_reviewed_words:
-            self.insert_many_rows('target_reviewed_words',
+            self.db.insert_many_rows('target_reviewed_words',
                 ({'target_id': target.id_str, 'lang_id': word[1], 'word': word[2], 'familiarity': word[3], 'is_mature': word[4], 'is_present': 1} for word in target_reviewed_words)
             )
 
-            self.insert_many_rows('global_reviewed_words',
+            self.db.insert_many_rows('global_reviewed_words',
                 ({'lang_id': word[1], 'word': word[2], 'date_created': int(time()), 'is_mature': word[4]} for word in target_reviewed_words)
             )
 
@@ -281,10 +282,10 @@ class ReorderLogger(SqlDbFile):
 
         info: InfoPerLang = {}
 
-        if not self.db_exists():
+        if not self.db.db_exists():
             return info
 
-        result = self.query('''
+        result = self.db.query('''
         SELECT a.lang_id, a.num_words_mature, a.num_words_reviewed
         FROM global_languages a
         WHERE a.reorder_id IN (SELECT MAX(b.reorder_id) FROM global_languages b WHERE b.lang_id = a.lang_id)
@@ -305,10 +306,10 @@ class ReorderLogger(SqlDbFile):
 
         info_per_target: dict[str, InfoPerLang] = defaultdict(dict)
 
-        if not self.db_exists():
+        if not self.db.db_exists():
             return info_per_target
 
-        result = self.query('''
+        result = self.db.query('''
             SELECT a.* FROM target_languages a
             INNER JOIN reordered_targets ON reordered_targets.reorder_id = a.reorder_id
             INNER JOIN reorders ON reorders.id = a.reorder_id
@@ -324,3 +325,6 @@ class ReorderLogger(SqlDbFile):
             }
 
         return info_per_target
+
+    def close(self) -> None:
+        self.db.close()

@@ -10,7 +10,7 @@ from typing import Collection, Optional, Union
 from ..language_data import LanguageData
 from ..target_list import TargetList
 
-from ..lib.persistent_cacher import PersistentCacher
+from ..lib.persistent_cacher import PersistentCacher, SqlDbFile
 from ..lib.addon_config import AddonConfig
 from ..lib.utilities import var_dump_log, override
 
@@ -79,7 +79,7 @@ class FrequencyManTab(QWidget):
     @cached_property
     def cacher(self) -> PersistentCacher:
 
-        return PersistentCacher(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite'))
+        return PersistentCacher(SqlDbFile(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite')))
 
     def init_new_target_list(self) -> TargetList:
 

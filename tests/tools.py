@@ -13,7 +13,7 @@ from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
 from frequencyman.language_data import LangDataId, LanguageData
-from frequencyman.lib.persistent_cacher import PersistentCacher
+from frequencyman.lib.persistent_cacher import PersistentCacher, SqlDbFile
 from frequencyman.lib.utilities import var_dump_log
 
 
@@ -43,7 +43,7 @@ class TestCollection(Collection):
             if not TestCollections.cacher_data_cleared and os.path.exists(TestCollections.CACHER_FILE_PATH):
                 os.remove(TestCollections.CACHER_FILE_PATH)
                 TestCollections.cacher_data_cleared = True
-            TestCollections.CACHER = PersistentCacher(TestCollections.CACHER_FILE_PATH)
+            TestCollections.CACHER = PersistentCacher(SqlDbFile(TestCollections.CACHER_FILE_PATH))
         else:
             TestCollections.CACHER.close()
         self.cacher = TestCollections.CACHER

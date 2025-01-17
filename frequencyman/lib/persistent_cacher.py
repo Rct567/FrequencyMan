@@ -12,7 +12,6 @@ from typing import Any, Callable, Optional, TypeVar
 from time import time
 
 from .sql_db_file import SqlDbFile
-from .utilities import override
 
 T = TypeVar('T')
 
@@ -23,20 +22,24 @@ class SerializationType(Enum):
     LIST_STR = 2
 
 
-class PersistentCacher(SqlDbFile):
+class PersistentCacher():
 
-    def __init__(self, db_file_path: str, save_buffer_limit: int = 10_000) -> None:
+    db: SqlDbFile
 
-        super().__init__(db_file_path)
+    def __init__(self, db: SqlDbFile, save_buffer_limit: int = 10_000) -> None:
+
+        self.db = db
+        self.db.on_connect(self.__on_db_connect)
+        self.db.on_close(self.__on_db_close)
 
         self._save_buffer: dict[str, tuple[str, SerializationType, int]] = {}
         self._save_buffer_num_limit = save_buffer_limit
         self._pre_loaded_cache: dict[str, Any] = {}
         self._items_preloaded = False
 
-    @override
-    def _create_tables(self) -> None:
-        self.query('''
+
+    def __on_db_connect(self) -> None:
+        self.db.query('''
             CREATE TABLE IF NOT EXISTS cache_items (
                 id BLOB(16) PRIMARY KEY,
                 value TEXT,
@@ -44,7 +47,7 @@ class PersistentCacher(SqlDbFile):
                 created_at INTEGER
             )
         ''')
-        self.commit()
+        self.db.commit()
 
     @staticmethod
     def _hash_id_bin(cache_id: str) -> bytes:
@@ -96,7 +99,7 @@ class PersistentCacher(SqlDbFile):
         if self._items_preloaded:
             return
 
-        result = self.query('SELECT id, value, storage_type FROM cache_items')
+        result = self.db.query('SELECT id, value, storage_type FROM cache_items')
         for row in result.fetch_rows():
             hashed_cache_id = self.binary_to_hex(row['id'])
             assert len(hashed_cache_id) == 32
@@ -106,14 +109,14 @@ class PersistentCacher(SqlDbFile):
     def num_items_stored(self) -> int:
         if self._save_buffer:
             raise Exception("Cannot call num_items_stored() if save_buffer is not empty")
-        return self.count_rows("cache_items")
+        return self.db.count_rows("cache_items")
 
     def get_item(self, cache_id: str, producer: Callable[..., T]) -> T:
 
         if (hashed_cache_id := self._hash_id_hex(cache_id)) in self._pre_loaded_cache:
             return self._pre_loaded_cache[hashed_cache_id]
 
-        result = self.query('SELECT value, storage_type, created_at FROM cache_items WHERE id = ?', self._hash_id_bin(cache_id))
+        result = self.db.query('SELECT value, storage_type, created_at FROM cache_items WHERE id = ?', self._hash_id_bin(cache_id))
         row = result.fetch_row()
 
         if row:
@@ -124,8 +127,8 @@ class PersistentCacher(SqlDbFile):
         return result
 
     def delete_item(self, cache_id: str) -> None:
-        self.delete_row('cache_items', 'id = ?', self._hash_id_bin(cache_id))
-        self.commit()
+        self.db.delete_row('cache_items', 'id = ?', self._hash_id_bin(cache_id))
+        self.db.commit()
         if (hashed_cache_id := self._hash_id_hex(cache_id)) in self._pre_loaded_cache:
             del self._pre_loaded_cache[hashed_cache_id]
 
@@ -149,15 +152,16 @@ class PersistentCacher(SqlDbFile):
             return
 
         save_buffer_items = ((self._hash_id_bin(id), values[0], values[1].value, values[2]) for id, values in self._save_buffer.items())
-        self.query_many('''
+        self.db.query_many('''
             INSERT OR REPLACE INTO cache_items (id, value, storage_type, created_at) VALUES (?, ?, ?, ?)
         ''', save_buffer_items)
-        self.commit()
+        self.db.commit()
 
         self._save_buffer.clear()
         self.clear_pre_loaded_cache()
 
-    @override
-    def close(self) -> None:
+    def __on_db_close(self) -> None:
         self.flush_save_buffer()
-        super().close()
+
+    def close(self) -> None:
+        self.db.close()

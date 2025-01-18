@@ -22,14 +22,29 @@ from ..lib.utilities import var_dump, var_dump_log
 from .main_window import FrequencyManMainWindow
 
 
-class SelectNewTargetWindow(QDialog):
+class ItemsList:
 
+    view: QListView
+    model: QStringListModel
+
+    def __init__(self, items: list[str], multi_select: bool = False):
+
+        self.view = QListView()
+        self.view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        self.model = QStringListModel(items)
+        self.view.setModel(self.model)
+
+        if multi_select:
+            self.view.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+
+
+class SelectNewTargetWindow(QDialog):
     selected_deck: str
     selected_note_type: str
     selected_fields: dict[str, str]
 
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection):
-
         super().__init__(fm_window)
         self.col = col
         self.setWindowTitle("Select new target")
@@ -47,50 +62,41 @@ class SelectNewTargetWindow(QDialog):
         self.deck_label = QLabel("Deck:")
         self.deck_filter = QLineEdit()
         self.deck_filter.setPlaceholderText("Filter decks...")
-        self.deck_list_view = QListView()
         deck_names = [deck.name for deck in self.__get_sorted_decks()]
-        self.deck_list_model = QStringListModel(deck_names)
+        self.deck_list = ItemsList(deck_names)
         if len(deck_names) > 10:
-            self.deck_list_view.setMinimumHeight(185)
-        self.deck_list_view.setModel(self.deck_list_model)
-        if (selection_model := self.deck_list_view.selectionModel()) is not None:
+            self.deck_list.view.setMinimumHeight(185)
+        if (selection_model := self.deck_list.view.selectionModel()) is not None:
             selection_model.selectionChanged.connect(self.__on_deck_selection_change)
         self.deck_filter.textChanged.connect(self.__filter_decks)
 
         layout.addWidget(self.deck_label)
         layout.addWidget(self.deck_filter)
-        layout.addWidget(self.deck_list_view)
+        layout.addWidget(self.deck_list.view)
 
         # Note type selection
         self.note_label = QLabel("Note type:")
         self.note_label.setContentsMargins(0, 10, 0, 0)
         self.note_filter = QLineEdit()
         self.note_filter.setPlaceholderText("Filter note types...")
-        self.note_list_view = QListView()
-        # self.note_list_view.setMinimumHeight(200)
-        self.note_list_model = QStringListModel([model.name for model in self.__get_sorted_note_types()])
-
-        self.note_list_view.setModel(self.note_list_model)
-        if (selection_model := self.note_list_view.selectionModel()) is not None:
+        self.note_list = ItemsList([model.name for model in self.__get_sorted_note_types()])
+        if (selection_model := self.note_list.view.selectionModel()) is not None:
             selection_model.selectionChanged.connect(self.__on_note_selection_change)
         self.note_filter.textChanged.connect(self.__filter_notes)
 
         layout.addWidget(self.note_label)
         layout.addWidget(self.note_filter)
-        layout.addWidget(self.note_list_view)
+        layout.addWidget(self.note_list.view)
 
         # Field selection
         self.fields_label = QLabel("Fields:")
         self.fields_label.setContentsMargins(0, 10, 0, 0)
         self.fields_label.setMargin(0)
         self.fields_label.setVisible(False)
-        self.fields_list_view = QListView()
-        self.fields_list_view.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-        self.fields_list_view.setVisible(False)
-        self.fields_list_model = QStringListModel()
-        self.fields_list_view.setModel(self.fields_list_model)
+        self.fields_list = ItemsList([], multi_select=True)
+        self.fields_list.view.setVisible(False)
         layout.addWidget(self.fields_label)
-        layout.addWidget(self.fields_list_view)
+        layout.addWidget(self.fields_list.view)
 
         layout.addItem(QSpacerItem(100, 25, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
         layout.addItem(QSpacerItem(100, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed))
@@ -101,7 +107,7 @@ class SelectNewTargetWindow(QDialog):
 
         # Add target button
         self.submit_button = QPushButton("Add Target")
-        self.submit_button.setEnabled(False)  # Initially disabled
+        self.submit_button.setEnabled(False)
         self.submit_button.clicked.connect(self.__submit_button_clicked)
         layout.addWidget(self.submit_button)
 
@@ -138,11 +144,11 @@ class SelectNewTargetWindow(QDialog):
         return sorted_note_type_counts
 
     def __set_decks_list(self, strings: Sequence[str]) -> None:
-        self.deck_list_model.setStringList(strings)
+        self.deck_list.model.setStringList(strings)
         self.__on_deck_selection_change()  # deselected
 
     def __set_note_types_list(self, strings: Sequence[str]) -> None:
-        self.note_list_model.setStringList(strings)
+        self.note_list.model.setStringList(strings)
         self.__on_note_selection_change()  # deselected
 
     def __filter_decks(self, needle: str) -> None:
@@ -154,7 +160,7 @@ class SelectNewTargetWindow(QDialog):
         self.__set_note_types_list(filtered_notes)
 
     def __on_deck_selection_change(self) -> None:
-        if (selection_model := self.deck_list_view.selectionModel()) is None:
+        if (selection_model := self.deck_list.view.selectionModel()) is None:
             return
         selected_indexes = selection_model.selectedIndexes()
         if selected_indexes:
@@ -171,7 +177,7 @@ class SelectNewTargetWindow(QDialog):
         self.__on_selection_change()
 
     def __on_note_selection_change(self) -> None:
-        if (selection_model := self.note_list_view.selectionModel()) is None:
+        if (selection_model := self.note_list.view.selectionModel()) is None:
             return
         selected_indexes = selection_model.selectedIndexes()
         if selected_indexes:
@@ -183,7 +189,7 @@ class SelectNewTargetWindow(QDialog):
 
     def __on_selection_change(self) -> None:
         self.fields_label.setVisible(self.selected_note_type != "")
-        self.fields_list_view.setVisible(self.selected_note_type != "")
+        self.fields_list.view.setVisible(self.selected_note_type != "")
         self.submit_button.setEnabled(self.selected_deck != "" and self.selected_note_type != "")
 
         if self.selected_deck != "" and self.selected_note_type != "":
@@ -204,11 +210,10 @@ class SelectNewTargetWindow(QDialog):
             return
 
         note_field_names = [str(field['name']) for field in note_model['flds']]
-        self.fields_list_model.setStringList(note_field_names)
+        self.fields_list.model.setStringList(note_field_names)
 
     @staticmethod
     def get_lang_data_id_suggestion(field_name: str, note_type_name: str, deck_name: str) -> str:
-
         field_name_lower = field_name.lower()
         note_type_name_lower = note_type_name.lower()
         deck_name_lower = deck_name.lower()
@@ -230,7 +235,6 @@ class SelectNewTargetWindow(QDialog):
                 lang_names[lang_id] += NAMES_FOR_THE_ENGLISH_LANGUAGE
 
         # check by deck name
-
         if field_name_lower == 'sentence' or field_name_lower == 'word':
             for lang_id, names in lang_names.items():
                 for name in names:
@@ -238,14 +242,12 @@ class SelectNewTargetWindow(QDialog):
                         return lang_id
 
         # check by field name
-
         for lang_id, names in lang_names.items():
             for name in names:
                 if name in field_name_lower:
                     return lang_id
 
         # check by note type name
-
         for lang_id, names in lang_names.items():
             for name in names:
                 if name in note_type_name_lower:
@@ -254,8 +256,8 @@ class SelectNewTargetWindow(QDialog):
         return ""
 
     def __submit_button_clicked(self) -> None:
-        selected_indexes = self.fields_list_view.selectedIndexes()
-        selected_fields = [self.fields_list_model.data(index) for index in selected_indexes]
+        selected_indexes = self.fields_list.view.selectedIndexes()
+        selected_fields = [self.fields_list.model.data(index) for index in selected_indexes]
         self.selected_fields = {field_name: '' for field_name in selected_fields}
         for field_name in self.selected_fields.keys():
             default_lang_data_id = self.get_lang_data_id_suggestion(field_name, self.selected_note_type, self.selected_deck)

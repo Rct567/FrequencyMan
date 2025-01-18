@@ -556,3 +556,52 @@ class TestTargetListReorder():
             col.lock_and_assert_order('all_cards_ids_'+ranking_factor, target_list[0].get_cards_non_cached().all_cards_ids)
 
             col.close()
+
+    @freeze_time_anki("2023-12-01")
+    def test_zh_and_ja(self):
+
+        col = TestCollections.get_test_collection('zh_and_ja')  # Chinese and Japanese, one card per deck, no word frequency files
+
+        target_list = TargetList(col.lang_data, col.cacher, col)
+
+        target_list.set_targets([
+            {
+                "deck": "JA",
+                "notes": [
+                    {
+                        "name": "Basic",
+                        "fields": {
+                            "Front": "ja"
+                        }
+                    }
+                ]
+            },
+            {
+                "deck": "ZH",
+                "notes": [
+                    {
+                        "name": "Basic",
+                        "fields": {
+                            "Front": "zh"
+                        }
+                    }
+                ]
+            }
+        ])
+
+        # reorder cards
+        event_logger = EventLogger()
+        target_list.reorder_cards(col, event_logger)
+
+        assert "Used tokenizer 'anki_morphs_jieba_tokenizer' for 'zh'" in str(event_logger)
+        assert "Used tokenizer 'anki_morphs_mecab_tokenizer' for 'ja'" in str(event_logger)
+        assert "0 cards repositioned" in str(event_logger)
+
+        for target in target_list.target_list:
+            assert target.corpus_data is not None
+
+            all_words: list[str] = []
+            for segment_data in target.corpus_data.content_metrics.values():
+                all_words.extend(segment_data.all_words)
+
+            col.lock_and_assert_result('all_words_'+str(target.index_num), sorted(all_words))

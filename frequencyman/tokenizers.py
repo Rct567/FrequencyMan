@@ -25,19 +25,19 @@ Tokenizer = Callable[[str], list[str]]
 class Tokenizers:
 
     tokenizers: dict[LangId, list[Tokenizer]]
-    tokenizers_hashes: set[int]
+    registered_tokenizers: set[Tokenizer]
 
     def __init__(self) -> None:
         self.tokenizers = defaultdict(list)
-        self.tokenizers_hashes = set()
+        self.registered_tokenizers = set()
 
     def register(self, lang_id: LangId, tokenizer: Tokenizer) -> None:
 
-        if hash(tokenizer) in self.tokenizers_hashes:
+        if tokenizer in self.registered_tokenizers:
             raise ValueError("Tokenizer '{}' already registered!".format(tokenizer.__name__))
 
         self.tokenizers[lang_id].append(tokenizer)
-        self.tokenizers_hashes.add(hash(tokenizer))
+        self.registered_tokenizers.add(tokenizer)
 
     def get_tokenizer(self, lang_id: LangId) -> Tokenizer:
 

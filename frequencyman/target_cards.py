@@ -16,7 +16,7 @@ from anki.utils import int_time
 from .lib.utilities import var_dump, var_dump_log
 
 
-@dataclass
+@dataclass(frozen=True)
 class TargetCard:
     id: CardId
     nid: NoteId
@@ -31,16 +31,19 @@ class TargetCard:
     days_overdue: Optional[int] = None
 
     @staticmethod
-    def get_days_overdue(card: 'TargetCard', col: Collection) -> Optional[int]:
+    def get_days_overdue(card_queue: int, card_type: int, card_due: int, col: Collection) -> Optional[int]:
 
-        if card.queue != 2:
+        assert -3 < card_queue < 5
+        assert 0 < card_type < 4
+
+        if card_queue != 2:
             return None
-        if card.type != 2:
+        if card_type != 2:
             return None
 
         now = int_time()
         collection_time = col.crt
-        due_date = collection_time + (card.due * 86400)
+        due_date = collection_time + (card_due * 86400)
 
         rollover = col.conf['rollover']
 
@@ -109,15 +112,22 @@ class TargetCards:
         leech_cards_ids = self.__get_leech_cards_ids()
 
         for card_row in cards:
-            card = TargetCard(*card_row, is_leech=False, is_suspended=False)
-            card.is_leech = card.id in leech_cards_ids
-            card.is_suspended = card.queue == -1
-            if card.queue == 0:
+
+            (card_id, card_type, card_queue, card_due) = (card_row[0], card_row[2], card_row[3], card_row[7])
+            is_leech = card_id in leech_cards_ids
+            is_suspended = card_queue == -1
+            if card_queue != 0 and card_type == 2:
+                days_overdue = TargetCard.get_days_overdue(card_queue, card_type, card_due, self.col)
+            else:
+                days_overdue = None
+
+            card = TargetCard(*card_row, is_leech=is_leech, is_suspended=is_suspended, days_overdue=days_overdue)
+
+            if card.queue == 0: 
                 new_cards.append(card)
                 new_cards_ids.append(card.id)
                 new_cards_notes_ids.append(card.nid)
             if card.queue != 0 and card.type == 2:
-                card.days_overdue = TargetCard.get_days_overdue(card, self.col)
                 reviewed_cards.append(card)
             all_cards.append(card)
             all_cards_notes_ids.append(card.nid)

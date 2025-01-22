@@ -328,7 +328,7 @@ class TargetCorpusData:
         self.content_metrics = {}
         self.focus_words_max_familiarity = 0.28
         self.familiarity_sweetspot_point = "~0.5"
-        self.suspended_card_value = 0.1
+        self.suspended_card_value = 0.25
         self.suspended_leech_card_value = 0.0
         self.segmentation_strategy = CorpusSegmentationStrategy.BY_LANG_DATA_ID
 

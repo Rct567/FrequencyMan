@@ -36,9 +36,9 @@ class TargetCard:
         assert -3 < card_queue < 5
         assert 0 < card_type < 4
 
-        if card_queue != 2:
-            return None
-        if card_type != 2:
+        is_review = card_queue != 0 and card_type == 2
+
+        if not is_review:
             return None
 
         now = int_time()
@@ -116,18 +116,22 @@ class TargetCards:
             (card_id, card_type, card_queue, card_due) = (card_row[0], card_row[2], card_row[3], card_row[7])
             is_leech = card_id in leech_cards_ids
             is_suspended = card_queue == -1
-            if card_queue != 0 and card_type == 2:
+            is_new = card_queue == 0
+            is_reviewed = card_queue != 0 and card_type == 2
+            assert not (is_new and is_reviewed)
+
+            if is_reviewed:
                 days_overdue = TargetCard.get_days_overdue(card_queue, card_type, card_due, self.col)
             else:
                 days_overdue = None
 
             card = TargetCard(*card_row, is_leech=is_leech, is_suspended=is_suspended, days_overdue=days_overdue)
 
-            if card.queue == 0: 
+            if is_new:
                 new_cards.append(card)
                 new_cards_ids.append(card.id)
                 new_cards_notes_ids.append(card.nid)
-            if card.queue != 0 and card.type == 2:
+            if is_reviewed:
                 reviewed_cards.append(card)
             all_cards.append(card)
             all_cards_notes_ids.append(card.nid)

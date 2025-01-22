@@ -445,14 +445,17 @@ class TargetCorpusData:
             return normalized
 
         for card in cards:
-            card_interval_score = normalize_against_baseline(card.ivl, 300)
-            card_ease_score = normalize_against_baseline(card.ease_factor, 2500)
-            card_reps_score = normalize_against_baseline(card.reps, 12)
-            card_score = (card_interval_score + (card_ease_score/4) + (card_reps_score/8)) / 1.375
-            if card.days_overdue is not None and card.days_overdue > 0:
-                relative_overdue = card.days_overdue/card.ivl
-                dev = (1+relative_overdue)**3
-                card_score = card_score/dev
+            if card.reps < 1 or card.ivl < 1:
+                card_score = 0
+            else:
+                card_interval_score = normalize_against_baseline(card.ivl, 300)
+                card_ease_score = normalize_against_baseline(card.ease_factor, 2500)
+                card_reps_score = normalize_against_baseline(card.reps, 12)
+                card_score = (card_interval_score + (card_ease_score/4) + (card_reps_score/8)) / 1.375
+                if card.days_overdue is not None and card.days_overdue > 0:
+                    relative_overdue = card.days_overdue/card.ivl
+                    dev = (1+relative_overdue)**3
+                    card_score = card_score/dev
             assert card_score < 2
             cards_familiarity[card.id] = card_score
 

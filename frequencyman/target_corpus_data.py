@@ -451,7 +451,11 @@ class TargetCorpusData:
                 card_interval_score = normalize_against_baseline(card.ivl, 300)
                 card_ease_score = normalize_against_baseline(card.ease_factor, 2500)
                 card_reps_score = normalize_against_baseline(card.reps, 12)
-                card_score = (card_interval_score + (card_ease_score/4) + (card_reps_score/8)) / 1.375
+                if card_reps_score > 1:
+                    card_reps_score = (0.75+card_reps_score)/1.75
+                interval_offset = ((card_ease_score+1.25)/2.25)
+                card_score = ( (card_interval_score*interval_offset) + (card_ease_score/4) + (card_reps_score/10) ) / 1.35
+
                 if card.days_overdue is not None and card.days_overdue > 0:
                     relative_overdue = card.days_overdue/card.ivl
                     dev = (1+relative_overdue)**3

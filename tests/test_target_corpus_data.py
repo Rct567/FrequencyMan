@@ -29,20 +29,39 @@ class TestTargetCorpusData:
         # test mature cards
 
         mature_scored_cards: list[TargetCard] = [
-            create_card(300, 2500, 12),
-            create_card(280, 4000, 36),
+            create_card(700, 2000, 20),
+            create_card(320, 2200, 12),
+            create_card(300, 2500, 12), # base
+            create_card(280, 2600, 14),
+            create_card(270, 3600, 14),
         ]
 
-        for card in mature_scored_cards:
-            assert card_familiarity_score(card) >= 1.0
+        for index, card in enumerate(mature_scored_cards):
+            assert card_familiarity_score(card) >= 1.0, index
+
+        # test immature cards
+
+        immature_scored_cards: list[TargetCard] = [
+            create_card(310, 1950, 14),
+            create_card(300, 2400, 12),
+            create_card(290, 2500, 50),
+            create_card(260, 3500, 100),
+        ]
+
+        for index, card in enumerate(immature_scored_cards):
+            assert card_familiarity_score(card) < 1.0, index
 
         # test scores
 
         cards_scores_expectations: dict[TargetCard, tuple[float, int]] = {
+            create_card(0, 2500, 0): (0.0, 10),
+            create_card(0, 2500, 1): (0.0, 10),
+            create_card(1, 2500, 0): (0.0, 10),
             create_card(300, 2500, 12): (1.0, 10),
             create_card(150, 2500, 10): (0.6, 1),
             create_card(125, 2700, 10): (0.6, 1),
             create_card(100, 3300, 10): (0.5, 1),
+            create_card(105, 1800, 20): (0.4, 1),
         }
 
         for index, (card, expected_score) in enumerate(cards_scores_expectations.items()):

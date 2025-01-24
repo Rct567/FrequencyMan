@@ -1,11 +1,11 @@
 DEFAULT_WF_LISTS_SOURCES = {
-    'en': 'https://raw.githubusercontent.com/orgtre/google-books-ngram-frequency/main/ngrams/1grams_english.csv',
-    'es': 'https://raw.githubusercontent.com/orgtre/google-books-ngram-frequency/main/ngrams/1grams_spanish.csv',
-    'fr': 'https://raw.githubusercontent.com/orgtre/google-books-ngram-frequency/main/ngrams/1grams_french.csv',
-    'de': 'https://raw.githubusercontent.com/orgtre/google-books-ngram-frequency/main/ngrams/1grams_german.csv',
-    'it': 'https://raw.githubusercontent.com/orgtre/google-books-ngram-frequency/main/ngrams/1grams_italian.csv',
-    'ru': 'https://raw.githubusercontent.com/orgtre/google-books-ngram-frequency/main/ngrams/1grams_russian.csv',
-    'zh': 'https://raw.githubusercontent.com/orgtre/google-books-ngram-frequency/main/ngrams/1grams_chinese_simplified.csv',
+    'en': 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_full.txt',
+    'es': 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/es/es_full.txt',
+    'fr': 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/fr/fr_full.txt',
+    'de': 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/de/de_full.txt',
+    'it': 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/it/it_full.txt',
+    'ru': 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ru/ru_full.txt',
+    'zh': 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/zh_cn/zh_cn_full.txt',
     'af': "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/af/af_full.txt",
     'ar': "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ar/ar_full.txt",
     'bg': "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/bg/bg_full.txt",
@@ -60,7 +60,7 @@ DEFAULT_WF_LISTS_SOURCES = {
     'vi': "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/vi/vi_full.txt",
     'ze_en': "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ze_en/ze_en_full.txt",
     'ze_zh': "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ze_zh/ze_zh_full.txt",
-    'zh_cn': "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/zh_cn/zh_cn_full.txt",
+     #'zh_cn': "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/zh_cn/zh_cn_full.txt",
     'zh_tw': "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/zh_tw/zh_tw_full.txt",
 }
 

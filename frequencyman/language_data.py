@@ -3,6 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from collections import defaultdict
 import re
 from typing import Iterator, NewType, Optional
 
@@ -62,23 +63,57 @@ class WordFrequencyLists:
         if self.word_frequency_lists is None:
             self.word_frequency_lists = {}
 
-        self.word_frequency_lists[lang_data_id] = self.__produce_combined_list(files, lang_data_id)
+        self.word_frequency_lists[lang_data_id] = WordFrequencyLists.__produce_combined_list(files, lang_data_id)
 
-    def __produce_combined_list(self, files: set[str], lang_data_id: LangDataId) -> dict[str, float]:
 
-        words_positions_combined: dict[str, float] = {}
+    @staticmethod
+    def combine_lists_by_top_position(lists: Iterable[Iterable[tuple[str, int]]]) -> dict[str, int]:
+
+        words_positions_combined: dict[str, int] = {}
+
+        for word_list in lists:
+
+            for word, line_number in word_list:
+                assert line_number > 0
+                if word not in words_positions_combined or line_number < words_positions_combined[word]:
+                    words_positions_combined[word] = line_number
+
+        return words_positions_combined
+
+    @staticmethod
+    def combine_lists_by_avg_position(wf_lists: Iterable[Iterable[tuple[str, int]]]) -> dict[str, int]:
+
+        word_positions: dict[str, list[int]] = defaultdict(list)
+        wf_list_num = 0
+        lowest_position = 0
+
+        for wf_list in wf_lists:
+            for word, line_number in wf_list:
+                word_positions[word].append(line_number)
+                if line_number > lowest_position:
+                    lowest_position = line_number
+            wf_list_num += 1
+
+        for word, positions in word_positions.items():
+            if len(positions) < wf_list_num:
+                #word_positions[word].extend([ int(mean(positions)*2.5) for _ in range(wf_list_num-len(positions)) ])
+                word_positions[word].extend([ lowest_position+1 for _ in range(wf_list_num-len(positions)) ])
+
+        combined_positions: dict[str, float] = {word: sum(positions) / len(positions) for word, positions in word_positions.items()}
+        combined_positions = dict(sorted(combined_positions.items(), key=lambda item: item[1]))
+        return {word: int(position) for word, position in combined_positions.items()}
+
+
+    @staticmethod
+    def __produce_combined_list(files: set[str], lang_data_id: LangDataId) -> dict[str, float]:
+
         lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
-
-        for file_path in files:
-            for word, line_number in self.get_words_from_file(file_path, lang_id):
-                position_value = 1/line_number
-                if word not in words_positions_combined or position_value > words_positions_combined[word]:  # highest position among lists (lowest line number)
-                    words_positions_combined[word] = position_value
+        words_positions_combined = WordFrequencyLists.combine_lists_by_top_position((WordFrequencyLists.get_words_from_file(file_path, lang_id) for file_path in files))
 
         if not words_positions_combined:
             return {}
 
-        words_positions_combined = sort_dict_floats_values(words_positions_combined)
+        words_positions_combined = sort_dict_floats_values({word: 1/line_number for word, line_number in words_positions_combined.items()})
         words_positions_combined = normalize_dict_positional_floats_values(words_positions_combined)
 
         return words_positions_combined
@@ -86,33 +121,42 @@ class WordFrequencyLists:
     @staticmethod
     def get_words_from_file(file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:
 
+        with open(file_path, encoding='utf-8') as text_file:
+            for word, line_number in WordFrequencyLists.get_words_from_content(text_file, file_path, lang_id):
+                yield word, line_number
+
+
+    @staticmethod
+    def get_words_from_content(content:Iterable[str], file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:
+
         line_number = 1
         is_csv_file = file_path.endswith('.csv')
         csv_patters = re.compile(r'(?:^|,)(?=[^"]|(")?)"?([^",]*)"?(")?,(?:.|$)')
         is_acceptable_word = TextProcessing.get_word_accepter(lang_id)
 
-        with open(file_path, encoding='utf-8') as text_file:
-            for line in text_file:
-                if is_csv_file:
-                    if line_number == 1 and 'freq' in line:
-                        continue
-                    first_column = re.match(csv_patters, line)
-                    if first_column:
-                        word = first_column.group(2)
-                    else:
-                        continue
+        for line in content:
+            if isinstance(line, bytes):
+                    line = line.decode('utf-8')
+            if is_csv_file:
+                if line_number == 1 and 'freq' in line:
+                    continue
+                first_column = re.match(csv_patters, line)
+                if first_column:
+                    word = first_column.group(2)
                 else:
-                    line = line.rstrip()
-                    last_space_index = line.rfind(' ')
-                    if last_space_index != -1 and last_space_index < len(line) - 1 and line[last_space_index + 1:].isdigit():
-                        word = line[:last_space_index]
-                    else:
-                        word = line
+                    continue
+            else:
+                line = line.rstrip()
+                last_space_index = line.rfind(' ')
+                if last_space_index != -1 and last_space_index < len(line) - 1 and line[last_space_index + 1:].isdigit():
+                    word = line[:last_space_index]
+                else:
+                    word = line
 
-                word = word.strip().lower()
-                if is_acceptable_word(word):
-                    yield word, line_number
-                    line_number += 1
+            word = word.strip().lower()
+            if is_acceptable_word(word):
+                yield word, line_number
+                line_number += 1
 
 
 class IgnoreLists:

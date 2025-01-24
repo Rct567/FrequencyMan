@@ -134,41 +134,38 @@ class CardRanker:
     @staticmethod
     def __calc_proper_introduction_score(field_metrics: FieldMetrics, field_data: NoteFieldContentData) -> tuple[Optional[WordToken], float]:
 
-        if len(field_data.field_value_tokenized) == 0:
+        if not field_data.field_value_tokenized:
             return (None, 0)
 
         assert len(field_metrics.words_familiarity_positional_scores) == len(field_metrics.words_fr_scores)
-        assert len(field_metrics.lowest_fr_least_familiar_word[0]) > 0
+        assert field_metrics.lowest_fr_least_familiar_word[0]
 
         # get new word (by lowest_fr_least_familiar_word word frequency)
-
         intro_word = field_metrics.lowest_fr_least_familiar_word[0]
 
         # position of new word in field
-
         intro_word_index = field_data.field_value_tokenized.index(intro_word)
-        intro_word_position_score = 1/(1+(intro_word_index/4))
+        intro_word_position_score = 1 / (1 + (intro_word_index / 4))
 
         # single new word factor
-
         num_new_words = len(field_metrics.new_words)
         single_new_word_score = 0.0 if num_new_words > 1 else 1.0
 
         # no repeat factor
-
         intro_word_no_repeat_factor = 1 / field_data.field_value_tokenized.count(intro_word)
-        general_no_repeat_factor = 1 / (1+(field_metrics.num_words-len(field_metrics.unique_words)))
-        no_repeat_score = (intro_word_no_repeat_factor+general_no_repeat_factor+1)/3
+        general_no_repeat_factor = 1 / (1 + (field_metrics.num_words - len(field_metrics.unique_words)))
+        no_repeat_score = (intro_word_no_repeat_factor + general_no_repeat_factor + 1) / 3
 
-        # non obscurity of other words
+        # non-obscurity of other words
 
         other_words = [word for word in field_metrics.words_fr_scores.keys() if word != intro_word]
         non_obscurity_others_words_score = 0.0
 
-        if len(other_words) > 0:
+        if other_words:
             lowest_wf_other_words = min(field_metrics.words_fr_scores[word] for word in other_words)
             lowest_familiarity_other_words = min(field_metrics.words_familiarity_positional_scores[word] for word in other_words)
-            non_obscurity_others_words_score = (min(lowest_wf_other_words, lowest_familiarity_other_words) + ((lowest_wf_other_words+lowest_familiarity_other_words)/2)) / 2
+            non_obscurity_others_words_score = (min(lowest_wf_other_words, lowest_familiarity_other_words) +
+                                                (lowest_wf_other_words + lowest_familiarity_other_words) / 2) / 2
 
         assert non_obscurity_others_words_score <= 1
 
@@ -179,11 +176,12 @@ class CardRanker:
             field_metrics.ideal_words_count_score,
             intro_word_position_score,
             single_new_word_score,
-            non_obscurity_others_words_score,
             no_repeat_score,
+            non_obscurity_others_words_score
         ]
 
         proper_introduction_score = fmean(factors)
+
         return (intro_word, proper_introduction_score)
 
 

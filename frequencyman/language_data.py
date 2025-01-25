@@ -72,7 +72,6 @@ class WordFrequencyLists:
         words_positions_combined: dict[str, int] = {}
 
         for word_list in lists:
-
             for word, line_number in word_list:
                 assert line_number > 0
                 if word not in words_positions_combined or line_number < words_positions_combined[word]:
@@ -89,6 +88,7 @@ class WordFrequencyLists:
 
         for wf_list in wf_lists:
             for word, line_number in wf_list:
+                assert line_number > 0
                 word_positions[word].append(line_number)
                 if line_number > lowest_position:
                     lowest_position = line_number

@@ -1,7 +1,6 @@
-from math import exp
 import os
 import pytest
-from frequencyman.language_data import LangDataId, LanguageData
+from frequencyman.language_data import LangDataId, LanguageData, WordFrequencyLists
 
 
 LIST_DIR = os.path.join(os.path.dirname(__file__), 'data', 'lang_data_test', 'lang_data')
@@ -136,3 +135,120 @@ def test_list_not_yet_loaded(lang_data: LanguageData):
 
     with pytest.raises(Exception, match="No word frequency lists loaded"):
         lang_data.get_word_frequency(LangDataId('en'), 'aaa', default=-1.0)
+
+
+# Tests for combine_lists_by_top_position
+
+combine_lists_by_top_position = WordFrequencyLists.combine_lists_by_top_position
+
+
+def test_combine_lists_by_top_position_empty():
+
+    result = combine_lists_by_top_position([])
+    assert result == {}
+
+
+def test_combine_lists_by_top_position_single_list():
+
+    result = combine_lists_by_top_position([[('a', 1)]])
+    assert result == {'a': 1}
+
+
+def test_combine_lists_by_top_position_multiple_lists_same_word():
+
+    result = combine_lists_by_top_position([
+        [('a', 2)],
+        [('a', 1)],
+    ])
+    assert result == {'a': 1}
+
+
+def test_combine_lists_by_top_position_multiple_lists_same_values():
+
+    result = combine_lists_by_top_position([
+        [('a', 2), ('c', 2)],
+        [('b', 2), ('d', 2)],
+    ])
+    assert result == {'a': 2, 'b': 2, 'c': 2, 'd': 2}
+
+
+def test_combine_lists_by_top_position_word_in_some_lists():
+
+    result = combine_lists_by_top_position([
+        [('a', 1), ('b', 3)],
+        [('a', 2), ('c', 4)],
+    ])
+    assert result == {'a': 1, 'b': 3, 'c': 4}
+
+
+def test_combine_lists_by_top_position_duplicate_in_same_list():
+
+    result = combine_lists_by_top_position([
+        [('a', 3), ('a', 2), ('b', 5)],
+        [('a', 1)],
+    ])
+    assert result == {'a': 1, 'b': 5}
+
+
+# Tests for combine_lists_by_avg_position
+
+combine_lists_by_avg_position = WordFrequencyLists.combine_lists_by_avg_position
+
+
+def test_combine_lists_by_avg_position_empty():
+
+    result = combine_lists_by_avg_position([])
+    assert result == {}
+
+
+def test_combine_lists_by_avg_position_single_list():
+
+    result = combine_lists_by_avg_position([[('a', 2), ('b', 5)]])
+    assert result == {'a': 2, 'b': 5}
+
+
+def test_combine_lists_by_avg_position_missing_word():
+
+    result = combine_lists_by_avg_position([
+        [('a', 2)],
+        [('b', 5)],
+    ])
+    assert result == {'a': 4, 'b': 5}
+
+
+def test_combine_lists_by_avg_position_three_lists():
+
+    result = combine_lists_by_avg_position([
+        [('a', 3)],
+        [('a', 5)],
+        [('b', 10), ('c', 100)],
+    ])
+    assert result == {'a': 36, 'b': 70, 'c': 100}
+
+
+def test_combine_lists_by_avg_position_three_lists_same_values():
+
+        result = combine_lists_by_avg_position([
+            [('a', 1), ('x', 50)],
+            [('b', 1), ('x', 50)],
+        ])
+        assert result == {'a': 26, 'b': 26, 'x': 50}
+
+
+def test_combine_lists_by_avg_position_order():
+
+    result = combine_lists_by_avg_position([
+        [('a', 4), ('b', 6)],
+        [('a', 6), ('b', 4)],
+    ])
+    assert result == {'a': 5, 'b': 5}
+
+
+def test_combine_lists_by_avg_position_lowest_position():
+
+    result = combine_lists_by_avg_position([
+        [('m', 5)],
+        [],
+        [],
+    ])
+    assert result == {'m': 5}

@@ -4,7 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from collections import defaultdict
-import re
+import csv
 from typing import Iterator, NewType, Optional
 
 from .lib.utilities import *
@@ -118,6 +118,7 @@ class WordFrequencyLists:
 
         return words_positions_combined
 
+
     @staticmethod
     def get_words_from_file(file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:
 
@@ -131,29 +132,29 @@ class WordFrequencyLists:
 
         line_number = 1
         is_csv_file = file_path.endswith('.csv')
-        csv_patters = re.compile(r'(?:^|,)(?=[^"]|(")?)"?([^",]*)"?(")?,(?:.|$)')
         is_acceptable_word = TextProcessing.get_word_accepter(lang_id)
 
-        for line in content:
-            if isinstance(line, bytes):
-                    line = line.decode('utf-8')
-            if is_csv_file:
-                if line_number == 1 and 'freq' in line:
-                    continue
-                first_column = re.match(csv_patters, line)
-                if first_column:
-                    word = first_column.group(2)
-                else:
-                    continue
-            else:
-                line = line.rstrip()
-                last_space_index = line.rfind(' ')
-                if last_space_index != -1 and last_space_index < len(line) - 1 and line[last_space_index + 1:].isdigit():
-                    word = line[:last_space_index]
-                else:
-                    word = line
+        if is_csv_file:
+            delimiter = ','
+        else:
+            delimiter = ' '
 
+        reader = csv.reader(content, delimiter=delimiter)
+        word_column_index = 0
+
+        for line in reader:
+
+            if line_number == 1 and len(line) > 1:
+                if line[1] == 'Morph-Inflection':
+                    word_column_index = 1
+                if line[0] == 'ngram' or line[1] == 'freq':
+                    continue
+                if any(column.lower() == 'frequency' for column in line):
+                    continue
+
+            word = line[word_column_index]
             word = word.strip().lower()
+
             if is_acceptable_word(word):
                 yield word, line_number
                 line_number += 1

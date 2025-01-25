@@ -73,7 +73,7 @@ def test_get_word_frequency_from_combined_files(lang_data: LanguageData):
 def test_id_has_frequency_list_file(lang_data: LanguageData):
 
     ids_with_files = {LangDataId('en'), LangDataId('es')}
-    ids_without_files = {LangDataId('fr'), LangDataId('de'), LangDataId('it')}
+    ids_without_files = {LangDataId('fr'), LangDataId('lt'), LangDataId('it')}
 
     for lang_data_id in ids_with_files:
         assert lang_data.word_frequency_lists.id_has_list_file(lang_data_id)
@@ -84,19 +84,30 @@ def test_id_has_frequency_list_file(lang_data: LanguageData):
 
 def test_frequency_list_csv_file(lang_data: LanguageData):
 
-    lang_data.load_data({LangDataId('ru')})
+    lang_data.load_data({LangDataId('ru')}) # csv file
 
     assert lang_data.word_frequency_lists.word_frequency_lists is not None
     assert len(lang_data.word_frequency_lists.get_files_by_id(LangDataId('ru'))) == 1
 
     value_a = lang_data.get_word_frequency(LangDataId('ru'), 'иии', default=-1.0)
-    assert 0 < value_a == 1
+    assert value_a == 1
 
     value_b = lang_data.get_word_frequency(LangDataId('ru'), 'ввв', default=-1.0)
     assert 0 < value_b < value_a
 
     value_c = lang_data.get_word_frequency(LangDataId('ru'), 'чточто', default=-1.0)
     assert 0 < value_c < value_b
+
+
+def test_frequency_list_csv_anki_morphs_priority_file(lang_data: LanguageData):
+
+    lang_data.load_data({LangDataId('de')}) # anki morphs priority file
+
+    value_a = lang_data.get_word_frequency(LangDataId('de'), 'hat', default=-1.0)
+    assert 0 < value_a < 1
+
+    value_b = lang_data.get_word_frequency(LangDataId('de'), 'hatte', default=-1.0)
+    assert 0 < value_b < value_a
 
 
 def test_id_has_ignore_file(lang_data: LanguageData):

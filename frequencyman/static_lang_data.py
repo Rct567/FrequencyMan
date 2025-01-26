@@ -81,6 +81,40 @@ TOP_OPEN_SUBTITLES_SENTENCES_SOURCES = {
 }
 
 
+# https://mortii.github.io/anki-morphs/user_guide/setup/prioritizing.html
+
+ANKI_MORPHS_PRIORITY_FILES = {
+    "zhh": "https://mortii.github.io/anki-morphs/priority_files/cantonese/words-hk/zhh-freq.csv",
+    "ca": "https://mortii.github.io/anki-morphs/priority_files/catalan/wortschatz/ca-news-priority.csv",
+    "zh": "https://mortii.github.io/anki-morphs/priority_files/chinese/wortschatz/zh-news-lemma-priority.csv",
+    "hr": "https://mortii.github.io/anki-morphs/priority_files/croatian/wortschatz/hr-news-priority.csv",
+    "da": "https://mortii.github.io/anki-morphs/priority_files/danish/wortschatz/da-news-priority.csv",
+    "nl": "https://mortii.github.io/anki-morphs/priority_files/dutch/wortschatz/nl-news-priority.csv",
+    "en": "https://mortii.github.io/anki-morphs/priority_files/english/wortschatz/en-wiki-priority.csv",
+    "fi": "https://mortii.github.io/anki-morphs/priority_files/finnish/wortschatz/fi-news-priority.csv",
+    "fr": "https://mortii.github.io/anki-morphs/priority_files/french/wortschatz/fr-news-priority.csv",
+    "de": "https://mortii.github.io/anki-morphs/priority_files/german/wortschatz/de-news-priority.csv",
+    "el": "https://mortii.github.io/anki-morphs/priority_files/greek/wortschatz/el-news-priority.csv",
+    "it": "https://mortii.github.io/anki-morphs/priority_files/italian/wortschatz/it-news-priority.csv",
+    "ja": [
+        "https://mortii.github.io/anki-morphs/priority_files/japanese/wortschatz/ja-news-priority.csv",
+        "https://mortii.github.io/anki-morphs/priority_files/japanese/nanako/ja-anime-priority.csv"
+    ],
+    "ko": "https://mortii.github.io/anki-morphs/priority_files/korean/wortschatz/ko-news-lemma-priority.csv",
+    "lt": "https://mortii.github.io/anki-morphs/priority_files/lithuanian/wortschatz/lt-news-priority.csv",
+    "mk": "https://mortii.github.io/anki-morphs/priority_files/macedonian/wortschatz/mk-news-priority.csv",
+    "nb": "https://mortii.github.io/anki-morphs/priority_files/norwegian/wortschatz/nb-news-priority.csv",
+    "pl": "https://mortii.github.io/anki-morphs/priority_files/polish/wortschatz/pl-news-priority.csv",
+    "pt": "https://mortii.github.io/anki-morphs/priority_files/portuguese/wortschatz/pt-news-priority.csv",
+    "ro": "https://mortii.github.io/anki-morphs/priority_files/romanian/wortschatz/ro-news-priority.csv",
+    "ru": "https://mortii.github.io/anki-morphs/priority_files/russian/wortschatz/ru-web-priority.csv",
+    "sl": "https://mortii.github.io/anki-morphs/priority_files/slovenian/wortschatz/sl-news-priority.csv",
+    "es": "https://mortii.github.io/anki-morphs/priority_files/spanish/wortschatz/es-news-priority.csv",
+    "sv": "https://mortii.github.io/anki-morphs/priority_files/swedish/wortschatz/sv-news-priority.csv",
+    "uk": "https://mortii.github.io/anki-morphs/priority_files/ukrainian/wortschatz/uk-news-priority.csv"
+}
+
+
 def get_default_wf_list_sources() -> dict[str, list[str]]:
 
     combined = defaultdict(list)
@@ -90,6 +124,12 @@ def get_default_wf_list_sources() -> dict[str, list[str]]:
 
     for lang_id, url in GOOGLE_BOOKS_SOURCES.items():
         combined[lang_id].append(url)
+
+    for lang_id, url in ANKI_MORPHS_PRIORITY_FILES.items():
+        if isinstance(url, list):
+            combined[lang_id].extend(url)
+        else:
+            combined[lang_id].append(url)
 
     return combined
 

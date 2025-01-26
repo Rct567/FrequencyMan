@@ -147,9 +147,7 @@ class WordFrequencyLists:
             if line_number == 1 and len(line) > 1:
                 if line[1] == 'Morph-Inflection':
                     word_column_index = 1
-                if line[0] == 'ngram' or line[1] == 'freq':
-                    continue
-                if any(column.lower() == 'frequency' for column in line):
+                if any(column.lower() in {'frequency', 'freq', 'ngram', 'word', 'count'} for column in line):
                     continue
 
             word = line[word_column_index]

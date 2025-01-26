@@ -21,7 +21,7 @@ from aqt.main import AnkiQt
 
 from ..lib.addon_config import AddonConfig
 
-from ..static_lang_data import DEFAULT_WF_LISTS_SOURCES
+from ..static_lang_data import get_default_wf_list_sources
 
 from .main_window import FrequencyManMainWindow, FrequencyManTab
 from .select_new_target_window import SelectNewTargetWindow
@@ -166,7 +166,7 @@ class ReorderCardsTab(FrequencyManTab):
             if not match:
                 return False
             defined_lang_data_id = str(match.group(1)).lower()
-            if not defined_lang_data_id in DEFAULT_WF_LISTS_SOURCES:
+            if not defined_lang_data_id in get_default_wf_list_sources():
                 return False
 
             src_file = os.path.join(default_wf_lists_dir, defined_lang_data_id+'.txt')

@@ -1,9 +1,9 @@
 import os
 import time
-from typing import Iterator
+from typing import Iterable, Iterator
 import requests
 
-from frequencyman.static_lang_data import DEFAULT_WF_LISTS_SOURCES
+from frequencyman.static_lang_data import get_default_wf_list_sources
 from frequencyman.text_processing import LangId
 from frequencyman.language_data import WordFrequencyLists
 
@@ -80,14 +80,12 @@ def add_en_contractions(wf_list: list[str]) -> None:
         wf_list.insert(target_position, contraction)
 
 
-def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list_url: str) ->  Iterator[str]:
+def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list_url: str) -> Iterator[str]:
 
-    content: Iterator[str] = (line for line in response.iter_lines(decode_unicode=True) if line and line[0] != "'")
+    content: Iterator[str] = (line.decode('utf-8') for line in response.iter_lines())
+    content_filters = (line for line in content if line and line[0] != "'" and line[0] != '-' and ("--" not in line[0]))
 
-    for word, _ in WordFrequencyLists.get_words_from_content(content, wf_list_url, lang_id):
-
-        if word[0] in {'-'}:
-            continue
+    for word, _ in WordFrequencyLists.get_words_from_content(content_filters, wf_list_url, lang_id):
 
         word = word.strip("!@#$%^&*()_-=+{}:\"<>?,./;' ")
 
@@ -95,32 +93,40 @@ def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list
             word = word.replace("’", "'")
             word = word.replace("`", "'")
 
+        if str(lang_id) in {'en', 'nl', 'af'}:
+            if word[-1] == "s" and word[-2] == "'":
+                word = word[:-2]
+
         if word:
             yield word
 
 
-
 WF_LIST_LENGTH_LIMIT = 15_000
-WF_LIST_FILE_SIZE_LIMIT = 100_000
+WF_LIST_FILE_SIZE_LIMIT = 120_000
 WF_LIST_TARGET_DIR = 'default_wf_lists'
+
 
 def download_default_wf_lists():
 
-    for lang_id, wf_list_url in DEFAULT_WF_LISTS_SOURCES.items():
+    for lang_id, wf_list_urls in get_default_wf_list_sources().items():
+
+        target_file = os.path.join(WF_LIST_TARGET_DIR, lang_id+'.txt')
+
+        if os.path.isfile(target_file):
+            print(format("File {} already exists!".format(target_file)))
+            continue
+
+        wf_lists: list[list[str]] = []
+
+        for wf_list_url in wf_list_urls:
 
             print("{} => {}".format(lang_id, wf_list_url))
-            target_file = os.path.join(WF_LIST_TARGET_DIR, lang_id+'.txt')
-
-            if os.path.isfile(target_file):
-                print(format("File {} already exists!".format(target_file)))
-                continue
 
             response = requests.get(wf_list_url, stream=True)
             response.raise_for_status()
 
             wf_list: list[str] = []
             words_added: set[str] = set()
-            wf_list_size = 0
 
             for word in get_words_from_content(response, LangId(lang_id[:2]), wf_list_url):
 
@@ -128,33 +134,45 @@ def download_default_wf_lists():
                     continue
 
                 wf_list.append(word)
-                wf_list_size += len(word.encode("utf-8"))
                 words_added.add(word)
 
-                if len(wf_list) > WF_LIST_LENGTH_LIMIT:
-                    break
-                if wf_list_size > WF_LIST_FILE_SIZE_LIMIT:
+                if len(wf_list) > (WF_LIST_LENGTH_LIMIT*10):
                     break
 
-            if wf_list:
-                if lang_id == 'en':
-                    add_en_contractions(wf_list)
-                    wf_list = wf_list[:WF_LIST_LENGTH_LIMIT]
-                # Write the list to a file
-                with open(target_file, "w", encoding="utf-8") as f:
-                    wf_list_content = "\n".join(wf_list)
-                    f.write(wf_list_content)
+            wf_lists.append(wf_list)
 
-            time.sleep(1)
+        if lang_id == 'en':
+            for wf_list in wf_lists:
+                add_en_contractions(wf_list)
+
+        combined = ((((word, position+1) for position, word in enumerate(wf_list))) for wf_list in wf_lists)
+        result_wf_list = []
+        wf_list_size = 0
+
+        for word in WordFrequencyLists.combine_lists_by_avg_position(combined):
+
+            result_wf_list.append(word)
+            wf_list_size += len(word.encode("utf-8"))
+
+            if len(result_wf_list) > WF_LIST_LENGTH_LIMIT:
+                break
+            if wf_list_size > WF_LIST_FILE_SIZE_LIMIT:
+                break
+
+        if not result_wf_list:
+            raise Exception("Resulting word frequency list is empty!")
+
+        result_wf_list = result_wf_list[:WF_LIST_LENGTH_LIMIT]
+
+        # Write the list to a file
+
+        with open(target_file, "w", encoding="utf-8") as f:
+            wf_list_content = "\n".join(result_wf_list)
+            f.write(wf_list_content)
+
+        time.sleep(1)
 
 
 if __name__ == "__main__":
     download_default_wf_lists()
     print("Done!")
-
-
-
-
-
-
-

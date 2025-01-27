@@ -273,7 +273,7 @@ Alternatively, a `language_data_id` can also be an 'extended two letter language
 ]
 ```
 
-For every **language data id** defined, a directory should exist (although it could be empty). In the example above, `\user_files\lang_data\en_medical` should exist. If it does not exist, you will be prompted to automatically create one with a default word frequency file shipped with FrequencyMan.
+For every **language data id** defined, a directory should exist (although it could be empty). In the example above, `\user_files\lang_data\en_medical` should exist. If it does not exist, you will be prompted to automatically create one with a [default word frequency list](#word-frequency-lists) shipped with FrequencyMan.
 
 Two different types of files can be placed in a **language data id** directory:
 - __word frequency lists__: A text or csv file with words sorted to reflect the word frequency (in descending order). Only the position is used, not the (optional) word frequency value.
@@ -281,7 +281,7 @@ Two different types of files can be placed in a **language data id** directory:
 
 ### Language data folder
 
-In the language data folder itself (`\user_files\lang_data`) the following type of files can be placed:
+In the __language data folder__ itself (`\user_files\lang_data`) the following type of files can be placed:
 
 - __names lists__: A text file with names/words that will not be used to calculate the rankings. It basically functions like a 'global' ignore list. The file name should start with "names", such as `names_to_ignore.txt`.
 
@@ -322,7 +322,7 @@ The information that is logged can be used to display the amount of 'mature' wor
 
 ![FrequencyMan](frequencyman_display_info_example.png)
 
-Notes:
+__Notes__:
 - `*` is used to show combined information about all logged targets.
 - `show_info_deck_browser` wil create a table below the deck browser (below where you normally see "Studied N cards in N minutes today.").
 - If there is no target with an `id` defined, nothing will be logged and thus no information will be shown.
@@ -348,7 +348,7 @@ To create separate _corpus data sets_ for each field, you can set `corpus_segmen
 {"Front": "EN", "Back": "EN", "Extra": "ES"} // <- Three corpus data sets
 ```
 
-Things to note:
+__Notes__:
 - Using `"by_note_model_id_and_field_name"` also means that fields from different notes in the same target will not be 'joined' together.
 - Using `"by_note_model_id_and_field_name"` can create multiple _corpus data sets_ for the same language, which may not be desirable for language learning purposes.
 - Using `"by_lang_data_id"` will join fields from __all notes__ defined within a target if they have the same `language_data_id`.
@@ -356,12 +356,13 @@ Things to note:
 
 ## Word frequency lists
 
-FrequencyMan comes with 50+ default word frequency lists. These are generated using one of the following sources:
+FrequencyMan comes with 50+ default word frequency lists. These lists are generated using a combination of sources:
 
 - Google Books n-gram: https://github.com/orgtre/google-books-ngram-frequency
-- Based on Open Subtitles: https://github.com/hermitdave/FrequencyWords/tree/master
+- Based on Open Subtitles 2018: https://github.com/orgtre/top-open-subtitles-sentences, https://github.com/hermitdave/FrequencyWords/tree/master
+- Wortschatz 'News 2022', AnkiMorphs 'priority files': https://mortii.github.io/anki-morphs/user_guide/setup/prioritizing.html
 
-The default word frequency lists can be found in the `\default_wf_lists`. When prompted to create a new _language data directory_ with a default word frequency list, the relevant file will be copied to the new _language data directory_, such as `\user_files\lang_data\en`.
+The default word frequency lists can be found in the [`\default_wf_lists`](https://github.com/Rct567/FrequencyMan/tree/master/default_wf_lists). When prompted to create a new _language data directory_ with a default word frequency list, the relevant file will be copied to the new _language data directory_, such as `\user_files\lang_data\en`.
 
 ## The `user_files` directory
 

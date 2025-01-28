@@ -7,6 +7,7 @@ def test_acceptable_word():
 
     is_acceptable_word = TextProcessing.get_word_accepter(None)
     is_acceptable_word_zh = TextProcessing.get_word_accepter(LangId("zh"))
+    is_acceptable_word_vi = TextProcessing.get_word_accepter(LangId("vi"))
 
     assert is_acceptable_word("app-le") == True
     assert is_acceptable_word("app---le") == True
@@ -23,6 +24,8 @@ def test_acceptable_word():
     assert is_acceptable_word("___") == False
 
     assert is_acceptable_word_zh("你") == True
+
+    assert is_acceptable_word_vi("đường") == True
 
 
 def test_get_plain_text():

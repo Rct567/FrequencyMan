@@ -4,7 +4,7 @@ from typing import Iterable, Iterator
 import requests
 
 from frequencyman.static_lang_data import get_default_wf_list_sources
-from frequencyman.text_processing import LangId
+from frequencyman.text_processing import LangId, TextProcessing
 from frequencyman.language_data import WordFrequencyLists
 
 
@@ -97,6 +97,14 @@ def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list
             if word[-1] == "s" and word[-2] == "'":
                 word = word[:-2]
 
+        if (str(lang_id) in {'vi', 'sr', 'th'}):
+            if " " in word:
+                word = word.split(" ")[0]
+            if not TextProcessing.get_word_accepter(lang_id)(word):
+                word = ""
+
+        assert not " " in word
+
         if word:
             yield word
 
@@ -106,7 +114,7 @@ WF_LIST_FILE_SIZE_LIMIT = 120_000
 WF_LIST_TARGET_DIR = 'default_wf_lists'
 
 
-def download_default_wf_lists():
+def create_default_wf_lists():
 
     for lang_id, wf_list_urls in get_default_wf_list_sources().items():
 
@@ -172,7 +180,44 @@ def download_default_wf_lists():
 
         time.sleep(1)
 
+def create_ignore_candidates_list():
+
+    ignore_candidates_file = os.path.join(WF_LIST_TARGET_DIR, 'ignore_candidates.txt')
+
+    if os.path.isfile(ignore_candidates_file):
+        print(format("File {} already exists!".format(ignore_candidates_file)))
+        return
+
+    all_words: dict[str, int] = {}
+
+    for lang_id in get_default_wf_list_sources():
+
+        if lang_id[:3] == 'ze_':
+            continue
+
+        wf_list_file = os.path.join(WF_LIST_TARGET_DIR, lang_id+'.txt')
+
+        if not os.path.isfile(wf_list_file):
+            raise Exception("File {} does not exist!".format(wf_list_file))
+
+        for word, _ in WordFrequencyLists.get_words_from_file(wf_list_file, LangId(lang_id[:2])):
+
+            if word in all_words:
+                 if lang_id not in {'nl', 'da', "no"}:
+                    all_words[word] += 1
+            else:
+                all_words[word] = 1
+
+    num_languages = len(get_default_wf_list_sources().keys())
+    global_words = {word: round(1 - count/num_languages, 2) for word, count in all_words.items() if count > num_languages*0.25}
+    global_words = dict(sorted(global_words.items(), key=lambda x: x[1], reverse=True))
+
+    with open(ignore_candidates_file, "w", encoding="utf-8") as f:
+        for word, count in global_words.items():
+            f.write("{} {}\n".format(word, count))
+
 
 if __name__ == "__main__":
-    download_default_wf_lists()
+    create_default_wf_lists()
+    create_ignore_candidates_list()
     print("Done!")

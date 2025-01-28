@@ -277,7 +277,8 @@ For every **language data id** defined, a directory should exist (although it co
 
 Two different types of files can be placed in a **language data id** directory:
 - __word frequency lists__: A text or csv file with words sorted to reflect the word frequency (in descending order). Only the position is used, not the (optional) word frequency value.
-- __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore".
+- __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore". FrequencyMan comes with a default ignore list ([`ignore_candidates.txt`](https://github.com/Rct567/FrequencyMan/blob/master/default_wf_lists/ignore_candidates.txt)), which can be found in [`default_wf_lists/`](https://github.com/Rct567/FrequencyMan/blob/master/default_wf_lists/). This file contains words most found across different languages (words such as 'FBI', 'Steve', 'cool' etc.).
+
 
 ### Language data folder
 

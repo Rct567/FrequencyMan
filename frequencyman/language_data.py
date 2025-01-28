@@ -120,7 +120,7 @@ class WordFrequencyLists:
 
 
     @staticmethod
-    def get_words_from_file(file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:
+    def get_words_from_file(file_path: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
 
         with open(file_path, encoding='utf-8') as text_file:
             for word, line_number in WordFrequencyLists.get_words_from_content(text_file, file_path, lang_id):
@@ -128,7 +128,7 @@ class WordFrequencyLists:
 
 
     @staticmethod
-    def get_words_from_content(content:Iterable[str], file_path: str, lang_id: LangId) -> Iterator[tuple[str, int]]:
+    def get_words_from_content(content:Iterable[str], file_path: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
 
         line_number = 1
         is_csv_file = file_path.endswith('.csv')
@@ -183,7 +183,7 @@ class IgnoreLists:
         if self.ignore_lists is None:
             self.ignore_lists = {}
 
-        self.ignore_lists[lang_data_id] = self.__produce_combined_list(files)
+        self.ignore_lists[lang_data_id] = self.__produce_combined_list(files, lang_data_id)
 
     def id_has_list_file(self, lang_data_id: LangDataId) -> bool:
 
@@ -206,25 +206,17 @@ class IgnoreLists:
 
         return files
 
-    def __produce_combined_list(self, files: set[str]) -> set[str]:
+    def __produce_combined_list(self, files: set[str], lang_data_id: LangDataId) -> set[str]:
 
         ignore_list_combined: set[str] = set()
+        lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
 
         for file_path in files:
-            for word in self.get_words_from_file(file_path):
+            for word, _ in WordFrequencyLists.get_words_from_file(file_path, lang_id):
                 ignore_list_combined.add(word)
 
         return ignore_list_combined
 
-    @staticmethod
-    def get_words_from_file(file_path: str) -> Iterator[str]:
-
-        with open(file_path, encoding='utf-8') as text_file:
-
-            for line in text_file:
-                line = line.rstrip()
-                word = line.strip().lower()
-                yield word
 
     def __list_already_loaded(self, lang_data_id: LangDataId) -> bool:
 
@@ -273,7 +265,7 @@ class NamesLists:
 
         assert self.names_list is not None and self.names_lists is not None
 
-        words = set(IgnoreLists.get_words_from_file(names_file))
+        words = set(word for word, _ in WordFrequencyLists.get_words_from_file(names_file, lang_id=None))
 
         self.names_list.update(words)
         self.names_lists.append(words)

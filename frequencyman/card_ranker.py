@@ -134,13 +134,13 @@ class CardRanker:
     @staticmethod
     def __calc_proper_introduction_score(field_metrics: FieldMetrics, field_data: NoteFieldContentData) -> tuple[Optional[WordToken], float]:
 
-        if not field_data.field_value_tokenized:
+        if not field_data.field_value_tokenized or field_metrics.lowest_fr_least_familiar_word[0] == "":
             return (None, 0)
 
         assert len(field_metrics.words_familiarity_positional_scores) == len(field_metrics.words_fr_scores)
-        assert field_metrics.lowest_fr_least_familiar_word[0]
+        assert field_metrics.lowest_fr_least_familiar_word[0] in field_data.field_value_tokenized
 
-        # get new word (by lowest_fr_least_familiar_word word frequency)
+        # get new word
         intro_word = field_metrics.lowest_fr_least_familiar_word[0]
 
         # position of new word in field

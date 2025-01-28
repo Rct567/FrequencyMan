@@ -1,4 +1,3 @@
-morph-inflection
 og
 det
 er

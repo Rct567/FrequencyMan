@@ -199,7 +199,7 @@ class Target:
         return target_corpus_data
 
     def reorder_cards(self, repositioning_starting_from: int, event_logger: EventLogger,
-                      modified_dirty_notes: dict[NoteId, Optional[Note]], schedule_cards_as_new: bool) -> TargetReorderResult:
+                      modified_dirty_notes: dict[NoteId, Optional[Note]]) -> TargetReorderResult:
 
         if self.cache_data is None:
             raise ValueError("Cache data object required for reordering!")
@@ -305,14 +305,10 @@ class Target:
             event_logger.add_entry("Repositioning {:n} cards not needed for this target.".format(len(sorted_cards_ids)))
             return TargetReorderResult(success=True)
 
-        return self.__reposition_cards(sorted_cards_ids, target_cards, repositioning_starting_from, event_logger, schedule_cards_as_new)
+        return self.__reposition_cards(sorted_cards_ids, target_cards, repositioning_starting_from, event_logger)
 
     def __reposition_cards(self, sorted_cards_ids: Sequence[CardId], target_cards: TargetCards, repositioning_starting_from: int,
-                           event_logger: EventLogger, schedule_cards_as_new: bool) -> TargetReorderResult:
-
-        if schedule_cards_as_new:  # may be needed in some cases, such as older anki version (?)
-            event_logger.add_entry("Scheduling cards as new before repositioning.")
-            self.col.sched.schedule_cards_as_new(sorted_cards_ids)
+                           event_logger: EventLogger) -> TargetReorderResult:
 
         with event_logger.add_benchmarked_entry("Repositioning {:n} cards for this target.".format(len(sorted_cards_ids))):
 

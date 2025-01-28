@@ -504,10 +504,7 @@ class ReorderCardsTab(FrequencyManTab):
 
         def reorder_operation(col: Collection) -> TargetListReorderResult:
 
-            nonlocal ctrl_pressed
-            schedule_cards_as_new = bool(ctrl_pressed)
-
-            reorder_result = self.target_list.reorder_cards(col, event_logger, schedule_cards_as_new)
+            reorder_result = self.target_list.reorder_cards(col, event_logger)
 
             return reorder_result
 

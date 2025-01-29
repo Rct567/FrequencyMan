@@ -216,10 +216,11 @@ class Target:
                 event_logger.add_entry(error_msg)
                 return TargetReorderResult(success=False, error=error_msg)
 
+        # Load data for defined 'language data' ids
+        language_data_ids = self.config_target.get_language_data_ids()
         with event_logger.add_benchmarked_entry("Loading word frequency lists."):
-            self.language_data.load_data(self.config_target.get_language_data_ids())
-
-            for lang_key in self.config_target.get_language_data_ids():
+            self.language_data.load_data(language_data_ids)
+            for lang_key in language_data_ids:
                 if not self.language_data.word_frequency_lists.id_has_list_file(lang_key):
                     event_logger.add_entry("No word frequency list file found for language '{}'!".format(lang_key))
 

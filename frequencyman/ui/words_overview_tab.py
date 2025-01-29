@@ -23,7 +23,7 @@ from .words_overview_tab_overview_options import (
     AllWordsOverview, LearningWordsOverview, MatureWordsOverview, WordsOverviewOption, WordFamiliarityOverview, WordFrequencyOverview, WordUnderexposureOverview,
     WordFamiliaritySweetspotOverview, NotInWordFrequencyListsOverview,
     NotInTargetCardsOverview, LonelyWordsOverview, NewWordsOverview, FocusWordsOverview)
-from .words_overview_filters import FilterOption, LearningWordsFilter, MatureWordsFilter
+from .words_overview_filters import FilterOption, IgnoredWordsFilter, LearningWordsFilter, MatureWordsFilter
 
 from .main_window import FrequencyManMainWindow, FrequencyManTab
 
@@ -94,6 +94,7 @@ class WordsOverviewTab(FrequencyManTab):
         ]
         self.additional_column_checkboxes = {}
         self.filters = [
+            IgnoredWordsFilter(),
             LearningWordsFilter(),
             MatureWordsFilter()
         ]
@@ -335,7 +336,7 @@ class WordsOverviewTab(FrequencyManTab):
 
         # Apply active filters
         for filter_option in self.filters:
-            if filter_option.is_hidden(overview_option_selected):
+            if filter_option.is_hidden(overview_option_selected, overview_option_selected.selected_corpus_content_metrics):
                 self.filter_checkboxes[filter_option.title].hide()
                 continue
             self.filter_checkboxes[filter_option.title].show()
@@ -376,8 +377,7 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setHorizontalHeaderLabels(combined_labels)
 
         # ignore list
-        overview_option_selected.selected_corpus_content_metrics.language_data.load_data({overview_option_selected.selected_corpus_content_metrics.lang_data_id})
-        ignored_words = overview_option_selected.selected_corpus_content_metrics.language_data.get_ignored_words(overview_option_selected.selected_corpus_content_metrics.lang_data_id)
+        ignored_words = overview_option_selected.selected_corpus_content_metrics.ignored_words
 
         # Populate the table
         for row_index, (row_word, row_data) in enumerate(data):

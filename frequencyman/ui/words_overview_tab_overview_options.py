@@ -155,14 +155,13 @@ class NotInTargetCardsOverview(WordsOverviewOption):
     @override
     def data(self) -> TableDataType:
 
-        self.selected_corpus_content_metrics.language_data.load_data({self.selected_corpus_content_metrics.lang_data_id})
+        word_frequency_list = self.selected_corpus_content_metrics.language_data.get_word_frequency_list(self.selected_corpus_content_metrics.lang_data_id)
 
         if self.selected_corpus_content_metrics.language_data.word_frequency_lists.word_frequency_lists is None:
             showWarning("No word frequency lists loaded.")
             return []
 
-        words_in_frequency_lists = self.selected_corpus_content_metrics.language_data.word_frequency_lists.word_frequency_lists[self.selected_corpus_content_metrics.lang_data_id].keys()
-        words_in_frequency_lists_with_position = {word: position+1 for position, word in enumerate(words_in_frequency_lists)}
+        words_in_frequency_lists_with_position = {word: position+1 for position, word in enumerate(word_frequency_list.keys())}
 
         words_without_cards: TableDataType = [(WordToken(word), [position]) for word, position in words_in_frequency_lists_with_position.items() if word not in self.selected_corpus_content_metrics.all_words]
         words_without_cards = sorted(words_without_cards, key=lambda x: x[1][0], reverse=False)

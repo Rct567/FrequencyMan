@@ -5,7 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from collections import defaultdict
 import csv
-from typing import Iterator, NewType, Optional
+from typing import Iterator, NewType, Optional, Union
 
 from .lib.utilities import *
 from .text_processing import TextProcessing, LangId
@@ -65,7 +65,6 @@ class WordFrequencyLists:
 
         self.word_frequency_lists[lang_data_id] = WordFrequencyLists.__produce_combined_list(files, lang_data_id)
 
-
     @staticmethod
     def combine_lists_by_top_position(lists: Iterable[Iterable[tuple[str, int]]]) -> dict[str, int]:
 
@@ -97,12 +96,11 @@ class WordFrequencyLists:
         for word, positions in word_positions.items():
             if len(positions) < wf_list_num:
                 #word_positions[word].extend([ int(mean(positions)*2.5) for _ in range(wf_list_num-len(positions)) ])
-                word_positions[word].extend([ lowest_position+1 for _ in range(wf_list_num-len(positions)) ])
+                word_positions[word].extend([lowest_position+1 for _ in range(wf_list_num-len(positions))])
 
         combined_positions: dict[str, float] = {word: sum(positions) / len(positions) for word, positions in word_positions.items()}
         combined_positions = dict(sorted(combined_positions.items(), key=lambda item: item[1]))
         return {word: int(position) for word, position in combined_positions.items()}
-
 
     @staticmethod
     def __produce_combined_list(files: set[str], lang_data_id: LangDataId) -> dict[str, float]:
@@ -118,7 +116,6 @@ class WordFrequencyLists:
 
         return words_positions_combined
 
-
     @staticmethod
     def get_words_from_file(file_path: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
 
@@ -126,9 +123,8 @@ class WordFrequencyLists:
             for word, line_number in WordFrequencyLists.get_words_from_content(text_file, file_path, lang_id):
                 yield word, line_number
 
-
     @staticmethod
-    def get_words_from_content(content:Iterable[str], file_path: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
+    def get_words_from_content(content: Iterable[str], file_path: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
 
         line_number = 1
         is_csv_file = file_path.endswith('.csv')
@@ -217,7 +213,6 @@ class IgnoreLists:
 
         return ignore_list_combined
 
-
     def __list_already_loaded(self, lang_data_id: LangDataId) -> bool:
 
         return self.ignore_lists is not None and lang_data_id in self.ignore_lists
@@ -279,6 +274,7 @@ class LanguageData:
     word_frequency_lists: WordFrequencyLists
     ignore_lists: IgnoreLists
     names_lists: NamesLists
+    ids_loaded_data: set[LangDataId]
 
     def __init__(self, lang_data_dir: str) -> None:
 
@@ -286,6 +282,7 @@ class LanguageData:
             raise ValueError("Invalid 'language data' directory. Directory not found: "+lang_data_dir)
 
         self.data_dir = lang_data_dir
+        self.ids_loaded_data = set()
         self.word_frequency_lists = WordFrequencyLists(self.data_dir)
         self.ignore_lists = IgnoreLists(self.data_dir)
         self.names_lists = NamesLists(self.data_dir)
@@ -298,23 +295,35 @@ class LanguageData:
         possible_lang_dir = os.path.join(self.data_dir, lang_data_id)
         return os.path.isdir(possible_lang_dir)
 
-    def load_data(self, lang_data_ids: set[LangDataId]) -> None:
+    def load_data(self, lang_data_ids: Union[set[LangDataId], LangDataId]) -> None:
 
-        self.word_frequency_lists.load_lists(lang_data_ids)
-        self.ignore_lists.load_lists(lang_data_ids)
-        self.names_lists.load_lists()
+        if not isinstance(lang_data_ids, set):
+            lang_data_ids = {lang_data_ids}
 
-    def get_word_frequency(self, lang_data_id: LangDataId, word: str, default: float) -> float:
+        for lang_data_id in lang_data_ids:
+            if lang_data_id in self.ids_loaded_data:
+                continue
+
+            self.word_frequency_lists.load_lists({lang_data_id})
+            self.ignore_lists.load_lists({lang_data_id})
+            self.names_lists.load_lists()
+            self.ids_loaded_data.add(lang_data_id)
+
+    def get_word_frequency_list(self, lang_data_id: LangDataId) -> dict[str, float]:
+
+        self.load_data(lang_data_id)
 
         if self.word_frequency_lists.word_frequency_lists is None:
             raise Exception("No word frequency lists loaded.")
 
         try:
-            return self.word_frequency_lists.word_frequency_lists[lang_data_id][word]
+            return self.word_frequency_lists.word_frequency_lists[lang_data_id]
         except KeyError:
-            return default
+            return {}
 
     def get_ignore_list(self, lang_data_id: LangDataId) -> set[str]:
+
+        self.load_data(lang_data_id)
 
         if self.ignore_lists.ignore_lists is None:
             raise Exception("No ignore lists loaded.")
@@ -326,12 +335,16 @@ class LanguageData:
 
     def get_names_list(self) -> set[str]:
 
+        self.names_lists.load_lists()
+
         if self.names_lists.names_list is None:
             raise Exception("No names list loaded.")
 
         return self.names_lists.names_list
 
     def get_ignored_words(self, lang_data_id: LangDataId) -> set[str]:
+
+        self.load_data(lang_data_id)
 
         return self.get_ignore_list(lang_data_id).union(self.get_names_list())
 

@@ -29,44 +29,45 @@ def test_load_lang_data(lang_data: LanguageData):
 
 def test_get_word_frequency(lang_data: LanguageData):
 
-    lang_data.load_data({LangDataId('en'), LangDataId('es')})
+    word_frequency_list = lang_data.get_word_frequency_list(LangDataId('en'))
 
-    value = lang_data.get_word_frequency(LangDataId('en'), 'aaa', default=-1.0)
+    value = word_frequency_list.get('aaa', -1.0)
     assert value == 1
 
-    value_b = lang_data.get_word_frequency(LangDataId('en'), 'bbb', default=-1.0)
+    value_b = word_frequency_list.get('bbb', -1.0)
     assert 0 < value_b < 1
 
-    value_c = lang_data.get_word_frequency(LangDataId('en'), 'ccc', default=-1.0)
+    value_c = word_frequency_list.get('ccc', -1.0)
     assert 0 < value_c < value_b
 
-    value = lang_data.get_word_frequency(LangDataId('en'), 'none_existing', default=-1.0)
+    value = word_frequency_list.get('none_existing', -1.0)
     assert value == -1.0
 
 
 def test_get_word_frequency_from_combined_files(lang_data: LanguageData):
 
-    lang_data.load_data({LangDataId('jp')})
+    word_frequency_list = lang_data.get_word_frequency_list(LangDataId('jp'))
 
     assert lang_data.word_frequency_lists.word_frequency_lists is not None
+
     assert len(lang_data.word_frequency_lists.get_files_by_id(LangDataId('jp'))) == 2
 
-    value = lang_data.get_word_frequency(LangDataId('jp'), 'aaaa', default=-1.0)
+    value = word_frequency_list.get('aaaa', -1.0)
     assert value == 1
 
-    value = lang_data.get_word_frequency(LangDataId('jp'), 'cccc', default=-1.0)
+    value = word_frequency_list.get('cccc', -1.0)
     assert value == 1
 
-    value_a = lang_data.get_word_frequency(LangDataId('jp'), 'bbbb', default=-1.0)
+    value_a = word_frequency_list.get('bbbb', -1.0)
     assert 0 < value_a < 1
 
-    value_b = lang_data.get_word_frequency(LangDataId('jp'), 'dddd', default=-1.0)
+    value_b = word_frequency_list.get('dddd', -1.0)
     assert 0 < value_b < value_a
 
-    value_c = lang_data.get_word_frequency(LangDataId('jp'), 'hhhh', default=-1.0)
+    value_c = word_frequency_list.get('hhhh',-1.0)
     assert 0 < value_c < value_b
 
-    value = lang_data.get_word_frequency(LangDataId('jp'), 'none_existing', default=-1.0)
+    value = word_frequency_list.get('none_existing', -1.0)
     assert value == -1.0
 
 
@@ -84,29 +85,29 @@ def test_id_has_frequency_list_file(lang_data: LanguageData):
 
 def test_frequency_list_csv_file(lang_data: LanguageData):
 
-    lang_data.load_data({LangDataId('ru')}) # csv file
+    word_frequency_list = lang_data.get_word_frequency_list(LangDataId('ru'))  # csv file
 
     assert lang_data.word_frequency_lists.word_frequency_lists is not None
     assert len(lang_data.word_frequency_lists.get_files_by_id(LangDataId('ru'))) == 1
 
-    value_a = lang_data.get_word_frequency(LangDataId('ru'), 'иии', default=-1.0)
+    value_a = word_frequency_list.get('иии', -1.0)
     assert value_a == 1
 
-    value_b = lang_data.get_word_frequency(LangDataId('ru'), 'ввв', default=-1.0)
+    value_b = word_frequency_list.get('ввв', -1.0)
     assert 0 < value_b < value_a
 
-    value_c = lang_data.get_word_frequency(LangDataId('ru'), 'чточто', default=-1.0)
+    value_c = word_frequency_list.get('чточто', -1.0)
     assert 0 < value_c < value_b
 
 
 def test_frequency_list_csv_anki_morphs_priority_file(lang_data: LanguageData):
 
-    lang_data.load_data({LangDataId('de')}) # anki morphs priority file
+    word_frequency_list = lang_data.get_word_frequency_list(LangDataId('de')) # anki morphs priority file
 
-    value_a = lang_data.get_word_frequency(LangDataId('de'), 'hat', default=-1.0)
+    value_a = word_frequency_list.get('hat', -1.0)
     assert 0 < value_a < 1
 
-    value_b = lang_data.get_word_frequency(LangDataId('de'), 'hatte', default=-1.0)
+    value_b = word_frequency_list.get('hatte', -1.0)
     assert 0 < value_b < value_a
 
 
@@ -124,13 +125,11 @@ def test_id_has_ignore_file(lang_data: LanguageData):
 
 def test_ignored_words(lang_data: LanguageData):
 
-    lang_data.load_data({LangDataId('jp')})
+    ignore_list = lang_data.get_ignore_list(LangDataId('jp'))
+    ignored_words = lang_data.get_ignored_words(LangDataId('jp'))
 
     assert lang_data.ignore_lists.ignore_lists is not None
     assert len(lang_data.ignore_lists.get_files_by_id(LangDataId('jp'))) == 2
-
-    ignore_list = lang_data.get_ignore_list(LangDataId('jp'))
-    ignored_words = lang_data.get_ignored_words(LangDataId('jp'))
 
     assert ignore_list == {'yes', 'yes_with_trailing_space', 'from_second_file'}
     assert ignored_words == {'yes', 'yes_with_trailing_space', 'from_second_file', 'word_from_names_list_in_lang_data_dir'}
@@ -141,11 +140,6 @@ def test_invalid_lists_directory():
     with pytest.raises(ValueError, match="directory"):
         LanguageData('/invalid/directory/path')
 
-
-def test_list_not_yet_loaded(lang_data: LanguageData):
-
-    with pytest.raises(Exception, match="No word frequency lists loaded"):
-        lang_data.get_word_frequency(LangDataId('en'), 'aaa', default=-1.0)
 
 
 # Tests for combine_lists_by_top_position

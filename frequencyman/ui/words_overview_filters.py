@@ -30,7 +30,7 @@ class FilterOption(ABC):
         pass
 
     @abstractmethod
-    def is_hidden(self, overview_option: WordsOverviewOption) -> bool:
+    def is_hidden(self, overview_option: WordsOverviewOption, metrics: SegmentContentMetrics) -> bool:
         pass
 
 
@@ -47,7 +47,7 @@ class MatureWordsFilter(FilterOption):
         return any(row for row in data if isinstance(row[0], str) and row[0] in metrics.mature_words)
 
     @override
-    def is_hidden(self, overview_option: WordsOverviewOption) -> bool:
+    def is_hidden(self, overview_option: WordsOverviewOption, metrics: SegmentContentMetrics) -> bool:
         return overview_option.title in {"Learning words", "Mature words"}
 
 
@@ -64,5 +64,22 @@ class LearningWordsFilter(FilterOption):
         return any(row for row in data if isinstance(row[0], str) and row[0] in metrics.words_familiarity and row[0] not in metrics.mature_words)
 
     @override
-    def is_hidden(self, overview_option: WordsOverviewOption) -> bool:
+    def is_hidden(self, overview_option: WordsOverviewOption, metrics: SegmentContentMetrics) -> bool:
         return overview_option.title in {"Learning words", "Mature words"}
+
+
+class IgnoredWordsFilter(FilterOption):
+
+    title = "Ignored words"
+
+    @override
+    def filter_data(self, data: TableDataType, metrics: SegmentContentMetrics) -> TableDataType:
+        return [row for row in data if isinstance(row[0], str) and row[0] in metrics.ignored_words]
+
+    @override
+    def is_enabled(self, data: TableDataType, metrics: SegmentContentMetrics) -> bool:
+        return any(row for row in data if isinstance(row[0], str) and row[0] in metrics.ignored_words)
+
+    @override
+    def is_hidden(self, overview_option: WordsOverviewOption, metrics: SegmentContentMetrics) -> bool:
+        return overview_option.title in {"Ignored words"} or not metrics.ignored_words

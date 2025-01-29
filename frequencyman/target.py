@@ -272,7 +272,7 @@ class Target:
         # Sort cards
         with event_logger.add_benchmarked_entry("Ranking cards and creating a new sorted list."):
 
-            card_ranker = CardRanker(target_corpus_data, self.name, self.language_data, self.col, modified_dirty_notes)
+            card_ranker = CardRanker(target_corpus_data, self.name, self.language_data, modified_dirty_notes)
 
             # Use any custom ranking weights defined in target definition
             for attribute in card_ranker.ranking_factors_span.keys():

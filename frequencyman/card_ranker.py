@@ -74,11 +74,10 @@ class CardRanker:
     field_all_empty: dict[str, bool]
 
     def __init__(self, target_corpus_data: TargetCorpusData, target_name: str, language_data: LanguageData,
-                 col: Collection, modified_dirty_notes: dict[NoteId, Optional[Note]]) -> None:
+                 modified_dirty_notes: dict[NoteId, Optional[Note]]) -> None:
 
         self.corpus_data = target_corpus_data
         self.language_data = language_data
-        self.col = col
         self.modified_dirty_notes = modified_dirty_notes
         self.ranking_factors_stats = None
         self.ranking_factors_span = self.get_default_ranking_factors_span()

@@ -306,8 +306,9 @@ class LanguageData:
 
             self.word_frequency_lists.load_lists({lang_data_id})
             self.ignore_lists.load_lists({lang_data_id})
-            self.names_lists.load_lists()
             self.ids_loaded_data.add(lang_data_id)
+
+        self.names_lists.load_lists()
 
     def get_word_frequency_list(self, lang_data_id: LangDataId) -> dict[str, float]:
 

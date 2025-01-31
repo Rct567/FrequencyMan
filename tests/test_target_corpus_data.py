@@ -33,7 +33,7 @@ class TestTargetCorpusData:
             create_card(320, 2200, 12),
             create_card(300, 2500, 12), # base
             create_card(280, 2600, 14),
-            create_card(270, 3600, 14),
+            create_card(270, 3200, 14),
         ]
 
         for index, card in enumerate(mature_scored_cards):
@@ -46,6 +46,7 @@ class TestTargetCorpusData:
             create_card(300, 2400, 12),
             create_card(290, 2500, 50),
             create_card(260, 3500, 100),
+            create_card(195, 2300, 25),
         ]
 
         for index, card in enumerate(immature_scored_cards):

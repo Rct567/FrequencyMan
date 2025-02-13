@@ -20,6 +20,9 @@ class TextProcessing:
     KOREAN_PATTERN = re.compile(r'[\uac00-\ud7a3]{1,}', re.UNICODE)
     ARABIC_PATTERN = re.compile(r'[\u0600-\u06FF]{1,}', re.UNICODE)
     ETHIOPIC_PATTERN = re.compile(r'[\u1200-\u137F]{1,}', re.UNICODE)
+    THAI_PATTERN = re.compile(r'[\u0e00-\u0e7f]{1,}', re.UNICODE)
+    LAO_PATTERN = re.compile(r'[\u0e80-\u0eff]{1,}', re.UNICODE)
+    KHMER_PATTERN = re.compile(r'[\u1780-\u17ff]{1,}', re.UNICODE)
     DEFAULT_PATTERN = re.compile(r'[^\W\d_]{2,}', re.UNICODE)
 
     user_provided_tokenizers: Optional[Tokenizers] = None
@@ -38,6 +41,12 @@ class TextProcessing:
             word_pattern = TextProcessing.ARABIC_PATTERN
         elif lang_id is not None and str(lang_id) in {'am', 'ti', 'om', 'so', 'ha'}:
             word_pattern = TextProcessing.ETHIOPIC_PATTERN
+        elif lang_id == 'th':
+            word_pattern = TextProcessing.THAI_PATTERN
+        elif lang_id == 'lo':
+            word_pattern = TextProcessing.LAO_PATTERN
+        elif lang_id == 'km':
+            word_pattern = TextProcessing.KHMER_PATTERN
         else:
             word_pattern = TextProcessing.DEFAULT_PATTERN
             min_length = 2

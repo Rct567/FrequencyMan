@@ -55,6 +55,19 @@ def test_get_word_tokens_from_text_default_tokenizer_en():
     assert TextProcessing.get_word_tokens_from_text("أنا بصدّقك وإحنا دايماً منقلكم", LangId("en")) == ['أنا', 'بصدّقك', 'وإحنا', 'دايماً', 'منقلكم']
 
 
+def test_get_word_tokens_from_text_user_tokenizer_th():
+    # no support for tokenization, but Thai script should be accepted and not split
+    assert TextProcessing.get_word_tokens_from_text("อาหาร hello", LangId("th")) == ['อาหาร']
+
+def test_get_word_tokens_from_text_user_tokenizer_lo():
+    # no support for tokenization, but Lao script should be accepted and not split
+    assert TextProcessing.get_word_tokens_from_text("ຮັກ hello อาหาร", LangId("lo")) == ['ຮັກ']
+
+def test_get_word_tokens_from_text_user_tokenizer_km():
+    # no support for tokenization, but Khmer script should be accepted and not split
+    assert TextProcessing.get_word_tokens_from_text("ជំរាបសួរ hello ຮັກ", LangId("km")) == ['ជំរាបសួរ']
+
+
 def test_get_word_tokens_from_text_user_tokenizer_ja():
 
     if not USER_PROVIDED_TOKENIZERS.lang_has_tokenizer(LangId('ja')):

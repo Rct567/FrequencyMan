@@ -88,8 +88,14 @@ class TextProcessing:
     def default_tokenizer(text: str) -> list[str]:
 
         text = str(text+" ").replace(". ", " ")
-        # Arabic diacritical marks: u0610-\u061A\u064B-\u065F
-        non_word_chars = r"[^\w\-\_\'\’\.\u0610-\u061A\u064B-\u065F]{1,}"
+        non_word_chars = (
+            r"[^\w\-\_\'\’\."
+            r"\u0610-\u061A\u064B-\u065F" # Arabic diacritical marks
+            r"\u0E00-\u0E7F"  # Thai script
+            r"\u0E80-\u0EFF"  # Lao script
+            r"\u1780-\u17FF"  # Khmer script
+            r"]+"
+        )
         return re.split(non_word_chars, text)
 
     @staticmethod

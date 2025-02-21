@@ -89,7 +89,7 @@ def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list
 
         word = word.strip("!@#$%^&*()_-=+{}:\"<>?,./;' ")
 
-        if str(lang_id) in {"en", "fr", "it", "de", "es", "el"}:
+        if str(lang_id) in {'en', 'fr', 'it', 'ga', 'pt', 'de', 'nl', 'sv', 'fi', 'mt', 'ca', 'oc'}:
             word = word.replace("’", "'")
             word = word.replace("`", "'")
 

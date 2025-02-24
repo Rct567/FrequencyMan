@@ -46,7 +46,7 @@ def test_get_word_tokens_from_text_default_tokenizer_en():
     assert TextProcessing.get_word_tokens_from_text("", LangId("en")) == []
     assert TextProcessing.get_word_tokens_from_text("12345", LangId("en")) == []
 
-    assert TextProcessing.get_word_tokens_from_text("Simple sente-nce. EE.UU. Anna's visit. john's. o'clock", LangId("en")) == ['simple', 'sente-nce', 'ee.uu', 'anna', 'visit', 'john', 'o\'clock']
+    assert TextProcessing.get_word_tokens_from_text("Anna’s sente-nce. EE.UU. Anna's visit. john's. o'clock", LangId("en")) == ['anna', 'sente-nce', 'ee.uu', 'anna', 'visit', 'john', 'o\'clock']
     assert TextProcessing.get_word_tokens_from_text("This is a\ttest.\t", LangId("en")) == ['this', 'is', 'test']
     assert TextProcessing.get_word_tokens_from_text("Hello, world!", LangId("en")) == ['hello', 'world']
 
@@ -100,10 +100,12 @@ def test_get_word_tokens_from_text_user_tokenizer_zh():
 
 def test_create_word_token():
 
-    assert TextProcessing.create_word_token("$$hellO", LangId('en')) == "hello"
-    assert TextProcessing.create_word_token("hello!", LangId('en')) == "hello"
-    assert TextProcessing.create_word_token("we’ll", LangId('en')) == "we'll"
-    assert TextProcessing.create_word_token("Iñtërnâtiônàlizætiøn", LangId('en')) == "iñtërnâtiônàlizætiøn"
+    create_word_token = TextProcessing.get_word_token_creator(LangId('en'))
+
+    assert create_word_token("$$hellO") == "hello"
+    assert create_word_token("hello!") == "hello"
+    assert create_word_token("we’ll") == "we'll"
+    assert create_word_token("Iñtërnâtiônàlizætiøn") == "iñtërnâtiônàlizætiøn"
 
 
 def test_calc_word_presence_score():

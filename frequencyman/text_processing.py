@@ -15,6 +15,42 @@ WordToken = NewType('WordToken', str)
 
 class TextProcessing:
 
+    LANGUAGES_USING_APOSTROPHE = {
+        'en',  # English (e.g., contractions like "don't")
+        'fr',  # French (e.g., "l'heure")
+        'it',  # Italian (e.g., "un'altra")
+        'ga',  # Irish (Gaeilge, e.g., "O'Connell")
+        'pt',  # Portuguese (e.g., poetic contractions)
+        'de',  # German (e.g., genitive case in older texts)
+        'nl',  # Dutch (e.g., shortened forms like "'s ochtends")
+        'sv',  # Swedish (e.g., possessive forms like "Anna's")
+        'fi',  # Finnish (e.g., loanwords like "taxi’t")
+        'mt',  # Maltese (apostrophe in words like "qalb’i")
+        'ca',  # Catalan (e.g., "l’àvia")
+        'oc',  # Occitan (e.g., "l’aiga")
+        'br',  # Breton
+        'sw',  # Swahili (e.g., Ng'ombe)
+        'tr',  # Turkish (e.g., İstanbul’a)
+        'cy',  # Welsh (e.g., i’r)
+        'gd',  # Scottish Gaelic (e.g., tha ’n)
+        'gv',  # Manx (e.g., yn ’eddin)
+        'mi',  # Māori (e.g., tā’onga)
+        'nv',  # Navajo (e.g., łéʼéjí)
+        'ku',  # Kurdish (e.g., k’u in Latin script)
+        'az',  # Azerbaijani (e.g., Bakı’da)
+        'uz',  # Uzbek (e.g., so’z)
+        'ht',  # Haitian Creole (e.g., "pa'm" for "pou mwen")
+        'nn',   # Norwegian Nynorsk (e.g., "kor'leis")
+        'co',  # Corsican (e.g., "l'acqua")
+        'gl',  # Galician (e.g., "n'a casa")
+        'lb',  # Luxembourgish (e.g., "d'Stad")
+        'qu',  # Quechua (e.g., "p'unchaw")
+        'sc',  # Sardinian (e.g., "s'arti")
+        'wa',   # Walloon (similar to French)
+        'mg',  # Malagasy (e.g., "lao'ny")
+        'rm',  # Romansh (e.g., "la 'n'oma")
+    }
+
     CHINESE_PATTERN = re.compile(r'[\u4e00-\u9fff]{1,}', re.UNICODE)
     JAPANESE_PATTERN = re.compile(r'[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\uf900-\ufaff\u3400-\u4dbf]{1,}', re.UNICODE)
     KOREAN_PATTERN = re.compile(r'[\uac00-\ud7a3]{1,}', re.UNICODE)
@@ -73,16 +109,22 @@ class TextProcessing:
         return val.strip()
 
     @staticmethod
-    def create_word_token(text: str, lang_id: LangId) -> WordToken:
+    def get_word_token_creator(lang_id: LangId) -> Callable[[str], WordToken]:
 
-        assert "\t" not in text and "\n" not in text and "\r" not in text
+        normalize_curly_apostrophe = str(lang_id) in TextProcessing.LANGUAGES_USING_APOSTROPHE
 
-        token = text.strip(".,'’\"' \t\n\r!@#$%^&*()_-=+{}:\"<>?/;")
+        def create_word_token(text: str) -> WordToken:
 
-        if '’' in token and lang_id in {LangId("en"), LangId("fr"), LangId("it"), LangId("de"), LangId("es")}:
-            token = token.replace("’", "'")
+            assert "\t" not in text and "\n" not in text and "\r" not in text
 
-        return WordToken(token.lower())
+            token = text.strip(".,'’\"' \t\n\r!@#$%^&*()_-=+{}:\"<>?/;")
+
+            if normalize_curly_apostrophe and '’' in token:
+                token = token.replace("’", "'")
+
+            return WordToken(token.lower())
+
+        return create_word_token
 
     @staticmethod
     def default_tokenizer(text: str) -> list[str]:
@@ -138,6 +180,7 @@ class TextProcessing:
     def get_word_tokens_from_text(text: str, lang_id: LangId, tokenizer: Optional[Tokenizer] = None) -> list[WordToken]:
 
         is_acceptable_word = TextProcessing.get_word_accepter(lang_id)
+        create_word_token = TextProcessing.get_word_token_creator(lang_id)
 
         if tokenizer is None:
             tokenizer = TextProcessing.get_tokenizer(lang_id)
@@ -146,7 +189,7 @@ class TextProcessing:
             if not tokenizer in user_provided_tokenizers.get_all_tokenizers(lang_id):
                 raise ValueError("Tokenizer '{}' is not a valid tokenizer for language {}!".format(tokenizer.__name__, lang_id))
 
-        word_tokens = (TextProcessing.create_word_token(token, lang_id) for token in tokenizer(text))
+        word_tokens = (create_word_token(token) for token in tokenizer(text))
         accepted_word_tokens = [token for token in word_tokens if is_acceptable_word(token)]
         return accepted_word_tokens
 

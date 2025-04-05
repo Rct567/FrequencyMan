@@ -186,9 +186,9 @@ class CardRanker:
 
     def calc_cards_ranking(self, target_cards: TargetCards, reorder_scope_target_cards: TargetCards) -> dict[CardId, float]:
 
-        # boost weight of lowest_word_frequency if there are less than 100 reviewed cards
+        # boost weight of lowest_word_frequency if there are not enough reviewed cards for other factors to be useful
 
-        if len(target_cards.reviewed_cards) < 100 and len(self.ranking_factors_span) == len(self.get_default_ranking_factors_span()):
+        if len(target_cards.reviewed_cards) < 50 and len(self.ranking_factors_span) == len(self.get_default_ranking_factors_span()):
             self.ranking_factors_span['lowest_word_frequency'] = max(fsum(self.ranking_factors_span.values()), self.ranking_factors_span['lowest_word_frequency'])
 
         # card ranking is calculates per note (which may have different cards, but same ranking)

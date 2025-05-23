@@ -203,6 +203,10 @@ For debug purposes:
 ### Display focus words on the back of your cards (html example)
 
 ```html
+{{#fm_main_focus_word_0}}
+  <p style="color:darkred;">{{fm_main_focus_word_0}}</p>
+{{/fm_main_focus_word_0}}
+
 {{#fm_focus_words}}
   <p> <span style="opacity:0.65;">Focus:</span> {{fm_focus_words}} </p>
 {{/fm_focus_words}}

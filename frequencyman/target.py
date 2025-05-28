@@ -219,7 +219,7 @@ class Target:
         # Load data for defined 'language data' ids
         language_data_ids_require_loading = {lang_data_id for lang_data_id in self.config_target.get_language_data_ids() if not lang_data_id in self.language_data.ids_loaded_data}
         if language_data_ids_require_loading:
-            with event_logger.add_benchmarked_entry("Loading word frequency lists."):
+            with event_logger.add_benchmarked_entry("Loading word frequency lists: {}.".format(", ".join(language_data_ids_require_loading))):
                 self.language_data.load_data(language_data_ids_require_loading)
                 for lang_key in language_data_ids_require_loading:
                     if not self.language_data.word_frequency_lists.id_has_list_file(lang_key):
@@ -238,7 +238,6 @@ class Target:
             event_logger.add_entry("Found {:n} new cards in a target collection of {:n} cards.".format(num_new_cards, len(target_cards.all_cards_ids)))
 
         # Get corpus data
-
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
             target_corpus_data = self.get_corpus_data(target_cards)
 

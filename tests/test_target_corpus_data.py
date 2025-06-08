@@ -63,6 +63,7 @@ class TestTargetCorpusData:
             create_card(125, 2700, 10): (0.6, 1),
             create_card(100, 3300, 10): (0.5, 1),
             create_card(105, 1800, 20): (0.4, 1),
+            create_card(365*100, 4000, 500): (2.3, 1),
         }
 
         for index, (card, expected_score) in enumerate(cards_scores_expectations.items()):

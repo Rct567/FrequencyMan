@@ -470,7 +470,7 @@ class TargetCorpusData:
                     relative_overdue = card.days_overdue/card.ivl
                     dev = (1+relative_overdue)**3
                     card_score = card_score/dev
-            assert card_score < 2
+            assert card_score <= 2.5
             cards_familiarity[card.id] = card_score
 
         # done

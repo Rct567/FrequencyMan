@@ -33,7 +33,7 @@ class TargetCard:
     @staticmethod
     def get_days_overdue(card_queue: int, card_type: int, card_due: int, col: Collection) -> Optional[int]:
 
-        assert -3 < card_queue < 5
+        assert -3 <= card_queue < 5
         assert 0 < card_type < 4
 
         is_review = card_queue != 0 and card_type == 2

@@ -43,17 +43,17 @@ class AddonConfig():
             raise ValueError("Config not loaded!")
         return key in self.__config
 
-    def is_enabled(self, key: str) -> bool:
+    def is_enabled(self, key: str, default: bool = False) -> bool:
         if self.__config is None:
             raise ValueError("Config not loaded!")
         if key not in self.__config:
-            return False
+            return default
         val = self.__config[key]
         if isinstance(val, bool):
             return val
         if isinstance(val, str):
             return val.lower() in ["y", "yes", "true"]
-        return False
+        return default
 
     def update_setting(self, key: str, value: Union[bool, int, float, str, list[Any], dict[str, Any]]) -> None:
         if self.__config is None:

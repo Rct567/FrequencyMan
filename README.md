@@ -333,6 +333,18 @@ __Notes__:
 - If there is no target with an `id` defined, nothing will be logged and thus no information will be shown.
 - All logged information is stored in the file `user_files\reorder_log.sqlite`.
 
+## FrequencyMan plugin settings
+
+| Setting | Type | Description | Default value      |
+|---------|------|-------------|-------|
+| `show_info_deck_browser` | array of objects |  |  |
+| `show_info_toolbar` | array of objects |  |  |
+| `reposition_shift_existing` | boolean | Wether to move cards outside the target, or leave them in place. | True |
+
+__Notes__:
+- To add or change any of the settings above, go to __Tools > Add-ons > (Select Frequencyman) > Config__.
+- If `reposition_shift_existing` is set to `True`, the cards from the first reordered target will be positioned at the top of your collection.
+
 ## Target Corpus data
 
 A '_corpus data set_' contains all the information related the the content of a note that is used to calculate the ranking of a card (such as the "familiarity" of a word).

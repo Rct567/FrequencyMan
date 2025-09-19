@@ -504,7 +504,8 @@ class ReorderCardsTab(FrequencyManTab):
 
         def reorder_operation(col: Collection) -> TargetListReorderResult:
 
-            reorder_result = self.target_list.reorder_cards(col, event_logger)
+            reposition_shift_existing = self.fm_window.fm_config.is_enabled('reposition_shift_existing', True)
+            reorder_result = self.target_list.reorder_cards(col, event_logger, reposition_shift_existing)
 
             return reorder_result
 

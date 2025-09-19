@@ -198,7 +198,7 @@ class Target:
 
         return target_corpus_data
 
-    def reorder_cards(self, repositioning_starting_from: int, event_logger: EventLogger,
+    def reorder_cards(self, shift_existing: bool, repositioning_starting_from: int, event_logger: EventLogger,
                       modified_dirty_notes: dict[NoteId, Optional[Note]]) -> TargetReorderResult:
 
         if self.cache_data is None:
@@ -306,10 +306,10 @@ class Target:
             event_logger.add_entry("Repositioning {:n} cards not needed for this target.".format(len(sorted_cards_ids)))
             return TargetReorderResult(success=True)
 
-        return self.__reposition_cards(sorted_cards_ids, target_cards, repositioning_starting_from, event_logger)
+        return self.__reposition_cards(sorted_cards_ids, target_cards, shift_existing, repositioning_starting_from, event_logger)
 
-    def __reposition_cards(self, sorted_cards_ids: Sequence[CardId], target_cards: TargetCards, repositioning_starting_from: int,
-                           event_logger: EventLogger) -> TargetReorderResult:
+    def __reposition_cards(self, sorted_cards_ids: Sequence[CardId], target_cards: TargetCards, shift_existing: bool,
+                           repositioning_starting_from: int, event_logger: EventLogger) -> TargetReorderResult:
 
         with event_logger.add_benchmarked_entry("Repositioning {:n} cards for this target.".format(len(sorted_cards_ids))):
 
@@ -318,7 +318,7 @@ class Target:
                 starting_from=repositioning_starting_from,
                 step_size=1,
                 randomize=False,
-                shift_existing=True
+                shift_existing=shift_existing
             )
 
             return TargetReorderResult(success=True).with_repositioning_data(

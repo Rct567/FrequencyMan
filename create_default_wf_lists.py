@@ -3,7 +3,7 @@ import time
 from typing import Iterable, Iterator
 import requests
 
-from frequencyman.static_lang_data import get_default_wf_list_sources
+from frequencyman.static_lang_data import LANGUAGE_NAMES_ENG_AND_NATIVE, get_default_wf_list_sources
 from frequencyman.text_processing import LangId, TextProcessing
 from frequencyman.language_data import WordFrequencyLists
 
@@ -120,15 +120,19 @@ def create_default_wf_lists():
 
         target_file = os.path.join(WF_LIST_TARGET_DIR, lang_id+'.txt')
 
+        print("Creating WF LIST for {}".format(LANGUAGE_NAMES_ENG_AND_NATIVE[lang_id]['name']))
+
         if os.path.isfile(target_file):
-            print(format("File {} already exists!".format(target_file)))
+            print(format(" File {} already exists!".format(target_file)))
             continue
+
+        print(" Downloading {} files...".format(len(wf_list_urls)))
 
         wf_lists: list[list[str]] = []
 
         for wf_list_url in wf_list_urls:
 
-            print("{} => {}".format(lang_id, wf_list_url))
+            print(" {} => {}".format(lang_id, wf_list_url))
 
             response = requests.get(wf_list_url, stream=True)
             response.raise_for_status()
@@ -146,6 +150,9 @@ def create_default_wf_lists():
 
                 if len(wf_list) > (WF_LIST_LENGTH_LIMIT*10):
                     break
+
+            if len(wf_list) < 100:
+                raise Exception("List from {} is too short!".format(wf_list_url))
 
             wf_lists.append(wf_list)
 
@@ -182,10 +189,12 @@ def create_default_wf_lists():
 
 def create_ignore_candidates_list():
 
+    print("Creating ignore candidates list...")
+
     ignore_candidates_file = os.path.join(WF_LIST_TARGET_DIR, 'ignore_candidates.txt')
 
     if os.path.isfile(ignore_candidates_file):
-        print(format("File {} already exists!".format(ignore_candidates_file)))
+        print(format(" File {} already exists!".format(ignore_candidates_file)))
         return
 
     all_words: dict[str, int] = {}
@@ -209,12 +218,17 @@ def create_ignore_candidates_list():
                 all_words[word] = 1
 
     num_languages = len(get_default_wf_list_sources().keys())
-    global_words = {word: round(1 - count/num_languages, 2) for word, count in all_words.items() if count > num_languages*0.25}
+    global_words = {word: round(1 - count/num_languages, 2) for word, count in all_words.items() if count > num_languages*0.15}
     global_words = dict(sorted(global_words.items(), key=lambda x: x[1], reverse=True))
+
+    if len(global_words) < 1000:
+        print(" Warning: Only {} words found!".format(len(global_words)))
 
     with open(ignore_candidates_file, "w", encoding="utf-8") as f:
         for word, count in global_words.items():
             f.write("{} {}\n".format(word, count))
+
+    print(" File {} created!".format(ignore_candidates_file))
 
 
 if __name__ == "__main__":

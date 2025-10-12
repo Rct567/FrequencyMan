@@ -375,9 +375,10 @@ __Notes__:
 
 FrequencyMan comes with 50+ default word frequency lists. These lists are generated using a combination of sources:
 
-- Google Books n-gram: https://github.com/orgtre/google-books-ngram-frequency
-- Based on Open Subtitles 2018: https://github.com/orgtre/top-open-subtitles-sentences, https://github.com/hermitdave/FrequencyWords/tree/master
+- Open Subtitles 2018: https://github.com/Rct567/top-open-subtitles-sentences/tree/frequencyman-edition
+- AI generated children's stories: https://github.com/Rct567/wf_lists_lm_childrenstories
 - Wortschatz 'News 2022', AnkiMorphs 'priority files': https://mortii.github.io/anki-morphs/user_guide/setup/prioritizing.html
+- Google Books n-gram: https://github.com/orgtre/google-books-ngram-frequency
 
 The default word frequency lists can be found in the [`\default_wf_lists`](https://github.com/Rct567/FrequencyMan/tree/master/default_wf_lists). When prompted to create a new _language data directory_ with a default word frequency list, the relevant file will be copied to the new _language data directory_, such as `\user_files\lang_data\en`.
 

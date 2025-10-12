@@ -263,6 +263,7 @@ LANGUAGE_NAMES_ENG_AND_NATIVE = {
     "pl": {"name": "Polish", "nativeName": "polski"},
     "ps": {"name": "Pashto, Pushto", "nativeName": "پښتو"},
     "pt": {"name": "Portuguese", "nativeName": "Português"},
+    "pt_br": {"name": "Portuguese (Brazil)", "nativeName": "Português (Brasil)"},
     "qu": {"name": "Quechua", "nativeName": "Runa Simi, Kichwa"},
     "rm": {"name": "Romansh", "nativeName": "rumantsch grischun"},
     "rn": {"name": "Kirundi", "nativeName": "kiRundi"},

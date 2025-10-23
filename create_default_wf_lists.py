@@ -152,9 +152,17 @@ def create_default_wf_lists():
                     break
 
             if len(wf_list) < 100:
-                raise Exception("List from {} is too short!".format(wf_list_url))
+                print(" WARNING: WF list not used! {} contains only {} words!".format(wf_list_url, len(wf_list)))
+            else:
+                wf_lists.append(wf_list)
 
-            wf_lists.append(wf_list)
+
+        lang_has_long_wf_list = any(len(wf_list) > 4_000 for wf_list in wf_lists)
+
+        if not lang_has_long_wf_list:
+            print(" WARNING: No long WF list found for {}!".format(lang_id))
+            print(" No combined WF list created...")
+            continue
 
         if lang_id == 'en':
             for wf_list in wf_lists:
@@ -184,6 +192,7 @@ def create_default_wf_lists():
         with open(target_file, "w", encoding="utf-8") as f:
             wf_list_content = "\n".join(result_wf_list)
             f.write(wf_list_content)
+            print(" Combined WF list {} created with {} words.".format(target_file, len(result_wf_list)))
 
         time.sleep(1)
 
@@ -207,7 +216,7 @@ def create_ignore_candidates_list():
         wf_list_file = os.path.join(WF_LIST_TARGET_DIR, lang_id+'.txt')
 
         if not os.path.isfile(wf_list_file):
-            raise Exception("File {} does not exist!".format(wf_list_file))
+            continue
 
         for word, _ in WordFrequencyLists.get_words_from_file(wf_list_file, LangId(lang_id[:2])):
 

@@ -11,11 +11,11 @@ from anki.notes import Note, NoteId
 
 from .lib.persistent_cacher import PersistentCacher
 from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
-from .text_processing import TextProcessing
 from .lib.utilities import get_float, profile_context, var_dump_log, override
 from .lib.event_logger import EventLogger
 from .language_data import LanguageData, LangDataId
 from .target_corpus_data import CorpusSegmentationStrategy, TargetCorpusData
+from .tokenizers import WHITE_SPACE_LANGUAGES, get_user_provided_tokenizer
 
 
 class TargetReorderResult():
@@ -241,11 +241,14 @@ class Target:
         with event_logger.add_benchmarked_entry("Creating corpus data from target cards."):
             target_corpus_data = self.get_corpus_data(target_cards)
 
-        if TextProcessing.user_provided_tokenizers is not None:
-            for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.config_target.get_language_data_ids()]:
-                tokenizer = TextProcessing.get_tokenizer(lang_id)
-                if hasattr(tokenizer, "__name__") and "default_tokenizer" not in tokenizer.__name__:
-                    event_logger.add_entry("Used tokenizer '{}' for '{}'.".format(tokenizer.__name__, lang_id))
+        # Check tokenizers used
+        for lang_id in [LanguageData.get_lang_id_from_data_id(lang_data_id) for lang_data_id in self.config_target.get_language_data_ids()]:
+            tokenizer_used = get_user_provided_tokenizer(lang_id)
+            name_tokenizer_used = tokenizer_used.name()
+            if not name_tokenizer_used.startswith("Default"):
+                event_logger.add_entry("Used tokenizer '{}' for '{}'.".format(name_tokenizer_used, lang_id))
+            if not lang_id in tokenizer_used.supported_languages():
+                event_logger.add_entry("Language '{}' not supported by tokenizer '{}'.".format(lang_id, name_tokenizer_used))
 
         # If reorder scope is defined, use it for reordering
         reorder_scope_query = self.reorder_scope_query

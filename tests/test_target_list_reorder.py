@@ -593,8 +593,9 @@ class TestTargetListReorder():
         event_logger = EventLogger()
         target_list.reorder_cards(col, event_logger)
 
-        assert "Used tokenizer 'anki_morphs_jieba_tokenizer' for 'zh'" in str(event_logger)
-        assert "Used tokenizer 'anki_morphs_mecab_tokenizer' for 'ja'" in str(event_logger)
+        assert str(event_logger).count("Used tokenizer '") == 2
+        assert "'AnkiMorphsJiebaTokenizer' for 'zh'" in str(event_logger) or "'UserProvidedTokenizer(jieba)' for 'zh'" in str(event_logger)
+        assert "'AnkiMorphsMecabTokenizer' for 'ja'" in str(event_logger) or "'UserProvidedTokenizer(janome)' for 'ja'" in str(event_logger)
         assert "0 cards repositioned" in str(event_logger)
 
         for target in target_list.target_list:

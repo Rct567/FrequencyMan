@@ -7,7 +7,7 @@ import re
 import html
 from typing import Callable, NewType, Optional
 
-from .tokenizers import Tokenizers, load_user_provided_tokenizers, Tokenizer, LangId
+from .tokenizers import get_user_provided_tokenizer, Tokenizer, LangId
 
 
 WordToken = NewType('WordToken', str)
@@ -62,8 +62,6 @@ class TextProcessing:
     LAO_PATTERN = re.compile(r'[\u0e80-\u0eff]{1,}', re.UNICODE)
     KHMER_PATTERN = re.compile(r'[\u1780-\u17ff]{1,}', re.UNICODE)
     DEFAULT_PATTERN = re.compile(r'[^\W\d_]{2,}', re.UNICODE)
-
-    user_provided_tokenizers: Optional[Tokenizers] = None
 
     @staticmethod
     def get_word_accepter(lang_id: Optional[LangId]) -> Callable[[str], bool]:
@@ -129,69 +127,18 @@ class TextProcessing:
         return create_word_token
 
     @staticmethod
-    def default_tokenizer(text: str) -> list[str]:
-
-        text = str(text+" ").replace(". ", " ")
-        non_word_chars = (
-            r"[^\w\-\_\'\’\."
-            r"\u0610-\u061A\u064B-\u065F" # Arabic diacritical marks
-            r"\u0E00-\u0E7F"  # Thai script
-            r"\u0E80-\u0EFF"  # Lao script
-            r"\u1780-\u17FF"  # Khmer script
-            r"]+"
-        )
-        return re.split(non_word_chars, text)
-
-    @staticmethod
-    def default_tokenizer_removing_possessives(text: str) -> list[str]:
-
-        tokens = TextProcessing.default_tokenizer(text)
-
-        for i, token in enumerate(tokens):
-            if len(token) <= 3:
-                continue
-            if token[-1] == "s" and token[-2] in {"'", "’"}:
-                tokens[i] = token[:-2]
-
-        return tokens
-
-    @staticmethod
-    def get_user_provided_tokenizers() -> Tokenizers:
-
-        if TextProcessing.user_provided_tokenizers is None:
-            TextProcessing.user_provided_tokenizers = load_user_provided_tokenizers()
-
-        return TextProcessing.user_provided_tokenizers
-
-    @staticmethod
-    def get_tokenizer(lang_id: LangId) -> Tokenizer:
-
-        user_provided_tokenizers = TextProcessing.get_user_provided_tokenizers()
-
-        if user_provided_tokenizers.lang_has_tokenizer(lang_id):
-            return user_provided_tokenizers.get_tokenizer(lang_id)
-
-        # or default tokenizer
-
-        if lang_id in {LangId('en'), LangId('nl'), LangId('af')}:
-            return TextProcessing.default_tokenizer_removing_possessives
-
-        return TextProcessing.default_tokenizer
-
-    @staticmethod
     def get_word_tokens_from_text(text: str, lang_id: LangId, tokenizer: Optional[Tokenizer] = None) -> list[WordToken]:
 
         is_acceptable_word = TextProcessing.get_word_accepter(lang_id)
         create_word_token = TextProcessing.get_word_token_creator(lang_id)
 
         if tokenizer is None:
-            tokenizer = TextProcessing.get_tokenizer(lang_id)
+            tokenizer = get_user_provided_tokenizer(lang_id)
         else:  # tokenizer is provided, should only be used for testing
-            user_provided_tokenizers = TextProcessing.get_user_provided_tokenizers()
-            if not tokenizer in user_provided_tokenizers.get_all_tokenizers(lang_id):
-                raise ValueError("Tokenizer '{}' is not a valid tokenizer for language {}!".format(tokenizer.__name__, lang_id))
+            if not lang_id in tokenizer.supported_languages():
+                raise ValueError("Provided tokenizer '{}' does not support '{}'.".format(tokenizer.__class__.__name__, lang_id))
 
-        word_tokens = (create_word_token(token) for token in tokenizer(text))
+        word_tokens = (create_word_token(token) for token in tokenizer.tokenize(text))
         accepted_word_tokens = [token for token in word_tokens if is_acceptable_word(token)]
         return accepted_word_tokens
 

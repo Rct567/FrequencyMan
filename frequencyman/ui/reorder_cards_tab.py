@@ -486,6 +486,14 @@ class ReorderCardsTab(FrequencyManTab):
             with open(json_backup_file_path, 'a'):  # touch (update modification time)
                 os.utime(json_backup_file_path, None)
 
+
+    @staticmethod
+    def __get_progress_label(target_index: int, num_targets: int) -> str:
+        if num_targets <= 1 or target_index < 0:
+            return "Reordering new cards..."
+
+        return "Reordering new cards... ({}/{})".format(target_index+1, num_targets)
+
     def __execute_reorder_request(self) -> None:
 
         if not self.target_list.has_targets():
@@ -505,7 +513,11 @@ class ReorderCardsTab(FrequencyManTab):
         def reorder_operation(col: Collection) -> TargetListReorderResult:
 
             reposition_shift_existing = self.fm_window.fm_config.is_enabled('reposition_shift_existing', True)
-            reorder_result = self.target_list.reorder_cards(col, event_logger, reposition_shift_existing)
+
+            def reorder_status_callback(target_index: int, num_targets: int) -> None:
+                self.fm_window.mw.taskman.run_on_main(lambda: self.fm_window.mw.progress.update(label=self.__get_progress_label(target_index, num_targets)))
+
+            reorder_result = self.target_list.reorder_cards(col, event_logger, reorder_status_callback, reposition_shift_existing)
 
             return reorder_result
 
@@ -549,6 +561,7 @@ class ReorderCardsTab(FrequencyManTab):
 
         shift_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
         ctrl_pressed = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier
+        initial_progress_label = self.__get_progress_label(0, len(self.target_list))
 
         if shift_pressed and ctrl_pressed:  # for debugging purposes
             handle_results(reorder_operation(self.col))
@@ -557,4 +570,4 @@ class ReorderCardsTab(FrequencyManTab):
                 parent=self.fm_window,
                 op=reorder_operation,
                 success=handle_results
-            ).with_progress(label="Reordering new cards...").run_in_background()
+            ).with_progress(label=initial_progress_label).run_in_background()

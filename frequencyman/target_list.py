@@ -8,7 +8,7 @@ from enum import Enum
 from functools import cache
 import json
 import re
-from typing import Iterator, Optional, Any
+from typing import Callable, Iterator, Optional, Any
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -421,21 +421,26 @@ class TargetList:
 
         return (True, "", ValidConfiguredTarget(**ordered_result))
 
-    def reorder_cards(self, col: Collection, event_logger: EventLogger, shift_existing: bool = True) -> TargetListReorderResult:
+    def reorder_cards(self, col: Collection, event_logger: EventLogger, reorder_status_callback: Optional[Callable[[int, int], None]] = None, shift_existing: bool = True) -> TargetListReorderResult:
 
         reorder_result_list: list[TargetReorderResult] = []
         modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
         num_cards_repositioned = 0
         num_targets_repositioned = 0
+        if reorder_status_callback is None:
+            reorder_status_callback = lambda target_index, num_targets: None
 
         # Reposition cards for each target
         for target in self.target_list:
             with event_logger.add_benchmarked_entry("Reordering target #{}.".format(target.index_num)):
+                reorder_status_callback(target.index_num, len(self.target_list))
                 reorder_result = target.reorder_cards(shift_existing, num_cards_repositioned, event_logger, modified_dirty_notes)
                 reorder_result_list.append(reorder_result)
                 if reorder_result.cards_repositioned:
                     num_cards_repositioned += reorder_result.num_cards_repositioned
                     num_targets_repositioned += 1
+
+        reorder_status_callback(-1, len(self.target_list))
 
         self.cacher.db.close()
 

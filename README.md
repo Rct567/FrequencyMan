@@ -288,7 +288,10 @@ Two different types of files can be placed in a **language data id** directory:
 
 In the __language data folder__ itself (`\user_files\lang_data`) the following type of files can be placed:
 
-- __names lists__: A text file with names/words that will not be used to calculate the rankings. It basically functions like a 'global' ignore list. The file name should start with "names", such as `names_to_ignore.txt`.
+- __names lists__: A text file with names/words that will not be used to calculate the rankings. The file name should start with "names", such as `names_to_ignore.txt`.
+- __ignore lists__: A text file with words that will not be used to calculate the rankings. The file name should start with "ignore".
+
+Both 'name lists' and 'ignore lists' placed in the __language data folder__ itself are used for all languages.
 
 ## Reorder logging
 

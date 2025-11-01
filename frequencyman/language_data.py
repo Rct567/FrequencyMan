@@ -218,19 +218,19 @@ class IgnoreLists:
         return self.ignore_lists is not None and lang_data_id in self.ignore_lists
 
 
-class NamesLists:
+class GlobalIgnoreLists:
 
     lang_data_dir: str
-    names_lists: Optional[list[set[str]]]
-    names_list: Optional[set[str]]
+    ignore_lists: Optional[list[set[str]]]
+    ignore_list: Optional[set[str]]
 
     def __init__(self, lang_data_dir: str) -> None:
 
         self.lang_data_dir = lang_data_dir
-        self.names_lists = None
-        self.names_list = None
+        self.ignore_lists = None
+        self.ignore_list = None
 
-    def __get_files(self) -> set[str]:
+    def get_files(self) -> set[str]:
 
         files: set[str] = set()
 
@@ -238,7 +238,7 @@ class NamesLists:
             for file_name in os.listdir(self.lang_data_dir):
                 if not file_name.endswith('.txt'):
                     continue
-                if not file_name.startswith('names'):
+                if not file_name.startswith('names') and not file_name.startswith('ignore'):
                     continue
 
                 files.add(os.path.join(self.lang_data_dir, file_name))
@@ -247,23 +247,23 @@ class NamesLists:
 
     def load_lists(self) -> None:
 
-        if self.names_list is not None and self.names_lists is not None:
+        if self.ignore_list is not None and self.ignore_lists is not None:
             return
 
-        self.names_list = set()
-        self.names_lists = []
+        self.ignore_list = set()
+        self.ignore_lists = []
 
-        for names_file in self.__get_files():
-            self.__load_list(names_file)
+        for file in self.get_files():
+            self.__load_list(file)
 
-    def __load_list(self, names_file: str) -> None:
+    def __load_list(self, file: str) -> None:
 
-        assert self.names_list is not None and self.names_lists is not None
+        assert self.ignore_list is not None and self.ignore_lists is not None
 
-        words = set(word for word, _ in WordFrequencyLists.get_words_from_file(names_file, lang_id=None))
+        words = set(word for word, _ in WordFrequencyLists.get_words_from_file(file, lang_id=None))
 
-        self.names_list.update(words)
-        self.names_lists.append(words)
+        self.ignore_list.update(words)
+        self.ignore_lists.append(words)
 
         self.lists_loaded = True
 
@@ -273,7 +273,7 @@ class LanguageData:
     data_dir: str
     word_frequency_lists: WordFrequencyLists
     ignore_lists: IgnoreLists
-    names_lists: NamesLists
+    global_ignore_lists: GlobalIgnoreLists
     ids_loaded_data: set[LangDataId]
 
     def __init__(self, lang_data_dir: str) -> None:
@@ -285,7 +285,7 @@ class LanguageData:
         self.ids_loaded_data = set()
         self.word_frequency_lists = WordFrequencyLists(self.data_dir)
         self.ignore_lists = IgnoreLists(self.data_dir)
-        self.names_lists = NamesLists(self.data_dir)
+        self.global_ignore_lists = GlobalIgnoreLists(self.data_dir)
 
     def id_has_directory(self, lang_data_id: LangDataId) -> bool:
 
@@ -308,7 +308,7 @@ class LanguageData:
             self.ignore_lists.load_lists({lang_data_id})
             self.ids_loaded_data.add(lang_data_id)
 
-        self.names_lists.load_lists()
+        self.global_ignore_lists.load_lists()
 
     def get_word_frequency_list(self, lang_data_id: LangDataId) -> dict[str, float]:
 
@@ -334,20 +334,20 @@ class LanguageData:
         except KeyError:
             return set()
 
-    def get_names_list(self) -> set[str]:
+    def get_global_ignore_list(self) -> set[str]:
 
-        self.names_lists.load_lists()
+        self.global_ignore_lists.load_lists()
 
-        if self.names_lists.names_list is None:
-            raise Exception("No names list loaded.")
+        if self.global_ignore_lists.ignore_list is None:
+            raise Exception("Global ignore list is not loaded.")
 
-        return self.names_lists.names_list
+        return self.global_ignore_lists.ignore_list
 
     def get_ignored_words(self, lang_data_id: LangDataId) -> set[str]:
 
         self.load_data(lang_data_id)
 
-        return self.get_ignore_list(lang_data_id).union(self.get_names_list())
+        return self.get_ignore_list(lang_data_id).union(self.get_global_ignore_list())
 
     @staticmethod
     def get_lang_id_from_data_id(lang_data_id: LangDataId) -> LangId:

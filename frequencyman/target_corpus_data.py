@@ -45,7 +45,7 @@ class NoteFieldContentData:
         if self.field_value == "":
             field_value_tokenized = []
         else:
-            cache_key = str(self.target_language_id)+self.field_value
+            cache_key = str(self.target_language_id)+"|"+self.field_value
             field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(self.field_value), self.target_language_id))
 
         return field_value_tokenized
@@ -121,11 +121,8 @@ class SegmentContentMetrics:
         if not self.words_familiarity_max > (familiarity_sweetspot_point*2):
             return {}
 
-        for word_token in self.words_familiarity:
-
-            familiarity = self.words_familiarity[word_token]
+        for word_token, familiarity in self.words_familiarity.items():
             familiarity_sweetspot_rating = (self.words_familiarity_max-abs(familiarity-familiarity_sweetspot_point))
-
             words_familiarity_sweetspot[word_token] = familiarity_sweetspot_rating
 
         words_familiarity_sweetspot = sort_dict_floats_values(words_familiarity_sweetspot)
@@ -162,7 +159,7 @@ class SegmentContentMetrics:
         if not words_familiarity_values:
             return 0
 
-        return median(self.words_familiarity.values())
+        return median(words_familiarity_values)
 
     @cached_property
     def words_familiarity_max(self) -> float:
@@ -314,7 +311,7 @@ class TargetCorpusData:
     Class representing corpus data from target cards.
     """
 
-    targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]] = field(default_factory=lambda: defaultdict(list))
+    targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]]
     content_metrics: dict[CorpusSegmentId, SegmentContentMetrics]
     focus_words_max_familiarity: float
     familiarity_sweetspot_point: Union[float, str]

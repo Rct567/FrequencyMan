@@ -1,4 +1,4 @@
-from frequencyman.text_processing import LangId, TextProcessing
+from frequencyman.text_processing import LangId, TextProcessing, WordToken
 from frequencyman.tokenizers import get_tokenizer_registry
 
 
@@ -109,14 +109,17 @@ def test_create_word_token():
 
 def test_calc_word_presence_score():
 
+    def calc_word_presence_score(context: list[WordToken], token_index: int) -> tuple[WordToken, float]:
+        return list(TextProcessing.calc_word_presence_scores(context))[token_index]
+
     token_context = TextProcessing.get_word_tokens_from_text("test", LangId("en"))
-    assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 0) == 1.0
+    assert calc_word_presence_score(token_context, 0) == (WordToken("test"), 1.0)
 
     token_context = TextProcessing.get_word_tokens_from_text("test abcd", LangId("en"))
-    assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 0) == (0.5+0.5+1)/3
+    assert calc_word_presence_score(token_context, 0)[1] == (0.5+0.5+1)/3
 
     token_context = TextProcessing.get_word_tokens_from_text("test abcdabcd", LangId("en"))
-    assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 0) == (0.5+(1/3)+1)/3
+    assert calc_word_presence_score(token_context, 0)[1] == (0.5+(1/3)+1)/3
 
     token_context = TextProcessing.get_word_tokens_from_text("test test abcd", LangId("en"))
-    assert TextProcessing.calc_word_presence_score(token_context[0], token_context, 1) == ((2/3)+(2/3)+0.5)/3
+    assert calc_word_presence_score(token_context, 1)[1] == ((2/3)+(2/3)+0.5)/3

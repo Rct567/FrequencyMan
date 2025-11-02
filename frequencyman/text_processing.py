@@ -5,7 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 import re
 import html
-from typing import Callable, NewType, Optional
+from typing import Callable, Generator, NewType, Optional
 
 from .tokenizers import get_user_provided_tokenizer, Tokenizer, LangId
 
@@ -143,17 +143,19 @@ class TextProcessing:
         return accepted_word_tokens
 
     @staticmethod
-    def calc_word_presence_score(word: WordToken, context: list[WordToken], position_index: int) -> float:
+    def calc_word_presence_scores(context: list[WordToken]) -> Generator[tuple[WordToken, float], None, None]:
 
-        assert word in context
-        assert word == context[position_index]
-
-        word_count = context.count(word)
         context_num_words = len(context)
         context_num_chars = len(''.join(context))
 
-        presence_score_by_words = word_count/context_num_words
-        presence_score_by_chars = (len(word)*word_count)/context_num_chars
-        position_value = 1/(position_index+1)
+        for position_index, word in enumerate(context):
 
-        return (presence_score_by_words+presence_score_by_chars+position_value)/3
+            word_count = context.count(word)
+
+            presence_score_by_words = word_count/context_num_words
+            presence_score_by_chars = (len(word)*word_count)/context_num_chars
+            position_value = 1/(position_index+1)
+
+            presence_score = (presence_score_by_words+presence_score_by_chars+position_value)/3
+
+            yield word, presence_score

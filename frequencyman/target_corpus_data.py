@@ -175,43 +175,29 @@ class SegmentContentMetrics:
 
         return normalize_dict_positional_floats_values(self.words_familiarity)
 
+    @staticmethod
+    def __get_words_presence_scores(cards: Sequence[TargetCard], targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]]) -> dict[WordToken, list[float]]:
+
+        words_presence: dict[WordToken, list[float]] = defaultdict(list)
+        calc_word_presence_scores = TextProcessing.calc_word_presence_scores
+
+        for card in cards:
+            for field_data in targeted_fields_per_note[card.nid]:
+
+                for word_token, word_presence_score in calc_word_presence_scores(field_data.field_value_tokenized):
+                    words_presence[word_token].append(word_presence_score)
+
+        return words_presence
+
     @cached_property
     def reviewed_words_presence(self) -> dict[WordToken, list[float]]:
 
-        reviewed_words_presence: dict[WordToken, list[float]] = {}
-
-        for card in self.target_cards.reviewed_cards:
-
-            for field_data in self.targeted_fields_per_note[card.nid]:
-
-                for index, word_token in enumerate(field_data.field_value_tokenized):
-
-                    if word_token not in reviewed_words_presence:
-                        reviewed_words_presence[word_token] = []
-
-                    word_presence_score = TextProcessing.calc_word_presence_score(word_token, field_data.field_value_tokenized, index)
-                    reviewed_words_presence[word_token].append(word_presence_score)
-
-        return reviewed_words_presence
+        return self.__get_words_presence_scores(self.target_cards.reviewed_cards, self.targeted_fields_per_note)
 
     @cached_property
     def all_words_presence(self) -> dict[WordToken, list[float]]:
 
-        words_presence: dict[WordToken, list[float]] = {}
-
-        for card in self.target_cards.all_cards:
-
-            for field_data in self.targeted_fields_per_note[card.nid]:
-
-                for index, word_token in enumerate(field_data.field_value_tokenized):
-
-                    if word_token not in words_presence:
-                        words_presence[word_token] = []
-
-                    word_presence_score = TextProcessing.calc_word_presence_score(word_token, field_data.field_value_tokenized, index)
-                    words_presence[word_token].append(word_presence_score)
-
-        return words_presence
+        return self.__get_words_presence_scores(self.target_cards.all_cards, self.targeted_fields_per_note)
 
     @cached_property
     def cards_per_word(self) -> dict[WordToken, list[TargetCard]]:

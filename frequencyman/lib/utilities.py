@@ -123,27 +123,31 @@ def profile_context(amount: int = 40) -> Iterator[cProfile.Profile]:
             f.write(profiling_results)
 
 
-T = TypeVar('T')
 
+if sys.version_info >= (3, 12):
+    from itertools import batched as batched
+else:
 
-def batched(iterable: Iterable[T], n: int) -> Iterator[tuple[T, ...]]:
-    """
-    Batch an iterable into smaller batches of a specified size.
+    T = TypeVar('T')
 
-    Parameters:
-        iterable (Iterable): The iterable to be batched.
-        n (int): The size of each batch.
+    def batched(iterable: Iterable[T], n: int) -> Iterator[tuple[T, ...]]:
+        """
+        Batch an iterable into smaller batches of a specified size.
 
-    Yields:
-        tuple[T, ...]: A tuple of the batched elements.
-    """
+        Parameters:
+            iterable (Iterable): The iterable to be batched.
+            n (int): The size of each batch.
 
-    it = iter(iterable)
-    while True:
-        batch = tuple(itertools.islice(it, n))
-        if not batch:
-            return
-        yield batch
+        Yields:
+            tuple[T, ...]: A tuple of the batched elements.
+        """
+
+        it = iter(iterable)
+        while True:
+            batch = tuple(itertools.islice(it, n))
+            if not batch:
+                return
+            yield batch
 
 
 K = TypeVar('K')

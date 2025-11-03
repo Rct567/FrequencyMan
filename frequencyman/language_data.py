@@ -5,6 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from collections import defaultdict
 import csv
+from functools import cache
 from typing import Iterator, NewType, Optional, Union
 
 from .lib.utilities import *
@@ -343,6 +344,7 @@ class LanguageData:
 
         return self.global_ignore_lists.ignore_list
 
+    @cache
     def get_ignored_words(self, lang_data_id: LangDataId) -> set[str]:
 
         self.load_data(lang_data_id)

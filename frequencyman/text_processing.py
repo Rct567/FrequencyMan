@@ -3,6 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from collections import Counter
 import re
 import html
 from typing import Callable, Generator, NewType, Optional
@@ -145,17 +146,28 @@ class TextProcessing:
     @staticmethod
     def calc_word_presence_scores(context: list[WordToken]) -> Generator[tuple[WordToken, float], None, None]:
 
+        if not context:
+            return
+
         context_num_words = len(context)
-        context_num_chars = len(''.join(context))
+        if context_num_words == 1:
+            yield context[0], 1.0
+            return
+
+        counts = Counter(context)
+        context_num_chars = 0
+        for w in context:
+            context_num_chars += len(w)
+
+        get_count = counts.get
 
         for position_index, word in enumerate(context):
+            word_count = get_count(word, 0)
+            presence_score_by_words = word_count / context_num_words
+            presence_score_by_chars = (len(word) * word_count) / context_num_chars
 
-            word_count = context.count(word)
-
-            presence_score_by_words = word_count/context_num_words
-            presence_score_by_chars = (len(word)*word_count)/context_num_chars
-            position_value = 1/(position_index+1)
-
-            presence_score = (presence_score_by_words+presence_score_by_chars+position_value)/3
+            position_value = 1.0 / (position_index + 1)
+            
+            presence_score = (presence_score_by_words + presence_score_by_chars + position_value) / 3.0
 
             yield word, presence_score

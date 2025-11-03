@@ -8,7 +8,7 @@ from typing import Generator, Callable, Optional
 from contextlib import contextmanager
 import time
 
-from .utilities import var_dump, override
+from .utilities import override
 
 
 class EventLogger:
@@ -19,34 +19,37 @@ class EventLogger:
         self.timed_entries_open: int = 0
         self.time_started: Optional[float] = None
 
-    def addEventLogListener(self, listener: Callable[[str], None]) -> None:
+    def add_event_log_listener(self, listener: Callable[[str], None]) -> None:
         self.event_log_listeners.append(listener)
 
     def add_entry(self, log_msg: str) -> int:
         index = len(self.event_log)
-        if self.timed_entries_open > 0:
-            self.event_log.append(("  "*self.timed_entries_open)+" "+log_msg)
-        else:
-            self.event_log.append(log_msg)
+        indent = ("  " * self.timed_entries_open) + " " if self.timed_entries_open > 0 else ""
+        self.event_log.append(indent + log_msg)
+
         if self.time_started is None:
-            self.time_started = time.time()
+            self.time_started = time.perf_counter()
+
         for listener in self.event_log_listeners:
             listener(log_msg)
+
         return index
 
-    def getElapsedTime(self) -> float:
+    def get_elapsed_time(self) -> float:
         if self.time_started is None:
             return 0.0
-        return time.time() - self.time_started
+        return time.perf_counter() - self.time_started
 
     @contextmanager
     def add_benchmarked_entry(self, log_msg: str) -> Generator[None, None, None]:
         index = self.add_entry(log_msg)
-        start_time = time.time()
+        start_time = time.perf_counter()
         self.timed_entries_open += 1
+
         yield
+
         self.timed_entries_open -= 1
-        elapsed_time = time.time() - start_time
+        elapsed_time = time.perf_counter() - start_time
         self.event_log[index] += " (took {:.2f} seconds)".format(elapsed_time)
 
     def append_to_file(self, target_file: str) -> None:

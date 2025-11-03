@@ -464,7 +464,7 @@ class TargetList:
 
         # Done
         event_logger.add_entry("Done with reordering of all targets!")
-        event_logger.add_entry("{:n} cards repositioned in {:.2f} seconds.".format(num_cards_repositioned, event_logger.getElapsedTime()))
+        event_logger.add_entry("{:n} cards repositioned in {:.2f} seconds.".format(num_cards_repositioned, event_logger.get_elapsed_time()))
 
         return TargetListReorderResult(
             num_cards_repositioned=num_cards_repositioned,

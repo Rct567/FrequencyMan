@@ -37,18 +37,8 @@ class NoteFieldContentData:
     field_value: str
     target_language_data_id: LangDataId
     target_language_id: LangId
-    cacher: PersistentCacher
+    field_value_tokenized: list[WordToken]
 
-    @cached_property
-    def field_value_tokenized(self) -> list[WordToken]:
-
-        if self.field_value == "":
-            field_value_tokenized = []
-        else:
-            cache_key = str(self.target_language_id)+"|"+self.field_value
-            field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(self.field_value), self.target_language_id))
-
-        return field_value_tokenized
 
 
 @dataclass
@@ -338,6 +328,16 @@ class TargetCorpusData:
 
         self.__set_targeted_fields_data()
 
+    def __get_field_value_tokenized(self, field_value: str, lang_id: LangId) -> list[WordToken]:
+
+        if field_value == "":
+            field_value_tokenized = []
+        else:
+            cache_key = str(lang_id)+"|"+field_value
+            field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(field_value), lang_id))
+
+        return field_value_tokenized
+
     def __set_targeted_fields_data(self):
 
         self.cacher.pre_load_all_items()
@@ -378,9 +378,9 @@ class TargetCorpusData:
                         corpus_segment_id=corpus_segment_id,
                         field_name=field_name,
                         field_value=field_val,
+                        field_value_tokenized=self.__get_field_value_tokenized(field_val, lang_id),
                         target_language_data_id=lang_data_id,
                         target_language_id=lang_id,
-                        cacher=self.cacher
                     )
 
                     card_note_fields_in_target.append(content_data)

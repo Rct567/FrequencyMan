@@ -63,22 +63,21 @@ class PersistentCacher():
 
     @staticmethod
     def deserialize(value: str, storage_type: SerializationType) -> Any:
-        if storage_type == SerializationType.JSON:
+        if storage_type == SerializationType.LIST_STR:
+            return value.split("\x1C")
+        elif storage_type == SerializationType.JSON:
             return json.loads(value)
         elif storage_type == SerializationType.STR:
             return value
-        elif storage_type == SerializationType.LIST_STR:
-            return value.split("\x1C")
         else:
             raise Exception("Invalid storage_type!")
 
     @staticmethod
     def serialize(value: Any, storage_type: SerializationType) -> str:
-
-        if storage_type == SerializationType.STR:
-            return value
-        elif storage_type == SerializationType.LIST_STR:
+        if storage_type == SerializationType.LIST_STR:
             return "\x1C".join(value)
+        elif storage_type == SerializationType.STR:
+            return value
         elif storage_type == SerializationType.JSON:
             return json.dumps(value)
         else:

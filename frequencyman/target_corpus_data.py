@@ -57,14 +57,10 @@ class SegmentContentMetrics:
     @cached_property
     def mature_words(self) -> set[WordToken]:
 
-        mature_words: set[WordToken] = set()
-
-        for word_token, word_familiarity in self.words_familiarity.items():
-
-            if word_familiarity > self.focus_words_max_familiarity:
-                mature_words.add(word_token)
-
-        return mature_words
+        return {
+            word_token for word_token, word_familiarity in self.words_familiarity.items()
+            if word_familiarity > self.focus_words_max_familiarity
+        }
 
     @cached_property
     def words_underexposure(self) -> dict[WordToken, float]:
@@ -77,25 +73,26 @@ class SegmentContentMetrics:
             word_familiarity = self.words_familiarity_positional.get(word_token, 0)
             word_underexposure_rating = (word_fr ** 3) - (word_familiarity ** 3)
 
-            if (word_underexposure_rating > 0):
-                if self.words_familiarity.get(word_token, 0) < 1.9:
-                    word_underexposure_rating = word_underexposure_rating * ((1 + word_familiarity) ** 1.5)
+            if word_underexposure_rating > 0:
+                current_familiarity = self.words_familiarity.get(word_token, 0)
+                if current_familiarity < 1.9:
+                    word_underexposure_rating *= ((1 + word_familiarity) ** 1.5)
                 if word_familiarity == 0:
-                    word_underexposure_rating = word_underexposure_rating*0.75
+                    word_underexposure_rating *= 0.75
                 words_underexposure[word_token] = word_underexposure_rating
 
-        words_underexposure = sort_dict_floats_values(words_underexposure)
-        words_underexposure = remove_bottom_percent_dict(words_underexposure, 0.1, 100)
-        words_underexposure = normalize_dict_floats_values(words_underexposure)
-        return words_underexposure
+        return normalize_dict_floats_values(
+            remove_bottom_percent_dict(
+                sort_dict_floats_values(words_underexposure),
+                0.1, 100
+            )
+        )
 
     @cached_property
     def words_familiarity_sweetspot(self) -> dict[WordToken, float]:
 
         if not self.words_familiarity:
             return {}
-
-        words_familiarity_sweetspot: dict[WordToken, float] = {}
 
         if isinstance(self.familiarity_sweetspot_point, str):
             if self.familiarity_sweetspot_point[0] == '^':
@@ -108,27 +105,32 @@ class SegmentContentMetrics:
         else:
             familiarity_sweetspot_point = self.familiarity_sweetspot_point
 
-        if not self.words_familiarity_max > (familiarity_sweetspot_point*2):
+        if not self.words_familiarity_max > (familiarity_sweetspot_point * 2):
             return {}
 
-        for word_token, familiarity in self.words_familiarity.items():
-            familiarity_sweetspot_rating = (self.words_familiarity_max-abs(familiarity-familiarity_sweetspot_point))
-            words_familiarity_sweetspot[word_token] = familiarity_sweetspot_rating
+        words_familiarity_sweetspot = {
+            word_token: (self.words_familiarity_max - abs(familiarity - familiarity_sweetspot_point))
+            for word_token, familiarity in self.words_familiarity.items()
+        }
 
-        words_familiarity_sweetspot = sort_dict_floats_values(words_familiarity_sweetspot)
-        words_familiarity_sweetspot = remove_bottom_percent_dict(words_familiarity_sweetspot, 0.1, 100)
-        words_familiarity_sweetspot = normalize_dict_floats_values(words_familiarity_sweetspot)
-        return words_familiarity_sweetspot
+        return normalize_dict_floats_values(
+            remove_bottom_percent_dict(
+                sort_dict_floats_values(words_familiarity_sweetspot),
+                0.1, 100
+            )
+        )
 
     @cached_property
     def words_familiarity(self) -> dict[WordToken, float]:
-
         words_familiarity: dict[WordToken, float] = {}
 
         for word_token, word_presence_scores in self.reviewed_words_presence.items():
             cards_familiarity_factor = self.reviewed_words_cards_familiarity_factor[word_token]
             assert len(word_presence_scores) == len(cards_familiarity_factor)
-            word_familiarity = fsum((card_familiarity_factor * word_presence) for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor))
+            word_familiarity = fsum(
+                card_familiarity_factor * word_presence
+                for word_presence, card_familiarity_factor in zip(word_presence_scores, cards_familiarity_factor)
+            )
             words_familiarity[word_token] = word_familiarity
 
         return sort_dict_floats_values(words_familiarity)
@@ -136,29 +138,17 @@ class SegmentContentMetrics:
     @cached_property
     def words_familiarity_mean(self) -> float:
 
-        words_familiarity_values = self.words_familiarity.values()
-        if not words_familiarity_values:
-            return 0
-
-        return fmean(words_familiarity_values)
+        return fmean(self.words_familiarity.values()) if self.words_familiarity else 0
 
     @cached_property
     def words_familiarity_median(self) -> float:
 
-        words_familiarity_values = self.words_familiarity.values()
-        if not words_familiarity_values:
-            return 0
-
-        return median(words_familiarity_values)
+        return median(self.words_familiarity.values()) if self.words_familiarity else 0
 
     @cached_property
     def words_familiarity_max(self) -> float:
 
-        words_familiarity_values = self.words_familiarity.values()
-        if not words_familiarity_values:
-            return 0
-
-        return max(words_familiarity_values)
+        return max(self.words_familiarity.values()) if self.words_familiarity else 0
 
     @cached_property
     def words_familiarity_positional(self) -> dict[WordToken, float]:
@@ -215,17 +205,11 @@ class SegmentContentMetrics:
     @cached_property
     def cards_per_word(self) -> dict[WordToken, list[TargetCard]]:
 
-        cards_per_word: dict[WordToken, list[TargetCard]] = {}
+        cards_per_word: dict[WordToken, list[TargetCard]] = defaultdict(list)
 
         for card in self.target_cards.all_cards:
-
             for field_data in self.targeted_fields_per_note[card.nid]:
-
                 for word_token in field_data.field_value_tokenized:
-
-                    if word_token not in cards_per_word:
-                        cards_per_word[word_token] = []
-
                     cards_per_word[word_token].append(card)
 
         return cards_per_word
@@ -233,37 +217,32 @@ class SegmentContentMetrics:
     @cached_property
     def all_words(self) -> set[WordToken]:
 
-        all_words: set[WordToken] = set()
-
-        for note_id in self.targeted_fields_per_note.keys():
-
-            for field_data in self.targeted_fields_per_note[note_id]:
-
-                for word_token in field_data.field_value_tokenized:
-                    all_words.add(word_token)
-
-        return all_words
+        return {
+            word_token
+            for field_data_list in self.targeted_fields_per_note.values()
+            for field_data in field_data_list
+            for word_token in field_data.field_value_tokenized
+        }
 
     @cached_property
     def new_words(self) -> set[WordToken]:
 
-        return set(word for word in self.all_words if word not in self.reviewed_words)
+        return self.all_words - set(self.reviewed_words.keys())
 
     @cached_property
     def word_frequency(self) -> dict[WordToken, float]:
 
         word_frequency_list = self.language_data.get_word_frequency_list(self.lang_data_id)
 
-        new_word_frequency: dict[WordToken, float] = {}
+        new_word_frequency = {
+            word_token: word_frequency_list.get(word_token, 0)
+            for word_token in self.all_words
+            if word_frequency_list.get(word_token, 0) > 0
+        }
 
-        for word_token in self.all_words:
-            word_frequency = word_frequency_list.get(word_token, 0)
-            if word_frequency > 0:
-                new_word_frequency[word_token] = word_frequency
-
-        new_word_frequency = sort_dict_floats_values(new_word_frequency)
-        new_word_frequency = normalize_dict_positional_floats_values(new_word_frequency)
-        return new_word_frequency
+        return normalize_dict_positional_floats_values(
+            sort_dict_floats_values(new_word_frequency)
+        )
 
     @cached_property
     def ignored_words(self) -> set[str]:

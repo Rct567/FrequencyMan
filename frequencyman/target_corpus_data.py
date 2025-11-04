@@ -165,29 +165,52 @@ class SegmentContentMetrics:
 
         return normalize_dict_positional_floats_values(self.words_familiarity)
 
-    @staticmethod
-    def __get_words_presence_scores(cards: Sequence[TargetCard], targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]]) -> dict[WordToken, list[float]]:
+    @cached_property
+    def __reviewed_words_aggregates(self) -> tuple[dict[WordToken, list[float]], dict[WordToken, list[TargetCard]], dict[WordToken, list[float]]]:
+
+        reviewed_words_presence: defaultdict[WordToken, list[float]] = defaultdict(list)
+        reviewed_words: defaultdict[WordToken, list[TargetCard]] = defaultdict(list)
+        reviewed_words_cards_familiarity_factor: defaultdict[WordToken, list[float]] = defaultdict(list)
+        calc_word_presence_scores = TextProcessing.calc_word_presence_scores
+
+        for card in self.target_cards.reviewed_cards:
+            cards_familiarity_factor = self.cards_familiarity_factor[card.id]
+            for field_data in self.targeted_fields_per_note[card.nid]:
+                for word_token, word_presence_score in calc_word_presence_scores(field_data.field_value_tokenized):
+                    reviewed_words_presence[word_token].append(word_presence_score)
+                    reviewed_words[word_token].append(card)
+                    reviewed_words_cards_familiarity_factor[word_token].append(cards_familiarity_factor)
+
+        return reviewed_words_presence, reviewed_words, reviewed_words_cards_familiarity_factor
+
+    @cached_property
+    def reviewed_words_presence(self) -> dict[WordToken, list[float]]:
+
+        return self.__reviewed_words_aggregates[0]
+
+    @cached_property
+    def reviewed_words_cards_familiarity_factor(self) -> dict[WordToken, list[float]]:
+
+        return self.__reviewed_words_aggregates[2]
+
+    @cached_property
+    def reviewed_words(self) -> dict[WordToken, list[TargetCard]]:
+
+        return self.__reviewed_words_aggregates[1]
+
+    @cached_property
+    def all_words_presence(self) -> dict[WordToken, list[float]]:
 
         words_presence: dict[WordToken, list[float]] = defaultdict(list)
         calc_word_presence_scores = TextProcessing.calc_word_presence_scores
 
-        for card in cards:
-            for field_data in targeted_fields_per_note[card.nid]:
+        for card in self.target_cards.all_cards:
+            for field_data in self.targeted_fields_per_note[card.nid]:
 
                 for word_token, word_presence_score in calc_word_presence_scores(field_data.field_value_tokenized):
                     words_presence[word_token].append(word_presence_score)
 
         return words_presence
-
-    @cached_property
-    def reviewed_words_presence(self) -> dict[WordToken, list[float]]:
-
-        return self.__get_words_presence_scores(self.target_cards.reviewed_cards, self.targeted_fields_per_note)
-
-    @cached_property
-    def all_words_presence(self) -> dict[WordToken, list[float]]:
-
-        return self.__get_words_presence_scores(self.target_cards.all_cards, self.targeted_fields_per_note)
 
     @cached_property
     def cards_per_word(self) -> dict[WordToken, list[TargetCard]]:
@@ -206,40 +229,6 @@ class SegmentContentMetrics:
                     cards_per_word[word_token].append(card)
 
         return cards_per_word
-
-    @cached_property
-    def reviewed_words_cards_familiarity_factor(self) -> dict[WordToken, list[float]]:
-
-        reviewed_words_cards_familiarity_factor: dict[WordToken, list[float]] = {}
-
-        for card in self.target_cards.reviewed_cards:
-
-            for field_data in self.targeted_fields_per_note[card.nid]:
-
-                for word_token in field_data.field_value_tokenized:
-
-                    if word_token not in reviewed_words_cards_familiarity_factor:
-                        reviewed_words_cards_familiarity_factor[word_token] = []
-
-                    reviewed_words_cards_familiarity_factor[word_token].append(self.cards_familiarity_factor[card.id])
-
-        return reviewed_words_cards_familiarity_factor
-
-    @cached_property
-    def reviewed_words(self) -> dict[WordToken, list[TargetCard]]:
-
-        reviewed_words: dict[WordToken, list[TargetCard]] = {}
-
-        for card in self.target_cards.reviewed_cards:
-
-            for field_data in self.targeted_fields_per_note[card.nid]:
-
-                for word_token in field_data.field_value_tokenized:
-                    if word_token not in reviewed_words:
-                        reviewed_words[word_token] = []
-                    reviewed_words[word_token].append(card)
-
-        return reviewed_words
 
     @cached_property
     def all_words(self) -> set[WordToken]:

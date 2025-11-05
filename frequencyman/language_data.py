@@ -351,6 +351,7 @@ class LanguageData:
 
         return self.get_ignore_list(lang_data_id).union(self.get_global_ignore_list())
 
+    @cache
     @staticmethod
     def get_lang_id_from_data_id(lang_data_id: LangDataId) -> LangId:
 

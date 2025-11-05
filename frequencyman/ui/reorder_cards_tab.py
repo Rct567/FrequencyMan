@@ -262,7 +262,7 @@ class ReorderCardsTab(FrequencyManTab):
             return
         # contains invalid json or invalid targets
         if self.targets_input_textarea.json_result.validity_state is not JsonTargetsValidity.VALID_TARGETS:
-            return askUserDialog("Unsaved changes will be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).exec()
+            return int(askUserDialog("Unsaved changes will be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).run() == "Cancel")
         # nothing changed
         if self.fm_window.fm_config['reorder_target_list'] == self.targets_input_textarea.json_result.valid_targets_defined:
             return
@@ -331,7 +331,7 @@ class ReorderCardsTab(FrequencyManTab):
 
             if isinstance(stored_target_list, list) and len(stored_target_list) == 0:
                 if askUser("Target list in config is empty. Resetting will result in an empty target list. Continue?"):
-                    if askUserDialog("Currently defined targets will be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).exec() == 0:
+                    if askUserDialog("Currently defined targets will be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).run() == "Ok":
                         self.targets_input_textarea.set_content([])
                 return
 
@@ -342,7 +342,7 @@ class ReorderCardsTab(FrequencyManTab):
                 return
 
             if askUser("Reset targets to those stored in the config?"):
-                if askUserDialog("Currently defined targets may be lost.", buttons=["Ok", "Cancel"], parent=self.fm_window).exec() == 0:
+                if askUserDialog("Currently defined targets may be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).run() == "Ok":
                     if isinstance(stored_target_list, list):
                         self.targets_input_textarea.set_content(stored_target_list)
 

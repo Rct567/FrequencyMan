@@ -72,6 +72,7 @@ class CardRanker:
     ideal_word_count_max: int
 
     field_all_empty: dict[str, bool]
+    note_model_has_n_field: dict[str, bool]
 
     def __init__(self, target_corpus_data: TargetCorpusData, target_name: str, language_data: LanguageData,
                  modified_dirty_notes: dict[NoteId, Optional[Note]]) -> None:
@@ -85,6 +86,7 @@ class CardRanker:
         self.ideal_word_count_min = 1
         self.ideal_word_count_max = 5
         self.field_all_empty = {}
+        self.note_model_has_n_field = {}
 
     @staticmethod
     def get_default_ranking_factors_span() -> dict[str, float]:
@@ -549,6 +551,21 @@ class CardRanker:
         self.field_all_empty[field_name] = True
         return True
 
+    def __note_has_n_field(self, note: Note, field_name: str, note_metrics: list[FieldMetrics]) -> bool:
+
+        key = str(note.mid)+'_'+field_name
+
+        if key in self.note_model_has_n_field:
+            return self.note_model_has_n_field[key]
+
+        for i in range(len(note_metrics)):
+            if field_name+'_'+str(i) in note:
+                self.note_model_has_n_field[key] = True
+                return True
+
+        self.note_model_has_n_field[key] = False
+        return False
+
     def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_new_card: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]],
                                          notes_metrics: dict[NoteId, list[FieldMetrics]]) -> None:
 
@@ -637,34 +654,37 @@ class CardRanker:
                 note_data['fm_focus_words'] = ''
 
         # set fm_lowest_fr_word_[n]
-        for index, field_metrics in enumerate(note_metrics):
-            field_name = 'fm_lowest_fr_word_'+str(index)
-            if field_name in note:
-                note_data[field_name] = field_metrics.lowest_fr_word[0]
+        if self.__note_has_n_field(note, 'fm_lowest_fr_word', note_metrics):
+            for index, field_metrics in enumerate(note_metrics):
+                field_name = 'fm_lowest_fr_word_'+str(index)
+                if field_name in note:
+                    note_data[field_name] = field_metrics.lowest_fr_word[0]
 
         # set fm_lowest_familiarity_word_[n]
-        for index, field_metrics in enumerate(note_metrics):
-            field_name = 'fm_lowest_familiarity_word_'+str(index)
-            field_name_static = 'fm_lowest_familiarity_word_static_'+str(index)
-            if field_name in note:
-                note_data[field_name] = field_metrics.lowest_familiarity_word[0]
-            if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
-                note_data[field_name_static] = field_metrics.lowest_familiarity_word[0]
+        if self.__note_has_n_field(note, 'fm_lowest_familiarity_word_static', note_metrics):
+            for index, field_metrics in enumerate(note_metrics):
+                field_name = 'fm_lowest_familiarity_word_'+str(index)
+                field_name_static = 'fm_lowest_familiarity_word_static_'+str(index)
+                if field_name in note:
+                    note_data[field_name] = field_metrics.lowest_familiarity_word[0]
+                if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
+                    note_data[field_name_static] = field_metrics.lowest_familiarity_word[0]
 
         # set fm_main_focus_word_[n]
-        for index, field_metrics in enumerate(note_metrics):
-            field_name = 'fm_main_focus_word_'+str(index)
-            field_name_static = 'fm_main_focus_word_static_'+str(index)
-            if field_name in note:
-                if field_metrics.focus_words:
-                    note_data[field_name] = list(field_metrics.focus_words.keys())[0]
-                else:
-                    note_data[field_name] = ''
-            if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
-                if field_metrics.focus_words:
-                    note_data[field_name_static] = list(field_metrics.focus_words.keys())[0]
-                else:
-                    note_data[field_name_static] = ''
+        if self.__note_has_n_field(note, 'fm_main_focus_word', note_metrics) or self.__note_has_n_field(note, 'fm_main_focus_word_static', note_metrics):
+            for index, field_metrics in enumerate(note_metrics):
+                field_name = 'fm_main_focus_word_'+str(index)
+                field_name_static = 'fm_main_focus_word_static_'+str(index)
+                if field_name in note:
+                    if field_metrics.focus_words:
+                        note_data[field_name] = list(field_metrics.focus_words.keys())[0]
+                    else:
+                        note_data[field_name] = ''
+                if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
+                    if field_metrics.focus_words:
+                        note_data[field_name_static] = list(field_metrics.focus_words.keys())[0]
+                    else:
+                        note_data[field_name_static] = ''
 
         return note_data
 

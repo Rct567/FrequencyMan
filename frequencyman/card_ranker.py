@@ -719,11 +719,12 @@ class CardRanker:
             if self.__is_factor_used('proper_introduction_dispersed'):
                 debug_info['proper_introduction_dispersed_scores'] = [field_metrics.proper_introduction_dispersed_score for field_metrics in note_metrics]
 
-            note_data['fm_debug_info'] = target_title_html
+            fm_debug_info_pieces: list[str] = [target_title_html]
             for info_name, info_val in debug_info.items():
                 if info_val:
                     fields_info = " | ".join(str(field_info) for field_info in info_val).strip("| ")
-                    note_data['fm_debug_info'] += info_name+": " + fields_info+"<br />\n"
+                    fm_debug_info_pieces.append(info_name+": " + fields_info+"<br />\n")
+            note_data['fm_debug_info'] = "".join(fm_debug_info_pieces)
 
         # set fm_debug_ranking_info
         if 'fm_debug_ranking_info' in note:
@@ -744,15 +745,32 @@ class CardRanker:
 
         # set fm_debug_words_info
         if 'fm_debug_words_info' in note:
-            note_data['fm_debug_words_info'] = target_title_html
-            fields_words_ue_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in [field_metrics.words_ue_scores for field_metrics in note_metrics]]
-            note_data['fm_debug_words_info'] += 'words_ue_scores: '+str(fields_words_ue_scores_sorted)+"<br />\n"
-            fields_words_fr_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in [field_metrics.words_fr_scores for field_metrics in note_metrics]]
-            note_data['fm_debug_words_info'] += 'words_fr_scores: '+str(fields_words_fr_scores_sorted)+"<br />\n"
-            fields_words_familiarity_sweetspot_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
-                                                                for word_dict in [field_metrics.words_familiarity_sweetspot_scores for field_metrics in note_metrics]]
-            note_data['fm_debug_words_info'] += 'familiarity_sweetspot_scores: '+str(fields_words_familiarity_sweetspot_scores_sorted)+"<br />\n"
-            fields_words_familiarity_scores_sorted = [dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)) for word_dict in [field_metrics.words_familiarity_scores for field_metrics in note_metrics]]
-            note_data['fm_debug_words_info'] += 'familiarity_scores: '+str(fields_words_familiarity_scores_sorted)+"<br />\n"
+            fm_debug_words_info_pieces: list[str] = [target_title_html]
+
+            fields_words_ue_scores_sorted = [
+                dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
+                for word_dict in [field_metrics.words_ue_scores for field_metrics in note_metrics]
+            ]
+            fm_debug_words_info_pieces.append('words_ue_scores: '+str(fields_words_ue_scores_sorted)+"<br />\n")
+
+            fields_words_fr_scores_sorted = [
+                dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
+                for word_dict in [field_metrics.words_fr_scores for field_metrics in note_metrics]
+            ]
+            fm_debug_words_info_pieces.append('words_fr_scores: '+str(fields_words_fr_scores_sorted)+"<br />\n")
+
+            fields_words_familiarity_sweetspot_scores_sorted = [
+                dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
+                for word_dict in [field_metrics.words_familiarity_sweetspot_scores for field_metrics in note_metrics]
+            ]
+            fm_debug_words_info_pieces.append('familiarity_sweetspot_scores: '+str(fields_words_familiarity_sweetspot_scores_sorted)+"<br />\n")
+
+            fields_words_familiarity_scores_sorted = [
+                dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
+                for word_dict in [field_metrics.words_familiarity_scores for field_metrics in note_metrics]
+            ]
+            fm_debug_words_info_pieces.append('familiarity_scores: '+str(fields_words_familiarity_scores_sorted)+"<br />\n")
+
+            note_data['fm_debug_words_info'] = "".join(fm_debug_words_info_pieces)
 
         return note_data

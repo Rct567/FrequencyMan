@@ -1,3 +1,4 @@
+from collections import defaultdict
 import pytest
 
 from frequencyman.card_ranker import CardRanker
@@ -55,13 +56,24 @@ class TestTargetListReorder():
         assert "Repositioning 6566 cards" in str(event_logger)
         assert "Updating 7895 modified notes" in str(event_logger)
 
-        # check focus word field for all notes
-        notes_focus_words = []
+        # check note fields
+
+        fields_to_test = [
+            "fm_focus_words",
+            "fm_debug_info",
+            "fm_debug_ranking_info",
+            "fm_debug_words_info",
+        ]
+
+        results_per_field: dict[str, list[str]] = defaultdict(list)
+
         for note_id in col.find_notes('*'):
             note = col.get_note(note_id)
-            notes_focus_words.append(str(note_id)+" => "+note['fm_focus_words'])
+            for field in fields_to_test:
+                results_per_field[field].append(str(note_id)+" => "+note[field])
 
-        col.lock_and_assert_result('notes_focus_words', notes_focus_words)
+        for field in fields_to_test:
+            col.lock_and_assert_result('notes_'+field[3:], results_per_field[field])
 
         # check acquired cards for each target
         assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 15790

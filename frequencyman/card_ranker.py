@@ -289,12 +289,12 @@ class CardRanker:
 
         # final ranking value for notes
 
-        notes_rankings: dict[NoteId, float] = {note_id: 0.0 for note_id in notes_ids}
+        notes_rankings: dict[NoteId, float] = dict.fromkeys(notes_ids, 0.0)
+        ranking_factors_span_sum = fsum(self.ranking_factors_span.values())
 
         for note_id in notes_spanned_ranking_factors.keys():
             total_value = fsum(notes_spanned_ranking_factors[note_id].values())
-            span = fsum(self.ranking_factors_span.values())
-            notes_rankings[note_id] = total_value/span
+            notes_rankings[note_id] = total_value/ranking_factors_span_sum
 
         # filter out factors not used in notes_rankings
 
@@ -582,6 +582,7 @@ class CardRanker:
             # get new meta data for note fields
             note_metrics = notes_metrics[note_id]
             new_field_data = self.__get_new_meta_data_for_note(note, note_metrics, notes_all_card)
+
             # add debug info
             debug_info = self.__get_new_debug_info_for_note(note, note_metrics, notes_ranking_scores, notes_new_card, reorder_scope_note_ids)
             new_field_data.update(debug_info)

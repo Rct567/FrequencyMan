@@ -346,14 +346,13 @@ class ReorderCardsTab(FrequencyManTab):
                     if isinstance(stored_target_list, list):
                         self.targets_input_textarea.set_content(stored_target_list)
 
-        def update_reset_button_state(new_json_result: JsonTargetsResult, _):
+        def update_reset_button_state(current_json_result: JsonTargetsResult, targets_input_textarea: TargetsDefiningTextArea):
 
             if "reorder_target_list" not in self.fm_window.fm_config or not isinstance(self.fm_window.fm_config['reorder_target_list'], list):
                 reset_button.setDisabled(True)
                 return
 
-            new_json_result = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
-            targets_defined_same_as_stored = self.fm_window.fm_config['reorder_target_list'] == new_json_result.targets_defined
+            targets_defined_same_as_stored = self.fm_window.fm_config['reorder_target_list'] == current_json_result.targets_defined
             reset_button.setDisabled(targets_defined_same_as_stored)
 
         reset_button = QPushButton("Reset")

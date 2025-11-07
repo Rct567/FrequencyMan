@@ -689,6 +689,25 @@ class CardRanker:
 
         return note_data
 
+    @staticmethod
+    def __debug_info_float(score: float) -> str:
+        return "{:.3g}".format(score)
+
+    @staticmethod
+    def __debug_info_tuple_single(tuple_data: tuple[WordToken, float]) -> str:
+        return "('{}', {:.3g})".format(tuple_data[0], tuple_data[1])
+
+    @staticmethod
+    def __debug_info_tuple_double(tuple_data: tuple[WordToken, float, float]) -> str:
+        return "('{}', {:.3g}, {:.3g})".format(tuple_data[0], tuple_data[1], tuple_data[2])
+
+    @staticmethod
+    def __debug_info_dict(dict_data: dict[WordToken, float]) -> str:
+        return "{" + ", ".join("'{}': {:.3g}".format(word, score) for word, score in dict_data.items()) + "}"
+
+    @staticmethod
+    def __debug_info_list_dict(list_data: list[dict[WordToken, float]]) -> str:
+        return "[" + ", ".join(CardRanker.__debug_info_dict(dict_data) for dict_data in list_data) + "]"
 
 
     def __get_new_debug_info_for_note(self, note: Note, note_metrics: list[FieldMetrics], notes_ranking_scores: dict[str, dict[NoteId, float]],
@@ -699,31 +718,31 @@ class CardRanker:
 
         # set fm_debug_info
         if 'fm_debug_info' in note:
-            debug_info: dict[str, list] = {
-                'fr_scores': [field_metrics.fr_score for field_metrics in note_metrics],
-                'familiarity_scores': [field_metrics.familiarity_score for field_metrics in note_metrics],
-                'most_obscure_word': [field_metrics.most_obscure_word for field_metrics in note_metrics],
-                'ideal_focus_word_count': [field_metrics.ideal_focus_words_count_score for field_metrics in note_metrics],
-                'ideal_word_count': [field_metrics.ideal_words_count_score for field_metrics in note_metrics],
-                'lowest_fr_least_familiar_word': [field_metrics.lowest_fr_least_familiar_word for field_metrics in note_metrics],
-                'lowest_fr_word': [field_metrics.lowest_fr_word for field_metrics in note_metrics],
+            debug_info: dict[str, list[str]] = {
+                'fr_scores': [self.__debug_info_float(field_metrics.fr_score) for field_metrics in note_metrics],
+                'familiarity_scores': [self.__debug_info_float(field_metrics.familiarity_score) for field_metrics in note_metrics],
+                'most_obscure_word': [self.__debug_info_tuple_single(field_metrics.most_obscure_word) for field_metrics in note_metrics],
+                'ideal_focus_word_count': [self.__debug_info_float(field_metrics.ideal_focus_words_count_score) for field_metrics in note_metrics],
+                'ideal_word_count': [self.__debug_info_float(field_metrics.ideal_words_count_score) for field_metrics in note_metrics],
+                'lowest_fr_least_familiar_word': [self.__debug_info_tuple_double(field_metrics.lowest_fr_least_familiar_word) for field_metrics in note_metrics],
+                'lowest_fr_word': [self.__debug_info_tuple_single(field_metrics.lowest_fr_word) for field_metrics in note_metrics],
             }
             if self.__is_factor_used('lexical_underexposure'):
-                debug_info['ue_scores'] = [field_metrics.ue_score for field_metrics in note_metrics]
-                debug_info['highest_ue_word'] = [field_metrics.highest_ue_word for field_metrics in note_metrics]
+                debug_info['ue_scores'] = [self.__debug_info_float(field_metrics.ue_score) for field_metrics in note_metrics]
+                debug_info['highest_ue_word'] = [self.__debug_info_tuple_single(field_metrics.highest_ue_word) for field_metrics in note_metrics]
             if self.__is_factor_used('familiarity_sweetspot'):
-                debug_info['familiarity_sweetspot_scores'] = [field_metrics.familiarity_sweetspot_score for field_metrics in note_metrics]
+                debug_info['familiarity_sweetspot_scores'] = [self.__debug_info_float(field_metrics.familiarity_sweetspot_score) for field_metrics in note_metrics]
             if self.__is_factor_used('ideal_new_word_count'):
-                debug_info['ideal_new_words_count_scores'] = [field_metrics.ideal_new_words_count_score for field_metrics in note_metrics]
+                debug_info['ideal_new_words_count_scores'] = [self.__debug_info_float(field_metrics.ideal_new_words_count_score) for field_metrics in note_metrics]
             if self.__is_factor_used('proper_introduction'):
-                debug_info['proper_introduction_scores'] = [field_metrics.proper_introduction_score for field_metrics in note_metrics]
+                debug_info['proper_introduction_scores'] = [self.__debug_info_float(field_metrics.proper_introduction_score) for field_metrics in note_metrics]
             if self.__is_factor_used('proper_introduction_dispersed'):
-                debug_info['proper_introduction_dispersed_scores'] = [field_metrics.proper_introduction_dispersed_score for field_metrics in note_metrics]
+                debug_info['proper_introduction_dispersed_scores'] = [self.__debug_info_float(field_metrics.proper_introduction_dispersed_score) for field_metrics in note_metrics]
 
             fm_debug_info_pieces: list[str] = [target_title_html]
             for info_name, info_val in debug_info.items():
                 if info_val:
-                    fields_info = " | ".join(str(field_info) for field_info in info_val).strip("| ")
+                    fields_info = " | ".join(field_info for field_info in info_val)
                     fm_debug_info_pieces.append(info_name+": " + fields_info+"<br />\n")
             note_data['fm_debug_info'] = "".join(fm_debug_info_pieces)
 
@@ -733,14 +752,15 @@ class CardRanker:
                 if not note.id in reorder_scope_notes_ids:
                     note_data['fm_debug_ranking_info'] = '<< Not in reorder scope of target '+self.target_name+' >>'
                 else:
-                    note_data['fm_debug_ranking_info'] = target_title_html
+                    fm_debug_ranking_info_pieces: list[str] = [target_title_html]
                     used_ranking_factors = {k: v for k, v in notes_ranking_scores.items() if k in self.ranking_factors_span and self.ranking_factors_span[k] > 0}
                     ranking_scores = dict(sorted(used_ranking_factors.items(), key=lambda item: (item[1][note.id]*self.ranking_factors_span[item[0]]), reverse=True))
                     for factor_name, factor_values in ranking_scores.items():
                         factor_value = factor_values[note.id]
                         factor_span = self.ranking_factors_span[factor_name]
                         factor_score = factor_value*factor_span
-                        note_data['fm_debug_ranking_info'] += "{}: {:.3f} <span style=\"opacity:0.5;\">x {} = {:.3f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score)
+                        fm_debug_ranking_info_pieces.append( "{}: {:.3f} <span style=\"opacity:0.5;\">x {} = {:.3f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score))
+                    note_data['fm_debug_ranking_info'] = "".join(fm_debug_ranking_info_pieces)
             else:
                 note_data['fm_debug_ranking_info'] = '<< No new cards in main scope of target '+self.target_name+' >>'
 
@@ -748,30 +768,35 @@ class CardRanker:
         if 'fm_debug_words_info' in note:
             fm_debug_words_info_pieces: list[str] = [target_title_html]
 
+            # words_ue_scores
             fields_words_ue_scores_sorted = [
                 dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
                 for word_dict in [field_metrics.words_ue_scores for field_metrics in note_metrics]
             ]
-            fm_debug_words_info_pieces.append('words_ue_scores: '+str(fields_words_ue_scores_sorted)+"<br />\n")
+            fm_debug_words_info_pieces.append('words_ue_scores: '+self.__debug_info_list_dict(fields_words_ue_scores_sorted)+"<br />\n")
 
+            # words_fr_scores
             fields_words_fr_scores_sorted = [
                 dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
                 for word_dict in [field_metrics.words_fr_scores for field_metrics in note_metrics]
             ]
-            fm_debug_words_info_pieces.append('words_fr_scores: '+str(fields_words_fr_scores_sorted)+"<br />\n")
+            fm_debug_words_info_pieces.append('words_fr_scores: '+self.__debug_info_list_dict(fields_words_fr_scores_sorted)+"<br />\n")
 
+            # words_familiarity_sweetspot_scores
             fields_words_familiarity_sweetspot_scores_sorted = [
                 dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
                 for word_dict in [field_metrics.words_familiarity_sweetspot_scores for field_metrics in note_metrics]
             ]
-            fm_debug_words_info_pieces.append('familiarity_sweetspot_scores: '+str(fields_words_familiarity_sweetspot_scores_sorted)+"<br />\n")
+            fm_debug_words_info_pieces.append('familiarity_sweetspot_scores: '+self.__debug_info_list_dict(fields_words_familiarity_sweetspot_scores_sorted)+"<br />\n")
 
+            # words_familiarity_scores
             fields_words_familiarity_scores_sorted = [
                 dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True))
                 for word_dict in [field_metrics.words_familiarity_scores for field_metrics in note_metrics]
             ]
-            fm_debug_words_info_pieces.append('familiarity_scores: '+str(fields_words_familiarity_scores_sorted)+"<br />\n")
+            fm_debug_words_info_pieces.append('familiarity_scores: '+self.__debug_info_list_dict(fields_words_familiarity_scores_sorted)+"<br />\n")
 
+            # done
             note_data['fm_debug_words_info'] = "".join(fm_debug_words_info_pieces)
 
         return note_data

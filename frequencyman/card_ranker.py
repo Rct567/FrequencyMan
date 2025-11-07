@@ -7,7 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from math import fsum, log
 from statistics import fmean, median
-from typing import Optional, Tuple
+from typing import Optional
 
 from anki.cards import Card, CardId
 from anki.notes import Note, NoteId
@@ -35,12 +35,12 @@ class FieldMetrics:
     seen_words: list[WordToken] = field(default_factory=list)
     new_words: list[WordToken] = field(default_factory=list)
 
-    lowest_familiarity_word: Tuple[WordToken, float] = (WordToken(""), 0)
-    lowest_fr_least_familiar_word: Tuple[WordToken, float, float] = (WordToken(""), 0, 0)
-    lowest_fr_word: Tuple[WordToken, float] = (WordToken(""), 0)
+    lowest_familiarity_word: tuple[WordToken, float] = (WordToken(""), 0)
+    lowest_fr_least_familiar_word: tuple[WordToken, float, float] = (WordToken(""), 0, 0)
+    lowest_fr_word: tuple[WordToken, float] = (WordToken(""), 0)
 
-    highest_ue_word: Tuple[WordToken, float] = (WordToken(""), 0)
-    most_obscure_word: Tuple[WordToken, float] = (WordToken(""), 0)
+    highest_ue_word: tuple[WordToken, float] = (WordToken(""), 0)
+    most_obscure_word: tuple[WordToken, float] = (WordToken(""), 0)
 
     fr_scores: list[float] = field(default_factory=list)
     ue_scores: list[float] = field(default_factory=list)

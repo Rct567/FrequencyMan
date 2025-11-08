@@ -10,4 +10,5 @@ profiling_results.txt
 events.log
 *_temp.anki2
 *.anki2-wal
+*.tmp.log
 cache*.sqlite

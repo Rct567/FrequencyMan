@@ -4,7 +4,7 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import Never, Optional
+from typing import NoReturn, Optional
 import zipfile
 
 
@@ -117,7 +117,7 @@ def create_zip(directory: str, zip_file: str) -> None:
                 zf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), directory))
 
 
-def print_and_exit_error(message: str) -> Never:
+def print_and_exit_error(message: str) -> NoReturn:
     print(message)
     sys.exit(1)
 
@@ -155,7 +155,18 @@ if os.path.exists(new_release_dst_dir):
     print_and_exit_error("Release directory '{}' already exists!".format(new_release_dst_dir))
 
 ignore_patterns = ignore_patterns_from_gitignore_file(new_release_src_dir)
-ignore_patterns.extend(['tests/', 'pytest.ini', 'create_release.py', 'create_default_wf_lists.py', 'pyproject.toml'])
+
+ignore_patterns.extend([
+    'tests/',
+    'pytest.ini',
+    'create_release.py',
+    'create_default_wf_lists.py',
+    'pyproject.toml',
+    'requirements-dev.txt',
+    'run_pytest_benchmark.py',
+    'noxfile.py'
+])
+
 copy_directory(new_release_src_dir, new_release_dst_dir, ignore_patterns)
 
 release_zip_file = os.path.join(releases_dir, new_release_obj_name+'.ankiaddon')

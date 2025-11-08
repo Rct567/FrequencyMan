@@ -1,8 +1,9 @@
 from contextlib import contextmanager
 import inspect
 import os
+from pathlib import Path
 import shutil
-from typing import Any, Generator, Optional, Sequence, Tuple, TypeVar, override
+from typing import Any, Generator, Optional, Sequence
 import pprint
 import time
 from dateutil.parser import parse
@@ -116,7 +117,30 @@ class TestCollections:
     cacher_data_cleared = False
 
     @staticmethod
+    def run_cleanup_routine():
+
+        if os.path.exists(TestCollections.CACHER_FILE_PATH):
+            try:
+                os.remove(TestCollections.CACHER_FILE_PATH)
+            except OSError:
+                pass
+
+        test_collection_folder = Path(TestCollections.TEST_COLLECTIONS_DIR)
+        for file in test_collection_folder.rglob("*_temp.anki2"):
+            try:
+                file.unlink(missing_ok=True)
+            except OSError:
+                pass
+        for file in test_collection_folder.rglob("*_temp.anki2-wal"):
+            try:
+                file.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+    @staticmethod
     def get_test_collection(test_collection_name: str) -> TestCollection:
+
+        TestCollections.run_cleanup_routine()
 
         collection_dir = os.path.join(TestCollections.TEST_COLLECTIONS_DIR, test_collection_name)
         lang_data_dir = os.path.join(collection_dir, 'lang_data')

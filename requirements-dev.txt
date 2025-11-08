@@ -1,4 +1,6 @@
+typing_extensions
 anki
 aqt
 pytest
 pytest-sugar
+python-dateutil

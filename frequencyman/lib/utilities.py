@@ -75,8 +75,9 @@ def remove_trailing_commas_from_json(json_str: str) -> str:
 
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-    JSON_TYPE: TypeAlias = dict[str, "JSON_TYPE"] | list["JSON_TYPE"] | str | int | float | bool | None
+    from typing import Union
+    from typing_extensions import TypeAlias
+    JSON_TYPE: TypeAlias = Union[dict[str, "JSON_TYPE"], list["JSON_TYPE"], str, int, float, bool, None]
 else:
     JSON_TYPE = Any
 
@@ -241,14 +242,13 @@ def remove_bottom_percent_dict(input_dict: dict[K, float], percent_remove: float
 
 # Check Python version and import override if available, else use a dummy
 if sys.version_info >= (3, 12):
-    from typing import override as override
-else:  # A dummy 'override' decorator for Python < 3.12
-    T_CALLABLE = TypeVar('T_CALLABLE', bound=Callable)
-
-    def dummy_override(method: T_CALLABLE) -> T_CALLABLE:
-        return method
-
-    override = dummy_override
+    from typing import override
+elif TYPE_CHECKING:
+    from typing_extensions import override
+else:
+    # Dummy decorator for runtime on Python < 3.12
+    def override(func):
+        return func
 
 
 def show_result(message: str, title: str, type: Literal['information', 'warning', 'error'], parent: QWidget) -> bool:

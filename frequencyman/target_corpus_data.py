@@ -37,7 +37,7 @@ class NoteFieldContentData:
     field_value: str
     target_language_data_id: LangDataId
     target_language_id: LangId
-    field_value_tokenized: list[WordToken]
+    field_value_tokenized: Sequence[WordToken]
 
 
 
@@ -296,7 +296,7 @@ class TargetCorpusData:
 
         self.__set_targeted_fields_data()
 
-    def __get_field_value_tokenized(self, field_value: str, lang_id: LangId) -> list[WordToken]:
+    def __get_field_value_tokenized(self, field_value: str, lang_id: LangId) -> Sequence[WordToken]:
 
         if field_value == "":
             field_value_tokenized = []

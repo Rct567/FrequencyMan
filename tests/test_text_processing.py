@@ -1,3 +1,4 @@
+from typing import Sequence
 from frequencyman.text_processing import LangId, TextProcessing, WordToken
 from frequencyman.tokenizers import get_tokenizer_registry
 
@@ -109,7 +110,7 @@ def test_create_word_token():
 
 def test_calc_word_presence_score():
 
-    def calc_word_presence_score(context: list[WordToken], token_index: int) -> tuple[WordToken, float]:
+    def calc_word_presence_score(context: Sequence[WordToken], token_index: int) -> tuple[WordToken, float]:
         return list(TextProcessing.calc_word_presence_scores(context))[token_index]
 
     token_context = TextProcessing.get_word_tokens_from_text("test", LangId("en"))

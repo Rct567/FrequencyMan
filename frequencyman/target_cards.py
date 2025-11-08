@@ -13,10 +13,10 @@ from anki.notes import Note, NoteId
 from anki.models import NotetypeId, NotetypeDict
 from anki.utils import int_time
 
-from .lib.utilities import var_dump, var_dump_log
+from .lib.utilities import var_dump, var_dump_log, dataclass_with_slots
 
 
-@dataclass(frozen=True)
+@dataclass_with_slots(frozen=True)
 class TargetCard:
     id: CardId
     nid: NoteId

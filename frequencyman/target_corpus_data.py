@@ -30,7 +30,7 @@ class CorpusSegmentationStrategy(Enum):
 CorpusSegmentId = NewType('CorpusSegmentId', str)
 
 
-@dataclass(frozen=True)
+@dataclass_with_slots(frozen=True)
 class NoteFieldContentData:
     corpus_segment_id: CorpusSegmentId
     field_name: str

@@ -3,6 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
 import io
 import cProfile
 from contextlib import contextmanager
@@ -14,9 +15,11 @@ import pprint
 import pstats
 import re
 import sys
-from typing import IO, TYPE_CHECKING, Any, Callable, Iterable, Iterator, Literal, Optional, TypeVar
+from typing import IO, TYPE_CHECKING, Any, Callable, Iterable, Iterator, Literal, Optional, Type, TypeVar, cast
+from dataclasses import dataclass, fields
 from aqt import Qt, QDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStyle, QVBoxLayout, QWidget
 from aqt.utils import showInfo
+from typing_extensions import dataclass_transform
 
 var_dump_count = 0
 
@@ -240,7 +243,8 @@ def remove_bottom_percent_dict(input_dict: dict[K, float], percent_remove: float
     return dict(list(input_dict.items())[0:keep_offset_end])
 
 
-# Check Python version and import override if available, else use a dummy
+#  override decorator for Python < 3.12
+
 if sys.version_info >= (3, 12):
     from typing import override
 elif TYPE_CHECKING:
@@ -249,6 +253,33 @@ else:
     # Dummy decorator for runtime on Python < 3.12
     def override(func):
         return func
+
+#  dataclass_with_slots for Python < 3.10
+
+if sys.version_info >= (3, 10):
+    @dataclass_transform()
+    def dataclass_with_slots(**kwargs: Any) -> Callable[[Type[T]], Type[T]]:
+        def wrapper(cls: Type[T]) -> Type[T]:
+            return dataclass(slots=True, **kwargs)(cls)  # type: ignore[misc]
+        return wrapper
+else:
+    def _make_slots_from_annotations(cls: Any) -> None:
+        try:
+            slot_names = tuple(f.name for f in fields(cls))
+        except Exception:
+            ann = getattr(cls, "__annotations__", {})
+            slot_names = tuple(ann.keys()) if isinstance(ann, dict) else ()
+
+        if not hasattr(cls, "__slots__"):
+            setattr(cls, "__slots__", slot_names)
+
+    @dataclass_transform()
+    def dataclass_with_slots(**kwargs: Any) -> Callable[[Type[T]], Type[T]]:
+        def wrapper(cls: Type[T]) -> Type[T]:
+            cls2 = dataclass(**kwargs)(cls)  # type: ignore[misc]
+            _make_slots_from_annotations(cls2)
+            return cls2
+        return wrapper
 
 
 def show_result(message: str, title: str, type: Literal['information', 'warning', 'error'], parent: QWidget) -> bool:

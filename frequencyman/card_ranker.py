@@ -20,7 +20,7 @@ from .language_data import LanguageData
 from .target_cards import TargetCards
 
 
-@dataclass
+@dataclass_with_slots()
 class FieldMetrics:
     words_fr_scores: dict[WordToken, float] = field(default_factory=dict)
     words_ue_scores: dict[WordToken, float] = field(default_factory=dict)

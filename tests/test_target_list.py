@@ -19,7 +19,7 @@ class TestTargetList:
                 "suspended_card_value": 0.1,
                 "suspended_leech_card_value": 0.2,
                 "ideal_word_count": [1, 10],
-                "focus_words_max_familiarity": 0.5,
+                "maturity_threshold": 0.5,
                 "notes": [
                     {
                         "name": "-- My spanish --",
@@ -44,7 +44,7 @@ class TestTargetList:
             suspended_card_value=0.1,
             suspended_leech_card_value=0.2,
             ideal_word_count=[1, 10],
-            focus_words_max_familiarity=0.5,
+            maturity_threshold=0.5,
             notes=[
                 {
                     "name": "-- My spanish --",

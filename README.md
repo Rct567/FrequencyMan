@@ -162,7 +162,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `familiarity`: Represents how familiar you are with the words in the content. Like _word_frequency_, it has a bias toward the lowest value. How familiar you are with a word depends on how many times you have seen the word and in what context that specific word was present (the interval and ease of the card, the amount of words in the content etc).
 - `familiarity_sweetspot`: Promotes cards with words close to a specific 'sweetspot' of familiarity. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These can be recently introduced words, or words that are 'hidden' (non-prominent) in older cards. Use target setting `familiarity_sweetspot_point` to customize the sweetspot value.
 - `lexical_underexposure`: Promotes cards with high-frequency words that you are not yet proportionally familiar with. Basically, _lexical_underexposure = (word_frequency-word_familiarity)_.
-- `ideal_focus_word_count`: Promotes cards with only a single '_focus word_'. See also _i+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis. A _focus word_ is a new word or a word you are not yet appropriately familiar with. Use target setting `focus_words_max_familiarity` to customize the maximum familiarity of the focus words.
+- `ideal_focus_word_count`: Promotes cards with only a single '_focus word_'. See also _i+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis. A _focus word_ is a new word or a word you are not yet appropriately familiar with. Use target setting `maturity_threshold` to customize the maximum familiarity of the focus words.
 - `ideal_word_count`: Represents how close the _word count_ of the content is to the defined ideal range. By default this is 1 to 5, but you can customize it per target with:
   ```json
   "ideal_word_count": [2, 8]
@@ -224,16 +224,16 @@ For each defined target, the following settings are available:
 | `notes`   | array of objects |  | -      |
 | `reorder_scope_query`   | string | Search query to reduce which cards get repositioned.  | Main scope as defined by `deck`, `decks` or  `scope_query`.       |
 | `ranking_factors`   | object |  | see '[Ranking factors](#default-ranking-factors)'      |
-| `familiarity_sweetspot_point`   | string \| float | Defines a specific 'sweetspot' of familiarity for  ranking factor `familiarity_sweetspot`.  |   `"~0.5"` (=50% of focus_words_max_familiarity)  |
+| `familiarity_sweetspot_point`   | string \| float | Defines a specific 'sweetspot' of familiarity for  ranking factor `familiarity_sweetspot`.  |   `"~0.5"` (=50% of maturity_threshold)  |
 | `suspended_card_value`   | number | The value of suspended reviewed cards for familiarity. |   `0.25`  |
 | `suspended_leech_card_value`   | number | The value of suspended reviewed leech cards for familiarity. |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[1, 5]`   |
-| `focus_words_max_familiarity`   | number | Defined the maximal familiarity value of focus words. Words above this threshold are considered 'mature'.   |  `0.28`   |
+| `maturity_threshold`   | number | Defined the maximal familiarity value of focus words. Words above this threshold are considered 'mature'.   |  `0.28`   |
 | `corpus_segmentation_strategy`   | string | [Corpus data](#target-corpus-data) of a target is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`.   |  `"by_lang_data_id"`   |
 | `id`   | string | Enables [reorder logging](#reorder-logging) for this target. | None, reorder logging is disabled by default.   |
 
 __Notes__:
- - `familiarity_sweetspot_point` accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the value of `focus_words_max_familiarity` value. With the default settings, `"~0.5"` would result in a value of `0.14` (50% of 0.28). A string starting with `^` will make the number relative to the median word familiarity value.
+ - `familiarity_sweetspot_point` accepts a string starting with `~`, such as `"~0.5"`. This can be used to make it relative to the value of `maturity_threshold`. With the default settings, `"~0.5"` would result in a value of `0.14` (50% of 0.28). A string starting with `^` will make the number relative to the median word familiarity value.
  - `suspended_card_value` and `suspended_leech_card_value` are used to devalue reviewed cards that are suspended when calculating 'word familiarity'. This is applied on top of the devaluing that happens if a card is due (devaluing due cards is done with both suspended and non-suspended cards).
 
 

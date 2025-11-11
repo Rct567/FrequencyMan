@@ -190,9 +190,19 @@ class TargetList:
 
         result = ValidConfiguredTarget(notes=[])
 
+        # handle renamed properties
+
+        renamed_properties = {'focus_words_max_familiarity': 'maturity_threshold'}
+
+        for old_property_name, new_property_name in renamed_properties.items():
+            if old_property_name in target_data:
+                target_data[new_property_name] = target_data[old_property_name]
+                del target_data[old_property_name]
+
         # handle renamed ranking factors
 
-        renamed_ranking_factors = {'ideal_unseen_word_count': 'ideal_new_word_count', 'reinforce_focus_words': 'reinforce_learning_words'}
+        renamed_ranking_factors = {'ideal_unseen_word_count': 'ideal_new_word_count', 'reinforce_focus_words': 'reinforce_learning_words',
+        }
 
         for old_factor_name, new_factor_name in renamed_ranking_factors.items():
             if 'ranking_'+old_factor_name in target_data:
@@ -302,9 +312,9 @@ class TargetList:
             else:
                 return (False, "Familiarity sweetspot point defined in target #{} is not a number of string.".format(index), None)
 
-        if 'focus_words_max_familiarity' in target_data:
-            if isinstance(target_data['focus_words_max_familiarity'], float) or isinstance(target_data['focus_words_max_familiarity'], int):
-                result['focus_words_max_familiarity'] = float(target_data['focus_words_max_familiarity'])
+        if 'maturity_threshold' in target_data:
+            if isinstance(target_data['maturity_threshold'], float) or isinstance(target_data['maturity_threshold'], int):
+                result['maturity_threshold'] = float(target_data['maturity_threshold'])
             else:
                 return (False, "Maximum familiarity for focus words defined in target #{} is not a number.".format(index), None)
 

@@ -152,9 +152,9 @@ class Target:
         elif (familiarity_sweetspot_point := get_float(configured_familiarity_sweetspot_point)) is not None:
             self.corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
-        # focus_words_max_familiarity
-        if (focus_words_max_familiarity := get_float(self.config_target.get('focus_words_max_familiarity'))) is not None:
-            self.corpus_data.focus_words_max_familiarity = focus_words_max_familiarity
+        # maturity_threshold
+        if (maturity_threshold := get_float(self.config_target.get('maturity_threshold'))) is not None:
+            self.corpus_data.maturity_threshold = maturity_threshold
 
         # suspended_card_value
         if (suspended_card_value := get_float(self.config_target.get('suspended_card_value'))) is not None:
@@ -186,7 +186,7 @@ class Target:
         cache_key = (str(target_cards.all_cards_ids), str(self.config_target.get_config_fields_per_note_type()), self.col, self.language_data,
                      self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'),
                      self.config_target.get('suspended_leech_card_value'), self.config_target.get('corpus_segmentation_strategy'),
-                     self.config_target.get('focus_words_max_familiarity'))
+                     self.config_target.get('maturity_threshold'))
 
         if self.cache_data and cache_key in self.cache_data['corpus']:
             return self.cache_data['corpus'][cache_key]

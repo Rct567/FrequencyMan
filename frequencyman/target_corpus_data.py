@@ -46,7 +46,7 @@ class SegmentContentMetrics:
 
     lang_id: LangId
     lang_data_id: LangDataId
-    focus_words_max_familiarity: float
+    maturity_threshold: float
     familiarity_sweetspot_point: Union[float, str]
     target_cards: TargetCards
     language_data: LanguageData
@@ -59,7 +59,7 @@ class SegmentContentMetrics:
 
         return {
             word_token for word_token, word_familiarity in self.words_familiarity.items()
-            if word_familiarity > self.focus_words_max_familiarity
+            if word_familiarity > self.maturity_threshold
         }
 
     @cached_property
@@ -99,7 +99,7 @@ class SegmentContentMetrics:
                 median_familiarity = self.words_familiarity_median
                 familiarity_sweetspot_point = median_familiarity*float(self.familiarity_sweetspot_point[1:])
             elif self.familiarity_sweetspot_point[0] == '~':
-                familiarity_sweetspot_point = self.focus_words_max_familiarity*float(self.familiarity_sweetspot_point[1:])
+                familiarity_sweetspot_point = self.maturity_threshold*float(self.familiarity_sweetspot_point[1:])
             else:
                 raise ValueError("Invalid value for familiarity_sweetspot_point!")
         else:
@@ -257,7 +257,7 @@ class TargetCorpusData:
 
     targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]]
     content_metrics: dict[CorpusSegmentId, SegmentContentMetrics]
-    focus_words_max_familiarity: float
+    maturity_threshold: float
     familiarity_sweetspot_point: Union[float, str]
     suspended_card_value: float
     suspended_leech_card_value: float
@@ -272,7 +272,7 @@ class TargetCorpusData:
 
         self.targeted_fields_per_note = {}
         self.content_metrics = {}
-        self.focus_words_max_familiarity = 0.28
+        self.maturity_threshold = 0.28
         self.familiarity_sweetspot_point = "~0.5"
         self.suspended_card_value = 0.25
         self.suspended_leech_card_value = 0.0
@@ -357,7 +357,7 @@ class TargetCorpusData:
                         segment_content_metrics = SegmentContentMetrics(
                             lang_id,
                             lang_data_id,
-                            self.focus_words_max_familiarity,
+                            self.maturity_threshold,
                             self.familiarity_sweetspot_point,
                             self.target_cards,
                             self.language_data,

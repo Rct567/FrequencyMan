@@ -17,7 +17,7 @@ class ConfiguredTargetNote(TypedDict):
 
 
 ConfiguredTargetKeys = Literal['id', 'deck', 'decks', 'scope_query', 'reorder_scope_query', 'familiarity_sweetspot_point',
-                               'focus_words_max_familiarity', 'suspended_card_value', 'suspended_leech_card_value',
+                               'maturity_threshold', 'suspended_card_value', 'suspended_leech_card_value',
                                'ideal_word_count', 'ranking_factors', 'corpus_segmentation_strategy', 'notes']
 
 
@@ -79,7 +79,7 @@ class ConfiguredTargetTypedDict(dict):
         ...
 
     @overload
-    def __getitem__(self, key: Literal['focus_words_max_familiarity', 'suspended_card_value', 'suspended_leech_card_value']) -> float:
+    def __getitem__(self, key: Literal['maturity_threshold', 'suspended_card_value', 'suspended_leech_card_value']) -> float:
         ...
 
     @overload
@@ -115,7 +115,7 @@ class ConfiguredTargetTypedDict(dict):
         ...
 
     @overload
-    def __setitem__(self, key: Literal['focus_words_max_familiarity', 'suspended_card_value', 'suspended_leech_card_value'], value: float) -> None:
+    def __setitem__(self, key: Literal['maturity_threshold', 'suspended_card_value', 'suspended_leech_card_value'], value: float) -> None:
         ...
 
     @overload

@@ -201,8 +201,7 @@ class TargetList:
 
         # handle renamed ranking factors
 
-        renamed_ranking_factors = {'ideal_unseen_word_count': 'ideal_new_word_count', 'reinforce_focus_words': 'reinforce_learning_words',
-        }
+        renamed_ranking_factors = {'ideal_unseen_word_count': 'ideal_new_word_count', 'reinforce_focus_words': 'reinforce_learning_words'}
 
         for old_factor_name, new_factor_name in renamed_ranking_factors.items():
             if 'ranking_'+old_factor_name in target_data:

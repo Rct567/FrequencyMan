@@ -504,7 +504,6 @@ class ReorderCardsTab(FrequencyManTab):
             with open(json_backup_file_path, 'a'):  # touch (update modification time)
                 os.utime(json_backup_file_path, None)
 
-
     @staticmethod
     def __get_progress_label(target_index: int, num_targets: int) -> str:
         if num_targets <= 1 or target_index < 0:

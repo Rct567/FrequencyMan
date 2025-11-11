@@ -22,7 +22,7 @@ class TextProcessing:
         'it',  # Italian (e.g., "un'altra")
         'ga',  # Irish (Gaeilge, e.g., "O'Connell")
         'pt',  # Portuguese (e.g., poetic contractions)
-        'pt_br', # Portuguese (Brazil)
+        'pt_br',  # Portuguese (Brazil)
         'de',  # German (e.g., genitive case in older texts)
         'nl',  # Dutch (e.g., shortened forms like "'s ochtends")
         'sv',  # Swedish (e.g., possessive forms like "Anna's")

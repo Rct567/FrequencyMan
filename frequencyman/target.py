@@ -79,7 +79,6 @@ class Target:
     main_scope_query: str
     reorder_scope_query: Optional[str]
 
-
     def __init__(self, config_target: ValidConfiguredTarget, index_num: int, col: Collection, language_data: LanguageData, cacher: PersistentCacher) -> None:
 
         self.config_target = config_target

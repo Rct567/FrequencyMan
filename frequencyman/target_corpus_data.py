@@ -40,7 +40,6 @@ class NoteFieldContentData:
     field_value_tokenized: Sequence[WordToken]
 
 
-
 @dataclass
 class SegmentContentMetrics:
 

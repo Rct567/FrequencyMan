@@ -61,7 +61,6 @@ class FieldMetrics:
     ue_score: float = 0
 
 
-
 class CardRanker:
 
     modified_dirty_notes: dict[NoteId, Optional[Note]]
@@ -184,7 +183,6 @@ class CardRanker:
         proper_introduction_score = fmean(factors)
 
         return (intro_word, proper_introduction_score)
-
 
     def calc_cards_ranking(self, target_cards: TargetCards, reorder_scope_target_cards: TargetCards) -> dict[CardId, float]:
 
@@ -695,10 +693,8 @@ class CardRanker:
 
         return note_data
 
-
-
     def __get_new_debug_info_for_notes(self, notes: dict[NoteId, Note], notes_metrics: dict[NoteId, list[FieldMetrics]], notes_ranking_scores: dict[str, dict[NoteId, float]],
-                                    notes_new_card: dict[NoteId, Note], reorder_scope_notes_ids: set[NoteId]) -> dict[NoteId, dict[str, str]]:
+                                       notes_new_card: dict[NoteId, Note], reorder_scope_notes_ids: set[NoteId]) -> dict[NoteId, dict[str, str]]:
 
         notes_debug_info: dict[NoteId, dict[str, str]] = {}
 
@@ -776,7 +772,7 @@ class CardRanker:
                             factor_value = factor_values[note.id]
                             factor_span = self.ranking_factors_span[factor_name]
                             factor_score = factor_value*factor_span
-                            fm_debug_ranking_info_pieces.append( "{}: {:.3f} <span style=\"opacity:0.5;\">x {} = {:.3f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score))
+                            fm_debug_ranking_info_pieces.append("{}: {:.3f} <span style=\"opacity:0.5;\">x {} = {:.3f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score))
                         note_data['fm_debug_ranking_info'] = "".join(fm_debug_ranking_info_pieces)
                 else:
                     note_data['fm_debug_ranking_info'] = debug_info_no_new_cards

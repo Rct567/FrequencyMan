@@ -251,6 +251,24 @@ class ReorderCardsTab(FrequencyManTab):
 
         return targets_input_textarea
 
+    def __defined_targets_have_changed(self) -> bool:
+
+        if self.targets_input_textarea.json_result is None:
+            return False
+
+        stored_target_list = self.fm_window.fm_config['reorder_target_list'] if 'reorder_target_list' in self.fm_window.fm_config else None
+
+        if stored_target_list == self.targets_input_textarea.json_result.valid_targets_defined:
+            return False
+
+        stored_valid_list = TargetList.validate_target_list(self.fm_window.fm_config['reorder_target_list'], self.col, self.language_data)[2]
+        current_valid_list = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data).valid_targets_defined
+
+        if stored_valid_list and current_valid_list and stored_valid_list == current_valid_list:
+            return False  # same when normalized
+
+        return True
+
     @override
     def on_window_closing(self) -> Optional[int]:
         if not self.first_paint_event_done:
@@ -264,8 +282,9 @@ class ReorderCardsTab(FrequencyManTab):
         if self.targets_input_textarea.json_result.validity_state is not JsonTargetsValidity.VALID_TARGETS:
             return int(askUserDialog("Unsaved changes will be lost!", buttons=["Ok", "Cancel"], parent=self.fm_window).run() == "Cancel")
         # nothing changed
-        if self.fm_window.fm_config['reorder_target_list'] == self.targets_input_textarea.json_result.valid_targets_defined:
+        if not self.__defined_targets_have_changed():
             return
+
         # something changed and is valid
         if askUser("Defined targets have changed. Save them to config?"):
             self.targets_input_textarea.save_current_to_config()
@@ -435,7 +454,7 @@ class ReorderCardsTab(FrequencyManTab):
         def ask_to_save_new_targets_to_config(targets_defined: list[ValidConfiguredTarget]):
             if "reorder_target_list" not in self.fm_window.fm_config:
                 return
-            if self.fm_window.fm_config['reorder_target_list'] == targets_defined:
+            if not self.__defined_targets_have_changed():
                 return
             if askUser("Defined targets have changed. Save them to config?"):
                 self.targets_input_textarea.save_current_to_config()

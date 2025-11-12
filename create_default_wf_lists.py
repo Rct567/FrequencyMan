@@ -109,21 +109,23 @@ def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list
             yield word
 
 
-WF_LIST_LENGTH_LIMIT = 15_000
-WF_LIST_FILE_SIZE_LIMIT = 120_000
-WF_LIST_TARGET_DIR = 'default_wf_lists'
+SOURCE_WF_LIST_LENGTH_LIMIT = 1_000_000
+LANG_REQUIRED_WF_LIST_LENGTH = 4_000
+RESULT_WF_LIST_LENGTH_LIMIT = 15_000
+RESULT_WF_LIST_FILE_SIZE_LIMIT = 120_000
+RESULT_WF_LIST_DIR = 'default_wf_lists'
 
 
 def create_default_wf_lists():
 
     for lang_id, wf_list_urls in get_default_wf_list_sources().items():
 
-        target_file = os.path.join(WF_LIST_TARGET_DIR, lang_id+'.txt')
+        result_wf_file = os.path.join(RESULT_WF_LIST_DIR, lang_id+'.txt')
 
         print("Creating WF LIST for {}".format(LANGUAGE_NAMES_ENG_AND_NATIVE[lang_id]['name']))
 
-        if os.path.isfile(target_file):
-            print(format(" File {} already exists!".format(target_file)))
+        if os.path.isfile(result_wf_file):
+            print(format(" File {} already exists!".format(result_wf_file)))
             continue
 
         print(" Downloading {} files...".format(len(wf_list_urls)))
@@ -148,7 +150,7 @@ def create_default_wf_lists():
                 wf_list.append(word)
                 words_added.add(word)
 
-                if len(wf_list) > (WF_LIST_LENGTH_LIMIT*10):
+                if len(wf_list) > SOURCE_WF_LIST_LENGTH_LIMIT:
                     break
 
             if len(wf_list) < 100:
@@ -157,7 +159,7 @@ def create_default_wf_lists():
                 wf_lists.append(wf_list)
 
 
-        lang_has_long_wf_list = any(len(wf_list) > 4_000 for wf_list in wf_lists)
+        lang_has_long_wf_list = any(len(wf_list) > LANG_REQUIRED_WF_LIST_LENGTH for wf_list in wf_lists)
 
         if not lang_has_long_wf_list:
             print(" WARNING: No long WF list found for {}!".format(lang_id))
@@ -177,22 +179,22 @@ def create_default_wf_lists():
             result_wf_list.append(word)
             wf_list_size += len(word.encode("utf-8"))
 
-            if len(result_wf_list) > WF_LIST_LENGTH_LIMIT:
+            if len(result_wf_list) > RESULT_WF_LIST_LENGTH_LIMIT:
                 break
-            if wf_list_size > WF_LIST_FILE_SIZE_LIMIT:
+            if wf_list_size > RESULT_WF_LIST_FILE_SIZE_LIMIT:
                 break
 
         if not result_wf_list:
             raise Exception("Resulting word frequency list is empty!")
 
-        result_wf_list = result_wf_list[:WF_LIST_LENGTH_LIMIT]
+        result_wf_list = result_wf_list[:RESULT_WF_LIST_LENGTH_LIMIT]
 
         # Write the list to a file
 
-        with open(target_file, "w", encoding="utf-8") as f:
+        with open(result_wf_file, "w", encoding="utf-8") as f:
             wf_list_content = "\n".join(result_wf_list)
             f.write(wf_list_content)
-            print(" Combined WF list {} created with {} words.".format(target_file, len(result_wf_list)))
+            print(" Combined WF list {} created with {} words.".format(result_wf_file, len(result_wf_list)))
 
         time.sleep(1)
 
@@ -200,7 +202,7 @@ def create_ignore_candidates_list():
 
     print("Creating ignore candidates list...")
 
-    ignore_candidates_file = os.path.join(WF_LIST_TARGET_DIR, 'ignore_candidates.txt')
+    ignore_candidates_file = os.path.join(RESULT_WF_LIST_DIR, 'ignore_candidates.txt')
 
     if os.path.isfile(ignore_candidates_file):
         print(format(" File {} already exists!".format(ignore_candidates_file)))
@@ -213,7 +215,7 @@ def create_ignore_candidates_list():
         if lang_id[:3] == 'ze_':
             continue
 
-        wf_list_file = os.path.join(WF_LIST_TARGET_DIR, lang_id+'.txt')
+        wf_list_file = os.path.join(RESULT_WF_LIST_DIR, lang_id+'.txt')
 
         if not os.path.isfile(wf_list_file):
             continue

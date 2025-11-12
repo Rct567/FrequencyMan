@@ -11,10 +11,10 @@ from anki.notes import Note, NoteId
 
 from .lib.persistent_cacher import PersistentCacher
 from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
-from .lib.utilities import get_float, profile_context, var_dump_log, override
+from .lib.utilities import get_float, is_numeric_value, profile_context, var_dump_log, override
 from .lib.event_logger import EventLogger
 from .language_data import LanguageData, LangDataId
-from .target_corpus_data import CorpusSegmentationStrategy, TargetCorpusData
+from .target_corpus_data import CorpusSegmentationStrategy, MaturityRequirements, TargetCorpusData
 from .tokenizers import WHITE_SPACE_LANGUAGES, get_user_provided_tokenizer
 
 
@@ -151,9 +151,16 @@ class Target:
         elif (familiarity_sweetspot_point := get_float(configured_familiarity_sweetspot_point)) is not None:
             self.corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point
 
-        # maturity_threshold
-        if (maturity_threshold := get_float(self.config_target.get('maturity_threshold'))) is not None:
-            self.corpus_data.maturity_threshold = maturity_threshold
+        # maturity
+        if 'maturity_threshold' in self.config_target or 'maturity_min_num_cards' in self.config_target or 'maturity_min_num_notes' in self.config_target:
+            maturity_requirements = MaturityRequirements()
+            if 'maturity_threshold' in self.config_target and (maturity_threshold := get_float(self.config_target['maturity_threshold'])) is not None:
+                maturity_requirements.threshold = maturity_threshold
+            if 'maturity_min_num_cards' in self.config_target and is_numeric_value(self.config_target.get('maturity_min_num_cards')):
+                maturity_requirements.min_num_cards = int(self.config_target.get('maturity_min_num_cards', 0))
+            if 'maturity_min_num_notes' in self.config_target and is_numeric_value(self.config_target.get('maturity_min_num_notes')):
+                maturity_requirements.min_num_notes = int(self.config_target.get('maturity_min_num_notes', 0))
+            self.corpus_data.maturity_requirements = maturity_requirements
 
         # suspended_card_value
         if (suspended_card_value := get_float(self.config_target.get('suspended_card_value'))) is not None:

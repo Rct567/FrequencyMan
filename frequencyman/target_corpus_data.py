@@ -41,11 +41,18 @@ class NoteFieldContentData:
 
 
 @dataclass
+class MaturityRequirements:
+    threshold: float = 0.28
+    min_num_cards: int = 1
+    min_num_notes: int = 1
+
+
+@dataclass
 class SegmentContentMetrics:
 
     lang_id: LangId
     lang_data_id: LangDataId
-    maturity_threshold: float
+    maturity_requirements: MaturityRequirements
     familiarity_sweetspot_point: Union[float, str]
     target_cards: TargetCards
     language_data: LanguageData
@@ -56,10 +63,19 @@ class SegmentContentMetrics:
     @cached_property
     def mature_words(self) -> set[WordToken]:
 
-        return {
+        mature_words = {
             word_token for word_token, word_familiarity in self.words_familiarity.items()
-            if word_familiarity > self.maturity_threshold
+            if word_familiarity > self.maturity_requirements.threshold
+            and len(self.reviewed_words[word_token]) >= self.maturity_requirements.min_num_cards
         }
+
+        if self.maturity_requirements.min_num_notes > 1:
+            mature_words = {
+                word_token for word_token in mature_words
+                if len(set(card.nid for card in self.reviewed_words[word_token])) >= self.maturity_requirements.min_num_notes
+            }
+
+        return mature_words
 
     @cached_property
     def words_underexposure(self) -> dict[WordToken, float]:
@@ -98,7 +114,7 @@ class SegmentContentMetrics:
                 median_familiarity = self.words_familiarity_median
                 familiarity_sweetspot_point = median_familiarity*float(self.familiarity_sweetspot_point[1:])
             elif self.familiarity_sweetspot_point[0] == '~':
-                familiarity_sweetspot_point = self.maturity_threshold*float(self.familiarity_sweetspot_point[1:])
+                familiarity_sweetspot_point = self.maturity_requirements.threshold*float(self.familiarity_sweetspot_point[1:])
             else:
                 raise ValueError("Invalid value for familiarity_sweetspot_point!")
         else:
@@ -256,7 +272,7 @@ class TargetCorpusData:
 
     targeted_fields_per_note: dict[NoteId, list[NoteFieldContentData]]
     content_metrics: dict[CorpusSegmentId, SegmentContentMetrics]
-    maturity_threshold: float
+    maturity_requirements: MaturityRequirements
     familiarity_sweetspot_point: Union[float, str]
     suspended_card_value: float
     suspended_leech_card_value: float
@@ -271,7 +287,7 @@ class TargetCorpusData:
 
         self.targeted_fields_per_note = {}
         self.content_metrics = {}
-        self.maturity_threshold = 0.28
+        self.maturity_requirements = MaturityRequirements()
         self.familiarity_sweetspot_point = "~0.5"
         self.suspended_card_value = 0.25
         self.suspended_leech_card_value = 0.0
@@ -356,7 +372,7 @@ class TargetCorpusData:
                         segment_content_metrics = SegmentContentMetrics(
                             lang_id,
                             lang_data_id,
-                            self.maturity_threshold,
+                            self.maturity_requirements,
                             self.familiarity_sweetspot_point,
                             self.target_cards,
                             self.language_data,
@@ -414,7 +430,7 @@ class TargetCorpusData:
                     interval_offset = ((card_ease_score+0.75)/1.75)
                 else:
                     interval_offset = 1
-                card_score = ( (card_interval_score*interval_offset) + (card_ease_score/4) + (card_reps_score/100) ) / 1.26
+                card_score = ((card_interval_score*interval_offset) + (card_ease_score/4) + (card_reps_score/100)) / 1.26
 
                 if card.days_overdue is not None and card.days_overdue > 0:
                     relative_overdue = card.days_overdue/card.ivl

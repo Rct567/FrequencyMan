@@ -317,6 +317,18 @@ class TargetList:
             else:
                 return (False, "Maximum familiarity for focus words defined in target #{} is not a number.".format(index), None)
 
+        if 'maturity_min_num_cards' in target_data:
+            if isinstance(target_data['maturity_min_num_cards'], int):
+                result['maturity_min_num_cards'] = int(target_data['maturity_min_num_cards'])
+            else:
+                return (False, "Minimum number of cards for mature words defined in target #{} is not a number.".format(index), None)
+
+        if 'maturity_min_num_notes' in target_data:
+            if isinstance(target_data['maturity_min_num_notes'], int):
+                result['maturity_min_num_notes'] = int(target_data['maturity_min_num_notes'])
+            else:
+                return (False, "Minimum number of notes for mature words defined in target #{} is not a number.".format(index), None)
+
         if 'suspended_card_value' in target_data:
             if isinstance(target_data['suspended_card_value'], float) or isinstance(target_data['suspended_card_value'], int):
                 result['suspended_card_value'] = float(target_data['suspended_card_value'])

@@ -16,9 +16,23 @@ class ConfiguredTargetNote(TypedDict):
     fields: dict[str, str]
 
 
-ConfiguredTargetKeys = Literal['id', 'deck', 'decks', 'scope_query', 'reorder_scope_query', 'familiarity_sweetspot_point',
-                               'maturity_threshold', 'suspended_card_value', 'suspended_leech_card_value',
-                               'ideal_word_count', 'ranking_factors', 'corpus_segmentation_strategy', 'notes']
+ConfiguredTargetKeys = Literal[
+    'id',
+    'deck',
+    'decks',
+    'scope_query',
+    'reorder_scope_query',
+    'familiarity_sweetspot_point',
+    'maturity_threshold',
+    'maturity_min_num_cards',
+    'maturity_min_num_notes',
+    'suspended_card_value',
+    'suspended_leech_card_value',
+    'ideal_word_count',
+    'ranking_factors',
+    'corpus_segmentation_strategy',
+    'notes'
+]
 
 
 class ConfiguredTarget:
@@ -83,6 +97,10 @@ class ConfiguredTargetTypedDict(dict):
         ...
 
     @overload
+    def __getitem__(self, key: Literal['maturity_min_num_cards', 'maturity_min_num_notes']) -> int:
+        ...
+
+    @overload
     def __getitem__(self, key: Literal['ideal_word_count']) -> list[int]:
         ...
 
@@ -119,6 +137,10 @@ class ConfiguredTargetTypedDict(dict):
         ...
 
     @overload
+    def __setitem__(self, key: Literal['maturity_min_num_cards', 'maturity_min_num_notes'], value: int) -> None:
+        ...
+
+    @overload
     def __setitem__(self, key: Literal['ideal_word_count'], value: list[int]) -> None:
         ...
 
@@ -146,6 +168,9 @@ class ValidConfiguredTarget(ConfiguredTargetTypedDict):
     # scope_query: str
     # reorder_scope_query: str
     # familiarity_sweetspot_point: Union[float, str]
+    # maturity_threshold: float
+    # maturity_min_num_cards: int
+    # maturity_min_num_notes: int
     # suspended_card_value: float
     # suspended_leech_card_value: float
     # ideal_word_count: list[int]

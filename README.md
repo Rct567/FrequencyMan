@@ -229,6 +229,8 @@ For each defined target, the following settings are available:
 | `suspended_leech_card_value`   | number | The value of suspended reviewed leech cards for familiarity. |   `0.0`  |
 | `ideal_word_count`   | array with two int's |  |  `[1, 5]`   |
 | `maturity_threshold`   | number | Defined the maximal familiarity value of focus words. Words above this threshold are considered 'mature'.   |  `0.28`   |
+| `maturity_min_num_cards`   | number | Minimum number of cards a word must have to be considered 'mature'.   |  `1`   |
+| `maturity_min_num_notes`   | number | Minimum number of notes a word must have to be considered 'mature'.   |  `1`   |
 | `corpus_segmentation_strategy`   | string | [Corpus data](#target-corpus-data) of a target is joined by _language data id_ by default, but could also stay 'per note field' by setting it to `"by_note_model_id_and_field_name"`.   |  `"by_lang_data_id"`   |
 | `id`   | string | Enables [reorder logging](#reorder-logging) for this target. | None, reorder logging is disabled by default.   |
 

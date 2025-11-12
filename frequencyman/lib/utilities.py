@@ -127,12 +127,15 @@ def profile_context(amount: int = 40) -> Iterator[cProfile.Profile]:
             f.write(profiling_results)
 
 
+T = TypeVar('T')
+K = TypeVar('K')
+
+
+# batched for Python < 3.12
 
 if sys.version_info >= (3, 12):
     from itertools import batched as batched
 else:
-
-    T = TypeVar('T')
 
     def batched(iterable: Iterable[T], n: int) -> Iterator[tuple[T, ...]]:
         """
@@ -153,8 +156,43 @@ else:
                 return
             yield batch
 
+#  override decorator for Python < 3.12
 
-K = TypeVar('K')
+if sys.version_info >= (3, 12):
+    from typing import override
+elif TYPE_CHECKING:
+    from typing_extensions import override
+else:
+    # Dummy decorator for runtime on Python < 3.12
+    def override(func):
+        return func
+
+#  dataclass_with_slots for Python < 3.10
+
+if sys.version_info >= (3, 10):
+    @dataclass_transform()
+    def dataclass_with_slots(**kwargs: Any) -> Callable[[Type[T]], Type[T]]:
+        def wrapper(cls: Type[T]) -> Type[T]:
+            return dataclass(slots=True, **kwargs)(cls)  # type: ignore[misc]
+        return wrapper
+else:
+    def _make_slots_from_annotations(cls: Any) -> None:
+        try:
+            slot_names = tuple(f.name for f in fields(cls))
+        except Exception:
+            ann = getattr(cls, "__annotations__", {})
+            slot_names = tuple(ann.keys()) if isinstance(ann, dict) else ()
+
+        if not hasattr(cls, "__slots__"):
+            setattr(cls, "__slots__", slot_names)
+
+    @dataclass_transform()
+    def dataclass_with_slots(**kwargs: Any) -> Callable[[Type[T]], Type[T]]:
+        def wrapper(cls: Type[T]) -> Type[T]:
+            cls2 = dataclass(**kwargs)(cls)  # type: ignore[misc]
+            _make_slots_from_annotations(cls2)
+            return cls2
+        return wrapper
 
 
 def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
@@ -241,45 +279,6 @@ def remove_bottom_percent_dict(input_dict: dict[K, float], percent_remove: float
         keep_offset_end = min_num_preserve
 
     return dict(list(input_dict.items())[0:keep_offset_end])
-
-
-#  override decorator for Python < 3.12
-
-if sys.version_info >= (3, 12):
-    from typing import override
-elif TYPE_CHECKING:
-    from typing_extensions import override
-else:
-    # Dummy decorator for runtime on Python < 3.12
-    def override(func):
-        return func
-
-#  dataclass_with_slots for Python < 3.10
-
-if sys.version_info >= (3, 10):
-    @dataclass_transform()
-    def dataclass_with_slots(**kwargs: Any) -> Callable[[Type[T]], Type[T]]:
-        def wrapper(cls: Type[T]) -> Type[T]:
-            return dataclass(slots=True, **kwargs)(cls)  # type: ignore[misc]
-        return wrapper
-else:
-    def _make_slots_from_annotations(cls: Any) -> None:
-        try:
-            slot_names = tuple(f.name for f in fields(cls))
-        except Exception:
-            ann = getattr(cls, "__annotations__", {})
-            slot_names = tuple(ann.keys()) if isinstance(ann, dict) else ()
-
-        if not hasattr(cls, "__slots__"):
-            setattr(cls, "__slots__", slot_names)
-
-    @dataclass_transform()
-    def dataclass_with_slots(**kwargs: Any) -> Callable[[Type[T]], Type[T]]:
-        def wrapper(cls: Type[T]) -> Type[T]:
-            cls2 = dataclass(**kwargs)(cls)  # type: ignore[misc]
-            _make_slots_from_annotations(cls2)
-            return cls2
-        return wrapper
 
 
 def show_result(message: str, title: str, type: Literal['information', 'warning', 'error'], parent: QWidget) -> bool:

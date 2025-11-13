@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Generator
+from typing import Generator
 import pytest
 
 from frequencyman.target_list import TargetList, TargetListReorderResult

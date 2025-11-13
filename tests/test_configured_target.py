@@ -1,8 +1,7 @@
 
 
-from frequencyman.configured_target import ConfiguredTarget, ValidConfiguredTarget
-from frequencyman.target_list import TargetList, TargetListReorderResult
-from frequencyman.language_data import LangDataId, LanguageData
+from frequencyman.configured_target import ValidConfiguredTarget
+from frequencyman.language_data import LangDataId
 
 
 class TestConfiguredTarget:

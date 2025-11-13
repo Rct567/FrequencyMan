@@ -1,6 +1,10 @@
 import pytest
 
-from frequencyman.lib.utilities import get_float, normalize_dict_floats_values, normalize_dict_positional_floats_values, positional_value_absolute, remove_bottom_percent_dict, remove_trailing_commas_from_json, sort_dict_floats_values
+from frequencyman.lib.utilities import (
+    get_float, normalize_dict_floats_values, normalize_dict_positional_floats_values,
+    positional_value_absolute, remove_bottom_percent_dict, remove_trailing_commas_from_json,
+    sort_dict_floats_values
+)
 
 
 def test_normalize_dict_floats_values():

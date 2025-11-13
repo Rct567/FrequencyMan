@@ -1,12 +1,10 @@
-from ast import Tuple
-from math import exp
 from typing import Callable
 import pytest
 
 from anki.cards import CardId, Card
 from anki.notes import Note, NoteId
 
-from frequencyman.target_cards import TargetCards, TargetCard
+from frequencyman.target_cards import TargetCard
 from frequencyman.target_corpus_data import TargetCorpusData
 
 

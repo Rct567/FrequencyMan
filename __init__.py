@@ -6,10 +6,9 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from functools import partial
 from typing import NamedTuple
 
-from aqt import QAction
-from aqt.qt import QTimer
+from aqt.qt import QTimer, QAction
 from aqt.main import AnkiQt
-from aqt.utils import showInfo, askUser, showWarning
+from aqt import mw, gui_hooks, dialogs
 
 from anki.collection import Collection
 
@@ -22,7 +21,6 @@ from .frequencyman.ui.main_window import FrequencyManMainWindow
 
 from .frequencyman.lib.utilities import *
 
-from aqt import mw, gui_hooks, dialogs
 
 
 def get_mw():

@@ -6,10 +6,11 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from typing import Optional, Union
 from anki.collection import Collection
 
-from aqt import QColor, QComboBox, QCursor, QKeyEvent, QKeySequence, QMenu, QPoint, QTableWidget, QTableWidgetItem, QCheckBox, dialogs
 from aqt.qt import (
-    QLabel, QSpacerItem, QSizePolicy, QLayout, QTimer, QHBoxLayout, QFrame, Qt, QApplication
+    QLabel, QSpacerItem, QSizePolicy, QLayout, QTimer, QHBoxLayout, QFrame, Qt, QApplication,
+    QColor, QComboBox, QCursor, QKeyEvent, QKeySequence, QMenu, QPoint, QTableWidget, QTableWidgetItem, QCheckBox
 )
+from aqt import dialogs
 from aqt.utils import showInfo, askUser, showWarning
 from aqt.browser.browser import Browser
 

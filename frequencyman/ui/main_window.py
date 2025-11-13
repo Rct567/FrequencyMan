@@ -5,7 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from functools import cached_property
 import os
-from typing import Collection, Optional, Union
+from typing import Optional, Union
 
 from ..language_data import LanguageData
 from ..target_list import TargetList

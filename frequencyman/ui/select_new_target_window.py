@@ -12,8 +12,10 @@ from anki.collection import Collection
 from anki.decks import DeckNameId
 from anki.models import NotetypeNameIdUseCount
 from aqt.utils import askUser, showWarning, showInfo, getOnlyText as getOnlyTextDialog
-from aqt import QAction, QSpacerItem, QSizePolicy, QApplication
-from aqt.qt import QDialog, QLabel, QSpacerItem, QSizePolicy, QPushButton, QVBoxLayout, QLineEdit, QStringListModel, QListView, QAbstractItemView
+from aqt.qt import (
+    QDialog, QLabel, QSpacerItem, QSizePolicy, QPushButton, QVBoxLayout,
+    QLineEdit, QStringListModel, QListView, QAbstractItemView
+)
 
 from ..static_lang_data import NAMES_FOR_THE_ENGLISH_LANGUAGE, LANGUAGE_NAMES_ENG_AND_NATIVE
 from ..target import ConfiguredTargetNote, ValidConfiguredTarget

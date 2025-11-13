@@ -17,7 +17,7 @@ import re
 import sys
 from typing import IO, TYPE_CHECKING, Any, Callable, Iterable, Iterator, Literal, Optional, Type, TypeVar, cast
 from dataclasses import dataclass, fields
-from aqt import Qt, QDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStyle, QVBoxLayout, QWidget
+from aqt.qt import Qt, QDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStyle, QVBoxLayout, QWidget
 from aqt.utils import showInfo
 from typing_extensions import dataclass_transform
 

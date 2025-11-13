@@ -112,10 +112,6 @@ class ConfiguredTargetTypedDict(dict):
     def __getitem__(self, key: Literal['notes']) -> list[ConfiguredTargetNote]:
         ...
 
-    @overload
-    def __getitem__(self, key: ConfiguredTargetKeys) -> Any:
-        ...
-
     @override
     def __getitem__(self, key: ConfiguredTargetKeys):
         return super().__getitem__(key)

@@ -82,7 +82,7 @@ def add_en_contractions(wf_list: list[str]) -> None:
 
 def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list_url: str) -> Iterator[str]:
 
-    content: Iterator[str] = (line.decode('utf-8') for line in response.iter_lines())
+    content = (line.decode('utf-8') for line in response.iter_lines() if isinstance(line, bytes))
     content_filters = (line for line in content if line and line[0] != "'" and line[0] != '-' and ("--" not in line[0]))
 
     for word, _ in WordFrequencyLists.get_words_from_content(content_filters, wf_list_url, lang_id):
@@ -153,6 +153,8 @@ def create_default_wf_lists():
                 if len(wf_list) > SOURCE_WF_LIST_LENGTH_LIMIT:
                     break
 
+            if not wf_list:
+                raise Exception("WF list unusable! {} contains no words!".format(wf_list_url))
             if len(wf_list) < 100:
                 print(" WARNING: WF list not used! {} contains only {} words!".format(wf_list_url, len(wf_list)))
             else:

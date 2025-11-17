@@ -281,7 +281,9 @@ def remove_bottom_percent_dict(input_dict: dict[K, float], percent_remove: float
     return dict(list(input_dict.items())[0:keep_offset_end])
 
 
-def show_result(message: str, title: str, type: Literal['information', 'warning', 'error'], parent: QWidget) -> bool:
+ShowResultType = Literal["information", "warning", "error"]
+
+def show_result(message: str, title: str, type: ShowResultType, parent: QWidget) -> bool:
 
     dialog = QDialog(parent)
     dialog.setWindowTitle(title)

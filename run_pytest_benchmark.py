@@ -35,17 +35,17 @@ def main() -> None:
     avg = sum(top_durations) / len(top_durations)
     min_time = min(durations)
 
-    result = "\n"
-    result += "Summary over {} runs:\n".format(runs)
-    result += "  Total time: {:.0f} seconds\n".format(total)
-    result += "  Average time (fastest 50%): {:.1f} seconds\n".format(avg)
-    result += "  Minimum time: {:.1f} seconds\n".format(min_time)
+    result_summary_txt = "\n"
+    result_summary_txt += "Summary over {} runs:\n".format(runs)
+    result_summary_txt += "  Total time: {:.0f} seconds\n".format(total)
+    result_summary_txt += "  Average time (fastest 50%): {:.1f} seconds\n".format(avg)
+    result_summary_txt += "  Minimum time: {:.1f} seconds\n".format(min_time)
 
-    print(result)
+    print(result_summary_txt)
 
     # add to log file
     with open("pytest_benchmark.tmp.log", "a") as f:
-        f.write(result+"\n")
+        f.write(result_summary_txt+"\n")
 
 if __name__ == "__main__":
     main()

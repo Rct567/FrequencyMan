@@ -28,7 +28,7 @@ from .main_window import FrequencyManMainWindow, FrequencyManTab
 from .select_new_target_window import SelectNewTargetWindow
 
 from ..lib.event_logger import EventLogger
-from ..lib.utilities import show_result, var_dump, var_dump_log, override
+from ..lib.utilities import ShowResultType, show_result, var_dump, var_dump_log, override
 
 from ..language_data import LanguageData
 from ..reorder_logger import ReorderLogger
@@ -553,7 +553,7 @@ class ReorderCardsTab(FrequencyManTab):
 
             result_info_str += "\n\n"+str(event_logger)
 
-            msg_type = "warning" if num_errors > 0 else "information"
+            msg_type: ShowResultType  = "warning" if num_errors > 0 else "information"
             show_result(result_info_str, "Result", msg_type, self.fm_window)
             # showText(result_info_str, self.fm_window, geomKey="ReorderResult")
 

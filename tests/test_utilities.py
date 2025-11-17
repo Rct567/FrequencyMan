@@ -32,7 +32,7 @@ def test_normalize_dict_floats_values_single_value():
 
 def test_normalize_dict_floats_values_empty_dict():
 
-    result = normalize_dict_floats_values({})
+    result: dict[str, float] = normalize_dict_floats_values({})
     assert result == {}
 
 

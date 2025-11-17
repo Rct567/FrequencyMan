@@ -399,8 +399,8 @@ class WordsOverviewTab(FrequencyManTab):
                 self.__set_opacity(first_column_item, 0.5)
 
             # Original columns
-            for col_index, value in enumerate(row_data, start=1):
-                self.__set_table_item(row_index, col_index, value)
+            for col_index, value_numeric in enumerate(row_data, start=1):
+                self.__set_table_item(row_index, col_index, value_numeric)
 
             # Additional columns
             for col_index, column_title in enumerate(additional_labels, start=len(row_data)+1):

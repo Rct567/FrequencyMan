@@ -3,8 +3,10 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+import os
+
 from functools import partial
-from typing import NamedTuple
+from typing import NamedTuple, Optional, Callable
 
 from aqt.qt import QTimer, QAction
 from aqt.main import AnkiQt

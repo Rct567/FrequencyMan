@@ -6,7 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 import os
 
 from functools import partial
-from typing import NamedTuple, Optional, Callable
+from typing import NamedTuple, Optional, Callable, TYPE_CHECKING
 
 from aqt.qt import QTimer, QAction
 from aqt.main import AnkiQt
@@ -21,7 +21,7 @@ from .frequencyman.ui.words_overview_tab import WordsOverviewTab, MatureWordsOve
 from .frequencyman.ui.reorder_cards_tab import ReorderCardsTab
 from .frequencyman.ui.main_window import FrequencyManMainWindow
 
-from .frequencyman.lib.utilities import *
+from .frequencyman.lib.utilities import JSON_TYPE
 
 
 

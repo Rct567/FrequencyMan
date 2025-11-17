@@ -76,12 +76,12 @@ def test_get_word_tokens_from_text_user_tokenizer_ja():
 
     for tokenizer in ja_tokenizers:
         print("User tokenizer for JA tested: "+tokenizer.name())
-        assert TextProcessing.get_word_tokens_from_text("すもももももももものうち", LangId('ja'), tokenizer) == ['すもも', 'も', 'もも', 'も', 'もも', 'の', 'うち'], tokenizer.__name__
-        assert TextProcessing.get_word_tokens_from_text("こんにちは。私の名前はシャンです。", LangId('ja'), tokenizer) == ["こんにちは", "私", "の", "名前", "は", "シャン", "です"], tokenizer.__name__
-        assert TextProcessing.get_word_tokens_from_text("これはテストです。", LangId('ja'), tokenizer) == ["これ", "は", "テスト", "です"], tokenizer.__name__
-        assert TextProcessing.get_word_tokens_from_text("私の名前は太郎です 。", LangId('ja'), tokenizer) == ["私", "の", "名前", "は", "太郎", "です"], tokenizer.__name__
-        assert TextProcessing.get_word_tokens_from_text("あのイルカはとてもかわいい！", LangId('ja'), tokenizer) == ["あの", "イルカ", "は", "とても", "かわいい"], tokenizer.__name__
-        assert TextProcessing.get_word_tokens_from_text("君の言葉は深いですね。", LangId('ja'), tokenizer) == ["君", "の", "言葉", "は", "深い", "です", "ね"], tokenizer.__name__
+        assert TextProcessing.get_word_tokens_from_text("すもももももももものうち", LangId('ja'), tokenizer) == ['すもも', 'も', 'もも', 'も', 'もも', 'の', 'うち'], tokenizer.name()
+        assert TextProcessing.get_word_tokens_from_text("こんにちは。私の名前はシャンです。", LangId('ja'), tokenizer) == ["こんにちは", "私", "の", "名前", "は", "シャン", "です"], tokenizer.name()
+        assert TextProcessing.get_word_tokens_from_text("これはテストです。", LangId('ja'), tokenizer) == ["これ", "は", "テスト", "です"], tokenizer.name()
+        assert TextProcessing.get_word_tokens_from_text("私の名前は太郎です 。", LangId('ja'), tokenizer) == ["私", "の", "名前", "は", "太郎", "です"], tokenizer.name()
+        assert TextProcessing.get_word_tokens_from_text("あのイルカはとてもかわいい！", LangId('ja'), tokenizer) == ["あの", "イルカ", "は", "とても", "かわいい"], tokenizer.name()
+        assert TextProcessing.get_word_tokens_from_text("君の言葉は深いですね。", LangId('ja'), tokenizer) == ["君", "の", "言葉", "は", "深い", "です", "ね"], tokenizer.name()
 
 
 def test_get_word_tokens_from_text_user_tokenizer_zh():
@@ -92,10 +92,10 @@ def test_get_word_tokens_from_text_user_tokenizer_zh():
 
     for tokenizer in zh_tokenizers:
         print("User tokenizer for ZH tested: "+tokenizer.name())
-        assert TextProcessing.get_word_tokens_from_text("你跟我", LangId('zh'), tokenizer) == ['你', '跟', '我'], tokenizer.__name__
-        assert TextProcessing.get_word_tokens_from_text("hello 吃饭了吗😊? ", LangId('zh'), tokenizer) == ["吃饭", "了", "吗"], tokenizer.__name__
-        assert TextProcessing.get_word_tokens_from_text("我爱自然语言处理。", LangId('zh'), tokenizer) == ['我', '爱', '自然语言', '处理'], tokenizer.__name__
-        assert TextProcessing.get_word_tokens_from_text(" 我 爱自然语言处理。 ", LangId('zh'), tokenizer) == ['我', '爱', '自然语言', '处理'], tokenizer.__name__
+        assert TextProcessing.get_word_tokens_from_text("你跟我", LangId('zh'), tokenizer) == ['你', '跟', '我'],tokenizer.name()
+        assert TextProcessing.get_word_tokens_from_text("hello 吃饭了吗😊? ", LangId('zh'), tokenizer) == ["吃饭", "了", "吗"], tokenizer.name()
+        assert TextProcessing.get_word_tokens_from_text("我爱自然语言处理。", LangId('zh'), tokenizer) == ['我', '爱', '自然语言', '处理'], tokenizer.name()
+        assert TextProcessing.get_word_tokens_from_text(" 我 爱自然语言处理。 ", LangId('zh'), tokenizer) == ['我', '爱', '自然语言', '处理'], tokenizer.name()
 
 
 def test_create_word_token():

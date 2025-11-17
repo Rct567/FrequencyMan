@@ -3,7 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Optional, Sequence, Tuple, TypedDict
+from typing import Optional, Sequence, TypedDict
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -58,8 +58,8 @@ class TargetReorderResult():
 
 
 class TargetCacheData(TypedDict):
-    target_cards: dict[Tuple, TargetCards]
-    corpus: dict[Tuple, TargetCorpusData]
+    target_cards: dict[tuple, TargetCards]
+    corpus: dict[tuple, TargetCorpusData]
 
 
 class Target:

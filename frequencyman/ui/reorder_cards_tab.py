@@ -9,7 +9,7 @@ import re
 import shutil
 import hashlib
 import time
-from typing import Any, Optional, Tuple, Callable, Union
+from typing import Any, Optional, Callable, Union
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from aqt.operations import QueryOp, CollectionOp

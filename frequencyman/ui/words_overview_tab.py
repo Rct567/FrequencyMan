@@ -3,7 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Optional, Union
+from typing import Any, Callable, Optional, Union
 from anki.collection import Collection
 
 from aqt.qt import (
@@ -30,6 +30,21 @@ from .main_window import FrequencyManMainWindow, FrequencyManTab
 
 from ..lib.utilities import batched, var_dump_log, override
 from ..text_processing import WordToken
+
+
+
+class KeyedTable(QTableWidget):
+    def __init__(self, key_press_callback: Optional[Callable[[QKeyEvent], None]] = None, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._key_press_callback = key_press_callback
+
+    @override
+    def keyPressEvent(self, e: Optional[QKeyEvent]) -> None:
+        if e is not None:
+            if self._key_press_callback:
+                self._key_press_callback(e)
+                return
+        super().keyPressEvent(e)
 
 
 class NumericTableWidgetItem(QTableWidgetItem):
@@ -74,7 +89,7 @@ class WordsOverviewTab(FrequencyManTab):
     ]
     overview_options_available: list[WordsOverviewOption]
     table_label: QLabel
-    table: QTableWidget
+    table: KeyedTable
 
     additional_columns: list[AdditionalColumn]
     additional_column_checkboxes: dict[str, QCheckBox]
@@ -161,9 +176,8 @@ class WordsOverviewTab(FrequencyManTab):
         self.table_label = QLabel("")
         self.table_label.setStyleSheet("margin-top:8px;")
         tab_layout.addWidget(self.table_label)
-        self.table = QTableWidget()
+        self.table = KeyedTable(key_press_callback=self.__handle_table_key_press)
         tab_layout.addWidget(self.table)
-        self.table.keyPressEvent = self.__handle_key_press
 
         # Add context menu to table
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -270,15 +284,11 @@ class WordsOverviewTab(FrequencyManTab):
         self.selected_overview_option_index = index
         self.__update_table()
 
-    def __handle_key_press(self, e: Optional[QKeyEvent]) -> None:
-        if not e:
-            return
+    def __handle_table_key_press(self, e: QKeyEvent) -> None:
+
         # Check for Ctrl+C (Cmd+C on Mac)
         if e.matches(QKeySequence.StandardKey.Copy):
             self.__copy_selection_to_clipboard()
-        else:
-            # Handle all other key events normally
-            QTableWidget.keyPressEvent(self.table, e)
 
     def __copy_selection_to_clipboard(self) -> None:
 

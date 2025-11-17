@@ -99,14 +99,35 @@ def has_staged_changes() -> bool:
 
 def run_pytest_with_success() -> bool:
 
+    print("Running pytest...")
+
     result = subprocess.run(["pytest"], capture_output=True, text=True)
 
-    if result.returncode == 0:
-        print("Pytest was successful!")
-        return True
-    else:
+    if result.returncode != 0:
         print(result.stderr)
         return False
+
+    print("Pytest was successful!")
+    return True
+
+def run_mypy_with_success() -> bool:
+
+    print("Running mypy...")
+
+    result_init_file = subprocess.run(["mypy", ".\\__init__.py", "--ignore-missing-imports"], capture_output=True, text=True)
+
+    if result_init_file.returncode != 0:
+        print(result_init_file.stdout)
+        return False
+
+    result_main = subprocess.run(["mypy"], capture_output=True, text=True)
+
+    if result_main.returncode != 0:
+        print(result_main.stdout)
+        return False
+
+    print("Mypy was successful!")
+    return True
 
 
 def create_zip(directory: str, zip_file: str) -> None:
@@ -140,8 +161,12 @@ new_release_src_dir = root_dir
 if not os.path.exists(releases_dir):
     os.mkdir(releases_dir)
 
+if not run_mypy_with_success():
+    print_and_exit_error("Mypy failed!")
+
 if not run_pytest_with_success():
     print_and_exit_error("Pytest failed!")
+
 
 new_release_version = set_release_version(new_release_src_dir)
 

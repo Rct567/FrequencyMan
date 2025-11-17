@@ -113,7 +113,7 @@ class TargetCards:
 
         for card_row in cards:
 
-            (card_id, card_type, card_queue, card_due) = (card_row[0], card_row[2], card_row[3], card_row[7])
+            card_id, note_id, card_type, card_queue, card_ivl, card_reps, card_factor, card_due = card_row
             is_leech = card_id in leech_cards_ids
             is_suspended = card_queue == -1
             is_new = card_queue == 0
@@ -125,7 +125,7 @@ class TargetCards:
             else:
                 days_overdue = None
 
-            card = TargetCard(*card_row, is_leech=is_leech, is_suspended=is_suspended, days_overdue=days_overdue)
+            card = TargetCard(card_id, note_id, card_type, card_queue, card_ivl, card_reps, card_factor, card_due, is_leech, is_suspended, days_overdue)
 
             if is_new:
                 new_cards.append(card)

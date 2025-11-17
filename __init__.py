@@ -8,7 +8,7 @@ from typing import NamedTuple
 
 from aqt.qt import QTimer, QAction
 from aqt.main import AnkiQt
-from aqt import mw, gui_hooks, dialogs
+from aqt import mw as anki_main_window, gui_hooks, dialogs
 
 from anki.collection import Collection
 
@@ -24,7 +24,7 @@ from .frequencyman.lib.utilities import *
 
 
 def get_mw():
-    return mw
+    return anki_main_window
 
 mw: Optional[AnkiQt] = get_mw()
 

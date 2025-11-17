@@ -37,7 +37,6 @@ class PersistentCacher():
         self._pre_loaded_cache: dict[str, Any] = {}
         self._items_preloaded = False
 
-
     def __on_db_connect(self) -> None:
         self.db.query('''
             CREATE TABLE IF NOT EXISTS cache_items (
@@ -121,9 +120,9 @@ class PersistentCacher():
         if row:
             return PersistentCacher.deserialize(row['value'], SerializationType(row['storage_type']))
 
-        result = producer()
-        self.save_item(cache_id, result)
-        return result
+        item = producer()
+        self.save_item(cache_id, item)
+        return item
 
     def delete_item(self, cache_id: str) -> None:
         self.db.delete_row('cache_items', 'id = ?', self._hash_id_bin(cache_id))

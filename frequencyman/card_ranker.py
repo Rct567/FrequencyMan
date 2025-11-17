@@ -635,12 +635,12 @@ class CardRanker:
 
         # set fm_unseen_words (deprecated, use fm_new_words)
         if 'fm_unseen_words' in note:
-            new_words_per_field: list[str] = []
+            unseen_words_per_field: list[str] = []
             for field_index, field_metrics in enumerate(note_metrics):
                 if field_metrics.new_words:
-                    new_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(field_metrics.new_words).strip(", ")+'</span>')
-            if new_words_per_field:
-                words_lists = ' <span class="separator">/</span> '.join(new_words_per_field)
+                    unseen_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(field_metrics.new_words).strip(", ")+'</span>')
+            if unseen_words_per_field:
+                words_lists = ' <span class="separator">/</span> '.join(unseen_words_per_field)
                 note_data['fm_unseen_words'] = '<span id="fm_new_words">'+words_lists+'</span>'
             else:
                 note_data['fm_unseen_words'] = ''

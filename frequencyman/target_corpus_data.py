@@ -314,14 +314,14 @@ class TargetCorpusData:
     def __get_field_value_tokenized(self, field_value: str, lang_id: LangId) -> Sequence[WordToken]:
 
         if field_value == "":
-            field_value_tokenized = []
+            field_value_tokenized: Sequence[WordToken] = []
         else:
             cache_key = str(lang_id)+"|"+field_value
             field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(field_value), lang_id))
 
         return field_value_tokenized
 
-    def __set_targeted_fields_data(self):
+    def __set_targeted_fields_data(self) -> None:
 
         self.cacher.pre_load_all_items()
 
@@ -417,7 +417,7 @@ class TargetCorpusData:
 
         for card in cards:
             if card.reps < 1 or card.ivl < 1:
-                card_score = 0
+                card_score = 0.0
             else:
                 card_interval_score = normalize_against_baseline(card.ivl, 300)
                 card_ease_score = normalize_against_baseline(card.ease_factor, 2500)

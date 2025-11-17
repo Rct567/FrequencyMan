@@ -178,7 +178,7 @@ ANKI_MORPHS_PRIORITY_FILES = {
 
 def get_default_wf_list_sources() -> dict[str, list[str]]:
 
-    combined = defaultdict(list)
+    combined: dict[str, list[str]] = defaultdict(list)
 
     for lang_id, url in TOP_OPEN_SUBTITLES_SENTENCES_SOURCES.items():
         combined[lang_id].append(url)
@@ -191,13 +191,13 @@ def get_default_wf_list_sources() -> dict[str, list[str]]:
             continue
         combined[lang_id].append(url)
 
-    for lang_id, url in ANKI_MORPHS_PRIORITY_FILES.items():
+    for lang_id, urls in ANKI_MORPHS_PRIORITY_FILES.items():
         if lang_id in {'fr'}:
             continue
-        if isinstance(url, list):
-            combined[lang_id].extend(url)
-        else:
-            combined[lang_id].append(url)
+        if isinstance(urls, list):
+            combined[lang_id].extend(urls)
+        elif isinstance(urls, str):
+            combined[lang_id].append(urls)
 
     return combined
 

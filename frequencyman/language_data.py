@@ -6,7 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from collections import defaultdict
 import csv
 from functools import cache
-from typing import Iterator, NewType, Optional, Union
+from typing import Iterator, NewType, Optional, Union, Iterable
 
 from .lib.utilities import *
 from .text_processing import TextProcessing, LangId
@@ -107,12 +107,16 @@ class WordFrequencyLists:
     def __produce_combined_list(files: set[str], lang_data_id: LangDataId) -> dict[str, float]:
 
         lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
-        words_positions_combined = WordFrequencyLists.combine_lists_by_top_position((WordFrequencyLists.get_words_from_file(file_path, lang_id) for file_path in files))
+        words_positions_combined = {
+            word: (1/line_number)
+            for word, line_number
+            in WordFrequencyLists.combine_lists_by_top_position((WordFrequencyLists.get_words_from_file(file_path, lang_id) for file_path in files)).items()
+        }
 
         if not words_positions_combined:
             return {}
 
-        words_positions_combined = sort_dict_floats_values({word: 1/line_number for word, line_number in words_positions_combined.items()})
+        words_positions_combined = sort_dict_floats_values(words_positions_combined)
         words_positions_combined = normalize_dict_positional_floats_values(words_positions_combined)
 
         return words_positions_combined

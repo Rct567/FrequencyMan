@@ -458,8 +458,8 @@ class WordsOverviewTab(FrequencyManTab):
         note_ids = set(card.nid for card in content_metrics.cards_per_word[word])
         batched_note_ids = batched(note_ids, 300)  # prevent "Expression tree is too large" error
         queries = []
-        for note_ids in batched_note_ids:
-            search_query = " OR ".join("nid:{}".format(note_id) for note_id in note_ids)
+        for note_ids_batch in batched_note_ids:
+            search_query = " OR ".join("nid:{}".format(note_id) for note_id in note_ids_batch)
             search_query = "({})".format(search_query)
             queries.append(search_query)
         search_query = " OR ".join(queries)

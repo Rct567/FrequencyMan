@@ -97,17 +97,17 @@ def has_staged_changes() -> bool:
     return result.returncode != 0
 
 
-def run_pytest_with_success() -> bool:
+def run_nox_with_success() -> bool:
 
-    print("Running pytest...")
+    print("Running nox...")
 
-    result = subprocess.run(["pytest"], capture_output=True, text=True)
+    result = subprocess.run(["nox"], capture_output=True, text=True)
 
     if result.returncode != 0:
         print(result.stderr)
         return False
 
-    print("Pytest was successful!")
+    print("Nox was successful!")
     return True
 
 def run_mypy_with_success() -> bool:
@@ -164,8 +164,8 @@ if not os.path.exists(releases_dir):
 if not run_mypy_with_success():
     print_and_exit_error("Mypy failed!")
 
-if not run_pytest_with_success():
-    print_and_exit_error("Pytest failed!")
+if not run_nox_with_success():
+    print_and_exit_error("Nox failed!")
 
 
 new_release_version = set_release_version(new_release_src_dir)

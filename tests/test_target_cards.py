@@ -5,16 +5,21 @@ from tests.tools import TestCollections
 
 class TestTargetCards:
 
-    def test_overdue_cards_from_db(self):
+    def test_days_overdue_cards(self):
+
+        # this test checks if days_overdue matches with Anki's due calculations.
+        # note: manually test this by changing the system time (before+after rollover hour).
+        # changing the time in Python alone is not enough to make it work properly.
 
         col = TestCollections.get_test_collection('big_collection_es')
+        assert col.conf['rollover'] == 7
         due_cards_ids_from_find_cards = col.find_cards('is:due')
         overdue_cards_ids_from_find_cards = col.find_cards('is:due -prop:due=0')
 
         target_cards = TargetCards(col.find_cards('*'), col)
 
         # note: days_overdue is set on all reviewed cards, including suspended ones,
-        # but for Anki, suspended cards are not due. 
+        # but for Anki, suspended cards are not due.
 
         due_cards_ids_from_target_cards = [card.id for card in target_cards.all_cards if card.days_overdue is not None and not card.is_suspended]
         overdue_cards_ids_from_target_cards = [card.id for card in target_cards.all_cards if card.days_overdue is not None and card.days_overdue > 0 and not card.is_suspended]

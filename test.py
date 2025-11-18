@@ -1,9 +1,32 @@
-"""Test runner script that checks Python version and runs tests with pytest or nox."""
-
 import subprocess
 import sys
 from typing import NoReturn
 
+
+def install_dev_requirements() -> None:
+    """Install dev requirements from requirements-dev.txt."""
+    print("="*60)
+    try:
+        with open("requirements-dev.txt", "r") as _:
+            print("Found requirements-dev.txt, installing dependencies...")
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-r", "requirements-dev.txt"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            if "installed" in result.stdout:
+                print(" Installation successful.")
+                if result.stdout:
+                    print(result.stdout)
+            else:
+                print(" Done.")
+    except FileNotFoundError:
+        print(" No requirements-dev.txt found.")
+        sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print(f" Failed to install requirements-dev.txt: {e}")
+        sys.exit(1)
 
 def check_python_version() -> None:
     """Check if Python 3.9 or higher is installed."""
@@ -29,15 +52,15 @@ def is_package_installed(package: str) -> bool:
 
 def install_package(package: str) -> None:
     """Install a Python package using pip."""
-    print(f"Installing {package}...")
+    print(f" Installing {package}...")
     try:
         subprocess.run(
             [sys.executable, "-m", "pip", "install", package],
             check=True
         )
-        print(f"✓ {package} installed successfully")
+        print(f" {package} installed successfully")
     except subprocess.CalledProcessError as e:
-        print(f"Error installing {package}: {e}")
+        print(f" Error installing {package}: {e}")
         sys.exit(1)
 
 
@@ -45,55 +68,61 @@ def ensure_packages_installed(packages: list[str]) -> None:
     """Ensure all required packages are installed."""
     for package in packages:
         if not is_package_installed(package):
-            print(f"✗ {package} is not installed")
+            print(f" {package} is not installed")
             install_package(package)
 
 
+def run_and_print_on_failure(cmd: list[str], fail_label: str) -> None:
+    """
+    Run `cmd`. If it fails, print stdout/stderr (if present) and exit with the subprocess return code.
+    """
+
+    print(" > "+"".join(part+" " for part in cmd))
+
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        print(" {} failed.".format(fail_label))
+        if e.stdout:
+            print(" stdout:\n{}".format(e.stdout))
+        if e.stderr:
+            print(" stderr:\n{}".format(e.stderr))
+        # propagate the exit code from the subprocess
+        sys.exit(e.returncode)
+
 def run_pytest() -> None:
     """Run pytest with the current Python version."""
-    print("\n" + "="*60)
+    print("=" * 60)
     print("Running pytest with current Python version...")
-    print("="*60 + "\n")
 
     ensure_packages_installed(["pytest"])
-
-    # Check if requirements-dev.txt exists and install from it
-    try:
-        with open("requirements-dev.txt", "r") as _:
-            print("Found requirements-dev.txt, installing dependencies...")
-            subprocess.run(
-                [sys.executable, "-m", "pip", "install", "-r", "requirements-dev.txt"],
-                check=True,
-                capture_output=True
-            )
-    except FileNotFoundError:
-        print("No requirements-dev.txt found, skipping...")
-    except subprocess.CalledProcessError as e:
-        print(f"Warning: Failed to install requirements-dev.txt: {e}")
-
-    try:
-        subprocess.run([sys.executable, "-m", "pytest", "tests/"], check=True)
-    except subprocess.CalledProcessError:
-        sys.exit(1)
-
+    run_and_print_on_failure(["pytest"], "Pytest")
 
 def run_nox() -> None:
     """Run tests across multiple Python versions using nox."""
-    print("\n" + "="*60)
+    print("=" * 60)
     print("Running tests across multiple Python versions with nox...")
-    print("="*60 + "\n")
 
     ensure_packages_installed(["nox", "uv"])
+    run_and_print_on_failure(["nox", "--stop-on-first-error"], "Nox")
 
-    try:
-        subprocess.run(["nox"], check=True)
-    except subprocess.CalledProcessError:
-        sys.exit(1)
+    print("Nox was successful!")
+
+def run_mypy() -> None:
+
+    print("="*60)
+    print("Running mypy...")
+
+    ensure_packages_installed(["mypy"])
+    run_and_print_on_failure(["mypy", ".\\__init__.py", "--ignore-missing-imports"], "Mypy")
+    run_and_print_on_failure(["mypy"], "Mypy")
+
+    print(" Mypy was successful!")
+
 
 
 def get_user_choice() -> str:
-    """Prompt user to choose between pytest and nox."""
-    print("\n" + "="*60)
+    print("="*60)
     print("Test Runner Options:")
     print(" 1. Run pytest with current Python version ({}.{})".format(sys.version_info.major, sys.version_info.minor))
     print(" 2. Test all Python versions using nox (3.9, 3.11, 3.13)")
@@ -107,14 +136,17 @@ def get_user_choice() -> str:
 
 
 def main() -> NoReturn:
-    """Main entry point for the test runner."""
     print(" "*60)
     print("Python Test Runner")
-    print("="*60 + "\n")
 
     check_python_version()
+    install_dev_requirements()
+    run_mypy()
 
-    choice = get_user_choice()
+    if len(sys.argv) > 1 and (sys.argv[1] == "-y" or sys.argv[1] == "--nox"):
+        choice = "2"
+    else:
+        choice = get_user_choice()
 
     if choice == "1":
         run_pytest()
@@ -122,7 +154,7 @@ def main() -> NoReturn:
         run_nox()
 
     print("\n" + "="*60)
-    print("✓ Tests completed successfully!")
+    print(" All tests completed successfully!")
     print("="*60)
     sys.exit(0)
 

@@ -97,36 +97,17 @@ def has_staged_changes() -> bool:
     return result.returncode != 0
 
 
-def run_nox_with_success() -> bool:
+def run_all_tests_with_success() -> bool:
 
-    print("Running nox...")
+    print("Running tests...")
 
-    result = subprocess.run(["nox"], capture_output=True, text=True)
+    result = subprocess.run(["python", "test.py", "--nox"], capture_output=True, text=True)
 
     if result.returncode != 0:
-        print(result.stderr)
+        print(result.stderr if result.stderr else result.stdout)
         return False
 
-    print("Nox was successful!")
-    return True
-
-def run_mypy_with_success() -> bool:
-
-    print("Running mypy...")
-
-    result_init_file = subprocess.run(["mypy", ".\\__init__.py", "--ignore-missing-imports"], capture_output=True, text=True)
-
-    if result_init_file.returncode != 0:
-        print(result_init_file.stdout)
-        return False
-
-    result_main = subprocess.run(["mypy"], capture_output=True, text=True)
-
-    if result_main.returncode != 0:
-        print(result_main.stdout)
-        return False
-
-    print("Mypy was successful!")
+    print(" All tests completed successfully!")
     return True
 
 
@@ -141,7 +122,6 @@ def create_zip(directory: str, zip_file: str) -> None:
 def print_and_exit_error(message: str) -> NoReturn:
     print(message)
     sys.exit(1)
-
 
 
 # create release
@@ -161,11 +141,9 @@ new_release_src_dir = root_dir
 if not os.path.exists(releases_dir):
     os.mkdir(releases_dir)
 
-if not run_mypy_with_success():
-    print_and_exit_error("Mypy failed!")
 
-if not run_nox_with_success():
-    print_and_exit_error("Nox failed!")
+if not run_all_tests_with_success():
+    print_and_exit_error("Tests failed!")
 
 
 new_release_version = set_release_version(new_release_src_dir)

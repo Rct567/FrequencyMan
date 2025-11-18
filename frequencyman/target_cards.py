@@ -5,7 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 from anki.collection import Collection
 from anki.cards import CardId, Card
@@ -31,32 +31,34 @@ class TargetCard:
     days_overdue: Optional[int] = None
 
     @staticmethod
-    def get_days_overdue(card_queue: int, card_type: int, card_due: int, col: Collection) -> Optional[int]:
+    def get_days_overdue(col: Collection) -> Callable[[int, int, int], Optional[int]]:
 
-        assert -3 <= card_queue < 5
-        assert 0 < card_type < 4
-
-        is_review = card_queue != 0 and card_type == 2
-
-        if not is_review:
-            return None
+        collection_time = col.crt
+        rollover = col.conf['rollover']
+        rollover_seconds = 60 * 60 * (rollover - 1)
 
         now = int_time()
-        collection_time = col.crt
-        due_date = collection_time + (card_due * 86400)
-
-        rollover = col.conf['rollover']
-
         if datetime.fromtimestamp(now).hour < rollover:
-            now -= 60*60*(rollover-1)  # adjust for 'next day starts at'
+            now -= rollover_seconds # adjust for 'next day starts at'
 
-        is_due = due_date < now
+        def _from_card(card_queue: int, card_type: int, card_due: int) -> Optional[int]:
+            assert -3 <= card_queue < 5
+            assert 0 < card_type < 4
 
-        if not is_due:
-            return None
+            is_review = card_queue != 0 and card_type == 2
+            if not is_review:
+                return None
 
-        days_overdue = (now-due_date) // 86400
-        return days_overdue  # if days_overdue is 0 then its also just due
+            due_date = collection_time + (card_due * 86400)
+            is_due = due_date < now
+
+            if not is_due:
+                return None
+
+            days_overdue = (now - due_date) // 86400
+            return days_overdue  # if days_overdue is 0 then its also just due
+
+        return _from_card
 
 
 class TargetCards:
@@ -110,6 +112,7 @@ class TargetCards:
         all_cards_notes_ids: list[NoteId] = []
         new_cards_notes_ids: list[NoteId] = []
         leech_cards_ids = self.__get_leech_cards_ids()
+        get_days_overdue = TargetCard.get_days_overdue(self.col)
 
         for card_row in cards:
 
@@ -121,7 +124,7 @@ class TargetCards:
             assert not (is_new and is_reviewed)
 
             if is_reviewed:
-                days_overdue = TargetCard.get_days_overdue(card_queue, card_type, card_due, self.col)
+                days_overdue = get_days_overdue(card_queue, card_type, card_due)
             else:
                 days_overdue = None
 

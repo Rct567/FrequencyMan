@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import time
 from typing import NoReturn
 
 
@@ -101,60 +102,99 @@ def run_pytest() -> None:
 def run_nox() -> None:
     """Run tests across multiple Python versions using nox."""
     print("=" * 60)
-    print("Running tests across multiple Python versions with nox...")
+    print("Running nox (tests across multiple Python versions)...")
+    start_time = time.perf_counter()
 
     ensure_packages_installed(["nox", "uv"])
     run_and_print_on_failure(["nox", "--stop-on-first-error"], "Nox")
 
-    print("Nox was successful!")
+    elapsed_time = time.perf_counter() - start_time
+    print("Nox was successful! ({:.0f} seconds)".format(elapsed_time))
+
+def run_tox() -> None:
+    """Run tests across multiple Python versions using nox."""
+    print("=" * 60)
+    print("Running tox (tests across multiple Python versions in parallel)...")
+    start_time = time.perf_counter()
+
+    ensure_packages_installed(["tox"])
+    run_and_print_on_failure(["tox", "--parallel", "auto"], "Tox")
+
+    elapsed_time = time.perf_counter() - start_time
+    print("Tox was successful! ({:.0f} seconds)".format(elapsed_time))
 
 def run_mypy() -> None:
-
+    """Run mypy."""
     print("="*60)
     print("Running mypy...")
+    start_time = time.perf_counter()
 
     ensure_packages_installed(["mypy"])
     run_and_print_on_failure(["mypy", ".\\__init__.py", "--ignore-missing-imports"], "Mypy")
     run_and_print_on_failure(["mypy"], "Mypy")
 
-    print(" Mypy was successful!")
+    elapsed_time = time.perf_counter() - start_time
+    print(" Mypy was successful! ({:.0f} seconds)".format(elapsed_time))
 
 
 
 def get_user_choice() -> str:
     print("="*60)
     print("Test Runner Options:")
-    print(" 1. Run pytest with current Python version ({}.{})".format(sys.version_info.major, sys.version_info.minor))
-    print(" 2. Test all Python versions using nox (3.9, 3.11, 3.13)")
-    print("="*60)
+
+    choices: dict[str, str] = {
+        "1":  "pytest -- Run pytest with current Python version ({}.{})".format(sys.version_info.major, sys.version_info.minor),
+        "2": "nox -- Test multiple Python versions using nox (3.9, 3.11, 3.13)"
+    }
+
+    if is_package_installed("tox") and is_package_installed("tox-uv"):
+        choices["3"] = "tox -- Test multiple Python versions in parallel using tox (3.9, 3.11, 3.13)"
+
+    for choice, description in choices.items():
+        print(" {}. {}".format(choice, description))
 
     while True:
-        choice = input("\nEnter your choice (1 or 2): ").strip()
-        if choice in ["1", "2"]:
+        choices_num_str = ", ".join(choices.keys())
+        choices_num_str = choices_num_str.replace(", {}".format(len(choices)), " or {}".format(len(choices)))
+        choice = input("\nEnter your choice ({}): ".format(choices_num_str).strip())
+        if choice in choices:
             return choice
-        print("Invalid choice. Please enter 1 or 2.")
+        print("Invalid choice. Please enter {}.".format(choices_num_str))
 
 
 def main() -> NoReturn:
     print(" "*60)
-    print("Python Test Runner")
+    print("FrequencyMan Test Runner")
+
+    start_time = time.perf_counter()
 
     check_python_version()
     install_dev_requirements()
     run_mypy()
 
-    if len(sys.argv) > 1 and (sys.argv[1] == "-y" or sys.argv[1] == "--nox"):
+    use_nox_to_test = len(sys.argv) > 1 and (sys.argv[1] == "-y" or sys.argv[1] == "--nox")
+
+    if use_nox_to_test:
         choice = "2"
     else:
         choice = get_user_choice()
 
     if choice == "1":
         run_pytest()
-    else:
+    elif choice == "2":
         run_nox()
+    elif choice == "3" and is_package_installed("tox"):
+        run_tox()
+    else:
+        raise Exception("Invalid choice.")
+
+    elapsed_time = time.perf_counter() - start_time
 
     print("\n" + "="*60)
-    print(" All tests completed successfully!")
+    if use_nox_to_test:
+        print(" All tests completed successfully! ({:.0f} seconds)".format(elapsed_time))
+    else:
+        print(" All tests completed successfully!")
     print("="*60)
     sys.exit(0)
 

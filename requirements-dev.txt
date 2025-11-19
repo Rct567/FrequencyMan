@@ -3,7 +3,10 @@ anki
 aqt
 mypy
 nox
+tox
+tox-uv
 pytest
+pytest-xdist
 pytest-sugar
 python-dateutil
 PyQt6-stubs; python_version >= "3.10"

@@ -1,6 +1,7 @@
 __pycache__/
 user_files/
 .pytest_cache/
+.tox/
 meta.json
 dump.log
 releases/

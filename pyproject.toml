@@ -1,5 +1,6 @@
 [project]
 name = "FrequencyMan"
+version = "0.0.1"
 requires-python = ">=3.9"
 
 [tool.autopep8]
@@ -43,3 +44,28 @@ module = [
 ]
 ignore_missing_imports = true
 follow_imports = "skip"
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["frequencyman", "tests"]
+exclude = ["^releases/", "^user_files/"]
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["py39", "py311", "py313"]
+
+[tool.tox.env_run_base]
+description = "Run tests with pytest"
+runner = "uv-venv-runner"
+set_env.PYTHONPATH = "{tox_root}"
+passenv = ["USERNAME", "USER", "USERPROFILE", "HOME"]
+skip_install = true
+deps = [
+    "-r requirements-dev.txt",
+    "pytest-xdist>=3.0"
+]
+commands = [
+    ["pytest", "tests", "-n", "auto", "--color=yes", "-vv", "{posargs}"]
+]
+

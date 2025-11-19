@@ -551,13 +551,13 @@ class CardRanker:
 
     def __note_has_n_field(self, note: Note, field_name: str, note_metrics: list[FieldMetrics]) -> bool:
 
-        key = str(note.mid)+'_'+field_name
+        key = f"{note.mid}_{field_name}"
 
         if key in self.note_model_has_n_field:
             return self.note_model_has_n_field[key]
 
         for i in range(len(note_metrics)):
-            if field_name+'_'+str(i) in note:
+            if f"{field_name}_{i}" in note:
                 self.note_model_has_n_field[key] = True
                 return True
 
@@ -614,10 +614,10 @@ class CardRanker:
             seen_words_per_field: list[str] = []
             for field_index, field_metrics in enumerate(note_metrics):
                 if field_metrics.seen_words:
-                    seen_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(field_metrics.seen_words).strip(", ")+'</span>')
+                    seen_words_per_field.append(f'<span data-field-index="{field_index}">{", ".join(field_metrics.seen_words)}</span>')
             if seen_words_per_field:
                 words_lists = ' <span class="separator">/</span> '.join(seen_words_per_field)
-                note_data['fm_seen_words'] = '<span id="fm_seen_words">'+words_lists+'</span>'
+                note_data['fm_seen_words'] = f'<span id="fm_seen_words">{words_lists}</span>'
             else:
                 note_data['fm_seen_words'] = ''
 
@@ -626,10 +626,10 @@ class CardRanker:
             new_words_per_field: list[str] = []
             for field_index, field_metrics in enumerate(note_metrics):
                 if field_metrics.new_words:
-                    new_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(field_metrics.new_words).strip(", ")+'</span>')
+                    new_words_per_field.append(f'<span data-field-index="{field_index}">{", ".join(field_metrics.new_words)}</span>')
             if new_words_per_field:
                 words_lists = ' <span class="separator">/</span> '.join(new_words_per_field)
-                note_data['fm_new_words'] = '<span id="fm_new_words">'+words_lists+'</span>'
+                note_data['fm_new_words'] = f'<span id="fm_new_words">{words_lists}</span>'
             else:
                 note_data['fm_new_words'] = ''
 
@@ -638,10 +638,10 @@ class CardRanker:
             unseen_words_per_field: list[str] = []
             for field_index, field_metrics in enumerate(note_metrics):
                 if field_metrics.new_words:
-                    unseen_words_per_field.append('<span data-field-index="'+str(field_index)+'">'+", ".join(field_metrics.new_words).strip(", ")+'</span>')
+                    unseen_words_per_field.append(f'<span data-field-index="{field_index}">{", ".join(field_metrics.new_words)}</span>')
             if unseen_words_per_field:
                 words_lists = ' <span class="separator">/</span> '.join(unseen_words_per_field)
-                note_data['fm_unseen_words'] = '<span id="fm_new_words">'+words_lists+'</span>'
+                note_data['fm_unseen_words'] = f'<span id="fm_new_words">{words_lists}</span>'
             else:
                 note_data['fm_unseen_words'] = ''
 
@@ -650,26 +650,26 @@ class CardRanker:
             focus_words_per_field: list[str] = []
             for field_index, field_metrics in enumerate(note_metrics):
                 if field_metrics.focus_words:
-                    focus_words_str = '<span data-field-index="'+str(field_index)+'">'+", ".join(field_metrics.focus_words.keys())+'</span>'
+                    focus_words_str = f'<span data-field-index="{field_index}">{", ".join(field_metrics.focus_words.keys())}</span>'
                     focus_words_per_field.append(focus_words_str)
             if focus_words_per_field:
                 words_lists = ' <span class="separator">/</span> '.join(focus_words_per_field)
-                note_data['fm_focus_words'] = '<span id="fm_focus_words">'+words_lists+'</span>'
+                note_data['fm_focus_words'] = f'<span id="fm_focus_words">{words_lists}</span>'
             else:
                 note_data['fm_focus_words'] = ''
 
         # set fm_lowest_fr_word_[n]
         if self.__note_has_n_field(note, 'fm_lowest_fr_word', note_metrics):
             for index, field_metrics in enumerate(note_metrics):
-                field_name = 'fm_lowest_fr_word_'+str(index)
+                field_name = f'fm_lowest_fr_word_{index}'
                 if field_name in note:
                     note_data[field_name] = field_metrics.lowest_fr_word[0]
 
         # set fm_lowest_familiarity_word_[n]
         if self.__note_has_n_field(note, 'fm_lowest_familiarity_word_static', note_metrics):
             for index, field_metrics in enumerate(note_metrics):
-                field_name = 'fm_lowest_familiarity_word_'+str(index)
-                field_name_static = 'fm_lowest_familiarity_word_static_'+str(index)
+                field_name = f'fm_lowest_familiarity_word_{index}'
+                field_name_static = f'fm_lowest_familiarity_word_static_{index}'
                 if field_name in note:
                     note_data[field_name] = field_metrics.lowest_familiarity_word[0]
                 if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
@@ -678,8 +678,8 @@ class CardRanker:
         # set fm_main_focus_word_[n]
         if self.__note_has_n_field(note, 'fm_main_focus_word', note_metrics) or self.__note_has_n_field(note, 'fm_main_focus_word_static', note_metrics):
             for index, field_metrics in enumerate(note_metrics):
-                field_name = 'fm_main_focus_word_'+str(index)
-                field_name_static = 'fm_main_focus_word_static_'+str(index)
+                field_name = f'fm_main_focus_word_{index}'
+                field_name_static = f'fm_main_focus_word_static_{index}'
                 if field_name in note:
                     if field_metrics.focus_words:
                         note_data[field_name] = list(field_metrics.focus_words.keys())[0]
@@ -772,7 +772,7 @@ class CardRanker:
                             factor_value = factor_values[note.id]
                             factor_span = self.ranking_factors_span[factor_name]
                             factor_score = factor_value*factor_span
-                            fm_debug_ranking_info_pieces.append("{}: {:.3f} <span style=\"opacity:0.5;\">x {} = {:.3f}</span><br />\n".format(factor_name, factor_value, factor_span, factor_score))
+                            fm_debug_ranking_info_pieces.append(f"{factor_name}: {factor_value:.3f} <span style=\"opacity:0.5;\">x {factor_span} = {factor_score:.3f}</span><br />\n")
                         note_data['fm_debug_ranking_info'] = "".join(fm_debug_ranking_info_pieces)
                 else:
                     note_data['fm_debug_ranking_info'] = debug_info_no_new_cards

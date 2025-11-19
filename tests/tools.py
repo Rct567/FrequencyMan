@@ -15,6 +15,9 @@ from frequencyman.lib.persistent_cacher import PersistentCacher, SqlDbFile
 from frequencyman.lib.utilities import var_dump_log
 
 
+CURRENT_PID = os.getpid()
+
+
 class TestCollection(Collection):
     collection_name: str
     collection_dir: str
@@ -48,7 +51,7 @@ class TestCollection(Collection):
 
         # create temporary collection
         collection_src_path = os.path.join(collection_dir, collection_name+".anki2")
-        temp_collection_file_name = collection_name+"_"+str(self.caller_full_name)+"_temp.anki2"
+        temp_collection_file_name = "{}_{}_{}_temp.anki2".format(collection_name, self.caller_full_name, CURRENT_PID)
         temp_collection_path = os.path.join(collection_dir, temp_collection_file_name)
         if os.path.exists(temp_collection_path):
             os.remove(temp_collection_path)
@@ -109,7 +112,7 @@ class TestCollections:
 
     TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
     TEST_COLLECTIONS_DIR = os.path.join(TEST_DATA_DIR, 'collections')
-    CACHER_FILE_PATH = os.path.join(TEST_DATA_DIR, 'cacher_data.sqlite')
+    CACHER_FILE_PATH = os.path.join(TEST_DATA_DIR, 'cacher_data_{}.sqlite'.format(CURRENT_PID))
     CACHER: Optional[PersistentCacher] = None
     cacher_data_cleared = False
 
@@ -123,12 +126,12 @@ class TestCollections:
                 pass
 
         test_collection_folder = Path(TestCollections.TEST_COLLECTIONS_DIR)
-        for file in test_collection_folder.rglob("*_temp.anki2"):
+        for file in test_collection_folder.rglob("*_{}_temp.anki2".format(CURRENT_PID)):
             try:
                 file.unlink(missing_ok=True)
             except OSError:
                 pass
-        for file in test_collection_folder.rglob("*_temp.anki2-wal"):
+        for file in test_collection_folder.rglob("*_{}_temp.anki2-wal".format(CURRENT_PID)):
             try:
                 file.unlink(missing_ok=True)
             except OSError:

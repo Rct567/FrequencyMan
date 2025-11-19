@@ -71,8 +71,9 @@ class TargetCards:
     new_cards_ids: Sequence[CardId]
     reviewed_cards: Sequence[TargetCard]
 
-    all_cards_notes_ids: Sequence[NoteId]
-    new_cards_notes_ids: Sequence[NoteId]
+    notes_ids_all_cards: Sequence[NoteId]
+    notes_ids_new_cards_set: set[NoteId]
+    notes_ids_new_cards: Sequence[NoteId]
 
     notes_from_cards_cached: dict[NoteId, Note] = {}
     leech_card_ids_cached: set[CardId] = set()
@@ -109,8 +110,8 @@ class TargetCards:
         new_cards: list[TargetCard] = []
         new_cards_ids: list[CardId] = []
         reviewed_cards: list[TargetCard] = []
-        all_cards_notes_ids: list[NoteId] = []
-        new_cards_notes_ids: list[NoteId] = []
+        notes_ids_all_cards: set[NoteId] = set()
+        notes_ids_new_cards: set[NoteId] = set()
         leech_cards_ids = self.__get_leech_cards_ids()
         get_days_overdue = TargetCard.get_days_overdue(self.col)
 
@@ -133,18 +134,19 @@ class TargetCards:
             if is_new:
                 new_cards.append(card)
                 new_cards_ids.append(card.id)
-                new_cards_notes_ids.append(card.nid)
+                notes_ids_new_cards.add(card.nid)
             if is_reviewed:
                 reviewed_cards.append(card)
             all_cards.append(card)
-            all_cards_notes_ids.append(card.nid)
+            notes_ids_all_cards.add(card.nid)
 
         self.all_cards = all_cards
         self.new_cards = new_cards
         self.new_cards_ids = new_cards_ids
         self.reviewed_cards = reviewed_cards
-        self.all_cards_notes_ids = sorted(set(all_cards_notes_ids))
-        self.new_cards_notes_ids = sorted(set(new_cards_notes_ids))
+        self.notes_ids_all_cards = sorted(notes_ids_all_cards)
+        self.notes_ids_new_cards_set = notes_ids_new_cards
+        self.notes_ids_new_cards = sorted(self.notes_ids_new_cards_set)
 
         if len(self.all_cards_ids) != len(self.all_cards):
             raise Exception("Could not get cards from database!")
@@ -166,7 +168,7 @@ class TargetCards:
 
         notes_from_all_cards = {k: v for k, v in sorted(notes_from_all_cards.items(), key=lambda item: item[0])}
 
-        assert self.all_cards_notes_ids == list(notes_from_all_cards.keys())
+        assert self.notes_ids_all_cards == list(notes_from_all_cards.keys())
 
         return notes_from_all_cards
 
@@ -179,7 +181,7 @@ class TargetCards:
 
         notes_from_new_cards = {k: v for k, v in sorted(notes_from_new_cards.items(), key=lambda item: item[0])}
 
-        assert self.new_cards_notes_ids == list(notes_from_new_cards.keys())
+        assert self.notes_ids_new_cards == list(notes_from_new_cards.keys())
 
         return notes_from_new_cards
 

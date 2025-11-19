@@ -213,8 +213,8 @@ class ReorderLogger():
             'num_cards': len(target_cards.all_cards_ids),
             'num_new_cards': len(target_cards.new_cards),
             'num_cards_repositioned': target_reorder_result.num_cards_repositioned,
-            'num_notes': len(target_cards.all_cards_notes_ids),
-            'num_new_notes': len(target_cards.new_cards_notes_ids),
+            'num_notes': len(target_cards.notes_ids_all_cards),
+            'num_new_notes': len(target_cards.notes_ids_new_cards),
         })
 
         # add entry for each segment in target

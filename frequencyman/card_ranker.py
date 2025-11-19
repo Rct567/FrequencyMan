@@ -7,11 +7,10 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from math import fsum, log
 from statistics import fmean, median
-from typing import Optional
+from typing import Optional, Sequence
 
 from anki.cards import Card, CardId
 from anki.notes import Note, NoteId
-from anki.collection import Collection
 
 from .text_processing import WordToken
 from .lib.utilities import *
@@ -191,15 +190,10 @@ class CardRanker:
         if len(target_cards.reviewed_cards) < 50 and len(self.ranking_factors_span) == len(self.get_default_ranking_factors_span()):
             self.ranking_factors_span['lowest_word_frequency'] = max(fsum(self.ranking_factors_span.values()), self.ranking_factors_span['lowest_word_frequency'])
 
-        # card ranking is calculates per note (which may have different cards, but same ranking)
-
-        notes_from_new_cards = target_cards.get_notes_from_new_cards()
-        notes_all_card = target_cards.get_notes_from_all_cards()
-
         # get ranking factors for notes
 
-        notes_metrics = self.__get_notes_field_metrics(notes_all_card, notes_from_new_cards)
-        notes_ranking_factors = self.__get_notes_ranking_factors(notes_from_new_cards, notes_metrics)
+        notes_metrics = self.__get_notes_field_metrics(target_cards.notes_ids_all_cards, target_cards.notes_ids_new_cards_set)
+        notes_ranking_factors = self.__get_notes_ranking_factors(target_cards.notes_ids_all_cards, notes_metrics)
 
         # normalize ranking of notes in reorder scope
 
@@ -207,7 +201,8 @@ class CardRanker:
 
         # set meta data that will be saved in note fields
 
-        self.__set_fields_meta_data_for_notes(notes_all_card, notes_from_new_cards, notes_ranking_scores_normalized, notes_metrics)
+        notes_all_card = target_cards.get_notes_from_all_cards()
+        self.__set_fields_meta_data_for_notes(notes_all_card, target_cards.notes_ids_new_cards_set, notes_ranking_scores_normalized, notes_metrics)
 
         # cards ranking based on note ranking
 
@@ -222,7 +217,7 @@ class CardRanker:
 
         notes_ranking_scores_normalized: dict[str, dict[NoteId, float]] = {}
 
-        notes_ids = set(reorder_scope_target_cards.new_cards_notes_ids)
+        notes_ids = reorder_scope_target_cards.notes_ids_new_cards_set
 
         for ranking_factor in notes_ranking_scores.keys():
             notes_ranking_scores_normalized[ranking_factor] = {note_id: ranking_val for (note_id, ranking_val) in notes_ranking_scores[ranking_factor].items() if note_id in notes_ids}
@@ -309,19 +304,19 @@ class CardRanker:
         except KeyError:
             return False
 
-    def __get_notes_field_metrics(self, notes_all_card: dict[NoteId, Note], notes_from_new_cards: dict[NoteId, Note]) -> dict[NoteId, list[FieldMetrics]]:
+    def __get_notes_field_metrics(self, notes_ids_all_cards: Sequence[NoteId], notes_ids_new_cards: set[NoteId]) -> dict[NoteId, list[FieldMetrics]]:
 
-        notes_metrics: dict[NoteId, list[FieldMetrics]] = {note_id: [] for note_id in notes_all_card.keys()}
+        notes_metrics: dict[NoteId, list[FieldMetrics]] = {note_id: [] for note_id in notes_ids_all_cards}
         bucked_size = fmean([1, (self.ideal_word_count_min+self.ideal_word_count_max)/4])
         set_proper_introduction = self.__is_factor_used('proper_introduction')
         set_proper_introduction_dispersed = self.__is_factor_used('proper_introduction_dispersed')
         introducing_notes: dict[WordToken, list[tuple[NoteId, float, int]]] = defaultdict(list)
 
-        for note_id, note in notes_all_card.items():
+        for note_id in notes_ids_all_cards:
 
             # get scores per note field and append to note metrics
 
-            note_fields_defined_in_target = self.corpus_data.targeted_fields_per_note[note.id]
+            note_fields_defined_in_target = self.corpus_data.targeted_fields_per_note[note_id]
 
             for field_data in note_fields_defined_in_target:
 
@@ -333,7 +328,7 @@ class CardRanker:
                 notes_metrics_index = len(notes_metrics[note_id])-1
 
                 # some metrics are not needed for reviewed cards
-                if note_id not in notes_from_new_cards:
+                if note_id not in notes_ids_new_cards:
                     continue
 
                 # ideal new words count
@@ -485,11 +480,11 @@ class CardRanker:
 
         return field_metrics
 
-    def __get_notes_ranking_factors(self, notes_from_new_cards: dict[NoteId, Note], notes_metrics: dict[NoteId, list[FieldMetrics]]) -> dict[str, dict[NoteId, float]]:
+    def __get_notes_ranking_factors(self, notes_ids_all_cards: Sequence[NoteId], notes_metrics: dict[NoteId, list[FieldMetrics]]) -> dict[str, dict[NoteId, float]]:
 
         notes_ranking_factors: dict[str, dict[NoteId, float]] = defaultdict(dict)
 
-        for note_id in notes_from_new_cards.keys():
+        for note_id in notes_ids_all_cards:
 
             note_metrics = notes_metrics[note_id]
 
@@ -564,7 +559,7 @@ class CardRanker:
         self.note_model_has_n_field[key] = False
         return False
 
-    def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_new_card: dict[NoteId, Note], notes_ranking_scores: dict[str, dict[NoteId, float]],
+    def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_ids_new_cards: set[NoteId], notes_ranking_scores: dict[str, dict[NoteId, float]],
                                          notes_metrics: dict[NoteId, list[FieldMetrics]]) -> None:
 
         try:
@@ -578,7 +573,7 @@ class CardRanker:
             non_modified_notes,
             notes_metrics,
             notes_ranking_scores,
-            notes_new_card,
+            notes_ids_new_cards,
             reorder_scope_note_ids
         )
 
@@ -694,7 +689,7 @@ class CardRanker:
         return note_data
 
     def __get_new_debug_info_for_notes(self, notes: dict[NoteId, Note], notes_metrics: dict[NoteId, list[FieldMetrics]], notes_ranking_scores: dict[str, dict[NoteId, float]],
-                                       notes_new_card: dict[NoteId, Note], reorder_scope_notes_ids: set[NoteId]) -> dict[NoteId, dict[str, str]]:
+                                       notes_ids_new_cards: set[NoteId], reorder_scope_notes_ids: set[NoteId]) -> dict[NoteId, dict[str, str]]:
 
         notes_debug_info: dict[NoteId, dict[str, str]] = {}
 
@@ -761,7 +756,7 @@ class CardRanker:
 
             # set fm_debug_ranking_info
             if 'fm_debug_ranking_info' in note:
-                if note.id in notes_new_card:
+                if note_id in notes_ids_new_cards:
                     if not note.id in reorder_scope_notes_ids:
                         note_data['fm_debug_ranking_info'] = debug_info_not_in_reorder_scope
                     else:

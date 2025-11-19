@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import inspect
+from itertools import chain
 import os
 from pathlib import Path
 import shutil
@@ -7,8 +8,10 @@ from typing import Any, Generator, Optional, Sequence
 import pprint
 import time
 from dateutil.parser import parse
+import atexit
 
 from anki.collection import Collection
+from anki.media import media_paths_from_col_path
 
 from frequencyman.language_data import LanguageData
 from frequencyman.lib.persistent_cacher import PersistentCacher, SqlDbFile
@@ -107,40 +110,79 @@ class TestCollection(Collection):
                 file.write('\n'.join(map(str, sorted_items)))
             print("WARNING: Order file '{}' for '{}' didn't exist yet!".format(order_file_path, self.collection_name))
 
+    def remove(self):
+
+        if not self.db:
+            return
+
+        self.close()
+
+        (media_dir, media_db) = media_paths_from_col_path(self.path)
+
+        try:
+            os.remove(media_db)
+        except OSError:
+            pass
+
+        try:
+            os.rmdir(media_dir)
+        except OSError:
+            pass
+
+        try:
+            os.remove(self.path)
+        except OSError:
+            pass
+
 
 class TestCollections:
 
     TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
     TEST_COLLECTIONS_DIR = os.path.join(TEST_DATA_DIR, 'collections')
-    CACHER_FILE_PATH = os.path.join(TEST_DATA_DIR, 'cacher_data_{}.sqlite'.format(CURRENT_PID))
+    CACHER_FILE_PATH = os.path.join(TEST_DATA_DIR, 'cacher_data_{}_temp.sqlite'.format(CURRENT_PID))
     CACHER: Optional[PersistentCacher] = None
+
     cacher_data_cleared = False
+    last_initiated_test_collection: Optional[TestCollection] = None
 
     @staticmethod
     def run_cleanup_routine():
 
-        if os.path.exists(TestCollections.CACHER_FILE_PATH):
-            try:
-                os.remove(TestCollections.CACHER_FILE_PATH)
-            except OSError:
-                pass
-
         test_collection_folder = Path(TestCollections.TEST_COLLECTIONS_DIR)
-        for file in test_collection_folder.rglob("*_{}_temp.anki2".format(CURRENT_PID)):
-            try:
-                file.unlink(missing_ok=True)
-            except OSError:
-                pass
-        for file in test_collection_folder.rglob("*_{}_temp.anki2-wal".format(CURRENT_PID)):
-            try:
-                file.unlink(missing_ok=True)
-            except OSError:
-                pass
+        cutoff = time.time() - 30  # 30 seconds
+
+        patterns = ["*_temp.anki2", "*_temp.anki2-wal", "*_temp.sqlite"]
+        all_temp_files = chain.from_iterable(test_collection_folder.rglob(p) for p in patterns)
+
+        try:
+            for file in all_temp_files:
+                name = file.name
+                name_match  = name.endswith("_temp.anki2") or name.endswith("_temp.anki2-wal") or name.endswith("_temp.sqlite")
+                if not name_match:
+                    raise Exception("Invalid file name '{}'".format(name))
+                try:
+                    if file.stat().st_mtime < cutoff:
+                        file.unlink(missing_ok=True)
+                except OSError:
+                    pass
+        except FileNotFoundError as e:
+            print("File '{}' got lost during cleanup routine. {}".format(e.filename, e.strerror))
+
+        for path in test_collection_folder.glob("*/*"):
+            if path.is_dir() and path.name.endswith("_temp.media"):
+                try:
+                    if path.stat().st_mtime < cutoff:
+                        path.rmdir() # rmdir only succeeds if directory is empty
+                except OSError:
+                    pass # Not empty or cannot remove → ignore
 
     @staticmethod
     def get_test_collection(test_collection_name: str) -> TestCollection:
 
-        TestCollections.run_cleanup_routine()
+        if TestCollections.last_initiated_test_collection:
+            TestCollections.last_initiated_test_collection.remove()
+        else: # set up cleanup routine on exit only once
+            atexit.register(TestCollections.run_cleanup_routine)
 
         collection_dir = os.path.join(TestCollections.TEST_COLLECTIONS_DIR, test_collection_name)
         lang_data_dir = os.path.join(collection_dir, 'lang_data')
@@ -148,7 +190,12 @@ class TestCollections:
         lang_data = LanguageData(lang_data_dir)
         caller_frame = inspect.stack()[1]
 
-        return TestCollection(test_collection_name, collection_dir, lang_data, caller_frame)
+        col = TestCollection(test_collection_name, collection_dir, lang_data, caller_frame)
+        TestCollections.last_initiated_test_collection = col
+
+        atexit.register(lambda: col.remove())
+
+        return col
 
 
 @contextmanager

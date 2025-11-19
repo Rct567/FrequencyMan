@@ -13,3 +13,5 @@ events.log
 *.anki2-wal
 *.tmp.log
 cache*.sqlite
+*.sqlite-journal
+*.db-journal

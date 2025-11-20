@@ -4,6 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from typing import Optional, Sequence, TypedDict
+from typing_extensions import Self
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -42,7 +43,7 @@ class TargetReorderResult():
         self.repositioning_anki_op_changes = None
 
     def with_repositioning_data(self, sorted_cards_ids: Sequence[CardId], num_cards_repositioned: int,
-                                target_cards: TargetCards, repositioning_anki_op_changes: OpChangesWithCount) -> 'TargetReorderResult':
+                                target_cards: TargetCards, repositioning_anki_op_changes: OpChangesWithCount) -> Self:
 
         self.sorted_cards_ids = sorted_cards_ids
         self.num_cards_repositioned = num_cards_repositioned

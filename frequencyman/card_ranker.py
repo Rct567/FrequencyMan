@@ -13,7 +13,7 @@ from anki.cards import Card, CardId
 from anki.notes import Note, NoteId
 
 from .text_processing import WordToken
-from .lib.utilities import *
+from .lib.utilities import dataclass_with_slots
 from .target_corpus_data import CorpusSegmentId, TargetCorpusData, NoteFieldContentData
 from .language_data import LanguageData
 from .target_cards import TargetCards

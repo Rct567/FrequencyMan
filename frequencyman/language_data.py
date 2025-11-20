@@ -8,7 +8,7 @@ import csv
 from functools import cache
 from typing import Iterator, NewType, Optional, Union, Iterable
 
-from .lib.utilities import *
+from .lib.utilities import normalize_dict_positional_floats_values, sort_dict_floats_values
 from .text_processing import TextProcessing, LangId
 import os
 

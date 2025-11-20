@@ -17,7 +17,7 @@ from anki.notes import NoteId
 from .lib.persistent_cacher import PersistentCacher
 from .target_cards import TargetCard, TargetCards
 from .language_data import LangId, LangDataId, LanguageData
-from .lib.utilities import *
+from .lib.utilities import dataclass_with_slots, normalize_dict_floats_values, normalize_dict_positional_floats_values, remove_bottom_percent_dict, sort_dict_floats_values
 from .text_processing import TextProcessing, WordToken
 
 

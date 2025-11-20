@@ -102,7 +102,7 @@ class Target:
 
         name = '#'+str(self.index_num)
 
-        if self.id_str != None:
+        if self.id_str:
             name += ' ('+self.id_str+')'
 
         return name
@@ -139,14 +139,14 @@ class Target:
 
     def get_corpus_data_non_cached(self, target_cards: TargetCards) -> TargetCorpusData:
 
-        if not self.corpus_data is None:
+        if self.corpus_data:
             return self.corpus_data
 
         self.corpus_data = TargetCorpusData(target_cards, self.config_target.get_config_fields_per_note_type(), self.language_data, self.cacher)
 
         # familiarity_sweetspot_point
         configured_familiarity_sweetspot_point = self.config_target.get('familiarity_sweetspot_point')
-        if isinstance(configured_familiarity_sweetspot_point, str) and configured_familiarity_sweetspot_point[0] in ['~', '^']:
+        if isinstance(configured_familiarity_sweetspot_point, str) and configured_familiarity_sweetspot_point[0] in {'~', '^'}:
             self.corpus_data.familiarity_sweetspot_point = configured_familiarity_sweetspot_point
         elif (familiarity_sweetspot_point := get_float(configured_familiarity_sweetspot_point)) is not None:
             self.corpus_data.familiarity_sweetspot_point = familiarity_sweetspot_point

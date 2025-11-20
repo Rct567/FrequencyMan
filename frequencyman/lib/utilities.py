@@ -123,7 +123,7 @@ def profile_context(amount: int = 40) -> Iterator[cProfile.Profile]:
         profiling_results = output.getvalue()
 
         dump_file = os.path.join(os.path.dirname(__file__), '..', '..', 'profiling_results.txt')
-        with open(dump_file, 'w') as f:
+        with open(dump_file, 'w', encoding='utf-8') as f:
             f.write(profiling_results)
 
 

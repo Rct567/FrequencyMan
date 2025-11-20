@@ -96,8 +96,8 @@ class WordFrequencyLists:
 
         for word, positions in word_positions.items():
             if len(positions) < wf_list_num:
-                # word_positions[word].extend([ int(mean(positions)*2.5) for _ in range(wf_list_num-len(positions)) ])
-                word_positions[word].extend([lowest_position+1 for _ in range(wf_list_num-len(positions))])
+                # positions.extend( int(mean(positions)*2.5) for _ in range(wf_list_num-len(positions)) )
+                positions.extend(lowest_position+1 for _ in range(wf_list_num-len(positions)))
 
         combined_positions: dict[str, float] = {word: sum(positions) / len(positions) for word, positions in word_positions.items()}
         combined_positions = dict(sorted(combined_positions.items(), key=lambda item: item[1]))

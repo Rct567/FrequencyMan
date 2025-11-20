@@ -118,7 +118,7 @@ class TextProcessing:
 
             assert "\t" not in text and "\n" not in text and "\r" not in text
 
-            token = text.strip(".,'’\"' \t\n\r!@#$%^&*()_-=+{}:\"<>?/;")
+            token = text.strip(".,'’\" \t\n\r!@#$%^&*()_-=+{}:<>?/;")
 
             if normalize_curly_apostrophe and '’' in token:
                 token = token.replace("’", "'")

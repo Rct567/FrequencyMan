@@ -52,7 +52,7 @@ class AddonConfig():
         if isinstance(val, bool):
             return val
         if isinstance(val, str):
-            return val.lower() in ["y", "yes", "true"]
+            return val.lower() in {"y", "yes", "true"}
         return default
 
     def update_setting(self, key: str, value: Union[bool, int, float, str, list[Any], dict[str, Any]]) -> None:

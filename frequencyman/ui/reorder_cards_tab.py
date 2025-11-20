@@ -502,8 +502,7 @@ class ReorderCardsTab(FrequencyManTab):
                 file.write("Created on {} at {}.\n\n\n".format(time.strftime("%d-%m-%Y"), time.strftime("%H:%M:%S")))
                 file.write(json_backup)
         else:
-            with open(json_backup_file_path, 'a'):  # touch (update modification time)
-                os.utime(json_backup_file_path, None)
+            os.utime(json_backup_file_path, None) # touch file (update access+modification time)
 
     @staticmethod
     def __get_progress_label(target_index: int, num_targets: int) -> str:

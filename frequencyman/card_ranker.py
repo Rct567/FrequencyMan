@@ -564,7 +564,7 @@ class CardRanker:
 
         try:
             reorder_scope_note_ids = set(list(notes_ranking_scores.values())[0].keys())
-        except:
+        except Exception:
             reorder_scope_note_ids = set()
 
         non_modified_notes = {note_id: note for note_id, note in notes_all_card.items() if note_id not in self.modified_dirty_notes}

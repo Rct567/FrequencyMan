@@ -225,7 +225,7 @@ class SelectNewTargetWindow(QDialog):
                 if field_name.startswith(lang_data_id+'_') or field_name_lower == lang_data_id.lower():
                     return lang_data_id
 
-        if field_name_lower == 'translation' or field_name_lower == 'meaning' or field_name_lower == 'definition':
+        if field_name_lower in {'translation', 'meaning', 'definition'}:
             return 'en'
 
         lang_names: dict[str, list[str]] = {}
@@ -237,7 +237,7 @@ class SelectNewTargetWindow(QDialog):
                 lang_names[lang_id] += NAMES_FOR_THE_ENGLISH_LANGUAGE
 
         # check by deck name
-        if field_name_lower == 'sentence' or field_name_lower == 'word':
+        if field_name_lower in {'sentence', 'word'}:
             for lang_id, names in lang_names.items():
                 for name in names:
                     if name in deck_name_lower:

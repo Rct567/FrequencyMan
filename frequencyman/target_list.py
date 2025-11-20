@@ -425,9 +425,8 @@ class TargetList:
                     return (False, "Value for field '{}' in fields object specified in target[{}].notes[{}] is not a valid type (string expected).".format(field_name, index, note_index), None)
                 if lang_data_id == "":
                     return (False, "Value for field '{}' in fields object specified in target[{}].notes[{}] is empty (lang_data_id expected).".format(field_name, index, note_index), None)
-                lang_data_id = LangDataId(lang_data_id.lower())
-                if not language_data.id_has_directory(lang_data_id):
-                    return (False, "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id, language_data.data_dir), None)
+                if not language_data.id_has_directory(LangDataId(lang_data_id.lower())):
+                    return (False, "No directory found for lang_data_id '{}' in '{}'!".format(lang_data_id.lower(), language_data.data_dir), None)
 
             note_fields = {field_name: str(lang_data_id) for field_name, lang_data_id in note['fields'].items()}
             result['notes'].append(ConfiguredTargetNote(name=note['name'], fields=note_fields))

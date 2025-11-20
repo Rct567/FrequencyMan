@@ -4,7 +4,6 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from abc import ABC, abstractmethod
-from collections import UserString
 from functools import cache
 import importlib
 import os
@@ -12,18 +11,16 @@ import re
 import sys
 from types import ModuleType
 from typing import Callable, Optional, Sequence
+from typing_extensions import Self
 
 
 from .lib.utilities import override
 
 
-class LangId(UserString):
+class LangId(str):
 
-    def __init__(self, lang_id: str) -> None:
-        assert len(lang_id) == 2, "Two characters only for LangId!"
-        assert lang_id.isalpha(), "Only alphabetic characters for LangId!"
-        assert lang_id.islower(), "Lowercase only for LangId!"
-        super().__init__(lang_id)
+    def __new__(cls, value: str) -> Self:
+        return str.__new__(cls, value.lower())
 
 
 CallableTokenizerFn = Callable[[str], Sequence[str]]
@@ -152,7 +149,7 @@ class UserProvidedTokenizer(Tokenizer):
 
         # Find the tokenizer function for our language
         for lang_id, tokenizer_func in tokenizers_provider():
-            if lang_id == self._lang_id.data:
+            if lang_id == self._lang_id:
                 self._tokenize_func = tokenizer_func
                 break
 

@@ -142,7 +142,7 @@ class ReorderLogger():
             self.db.delete_row("reorders", "id = ?", reorder_id)
         elif self.targets_languages:
 
-            targets_languages_str = ', '.join(['"'+str(lang_id)+'"' for lang_id in self.targets_languages])
+            targets_languages_str = ', '.join(['"'+lang_id+'"' for lang_id in self.targets_languages])
 
             # update familiarity for each word
 
@@ -171,10 +171,10 @@ class ReorderLogger():
             # update num_words_mature for each language
 
             for lang_id in self.targets_languages:
-                num_words_reviewed = self.db.count_rows('global_reviewed_words', "lang_id = ? AND is_present > 0", str(lang_id))
-                num_words_mature = self.db.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0 AND is_present > 0", str(lang_id))
+                num_words_reviewed = self.db.count_rows('global_reviewed_words', "lang_id = ? AND is_present > 0", lang_id)
+                num_words_mature = self.db.count_rows('global_reviewed_words', "lang_id = ? AND is_mature > 0 AND is_present > 0", lang_id)
                 self.db.insert_row('global_languages', {
-                    'lang_id': str(lang_id),
+                    'lang_id': lang_id,
                     'num_words_mature': num_words_mature,
                     'num_words_reviewed': num_words_reviewed,
                     'reorder_id': reorder_id,
@@ -260,7 +260,7 @@ class ReorderLogger():
         for lang_id, reviewed_words in target_reviewed_words_per_lang.items():
             num_mature_words = len(target_mature_words_per_lang[lang_id])
             self.db.insert_row('target_languages',
-                {'reorder_id': reorder_id, 'target_id': target.id_str, 'lang_id': str(lang_id), 'num_words_reviewed': len(reviewed_words), 'num_words_mature': num_mature_words}
+                {'reorder_id': reorder_id, 'target_id': target.id_str, 'lang_id': lang_id, 'num_words_reviewed': len(reviewed_words), 'num_words_mature': num_mature_words}
             )
 
         self.db.query('UPDATE target_reviewed_words SET is_present = 0 WHERE target_id = ?', target.id_str)

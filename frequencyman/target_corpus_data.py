@@ -316,7 +316,7 @@ class TargetCorpusData:
         if field_value == "":
             field_value_tokenized: Sequence[WordToken] = []
         else:
-            cache_key = str(lang_id)+"|"+field_value
+            cache_key = lang_id+"|"+field_value
             field_value_tokenized = self.cacher.get_item(cache_key, lambda: TextProcessing.get_word_tokens_from_text(TextProcessing.get_plain_text(field_value), lang_id))
 
         return field_value_tokenized
@@ -347,15 +347,13 @@ class TargetCorpusData:
                     lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
 
                     if self.segmentation_strategy == CorpusSegmentationStrategy.BY_LANG_DATA_ID:
-                        corpus_segment_id = str(lang_data_id)
+                        corpus_segment_id = CorpusSegmentId(lang_data_id)
                     elif self.segmentation_strategy == CorpusSegmentationStrategy.BY_LANG_ID:
-                        corpus_segment_id = str(lang_id)
+                        corpus_segment_id = CorpusSegmentId(lang_id)
                     elif self.segmentation_strategy == CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME:
-                        corpus_segment_id = str(note_type['id'])+" => "+field_name
+                        corpus_segment_id = CorpusSegmentId(str(note_type['id'])+" => "+field_name)
                     else:
                         raise Exception("Invalid segmentation_strategy set!")
-
-                    corpus_segment_id = CorpusSegmentId(corpus_segment_id)
 
                     content_data = NoteFieldContentData(
                         corpus_segment_id=corpus_segment_id,

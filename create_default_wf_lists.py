@@ -89,15 +89,15 @@ def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list
 
         word = word.strip("!@#$%^&*()_-=+{}:\"<>?,./;' ")
 
-        if str(lang_id) in {'en', 'fr', 'it', 'ga', 'pt', 'de', 'nl', 'sv', 'fi', 'mt', 'ca', 'oc'}:
+        if lang_id in {'en', 'fr', 'it', 'ga', 'pt', 'de', 'nl', 'sv', 'fi', 'mt', 'ca', 'oc'}:
             word = word.replace("’", "'")
             word = word.replace("`", "'")
 
-        if str(lang_id) in {'en', 'nl', 'af'}:
+        if lang_id in {'en', 'nl', 'af'}:
             if word[-1] == "s" and word[-2] == "'":
                 word = word[:-2]
 
-        if (str(lang_id) in {'vi', 'sr', 'th'}):
+        if lang_id in {'vi', 'sr', 'th'}:
             if " " in word:
                 word = word.split(" ")[0]
             if not TextProcessing.get_word_accepter(lang_id)(word):

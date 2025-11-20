@@ -76,7 +76,7 @@ class TextProcessing:
             word_pattern = TextProcessing.KOREAN_PATTERN
         elif lang_id == 'ar':
             word_pattern = TextProcessing.ARABIC_PATTERN
-        elif lang_id is not None and str(lang_id) in {'am', 'ti'}:
+        elif lang_id is not None and lang_id in {'am', 'ti'}:
             word_pattern = TextProcessing.ETHIOPIC_PATTERN
         elif lang_id == 'th':
             word_pattern = TextProcessing.THAI_PATTERN
@@ -112,7 +112,7 @@ class TextProcessing:
     @staticmethod
     def get_word_token_creator(lang_id: LangId) -> Callable[[str], WordToken]:
 
-        normalize_curly_apostrophe = str(lang_id) in TextProcessing.LANGUAGES_USING_APOSTROPHE
+        normalize_curly_apostrophe = lang_id in TextProcessing.LANGUAGES_USING_APOSTROPHE
 
         def create_word_token(text: str) -> WordToken:
 

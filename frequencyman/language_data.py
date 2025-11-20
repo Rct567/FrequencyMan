@@ -7,12 +7,32 @@ from collections import defaultdict
 import csv
 from functools import cache
 from typing import Iterator, NewType, Optional, Union, Iterable
+from typing_extensions import Self
 
 from .lib.utilities import normalize_dict_positional_floats_values, sort_dict_floats_values
 from .text_processing import TextProcessing, LangId
 import os
 
-LangDataId = NewType('LangDataId', str)  # full lowercased string of specified language of field
+
+class LangDataId(str):
+
+    def __new__(cls, value: str) -> Self:
+        return str.__new__(cls, value.lower())
+
+
+def get_lang_dir(data_dir: str, lang_id: LangDataId) -> Optional[str]:
+
+    possible_lang_dir = os.path.join(data_dir, lang_id)
+
+    if os.path.isdir(possible_lang_dir):
+        return possible_lang_dir
+
+    # check all sub directories case insensitive
+    for sub_dir in os.listdir(data_dir):
+        if sub_dir.lower() == lang_id:
+            return os.path.join(data_dir, sub_dir)
+
+    return None
 
 
 class WordFrequencyLists:
@@ -27,7 +47,10 @@ class WordFrequencyLists:
 
     def get_files_by_id(self, lang_data_id: LangDataId) -> set[str]:
 
-        possible_lang_dir = os.path.join(self.data_dir, lang_data_id)
+        possible_lang_dir = get_lang_dir(self.data_dir, lang_data_id)
+
+        if not possible_lang_dir:
+            return set()
 
         files: set[str] = set()
 
@@ -192,7 +215,10 @@ class IgnoreLists:
 
     def get_files_by_id(self, lang_data_id: LangDataId) -> set[str]:
 
-        possible_lang_dir = os.path.join(self.data_dir, lang_data_id)
+        possible_lang_dir = get_lang_dir(self.data_dir, lang_data_id)
+
+        if not possible_lang_dir:
+            return set()
 
         files: set[str] = set()
 
@@ -292,7 +318,7 @@ class LanguageData:
         self.ignore_lists = IgnoreLists(self.data_dir)
         self.global_ignore_lists = GlobalIgnoreLists(self.data_dir)
 
-    def id_has_directory(self, lang_data_id: LangDataId) -> bool:
+    def id_has_directory(self, lang_data_id: str) -> bool:
 
         if lang_data_id == "":
             return False

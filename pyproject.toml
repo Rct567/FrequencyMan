@@ -10,8 +10,31 @@ max_line_length = 200
 line-length = 220
 
 [tool.ruff.lint]
-extend-select = ["PL", "E501", "PLW0108"]
-ignore = ["F401", "PLR6301", "PLR2004", "PLW0603", "E731", "F405", "PLC0415", "PLR2044", "PLR6104", "PLR6104", "PLR1730", "PLC0414", "PLC1901", "E713", "PLR5501", "E712"]
+extend-select = [
+    "PL",       # Category selector for all Pylint rules (prefix PL).
+    "E501",     # Line too long - Checks for lines that exceed the configured line length.
+    "PLW0108",  # Unnecessary lambda - Checks for lambda definitions that consist of a single function call.
+    "B"         # Category selector for all flake8-bugbear rules (prefix B).
+]
+ignore = [
+    "F401",      # Unused import - Module imported but unused.
+    "PLR6301",   # No self use - Checks for the presence of unused `self` parameter in method definitions.
+    "PLR2004",   # Magic value comparison - Checks for the use of unnamed numerical constants ("magic values") in comparisons.
+    "PLW0603",   # Global statement - Checks for the use of `global` statements to update identifiers.
+    "E731",      # Lambda assignment - Do not assign a lambda expression, use a def.
+    "PLC0415",   # Import outside top level - `import` should be at the top-level of a module.
+    "PLR2044",   # Empty comment - Checks for a # symbol appearing on a line not followed by an actual comment.
+    "PLR6104",   # Non-augmented assignment - Checks for assignments that can be replaced by augmented assignments (like x = x + y -> x += y).
+    "PLR1730",   # If stmt min max - Checks for `if` statements that can be replaced with `min()` or `max()`.
+    "PLC0414",   # Useless import alias - Import alias does not rename original package.
+    "PLC1901",   # Compare to empty string - Comparison to empty string can be simplified.
+    "E713",      # Not in test - Test for membership should be 'not in'.
+    "PLR5501",   # Collapsible else if - Checks for `else` blocks that consist of a single `if` statement.
+    "E712",      # Comparison to true - Avoid equality comparisons to True; use the condition directly for truth checks.
+    "B010",      # Set attr with constant - Do not call setattr with a constant attribute value. It is not any safer than normal property access.
+    "B019",      # Cached instance method - Use of functools.lru_cache or functools.cache on methods can lead to memory leaks.
+    "B009"       # Get attr with constant - Do not call getattr with a constant attribute value. It is not any safer than normal property access.
+]
 
 [tool.ruff.lint.pylint]
 max-locals = 25

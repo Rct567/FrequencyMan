@@ -20,16 +20,16 @@ class LangDataId(str):
         return str.__new__(cls, value.lower())
 
 
-def get_lang_dir(data_dir: str, lang_id: LangDataId) -> Optional[str]:
+def get_lang_dir(data_dir: str, lang_data_id: LangDataId) -> Optional[str]:
 
-    possible_lang_dir = os.path.join(data_dir, lang_id)
+    possible_lang_dir = os.path.join(data_dir, lang_data_id)
 
     if os.path.isdir(possible_lang_dir):
         return possible_lang_dir
 
     # check all sub directories case insensitive
     for sub_dir in os.listdir(data_dir):
-        if sub_dir.lower() == lang_id:
+        if sub_dir.lower() == lang_data_id:
             return os.path.join(data_dir, sub_dir)
 
     return None

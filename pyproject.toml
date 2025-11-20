@@ -6,6 +6,18 @@ requires-python = ">=3.9"
 [tool.autopep8]
 max_line_length = 200
 
+[tool.ruff]
+line-length = 220
+
+[tool.ruff.lint]
+extend-select = ["PL", "E501"]
+ignore = ["F401", "PLR6301", "PLR2004", "PLW0603", "E731", "F405", "PLC0415", "PLR2044", "PLR6104", "PLR6104", "PLR1730", "PLC0414", "PLC1901", "E713", "PLR5501", "E712"]
+
+[tool.ruff.lint.pylint]
+max-locals = 25
+max-branches = 120
+max-statements = 135
+max-returns = 70
 
 [tool.pyright]
 pythonVersion = "3.9"

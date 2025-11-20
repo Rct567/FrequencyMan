@@ -155,7 +155,7 @@ def add_frequencyman_info_to_toolbar_items(mw: AnkiQt, reorder_logger: ReorderLo
                 toolbar.create_link(
                     cmd="fm_lang_info_toolbar_{}".format(info_item.target_id),
                     label="{}: <b>{}</b>".format(info_item.lang_id.upper(), info_item.data['num_words_mature']),
-                    func=lambda: info_item.open_words_overview_tab(),
+                    func=info_item.open_words_overview_tab,
                     tip="Target: {}\nLearning: {}, Mature: {}".format(info_item.target_display_id, info_item.data['num_words_learning'], info_item.data['num_words_mature']),
                     id=None,
                 )

@@ -126,7 +126,7 @@ class TestConfiguredTarget:
             }]
         })
 
-        assert defined_target.get_reorder_scope_query() == None
+        assert defined_target.get_reorder_scope_query() is None
 
     def test_get_reorder_scope_query(self):
 

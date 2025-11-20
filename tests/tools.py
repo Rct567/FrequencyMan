@@ -193,7 +193,7 @@ class TestCollections:
         col = TestCollection(test_collection_name, collection_dir, lang_data, caller_frame)
         TestCollections.last_initiated_test_collection = col
 
-        atexit.register(lambda: col.remove())
+        atexit.register(col.remove)
 
         return col
 

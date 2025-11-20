@@ -10,7 +10,7 @@ class TestReadme:
 
     def test_readme_content(self):
 
-        readme_content = open(README_FILE_PATH).read()
+        readme_content = open(README_FILE_PATH, encoding='utf-8').read()
 
         # check ranking factors and default weights
 

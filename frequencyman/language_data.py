@@ -239,8 +239,9 @@ class IgnoreLists:
         lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
 
         for file_path in files:
-            for word, _ in WordFrequencyLists.get_words_from_file(file_path, lang_id):
-                ignore_list_combined.add(word)
+            ignore_list_combined.update(
+                word for word, _ in WordFrequencyLists.get_words_from_file(file_path, lang_id)
+            )
 
         return ignore_list_combined
 

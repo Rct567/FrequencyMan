@@ -461,7 +461,7 @@ NAMES_FOR_THE_ENGLISH_LANGUAGE = {
     "tiếng Anh",
     "Angolano",
     "Англиски",
-    "Английски"
+    "Английски",
     "Englesh",
     "Αγγλική",
     "Inggris",

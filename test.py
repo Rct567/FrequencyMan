@@ -1,3 +1,4 @@
+from pathlib import Path
 import subprocess
 import sys
 import time
@@ -130,7 +131,13 @@ def run_mypy() -> None:
     start_time = time.perf_counter()
 
     ensure_packages_installed(["mypy"])
-    run_and_print_on_failure(["mypy", ".\\__init__.py", "--ignore-missing-imports"], "Mypy")
+
+    for py_file in Path(__file__).parent.glob('*.py'):
+        if py_file.name == "__init__.py":
+            run_and_print_on_failure(["mypy", ".\\{}".format(py_file.name), "--ignore-missing-imports"], "Mypy")
+        else:
+            run_and_print_on_failure(["mypy", ".\\{}".format(py_file.name)], "Mypy")
+
     run_and_print_on_failure(["mypy"], "Mypy")
 
     elapsed_time = time.perf_counter() - start_time

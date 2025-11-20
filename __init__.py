@@ -172,7 +172,7 @@ def add_frequencyman_info_to_deck_browser(mw: AnkiQt, reorder_logger: ReorderLog
     if TYPE_CHECKING:
         from aqt.deckbrowser import DeckBrowserContent
 
-    def update_deck_browser(deck_browser: DeckBrowser, content: "DeckBrowserContent") -> None:
+    def update_deck_browser(_: DeckBrowser, content: "DeckBrowserContent") -> None:
 
         if 'show_info_deck_browser' not in fm_config:
             return

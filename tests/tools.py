@@ -33,7 +33,7 @@ class TestCollection(Collection):
     def __init__(self, collection_name: str, collection_dir: str, lang_data: LanguageData, caller_frame: inspect.FrameInfo):
         self.collection_name = collection_name
         self.collection_dir = collection_dir
-        self.caller = caller_frame
+
         self.lang_data = lang_data
 
         caller_fn_name = caller_frame.function

@@ -107,7 +107,6 @@ class FrequencyManTab(QWidget):
 class FrequencyManMainWindow(QMainWindow):
 
     key = "FrequencyMan"
-    silentlyClose = True
 
     root_dir: str
     user_files_dir: str

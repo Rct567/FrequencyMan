@@ -219,8 +219,8 @@ class CardRanker:
 
         notes_ids = reorder_scope_target_cards.notes_ids_new_cards_set
 
-        for ranking_factor in notes_ranking_scores.keys():
-            notes_ranking_scores_normalized[ranking_factor] = {note_id: ranking_val for (note_id, ranking_val) in notes_ranking_scores[ranking_factor].items() if note_id in notes_ids}
+        for ranking_factor, factor_scores in notes_ranking_scores.items():
+            notes_ranking_scores_normalized[ranking_factor] = {note_id: ranking_val for (note_id, ranking_val) in factor_scores.items() if note_id in notes_ids}
 
         useable_factors: set[str] = set()
 
@@ -285,8 +285,8 @@ class CardRanker:
         notes_rankings: dict[NoteId, float] = dict.fromkeys(notes_ids, 0.0)
         ranking_factors_span_sum = fsum(self.ranking_factors_span.values())
 
-        for note_id in notes_spanned_ranking_factors.keys():
-            total_value = fsum(notes_spanned_ranking_factors[note_id].values())
+        for note_id, ranking_factors in notes_spanned_ranking_factors.items():
+            total_value = fsum(ranking_factors.values())
             notes_rankings[note_id] = total_value/ranking_factors_span_sum
 
         # filter out factors not used in notes_rankings

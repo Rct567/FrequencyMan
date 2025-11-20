@@ -144,6 +144,17 @@ def run_mypy() -> None:
     print(" Mypy was successful! ({:.0f} seconds)".format(elapsed_time))
 
 
+def run_ruff() -> None:
+    """Run ruff."""
+    print("=" * 60)
+    print("Running ruff...")
+    start_time = time.perf_counter()
+
+    ensure_packages_installed(["ruff"])
+    run_and_print_on_failure(["ruff", "check", ".\\frequencyman", ".\\tests", "__init__.py", "--preview"], "Ruff")
+
+    elapsed_time = time.perf_counter() - start_time
+    print(" Ruff was successful! ({:.0f} seconds)".format(elapsed_time))
 
 def get_user_choice() -> str:
     print("="*60)
@@ -178,6 +189,7 @@ def main() -> NoReturn:
     check_python_version()
     install_dev_requirements()
     run_mypy()
+    run_ruff()
 
     use_nox_to_test = len(sys.argv) > 1 and (sys.argv[1] == "-y" or sys.argv[1] == "--nox")
 

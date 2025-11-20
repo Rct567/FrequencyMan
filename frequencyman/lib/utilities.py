@@ -96,8 +96,8 @@ def load_json(json_data: str) -> JSON_TYPE:
         new_json_data = remove_trailing_commas_from_json(json_data)
         try:
             return json.loads(new_json_data)
-        except json.JSONDecodeError as _:
-            raise e
+        except json.JSONDecodeError:
+            raise e from None
 
 
 @contextmanager

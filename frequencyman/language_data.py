@@ -117,7 +117,7 @@ class WordFrequencyLists:
                     lowest_position = line_number
             wf_list_num += 1
 
-        for word, positions in word_positions.items():
+        for positions in word_positions.values():
             if len(positions) < wf_list_num:
                 # positions.extend( int(mean(positions)*2.5) for _ in range(wf_list_num-len(positions)) )
                 positions.extend(lowest_position+1 for _ in range(wf_list_num-len(positions)))

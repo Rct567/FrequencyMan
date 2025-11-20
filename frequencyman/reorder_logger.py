@@ -242,7 +242,7 @@ class ReorderLogger():
         target_mature_words_per_lang: dict[LangId, set[str]] = defaultdict(set)
         target_reviewed_words: list[tuple[str, str, str, float, int]] = []
 
-        for segment_id, segment_data in corpus_data.content_metrics.items():
+        for segment_data in corpus_data.content_metrics.values():
 
             target_reviewed_words_per_lang[segment_data.lang_id].update(segment_data.words_familiarity.keys())
             target_mature_words_per_lang[segment_data.lang_id].update(segment_data.mature_words)

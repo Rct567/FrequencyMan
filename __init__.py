@@ -124,7 +124,10 @@ def get_info_items_from_config(mw: AnkiQt, config: JSON_TYPE, reorder_logger: Re
             continue
 
         target_display_id = "Global (all logged targets)" if info_target_id == "*" else info_target_id
-        open_words_overview_tab = lambda: open_frequencyman_word_overview(mw, str(info_target_id), str(info_lang_id))
+        open_words_overview_tab = (
+            lambda target_id=info_target_id, lang_id=info_lang_id:
+            open_frequencyman_word_overview(mw, str(target_id), str(lang_id))
+        )
         info_items.append(InfoItem(info_target_id, target_display_id, info_lang_id, lang_data, open_words_overview_tab))
 
     reorder_logger.db.close()

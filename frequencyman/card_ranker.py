@@ -394,7 +394,7 @@ class CardRanker:
         if set_proper_introduction_dispersed:
             for introducing_notes_list in introducing_notes.values():
                 introducing_notes_list.sort(key=lambda x: x[1], reverse=True)
-                for position, (note_id, proper_introduction_score, metric_index) in enumerate(introducing_notes_list):
+                for position, (note_id, _, metric_index) in enumerate(introducing_notes_list):
                     new_proper_introduction_dispersed_score = 1 / (2**position)
                     notes_metrics[note_id][metric_index].proper_introduction_dispersed_score = new_proper_introduction_dispersed_score
 

@@ -53,6 +53,7 @@ class Tokenizer(ABC):
             self._initialize()
             self._initialized = True
 
+    @abstractmethod
     def _initialize(self) -> None:
         pass
 
@@ -98,6 +99,10 @@ class DefaultTokenizer(Tokenizer):
             r"]+"
         )
         return re.split(non_word_chars, text)
+
+    @override
+    def _initialize(self) -> None:
+        pass
 
 
 class DefaultTokenizerRemovingPossessives(DefaultTokenizer):

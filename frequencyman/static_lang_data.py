@@ -437,7 +437,6 @@ NAMES_FOR_THE_ENGLISH_LANGUAGE = {
     "Anglų",
     "Engel",
     "Engils",
-    "Angličina",
     "Angol",
     "Angļu valoda",
     "Inglise keel",

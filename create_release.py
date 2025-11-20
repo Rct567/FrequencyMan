@@ -167,7 +167,8 @@ ignore_patterns.extend([
     'pyproject.toml',
     'requirements-dev.txt',
     'run_pytest_benchmark.py',
-    'noxfile.py'
+    'noxfile.py',
+    'test.py',
 ])
 
 copy_directory(new_release_src_dir, new_release_dst_dir, ignore_patterns)

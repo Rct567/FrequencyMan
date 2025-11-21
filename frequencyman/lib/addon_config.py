@@ -10,7 +10,7 @@ from aqt.main import AnkiQt
 from .utilities import JSON_TYPE
 
 
-class AddonConfig():
+class AddonConfig:
 
     __config: Optional[dict[str, JSON_TYPE]]
     __config_load: Callable[[], Optional[dict[str, Any]]]

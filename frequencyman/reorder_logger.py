@@ -24,7 +24,7 @@ class LanguageInfoData(TypedDict):
 InfoPerLang = dict[str, LanguageInfoData]
 
 
-class ReorderLogger():
+class ReorderLogger:
 
     db: SqlDbFile
     targets_languages: set[LangId]

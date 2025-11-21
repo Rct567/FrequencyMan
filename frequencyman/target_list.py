@@ -26,7 +26,7 @@ from .lib.event_logger import EventLogger
 
 
 @dataclass(frozen=True)
-class TargetListReorderResult():
+class TargetListReorderResult:
     reorder_result_list: list[TargetReorderResult]
     update_notes_anki_op_changes: list[OpChanges]
     modified_dirty_notes: dict[NoteId, Optional[Note]]

@@ -22,7 +22,7 @@ class SerializationType(Enum):
     LIST_STR = 2
 
 
-class PersistentCacher():
+class PersistentCacher:
 
     db: SqlDbFile
 

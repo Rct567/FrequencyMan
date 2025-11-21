@@ -43,7 +43,7 @@ class QueryResults:
         return time.perf_counter() - self.time_started
 
 
-class SqlDbFile():
+class SqlDbFile:
 
     __connection: Optional[sqlite3.Connection] = None
     db_file_path: str

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from .lib.event_logger import EventLogger
 
 
-class TargetReorderResult():
+class TargetReorderResult:
 
     success: bool
     error: Optional[str]

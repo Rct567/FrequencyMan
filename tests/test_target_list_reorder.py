@@ -8,7 +8,7 @@ from frequencyman.lib.event_logger import EventLogger
 from tests.tools import TestCollections, freeze_time_anki
 
 
-class TestTargetListReorder():
+class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-05")
     def test_reorder_cards_big_collection_es(self):

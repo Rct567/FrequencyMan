@@ -4,15 +4,15 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import Union
 
-from aqt.utils import showInfo, askUser, showWarning
+from aqt.utils import showWarning
 
 from ..text_processing import WordToken
-from ..target_corpus_data import TargetCorpusData, SegmentContentMetrics, CorpusSegmentId
+from ..target_corpus_data import SegmentContentMetrics, CorpusSegmentId
 from ..target import Target
 
-from ..lib.utilities import var_dump_log, override
+from ..lib.utilities import override
 
 
 TableDataType = list[tuple[WordToken, list[Union[float, int]]]]

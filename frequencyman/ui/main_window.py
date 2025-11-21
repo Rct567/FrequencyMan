@@ -12,7 +12,7 @@ from ..target_list import TargetList
 
 from ..lib.persistent_cacher import PersistentCacher, SqlDbFile
 from ..lib.addon_config import AddonConfig
-from ..lib.utilities import var_dump_log, override
+from ..lib.utilities import override
 
 from aqt.qt import QMainWindow, QWidget, QVBoxLayout, QLayout, QPaintEvent, QCloseEvent, QTabWidget, QHideEvent
 from aqt.main import AnkiQt

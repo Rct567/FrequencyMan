@@ -8,7 +8,7 @@ from time import time
 from typing import TypedDict
 
 
-from .lib.utilities import batched, override, var_dump, var_dump_log
+from .lib.utilities import batched, override
 from .lib.sql_db_file import SqlDbFile
 from .target_list import TargetList, TargetListReorderResult
 from .tokenizers import LangId

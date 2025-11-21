@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from anki.collection import Collection
 from anki.decks import DeckNameId
 from anki.models import NotetypeNameIdUseCount
-from aqt.utils import askUser, showWarning, showInfo, getOnlyText as getOnlyTextDialog
+from aqt.utils import getOnlyText as getOnlyTextDialog
 from aqt.qt import (
     QDialog, QLabel, QSpacerItem, QSizePolicy, QPushButton, QVBoxLayout,
     QLineEdit, QStringListModel, QListView, QAbstractItemView

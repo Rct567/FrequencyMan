@@ -11,7 +11,7 @@ from aqt.qt import (
     QColor, QComboBox, QCursor, QKeyEvent, QKeySequence, QMenu, QPoint, QTableWidget, QTableWidgetItem, QCheckBox
 )
 from aqt import dialogs
-from aqt.utils import showInfo, askUser, showWarning
+from aqt.utils import showWarning
 
 if TYPE_CHECKING:
     from aqt.browser.browser import Browser
@@ -30,7 +30,7 @@ from .words_overview_filters import FilterOption, IgnoredWordsFilter, LearningWo
 
 from .main_window import FrequencyManMainWindow, FrequencyManTab
 
-from ..lib.utilities import batched, var_dump_log, override
+from ..lib.utilities import batched, override
 from ..text_processing import WordToken
 
 

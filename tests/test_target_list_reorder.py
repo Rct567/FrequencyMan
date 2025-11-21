@@ -1,5 +1,4 @@
 from collections import defaultdict
-import pytest
 
 from frequencyman.card_ranker import CardRanker
 from frequencyman.target_list import TargetList, TargetListReorderResult

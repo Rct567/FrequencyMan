@@ -8,7 +8,7 @@ import binascii
 from enum import Enum
 import hashlib
 import json
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, TypeVar
 from time import time
 
 from .sql_db_file import SqlDbFile

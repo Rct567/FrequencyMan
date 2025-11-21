@@ -4,13 +4,13 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import Union
 
 from .words_overview_tab_overview_options import WordsOverviewOption
 
-from ..target_corpus_data import SegmentContentMetrics, TargetCorpusData, CorpusSegmentId
+from ..target_corpus_data import SegmentContentMetrics
 
-from ..lib.utilities import var_dump_log, override
+from ..lib.utilities import override
 from ..text_processing import WordToken
 
 

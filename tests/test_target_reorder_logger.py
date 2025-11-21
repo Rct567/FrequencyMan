@@ -2,7 +2,7 @@ import os
 from collections.abc import Generator
 import pytest
 
-from frequencyman.target_list import TargetList, TargetListReorderResult
+from frequencyman.target_list import TargetList
 from frequencyman.lib.event_logger import EventLogger
 from frequencyman.reorder_logger import ReorderLogger, SqlDbFile
 

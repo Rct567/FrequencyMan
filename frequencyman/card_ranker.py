@@ -4,13 +4,13 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import field
 from math import fsum, log
 from statistics import fmean, median
 from typing import Optional
 from collections.abc import Sequence
 
-from anki.cards import Card, CardId
+from anki.cards import CardId
 from anki.notes import Note, NoteId
 
 from .text_processing import WordToken

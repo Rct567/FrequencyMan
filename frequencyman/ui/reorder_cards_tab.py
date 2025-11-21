@@ -9,12 +9,12 @@ import re
 import shutil
 import hashlib
 import time
-from typing import Any, Optional, Callable, Union
+from typing import Optional, Callable, Union
 
-from anki.collection import Collection, OpChanges, OpChangesWithCount
-from aqt.operations import QueryOp, CollectionOp
+from anki.collection import Collection
+from aqt.operations import QueryOp
 
-from aqt.utils import askUser, showWarning, showInfo, askUserDialog, showText
+from aqt.utils import askUser, showWarning, showInfo, askUserDialog
 from aqt.qt import (
     QWidget, QGridLayout, QLabel, QSpacerItem, QSizePolicy, QPushButton, QApplication,
     Qt, QColor, QPalette, QLayout, QPaintEvent, QTextEdit, pyqtSlot
@@ -28,12 +28,11 @@ from .main_window import FrequencyManMainWindow, FrequencyManTab
 from .select_new_target_window import SelectNewTargetWindow
 
 from ..lib.event_logger import EventLogger
-from ..lib.utilities import ShowResultType, show_result, var_dump, var_dump_log, override
+from ..lib.utilities import ShowResultType, show_result, override
 
-from ..language_data import LanguageData
 from ..reorder_logger import ReorderLogger
 from ..target import ValidConfiguredTarget
-from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult, PersistentCacher
+from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult
 
 
 class TargetsDefiningTextArea(QTextEdit):

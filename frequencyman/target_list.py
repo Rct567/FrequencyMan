@@ -11,17 +11,16 @@ import re
 from typing import Callable, Optional, Any
 from collections.abc import Iterator
 
-from anki.collection import Collection, OpChanges, OpChangesWithCount
-from anki.cards import CardId, Card
+from anki.collection import Collection, OpChanges
 from anki.notes import Note, NoteId
 
 from .lib.persistent_cacher import PersistentCacher
 from .configured_target import ConfiguredTarget
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
-from .lib.utilities import JSON_TYPE, batched, get_float, load_json, profile_context, var_dump_log
+from .lib.utilities import JSON_TYPE, batched, get_float, load_json
 from .target import ConfiguredTargetNote, TargetCacheData, TargetReorderResult, Target, ValidConfiguredTarget, CardRanker
-from .language_data import LangDataId, LanguageData
+from .language_data import LanguageData
 from .lib.event_logger import EventLogger
 
 

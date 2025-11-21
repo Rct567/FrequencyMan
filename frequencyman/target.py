@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, TypedDict
 
-from .lib.utilities import get_float, is_numeric_value, profile_context, var_dump_log, override
+from .lib.utilities import get_float, is_numeric_value, override
 from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
 from .target_corpus_data import CorpusSegmentationStrategy, MaturityRequirements, TargetCorpusData
-from .tokenizers import WHITE_SPACE_LANGUAGES, get_user_provided_tokenizer
+from .tokenizers import get_user_provided_tokenizer
 from .language_data import LanguageData
 
 if TYPE_CHECKING:

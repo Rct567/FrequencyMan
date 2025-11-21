@@ -7,12 +7,11 @@ from abc import ABC, abstractmethod
 from typing import Union
 from collections.abc import Sequence
 
-from aqt.utils import showInfo, askUser, showWarning
 
 from ..text_processing import WordToken
-from ..target_corpus_data import TargetCorpusData, SegmentContentMetrics, CorpusSegmentId
+from ..target_corpus_data import SegmentContentMetrics
 
-from ..lib.utilities import var_dump_log, override
+from ..lib.utilities import override
 
 
 class AdditionalColumn(ABC):

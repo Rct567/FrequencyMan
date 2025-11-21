@@ -12,7 +12,7 @@ from typing import NewType, Union
 from collections.abc import Sequence
 from enum import Enum
 
-from anki.cards import CardId, Card
+from anki.cards import CardId
 from anki.notes import NoteId
 
 from .lib.persistent_cacher import PersistentCacher

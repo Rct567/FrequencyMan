@@ -153,8 +153,7 @@ class WordFrequencyLists:
     def get_words_from_file(file_path: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
 
         with open(file_path, encoding='utf-8') as text_file:
-            for word, line_number in WordFrequencyLists.get_words_from_content(text_file, file_path, lang_id):
-                yield word, line_number
+            yield from WordFrequencyLists.get_words_from_content(text_file, file_path, lang_id)
 
     @staticmethod
     def get_words_from_content(content: Iterable[str], file_path: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:

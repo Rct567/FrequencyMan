@@ -56,7 +56,7 @@ def setup_mecab(reading: ModuleType) -> None:
 
     dict_info_dump: bytes = _get_subprocess_dump(sub_cmd=["-D"])
     charset_match = re.search(
-        "^charset:\t(.*)$", str(dict_info_dump, "utf-8"), flags=re.M
+        r"^charset:\t(.*)$", str(dict_info_dump, "utf-8"), flags=re.M
     )
     assert charset_match is not None
     _mecab_encoding = charset_match.group(1)  # example: utf8, type: <class 'str'>
@@ -106,8 +106,8 @@ def _spawn_cmd(cmd: list[str], _startupinfo: Any) -> subprocess.Popen[bytes]:
     )
 
 
-_CONTROL_CHARS_RE = re.compile("[\x00-\x1f\x7f-\x9f]")
-_SPACE_CHAR_REGEX = re.compile(" ")
+_CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f-\x9f]")
+_SPACE_CHAR_REGEX = re.compile(r" ")
 
 def get_morphemes_mecab(expression: str) -> list[str]:
 

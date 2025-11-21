@@ -1,3 +1,4 @@
+import re
 import pytest
 
 from frequencyman.lib.utilities import (
@@ -46,7 +47,7 @@ def test_normalize_dict_floats_values_negative_value():
 
     input_dict = {'a': -2.0, 'b': 1.0, 'c': 3.0}
 
-    with pytest.raises(Exception, match="Unexpected below zero value found."):
+    with pytest.raises(Exception, match=re.escape("Unexpected below zero value found.")):
         normalize_dict_floats_values(input_dict)
 
 

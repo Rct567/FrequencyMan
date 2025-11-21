@@ -199,7 +199,7 @@ def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
     new_dict = input_dict.copy()
 
-    if len(input_dict) == 0:
+    if not input_dict:
         return new_dict
 
     min_value = min(new_dict.values())
@@ -221,43 +221,39 @@ def normalize_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
 def positional_value_absolute(position: int) -> float:
 
-    positional_val_a = (1 / ((position) ** 0.125))
+    positional_val_a = 1.0 / (position ** 0.125)
+    positional_val_b = max(0.0, 1.0 - 0.0001 * (position - 1))
+    positional_val_c = math.exp(-0.00016 * (position - 1))
 
-    positional_val_b = 1-(1/(10_000) * (position-1))
-    if positional_val_b < 0:
-        positional_val_b = 0
-
-    decay_rate = 0.00016
-    positional_val_c = math.exp(-decay_rate * (position - 1))
-
-    return (positional_val_a + positional_val_b + (positional_val_c*3)) / 5
+    return (positional_val_a + positional_val_b + positional_val_c * 3.0) * 0.2
 
 
 def normalize_dict_positional_floats_values(input_dict: dict[K, float], absolute_values: bool = True) -> dict[K, float]:
 
-    new_dict = input_dict.copy()
+    if not input_dict:
+        return {}
 
-    if len(input_dict) == 0:
-        return new_dict
+    values = list(input_dict.values())
+
+    assert values == sorted(values, reverse=True), "Input dictionary must be in descending order."
 
     get_position_value: Callable[[int], float]
-
-    assert list(input_dict.values()) == sorted(input_dict.values(), reverse=True), "Input dictionary must be in descending order."
 
     if absolute_values:
         get_position_value = positional_value_absolute
     else:
-        max_rank = len(set(new_dict.values()))
-        get_position_value = lambda value_index: (max_rank-(value_index-1))/max_rank
+        max_rank = len(set(values))
+        inv_max_rank = 1.0 / max_rank
+        get_position_value = lambda value_index: (max_rank - value_index + 1) * inv_max_rank
 
+    new_dict = input_dict.copy()
     value_index = 0
     last_value = None
 
-    for key, value in new_dict.items():
-
+    for key, value in input_dict.items():
         if value != last_value:
             value_index += 1
-        last_value = value
+            last_value = value
 
         new_dict[key] = get_position_value(value_index)
 

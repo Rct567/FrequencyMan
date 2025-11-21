@@ -3,7 +3,7 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from anki.collection import Collection
 
 from aqt.qt import (
@@ -12,7 +12,9 @@ from aqt.qt import (
 )
 from aqt import dialogs
 from aqt.utils import showInfo, askUser, showWarning
-from aqt.browser.browser import Browser
+
+if TYPE_CHECKING:
+    from aqt.browser.browser import Browser
 
 from ..target_corpus_data import SegmentContentMetrics, TargetCorpusData, CorpusSegmentId
 from ..target_list import TargetList

@@ -5,7 +5,8 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Optional, Sequence
+from typing import Callable, Optional
+from collections.abc import Sequence
 
 from anki.collection import Collection
 from anki.cards import CardId, Card

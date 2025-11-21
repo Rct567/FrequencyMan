@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 from frequencyman.text_processing import LangId, TextProcessing, WordToken
 from frequencyman.tokenizers import get_tokenizer_registry
 

@@ -8,7 +8,8 @@ from enum import Enum
 from functools import cache
 import json
 import re
-from typing import Callable, Iterator, Optional, Any
+from typing import Callable, Optional, Any
+from collections.abc import Iterator
 
 from anki.collection import Collection, OpChanges, OpChangesWithCount
 from anki.cards import CardId, Card
@@ -40,7 +41,7 @@ class JsonTargetsValidity(Enum):
 
 
 @dataclass
-class JsonTargetsResult():
+class JsonTargetsResult:
     validity_state: JsonTargetsValidity
     targets_defined: list[JSON_TYPE]
     err_desc: str

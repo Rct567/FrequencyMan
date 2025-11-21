@@ -4,7 +4,8 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import re
-from typing import Any, Literal, Optional, Sequence, TypedDict, Union, overload
+from typing import Any, Literal, Optional, TypedDict, Union, overload
+from collections.abc import Sequence
 
 from .language_data import LangDataId
 from .lib.utilities import override

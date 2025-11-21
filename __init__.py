@@ -3,6 +3,8 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 import os
 
 from functools import partial
@@ -21,8 +23,10 @@ from .frequencyman.ui.words_overview_tab import WordsOverviewTab, MatureWordsOve
 from .frequencyman.ui.reorder_cards_tab import ReorderCardsTab
 from .frequencyman.ui.main_window import FrequencyManMainWindow
 
-from .frequencyman.lib.utilities import JSON_TYPE
-
+if TYPE_CHECKING:
+    from aqt.deckbrowser import DeckBrowser, DeckBrowserContent
+    from aqt.toolbar import Toolbar
+    from .frequencyman.lib.utilities import JSON_TYPE
 
 
 def get_mw():
@@ -145,8 +149,6 @@ def get_info_items_from_config(mw: AnkiQt, config: JSON_TYPE, reorder_logger: Re
 
 def add_frequencyman_info_to_toolbar_items(mw: AnkiQt, reorder_logger: ReorderLogger, fm_config: AddonConfig) -> None:
 
-    from aqt.toolbar import Toolbar
-
     def init_toolbar_items(links: list[str], toolbar: Toolbar) -> None:
 
         if 'show_info_toolbar' not in fm_config:
@@ -174,12 +176,7 @@ def add_frequencyman_info_to_toolbar_items(mw: AnkiQt, reorder_logger: ReorderLo
 
 def add_frequencyman_info_to_deck_browser(mw: AnkiQt, reorder_logger: ReorderLogger, fm_config: AddonConfig) -> None:
 
-    from aqt.deckbrowser import DeckBrowser
-
-    if TYPE_CHECKING:
-        from aqt.deckbrowser import DeckBrowserContent
-
-    def update_deck_browser(_: DeckBrowser, content: "DeckBrowserContent") -> None:
+    def update_deck_browser(_: DeckBrowser, content: DeckBrowserContent) -> None:
 
         if 'show_info_deck_browser' not in fm_config:
             return

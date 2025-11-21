@@ -6,7 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from collections import defaultdict
 import random
 import re
-from typing import Iterable, Sequence
+from collections.abc import Sequence
 
 from anki.collection import Collection
 from anki.decks import DeckNameId
@@ -19,7 +19,6 @@ from aqt.qt import (
 
 from ..static_lang_data import NAMES_FOR_THE_ENGLISH_LANGUAGE, LANGUAGE_NAMES_ENG_AND_NATIVE
 from ..target import ConfiguredTargetNote, ValidConfiguredTarget
-from ..lib.utilities import var_dump, var_dump_log
 
 from .main_window import FrequencyManMainWindow
 

@@ -7,9 +7,8 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 import os
 import sqlite3
 import time
-from typing import Any, Callable, Iterable, Optional, Sequence, Union
-
-from .utilities import var_dump, var_dump_log
+from typing import Any, Callable, Optional, Union
+from collections.abc import Iterable, Sequence
 
 QueryParameters = Union[Sequence[Union[int, float, str, bytes]], int, float, str, bytes]
 

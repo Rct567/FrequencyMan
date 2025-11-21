@@ -4,6 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from __future__ import annotations
+
 import io
 import cProfile
 from contextlib import contextmanager
@@ -15,11 +16,15 @@ import pprint
 import pstats
 import re
 import sys
-from typing import IO, TYPE_CHECKING, Any, Callable, Iterable, Iterator, Literal, Optional, Type, TypeVar, cast
+from typing import IO, TYPE_CHECKING, Any, Callable, Literal, Optional, Type, TypeVar, cast
 from dataclasses import dataclass, fields
+
 from aqt.qt import Qt, QDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStyle, QVBoxLayout, QWidget
 from aqt.utils import showInfo
 from typing_extensions import dataclass_transform
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 var_dump_count = 0
 

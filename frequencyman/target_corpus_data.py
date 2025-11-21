@@ -8,7 +8,8 @@ from dataclasses import dataclass, field
 from functools import cached_property
 from math import fsum
 from statistics import fmean, median
-from typing import NewType, Sequence, Union
+from typing import NewType, Union
+from collections.abc import Sequence
 from enum import Enum
 
 from anki.cards import CardId, Card

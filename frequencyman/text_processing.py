@@ -6,7 +6,8 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from collections import Counter
 import re
 import html
-from typing import Callable, Generator, NewType, Optional, Sequence
+from typing import Callable, NewType, Optional
+from collections.abc import Sequence
 
 from .tokenizers import get_user_provided_tokenizer, Tokenizer, LangId
 

@@ -4,7 +4,8 @@ from itertools import chain
 import os
 from pathlib import Path
 import shutil
-from typing import Any, Generator, Optional, Sequence
+from typing import Any, Optional
+from collections.abc import Generator, Sequence
 import pprint
 import time
 from dateutil.parser import parse
@@ -15,7 +16,6 @@ from anki.media import media_paths_from_col_path
 
 from frequencyman.language_data import LanguageData
 from frequencyman.lib.persistent_cacher import PersistentCacher, SqlDbFile
-from frequencyman.lib.utilities import var_dump_log
 
 
 CURRENT_PID = os.getpid()

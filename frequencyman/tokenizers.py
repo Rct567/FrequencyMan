@@ -3,16 +3,20 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from functools import cache
 import importlib
 import os
 import re
 import sys
-from types import ModuleType
-from typing import Callable, Optional, Sequence
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Callable, Optional
+from collections.abc import Sequence
 
+if TYPE_CHECKING:
+    from typing_extensions import Self
+    from types import ModuleType
 
 from .lib.utilities import override
 

@@ -3,11 +3,16 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 import csv
 from functools import cache
-from typing import Iterator, NewType, Optional, Union, Iterable
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Optional, Union
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
+    from collections.abc import Iterator, Iterable
 
 from .lib.utilities import normalize_dict_positional_floats_values, sort_dict_floats_values
 from .text_processing import TextProcessing, LangId
@@ -133,7 +138,7 @@ class WordFrequencyLists:
         words_positions_combined = {
             word: (1/line_number)
             for word, line_number
-            in WordFrequencyLists.combine_lists_by_top_position((WordFrequencyLists.get_words_from_file(file_path, lang_id) for file_path in files)).items()
+            in WordFrequencyLists.combine_lists_by_top_position(WordFrequencyLists.get_words_from_file(file_path, lang_id) for file_path in files).items()
         }
 
         if not words_positions_combined:

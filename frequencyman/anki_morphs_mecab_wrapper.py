@@ -4,8 +4,10 @@ import functools
 import re
 import subprocess
 import sys
-from types import ModuleType
-from typing import IO, Any
+from typing import IO, TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 #
 # Originally from https://github.com/mortii/anki-morphs/blob/main/ankimorphs/mecab_wrapper.py

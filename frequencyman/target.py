@@ -3,20 +3,24 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import Optional, Sequence, TypedDict
-from typing_extensions import Self
+from __future__ import annotations
 
-from anki.collection import Collection, OpChanges, OpChangesWithCount
-from anki.cards import CardId, Card
-from anki.notes import Note, NoteId
+from typing import TYPE_CHECKING, Optional, TypedDict
 
-from .lib.persistent_cacher import PersistentCacher
-from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
 from .lib.utilities import get_float, is_numeric_value, profile_context, var_dump_log, override
-from .lib.event_logger import EventLogger
-from .language_data import LanguageData, LangDataId
+from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
 from .target_corpus_data import CorpusSegmentationStrategy, MaturityRequirements, TargetCorpusData
 from .tokenizers import WHITE_SPACE_LANGUAGES, get_user_provided_tokenizer
+from .language_data import LanguageData
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
+    from collections.abc import Sequence
+    from anki.cards import CardId
+    from anki.notes import Note, NoteId
+    from anki.collection import Collection, OpChangesWithCount
+    from .lib.persistent_cacher import PersistentCacher
+    from .lib.event_logger import EventLogger
 
 
 class TargetReorderResult():

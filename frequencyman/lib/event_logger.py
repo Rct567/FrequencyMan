@@ -4,7 +4,8 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import os
-from typing import Generator, Callable, Optional
+from typing import Callable, Optional
+from collections.abc import Generator
 from contextlib import contextmanager
 import time
 

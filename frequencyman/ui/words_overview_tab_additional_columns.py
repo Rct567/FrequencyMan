@@ -4,7 +4,8 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence, Union
+from typing import Union
+from collections.abc import Sequence
 
 from aqt.utils import showInfo, askUser, showWarning
 

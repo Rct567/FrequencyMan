@@ -1,6 +1,7 @@
 import pytest
 import os
-from typing import Any, Generator
+from typing import Any
+from collections.abc import Generator
 
 from frequencyman.lib.persistent_cacher import PersistentCacher, SqlDbFile
 

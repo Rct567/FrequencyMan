@@ -563,10 +563,8 @@ class CardRanker:
     def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_ids_new_cards: set[NoteId], notes_ranking_scores: dict[str, dict[NoteId, float]],
                                          notes_metrics: dict[NoteId, list[FieldMetrics]]) -> None:
 
-        try:
-            reorder_scope_note_ids = set(list(notes_ranking_scores.values())[0].keys())
-        except Exception:
-            reorder_scope_note_ids = set()
+        first_dict = next(iter(notes_ranking_scores.values()), {})
+        reorder_scope_note_ids = set(first_dict)
 
         non_modified_notes = {note_id: note for note_id, note in notes_all_card.items() if note_id not in self.modified_dirty_notes}
 
@@ -678,12 +676,12 @@ class CardRanker:
                 field_name_static = f'fm_main_focus_word_static_{index}'
                 if field_name in note:
                     if field_metrics.focus_words:
-                        note_data[field_name] = list(field_metrics.focus_words.keys())[0]
+                        note_data[field_name] = next(iter(field_metrics.focus_words.keys()), '')
                     else:
                         note_data[field_name] = ''
                 if field_name_static in note and self.__field_is_empty_for_all_notes(field_name_static, notes_all_card):
                     if field_metrics.focus_words:
-                        note_data[field_name_static] = list(field_metrics.focus_words.keys())[0]
+                        note_data[field_name_static] = next(iter(field_metrics.focus_words.keys()), '')
                     else:
                         note_data[field_name_static] = ''
 

@@ -249,15 +249,16 @@ class SegmentContentMetrics:
 
         word_frequency_list = self.language_data.get_word_frequency_list(self.lang_data_id)
 
-        new_word_frequency = {
-            word_token: word_frequency_list.get(word_token, 0)
-            for word_token in self.all_words
-            if word_frequency_list.get(word_token, 0) > 0
-        }
+        new_word_frequency: dict[WordToken, float] = {}
 
-        return normalize_dict_positional_floats_values(
-            sort_dict_floats_values(new_word_frequency)
-        )
+        for word_token in self.all_words:
+            word_frequency = word_frequency_list.get(word_token, 0)
+            if word_frequency > 0:
+                new_word_frequency[word_token] = word_frequency
+
+        new_word_frequency = sort_dict_floats_values(new_word_frequency)
+        new_word_frequency = normalize_dict_positional_floats_values(new_word_frequency)
+        return new_word_frequency
 
     @cached_property
     def ignored_words(self) -> set[str]:

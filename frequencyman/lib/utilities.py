@@ -242,7 +242,7 @@ def normalize_dict_positional_floats_values(input_dict: dict[K, float], absolute
 
     get_position_value: Callable[[int], float]
 
-    assert repr(input_dict) == repr(sort_dict_floats_values(input_dict)), "Input dictionary must be in descending order."
+    assert list(input_dict.values()) == sorted(input_dict.values(), reverse=True), "Input dictionary must be in descending order."
 
     if absolute_values:
         get_position_value = positional_value_absolute
@@ -271,7 +271,7 @@ def sort_dict_floats_values(input_dict: dict[K, float]) -> dict[K, float]:
 
 def remove_bottom_percent_dict(input_dict: dict[K, float], percent_remove: float, min_num_preserve: int) -> dict[K, float]:
 
-    assert repr(input_dict) == repr(sort_dict_floats_values(input_dict)), "Input dictionary must be in descending order."
+    assert list(input_dict.values()) == sorted(input_dict.values(), reverse=True), "Input dictionary must be in descending order."
 
     keep_offset_end = int(len(input_dict) * (1-percent_remove))
 

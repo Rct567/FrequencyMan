@@ -16,7 +16,7 @@ import pprint
 import pstats
 import re
 import sys
-from typing import IO, TYPE_CHECKING, Any, Callable, Literal, Optional, Type, TypeVar, cast
+from typing import IO, TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar
 from dataclasses import dataclass, fields
 
 from aqt.qt import Qt, QDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStyle, QVBoxLayout, QWidget
@@ -176,8 +176,8 @@ else:
 
 if sys.version_info >= (3, 10):
     @dataclass_transform()
-    def dataclass_with_slots(**kwargs: Any) -> Callable[[Type[T]], Type[T]]:
-        def wrapper(cls: Type[T]) -> Type[T]:
+    def dataclass_with_slots(**kwargs: Any) -> Callable[[type[T]], type[T]]:
+        def wrapper(cls: type[T]) -> type[T]:
             return dataclass(slots=True, **kwargs)(cls)  # type: ignore[misc]
         return wrapper
 else:
@@ -192,8 +192,8 @@ else:
             setattr(cls, "__slots__", slot_names)
 
     @dataclass_transform()
-    def dataclass_with_slots(**kwargs: Any) -> Callable[[Type[T]], Type[T]]:
-        def wrapper(cls: Type[T]) -> Type[T]:
+    def dataclass_with_slots(**kwargs: Any) -> Callable[[type[T]], type[T]]:
+        def wrapper(cls: type[T]) -> type[T]:
             cls2 = dataclass(**kwargs)(cls)  # type: ignore[misc]
             _make_slots_from_annotations(cls2)
             return cls2

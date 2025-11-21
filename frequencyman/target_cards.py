@@ -4,7 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Callable, ClassVar, Optional
 from collections.abc import Sequence
 
 from anki.collection import Collection
@@ -75,8 +75,8 @@ class TargetCards:
     notes_ids_new_cards_set: set[NoteId]
     notes_ids_new_cards: Sequence[NoteId]
 
-    notes_from_cards_cached: dict[NoteId, Note] = {}
-    leech_card_ids_cached: set[CardId] = set()
+    notes_from_cards_cached: ClassVar[dict[NoteId, Note]] = {}
+    leech_card_ids_cached: ClassVar[set[CardId]] = set()
     cache_lock: Optional[Collection] = None
 
     def __init__(self, all_cards_ids: Sequence[CardId], col: Collection) -> None:

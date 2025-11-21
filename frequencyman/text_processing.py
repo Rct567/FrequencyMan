@@ -5,7 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 import re
 import html
-from typing import Callable, NewType, Optional
+from typing import Callable, ClassVar, NewType, Optional
 from collections.abc import Sequence
 
 from .tokenizers import get_user_provided_tokenizer, Tokenizer, LangId
@@ -16,7 +16,7 @@ WordToken = NewType('WordToken', str)
 
 class TextProcessing:
 
-    LANGUAGES_USING_APOSTROPHE = {
+    LANGUAGES_USING_APOSTROPHE: ClassVar[set[str]] = {
         'en',  # English (e.g., contractions like "don't")
         'fr',  # French (e.g., "l'heure")
         'it',  # Italian (e.g., "un'altra")

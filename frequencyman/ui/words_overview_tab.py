@@ -3,7 +3,8 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union
 from anki.collection import Collection
 
 from aqt.qt import (
@@ -75,7 +76,7 @@ class WordsOverviewTab(FrequencyManTab):
     selected_corpus_segment_id: CorpusSegmentId
     targets_dropdown: QComboBox
     target_corpus_segment_dropdown: QComboBox
-    overview_options: list[type[WordsOverviewOption]] = [
+    OVERVIEW_OPTIONS: ClassVar[Sequence[type[WordsOverviewOption]]] = (
         WordFamiliarityOverview,
         WordFrequencyOverview,
         WordUnderexposureOverview,
@@ -88,7 +89,7 @@ class WordsOverviewTab(FrequencyManTab):
         LonelyWordsOverview,
         NotInWordFrequencyListsOverview,
         NotInTargetCardsOverview,
-    ]
+    )
     overview_options_available: list[WordsOverviewOption]
     table_label: QLabel
     table: KeyedTable
@@ -170,7 +171,7 @@ class WordsOverviewTab(FrequencyManTab):
         label.setStyleSheet("margin-top:8px;")
         tab_layout.addWidget(label)
         self.overview_options_dropdown = QComboBox()
-        self.overview_options_dropdown.addItems([option.title for option in self.overview_options])
+        self.overview_options_dropdown.addItems([option.title for option in self.OVERVIEW_OPTIONS])
         self.overview_options_dropdown.currentIndexChanged.connect(self.__set_selected_overview_option)
         tab_layout.addWidget(self.overview_options_dropdown)
 
@@ -271,10 +272,10 @@ class WordsOverviewTab(FrequencyManTab):
         content_metrics = target_corpus_data.content_metrics[selected_corpus_segment_id]
 
         self.selected_corpus_segment_id = selected_corpus_segment_id
-        self.overview_options_available = [option(selected_target, selected_corpus_segment_id, content_metrics) for option in self.overview_options]
+        self.overview_options_available = [option(selected_target, selected_corpus_segment_id, content_metrics) for option in self.OVERVIEW_OPTIONS]
 
         if hasattr(self, 'selected_overview_option') and self.selected_overview_option is not None and issubclass(self.selected_overview_option, WordsOverviewOption):
-            self.selected_overview_option_index = self.overview_options.index(self.selected_overview_option)
+            self.selected_overview_option_index = self.OVERVIEW_OPTIONS.index(self.selected_overview_option)
             self.selected_overview_option = None
 
         self.__set_selected_overview_option(self.selected_overview_option_index)

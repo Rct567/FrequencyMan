@@ -96,12 +96,11 @@ class SegmentContentMetrics:
                     word_underexposure_rating *= 0.75
                 words_underexposure[word_token] = word_underexposure_rating
 
-        return normalize_dict_floats_values(
-            remove_bottom_percent_dict(
-                sort_dict_floats_values(words_underexposure),
-                0.1, 100
-            )
-        )
+        words_underexposure = sort_dict_floats_values(words_underexposure)
+        words_underexposure = remove_bottom_percent_dict(words_underexposure, 0.1, 100)
+        words_underexposure = normalize_dict_floats_values(words_underexposure)
+        return words_underexposure
+
 
     @cached_property
     def words_familiarity_sweetspot(self) -> dict[WordToken, float]:
@@ -128,12 +127,10 @@ class SegmentContentMetrics:
             for word_token, familiarity in self.words_familiarity.items()
         }
 
-        return normalize_dict_floats_values(
-            remove_bottom_percent_dict(
-                sort_dict_floats_values(words_familiarity_sweetspot),
-                0.1, 100
-            )
-        )
+        words_familiarity_sweetspot = sort_dict_floats_values(words_familiarity_sweetspot)
+        words_familiarity_sweetspot = remove_bottom_percent_dict(words_familiarity_sweetspot, 0.1, 100)
+        words_familiarity_sweetspot = normalize_dict_floats_values(words_familiarity_sweetspot)
+        return words_familiarity_sweetspot
 
     @cached_property
     def words_familiarity(self) -> dict[WordToken, float]:

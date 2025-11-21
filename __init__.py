@@ -37,10 +37,14 @@ if not os.path.isdir(FM_USER_FILES_DIR):
     os.mkdir(FM_USER_FILES_DIR)
 
 
-def register_frequencyman_dialogs(fm_config: AddonConfig, reorder_logger: ReorderLogger) -> None:
+def register_frequencyman_dialogs(mw: AnkiQt, fm_config: AddonConfig, reorder_logger: ReorderLogger) -> None:
 
-    register_dialog: Callable[[str, Callable[[AnkiQt], Optional[FrequencyManMainWindow]]], None] = dialogs.register_dialog
-    register_dialog(FrequencyManMainWindow.key, lambda mw: frequencyman_window_creator(mw, fm_config, reorder_logger))
+    def dialog_creator(mw: AnkiQt) -> Optional[FrequencyManMainWindow]:
+        return frequencyman_window_creator(mw, fm_config, reorder_logger)
+
+    dialogs.register_dialog(FrequencyManMainWindow.key, dialog_creator)
+
+
 
 def frequencyman_window_creator(mw: AnkiQt, fm_config: AddonConfig, reorder_logger: ReorderLogger) -> Optional[FrequencyManMainWindow]:
 
@@ -202,7 +206,7 @@ if isinstance(mw, AnkiQt):
     reorder_logger = ReorderLogger(SqlDbFile(os.path.join(FM_USER_FILES_DIR, 'reorder_log.sqlite')))
     fm_config = AddonConfig.from_anki_main_window(mw)
 
-    register_frequencyman_dialogs(fm_config, reorder_logger)
+    register_frequencyman_dialogs(mw, fm_config, reorder_logger)
     add_frequencyman_menu_option_to_anki_tools_menu(mw)
 
     add_frequencyman_info_to_deck_browser(mw, reorder_logger, fm_config)

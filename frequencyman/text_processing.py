@@ -144,30 +144,44 @@ class TextProcessing:
         return accepted_word_tokens
 
     @staticmethod
-    def calc_word_presence_scores(context: Sequence[WordToken]) -> Generator[tuple[WordToken, float], None, None]:
-
-        if not context:
-            return
-
+    def calc_word_presence_scores(context: Sequence[WordToken]) -> list[tuple[WordToken, float]]:
         context_num_words = len(context)
+
+        if context_num_words == 0:
+            return []
         if context_num_words == 1:
-            yield context[0], 1.0
-            return
+            return [(context[0], 1.0)]
 
-        counts = Counter(context)
+        counts: dict[WordToken, int] = {}
+        word_lengths: dict[WordToken, int] = {}
         context_num_chars = 0
-        for w in context:
-            context_num_chars += len(w)
 
-        get_count = counts.get
+        for word in context:
+            if word in counts:
+                counts[word] += 1
+                context_num_chars += word_lengths[word]
+            else:
+                counts[word] = 1
+                word_len = len(word)
+                word_lengths[word] = word_len
+                context_num_chars += word_len
 
-        for position_index, word in enumerate(context):
-            word_count = get_count(word, 0)
-            presence_score_by_words = word_count / context_num_words
-            presence_score_by_chars = (len(word) * word_count) / context_num_chars
+        inv_num_words = 1.0 / context_num_words
+        inv_num_chars = 1.0 / context_num_chars
+        inv_three = 1.0 / 3.0
 
-            position_value = 1.0 / (position_index + 1)
+        results: list[tuple[WordToken, float]] = []
 
-            presence_score = (presence_score_by_words + presence_score_by_chars + position_value) / 3.0
+        for position_index in range(context_num_words):
+            word = context[position_index]
+            word_count = counts[word]
+            word_len = word_lengths[word]
 
-            yield word, presence_score
+            results.append((
+                word,
+                (word_count * inv_num_words +
+                 (word_len * word_count) * inv_num_chars +
+                 1.0 / (position_index + 1)) * inv_three
+            ))
+
+        return results

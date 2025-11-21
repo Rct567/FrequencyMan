@@ -156,6 +156,18 @@ def run_ruff() -> None:
     elapsed_time = time.perf_counter() - start_time
     print(" Ruff was successful! ({:.0f} seconds)".format(elapsed_time))
 
+def run_pyright() -> None:
+    """Run pyright."""
+    print("=" * 60)
+    print("Running pyright...")
+    start_time = time.perf_counter()
+
+    ensure_packages_installed(["pyright"])
+    run_and_print_on_failure(["pyright", "frequencyman", "tests", "__init__.py"], "Pyright")
+
+    elapsed_time = time.perf_counter() - start_time
+    print(" Pyright was successful! ({:.0f} seconds)".format(elapsed_time))
+
 def get_user_choice() -> str:
     print("="*60)
     print("Test Runner Options:")
@@ -189,6 +201,8 @@ def main() -> NoReturn:
     check_python_version()
     install_dev_requirements()
     run_mypy()
+    if is_package_installed("pyright"):
+        run_pyright()
     run_ruff()
 
     use_nox_to_test = len(sys.argv) > 1 and (sys.argv[1] == "-y" or sys.argv[1] == "--nox")

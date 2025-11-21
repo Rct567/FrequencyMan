@@ -48,11 +48,11 @@ def setup_mecab(reading: ModuleType) -> None:
     # is only available on Windows, so we can't use type annotations here
     _mecab_windows_startup_info = get_windows_startup_info()
 
-    _mecab = reading.MecabController()
-    _mecab.setup()
+    mecab = reading.MecabController()
+    mecab.setup()
 
     # _mecab.mecabCmd[1:4] are assumed to be the format arguments.
-    _mecab_base_cmd = _mecab.mecabCmd[:1] + _mecab.mecabCmd[4:]
+    _mecab_base_cmd = mecab.mecabCmd[:1] + mecab.mecabCmd[4:]
 
     dict_info_dump: bytes = _get_subprocess_dump(sub_cmd=["-D"])
     charset_match = re.search(

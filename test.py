@@ -96,9 +96,13 @@ def run_pytest() -> None:
     """Run pytest with the current Python version."""
     print("=" * 60)
     print("Running pytest with current Python version...")
+    start_time = time.perf_counter()
 
     ensure_packages_installed(["pytest"])
     run_and_print_on_failure(["pytest"], "Pytest")
+
+    elapsed_time = time.perf_counter() - start_time
+    print("Pytest was successful! ({:.0f} seconds)".format(elapsed_time))
 
 def run_nox() -> None:
     """Run tests across multiple Python versions using nox."""

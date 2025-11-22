@@ -660,7 +660,7 @@ class CardRanker:
                     note_data[field_name] = field_metrics.lowest_fr_word[0]
 
         # set fm_lowest_familiarity_word_[n]
-        if self.__note_has_n_field(note, 'fm_lowest_familiarity_word_static', note_metrics):
+        if self.__note_has_n_field(note, 'fm_lowest_familiarity_word', note_metrics) or self.__note_has_n_field(note, 'fm_lowest_familiarity_word_static', note_metrics):
             for index, field_metrics in enumerate(note_metrics):
                 field_name = f'fm_lowest_familiarity_word_{index}'
                 field_name_static = f'fm_lowest_familiarity_word_static_{index}'

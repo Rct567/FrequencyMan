@@ -14,6 +14,41 @@ class TestTargetListReorder:
 
         col = TestCollections.get_test_collection('big_collection_es')
 
+        # add additional fields to test
+
+        model = col.models.by_name("-- My spanish --")
+
+        if not model:
+            raise Exception("Model not found")
+
+        additional_fields = [ # field don't exist in collection
+            'fm_seen_words',
+            'fm_new_words',
+            'fm_unseen_words', # deprecated
+            'fm_lowest_fr_word_0',
+            'fm_lowest_fr_word_1',
+            'fm_lowest_familiarity_word_0',
+            'fm_lowest_familiarity_word_1',
+            'fm_lowest_familiarity_word_static_0',
+            'fm_lowest_familiarity_word_static_1',
+            'fm_lowest_familiarity_word_static_2',  # should stay empty
+            'fm_main_focus_word_0',
+            'fm_main_focus_word_1',
+            'fm_main_focus_word_2',  # should stay empty
+            'fm_main_focus_word_static_0',
+            'fm_main_focus_word_static_1',
+            'fm_main_focus_word_static_2',  # should stay empty
+        ]
+
+        for field_name in additional_fields:
+            assert field_name not in col.models.field_names(model)
+            field = col.models.new_field(field_name)
+            col.models.add_field(model, field)
+
+        col.models.save(model)
+
+        # define target list
+
         target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
@@ -62,7 +97,7 @@ class TestTargetListReorder:
             "fm_debug_info",
             "fm_debug_ranking_info",
             "fm_debug_words_info",
-        ]
+        ] + additional_fields
 
         results_per_field: dict[str, list[str]] = defaultdict(list)
 

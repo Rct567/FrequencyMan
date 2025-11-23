@@ -9,7 +9,7 @@ def install_dev_requirements() -> None:
     """Install dev requirements from requirements-dev.txt."""
     print("="*60)
     try:
-        with open("requirements-dev.txt", "r") as _:
+        with open("requirements-dev.txt", "r", encoding="utf-8"):
             print("Found requirements-dev.txt, installing dependencies...")
             result = subprocess.run(
                 [sys.executable, "-m", "pip", "install", "-r", "requirements-dev.txt"],
@@ -33,7 +33,7 @@ def install_dev_requirements() -> None:
 def check_python_version() -> None:
     """Check if Python 3.9 or higher is installed."""
     if sys.version_info < (3, 9):
-        print(f"Error: Python 3.9 or higher is required.")
+        print("Error: Python 3.9 or higher is required.")
         print(f"Current version: {sys.version}")
         sys.exit(1)
 

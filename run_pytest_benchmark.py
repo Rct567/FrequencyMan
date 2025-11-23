@@ -14,6 +14,7 @@ def main() -> None:
             ["pytest", "-q", "-k", "target_list_reorder"],
             capture_output=True,
             text=True,
+            check=False
         )
 
         elapsed = time.perf_counter() - start

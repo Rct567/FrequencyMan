@@ -40,6 +40,7 @@ ignore = [
     "UP015",     # redundant-open-modes - Checks for redundant `open` mode arguments.
     "UP045",     # non-pep604-annotation-optional - Use `X | None` for type annotations.
     "UP007",     # non-pep604-annotation-union - Use `X | Y` for type annotations.
+    "UP036",     # Outdated conditional blocks gated on sys.version_info
     "RUF001",    # ambiguous-unicode-character-string - Checks for ambiguous unicode characters in strings.
     "RUF003",    # ambiguous-unicode-character-comment - Checks for ambiguous unicode characters in comments.
     "RUF005",    # collection-literal-concatenation - Checks for uses of the `+` operator to concatenate collections.

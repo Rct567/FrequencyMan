@@ -155,7 +155,10 @@ def run_ruff() -> None:
     start_time = time.perf_counter()
 
     ensure_packages_installed(["ruff"])
-    run_and_print_on_failure(["ruff", "check", ".\\frequencyman", ".\\tests", "__init__.py", "--preview"], "Ruff")
+    run_and_print_on_failure(["ruff", "check", ".\\frequencyman", ".\\tests", "--preview"], "Ruff")
+
+    for py_file in Path(__file__).parent.glob('*.py'):
+        run_and_print_on_failure(["ruff", "check", str(py_file), "--preview"], "Ruff")
 
     elapsed_time = time.perf_counter() - start_time
     print(" Ruff was successful! ({:.0f} seconds)".format(elapsed_time))
@@ -167,7 +170,10 @@ def run_pyright() -> None:
     start_time = time.perf_counter()
 
     ensure_packages_installed(["pyright"])
-    run_and_print_on_failure(["pyright", "frequencyman", "tests", "__init__.py"], "Pyright")
+    run_and_print_on_failure(["pyright", "frequencyman", "tests"], "Pyright")
+
+    for py_file in Path(__file__).parent.glob('*.py'):
+        run_and_print_on_failure(["pyright", str(py_file)], "Pyright")
 
     elapsed_time = time.perf_counter() - start_time
     print(" Pyright was successful! ({:.0f} seconds)".format(elapsed_time))

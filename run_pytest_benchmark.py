@@ -1,3 +1,4 @@
+from pathlib import Path
 import subprocess
 import time
 
@@ -44,7 +45,8 @@ def main() -> None:
     print(result_summary_txt)
 
     # add to log file
-    with open("pytest_benchmark.tmp.log", "a") as f:
+    log_file = Path(__file__).parent / 'pytest_benchmark.tmp.log'
+    with log_file.open("a") as f:
         f.write(result_summary_txt+"\n")
 
 if __name__ == "__main__":

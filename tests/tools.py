@@ -23,14 +23,14 @@ CURRENT_PID = os.getpid()
 
 class TestCollection(Collection):
     collection_name: str
-    collection_dir: str
+    collection_dir: Path
     lang_data: LanguageData
     cacher: PersistentCacher
 
     caller_class_name: str
     caller_full_name: str
 
-    def __init__(self, collection_name: str, collection_dir: str, lang_data: LanguageData, caller_frame: inspect.FrameInfo):
+    def __init__(self, collection_name: str, collection_dir: Path, lang_data: LanguageData, caller_frame: inspect.FrameInfo):
         self.collection_name = collection_name
         self.collection_dir = collection_dir
 
@@ -44,8 +44,8 @@ class TestCollection(Collection):
 
         # cacher
         if TestCollections.CACHER is None:
-            if not TestCollections.cacher_data_cleared and os.path.exists(TestCollections.CACHER_FILE_PATH):
-                os.remove(TestCollections.CACHER_FILE_PATH)
+            if not TestCollections.cacher_data_cleared and TestCollections.CACHER_FILE_PATH.exists():
+                TestCollections.CACHER_FILE_PATH.unlink()
                 TestCollections.cacher_data_cleared = True
             TestCollections.CACHER = PersistentCacher(SqlDbFile(TestCollections.CACHER_FILE_PATH))
         else:
@@ -53,30 +53,30 @@ class TestCollection(Collection):
         self.cacher = TestCollections.CACHER
 
         # create temporary collection
-        collection_src_path = os.path.join(collection_dir, collection_name+".anki2")
+        collection_src_path = collection_dir / (collection_name+".anki2")
         temp_collection_file_name = "{}_{}_{}_temp.anki2".format(collection_name, self.caller_full_name, CURRENT_PID)
-        temp_collection_path = os.path.join(collection_dir, temp_collection_file_name)
-        if os.path.exists(temp_collection_path):
-            os.remove(temp_collection_path)
+        temp_collection_path = collection_dir / temp_collection_file_name
+        if temp_collection_path.exists():
+            temp_collection_path.unlink()
         shutil.copy(collection_src_path, temp_collection_path)
 
         # init anki collection
-        super().__init__(temp_collection_path)
+        super().__init__(str(temp_collection_path))
 
-    def __get_lock_file_path(self, lock_name: str, lock_dir: str) -> str:
+    def __get_lock_file_path(self, lock_name: str, lock_dir: str) -> Path:
         assert lock_name != ''
-        order_file_dir = os.path.join(self.collection_dir, lock_dir)
-        if not os.path.exists(order_file_dir):
-            os.makedirs(order_file_dir)
-        return os.path.join(order_file_dir, '{}_{}.txt'.format(self.caller_full_name, lock_name))
+        order_file_dir = self.collection_dir / lock_dir
+        if not order_file_dir.exists():
+            order_file_dir.mkdir(parents=True)
+        return order_file_dir / '{}_{}.txt'.format(self.caller_full_name, lock_name)
 
     # helper function used to lock-in and assert result
     def lock_and_assert_result(self, lock_name: str,  result_data: Any):
         result_file_path = self.__get_lock_file_path(lock_name, 'locked_results')
         result_data_str = pprint.pformat(result_data, width=10000)
 
-        if os.path.exists(result_file_path):
-            with open(result_file_path, 'r', encoding="utf-8") as file:
+        if result_file_path.exists():
+            with result_file_path.open('r', encoding="utf-8") as file:
                 expected_result = file.read().splitlines()
             result_lines = result_data_str.splitlines()
             assert len(expected_result) == len(result_lines)
@@ -86,7 +86,7 @@ class TestCollection(Collection):
                     .format(result_file_path, self.collection_name, line_num, result_line, expected_line)
                 )
         else:
-            with open(result_file_path, 'w', encoding="utf-8") as file:
+            with result_file_path.open('w', encoding="utf-8") as file:
                 file.write(result_data_str)
             print("WARNING: Result file '{}' for '{}' didn't exist yet!".format(result_file_path, self.collection_name))
 
@@ -96,8 +96,8 @@ class TestCollection(Collection):
 
         order_file_path = self.__get_lock_file_path(lock_name, 'locked_orders')
 
-        if os.path.exists(order_file_path):
-            with open(order_file_path, 'r', encoding="utf-8") as file:
+        if order_file_path.exists():
+            with order_file_path.open('r', encoding="utf-8") as file:
                 expected_order = [line.rstrip() for line in file]
             for line_num, expected_line in enumerate(expected_order):
                 result_item = str(sorted_items[line_num]).rstrip()
@@ -106,7 +106,7 @@ class TestCollection(Collection):
                     .format(order_file_path, self.collection_name, line_num, result_item, expected_line)
                 )
         else:
-            with open(order_file_path, 'w', encoding="utf-8") as file:
+            with order_file_path.open('w', encoding="utf-8") as file:
                 file.write('\n'.join(map(str, sorted_items)))
             print("WARNING: Order file '{}' for '{}' didn't exist yet!".format(order_file_path, self.collection_name))
 
@@ -120,26 +120,26 @@ class TestCollection(Collection):
         (media_dir, media_db) = media_paths_from_col_path(self.path)
 
         try:
-            os.remove(media_db)
+            Path(media_db).unlink()
         except OSError:
             pass
 
         try:
-            os.rmdir(media_dir)
+            Path(media_dir).rmdir()
         except OSError:
             pass
 
         try:
-            os.remove(self.path)
+            Path(self.path).unlink()
         except OSError:
             pass
 
 
 class TestCollections:
 
-    TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
-    TEST_COLLECTIONS_DIR = os.path.join(TEST_DATA_DIR, 'collections')
-    CACHER_FILE_PATH = os.path.join(TEST_DATA_DIR, 'cacher_data_{}_temp.sqlite'.format(CURRENT_PID))
+    TEST_DATA_DIR = Path(__file__).parent / 'data'
+    TEST_COLLECTIONS_DIR = TEST_DATA_DIR / 'collections'
+    CACHER_FILE_PATH = TEST_DATA_DIR / 'cacher_data_{}_temp.sqlite'.format(CURRENT_PID)
     CACHER: Optional[PersistentCacher] = None
 
     cacher_data_cleared = False
@@ -148,7 +148,7 @@ class TestCollections:
     @staticmethod
     def run_cleanup_routine():
 
-        test_collection_folder = Path(TestCollections.TEST_COLLECTIONS_DIR)
+        test_collection_folder = TestCollections.TEST_COLLECTIONS_DIR
         cutoff = time.time() - 30  # 30 seconds
 
         patterns = ["*_temp.anki2", "*_temp.anki2-wal", "*_temp.sqlite"]
@@ -184,8 +184,8 @@ class TestCollections:
         else: # set up cleanup routine on exit only once
             atexit.register(TestCollections.run_cleanup_routine)
 
-        collection_dir = os.path.join(TestCollections.TEST_COLLECTIONS_DIR, test_collection_name)
-        lang_data_dir = os.path.join(collection_dir, 'lang_data')
+        collection_dir = TestCollections.TEST_COLLECTIONS_DIR / test_collection_name
+        lang_data_dir = collection_dir / 'lang_data'
 
         lang_data = LanguageData(lang_data_dir)
         caller_frame = inspect.stack()[1]

@@ -3,10 +3,10 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-
 import os
 import sqlite3
 import time
+from pathlib import Path
 from typing import Any, Callable, Optional, Union
 from collections.abc import Iterable, Sequence
 
@@ -46,22 +46,22 @@ class QueryResults:
 class SqlDbFile:
 
     __connection: Optional[sqlite3.Connection] = None
-    db_file_path: str
+    db_file_path: Path
     max_query_time: Optional[float] = None
 
     on_connect_callbacks: list[Callable[[], None]]
     on_close_callbacks: list[Callable[[], None]]
 
-    def __init__(self, db_file_path: str) -> None:
+    def __init__(self, db_file_path: Path) -> None:
         self.db_file_path = db_file_path
 
-        if not os.path.isdir(os.path.dirname(db_file_path)):
+        if not db_file_path.parent.is_dir():
             raise ValueError("Directory for db_file_path {} does not exist!".format(db_file_path))
 
-        if os.path.isdir(db_file_path):
+        if db_file_path.is_dir():
             raise ValueError("db_file_path {} is a directory, not a file!".format(db_file_path))
 
-        if os.path.exists(db_file_path):
+        if db_file_path.exists():
             if not os.access(db_file_path, os.R_OK | os.W_OK):
                 raise ValueError("db_file_path {} is not readable or writeable!".format(db_file_path))
 
@@ -147,7 +147,7 @@ class SqlDbFile:
         return result.row_count()
 
     def db_file_exists(self) -> bool:
-        return os.path.exists(self.db_file_path)
+        return self.db_file_path.exists()
 
     def db_exists(self) -> bool:
         return self.__connection is not None or self.db_file_exists()

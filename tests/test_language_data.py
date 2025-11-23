@@ -1,9 +1,8 @@
-import os
 import pytest
 from frequencyman.language_data import LangDataId, LanguageData, WordFrequencyLists
+from pathlib import Path
 
-
-LIST_DIR = os.path.join(os.path.dirname(__file__), 'data', 'lang_data_test', 'lang_data')
+LIST_DIR = Path(__file__).parent / 'data' / 'lang_data_test' / 'lang_data'
 
 
 @pytest.fixture
@@ -138,7 +137,7 @@ def test_ignored_words(lang_data: LanguageData):
 def test_invalid_lists_directory():
 
     with pytest.raises(ValueError, match="directory"):
-        LanguageData('/invalid/directory/path')
+        LanguageData(Path('/invalid/directory/path'))
 
 
 

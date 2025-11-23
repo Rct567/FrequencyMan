@@ -1,5 +1,5 @@
 import pytest
-import os
+from pathlib import Path
 from typing import Any
 from collections.abc import Generator
 
@@ -13,7 +13,7 @@ def dummy_producer() -> str:
 
 @pytest.fixture
 def cacher(tmpdir: str) -> Generator[PersistentCacher, None, None]:
-    db_path = os.path.join(tmpdir, "test_cache.db")
+    db_path = Path(tmpdir) / "test_cache.db"
     cacher = PersistentCacher(SqlDbFile(db_path), save_buffer_limit=2)
     yield cacher
     cacher.close()

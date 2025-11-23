@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import itertools
 import json
 import math
-import os
+from pathlib import Path
 import pprint
 import pstats
 import re
@@ -50,8 +50,8 @@ def var_dump_log(var: Any) -> None:
     global var_dump_log_count
 
     if var_dump_log_size < (1024 * 1024) and var_dump_log_count < 100_000:
-        dump_log_file = os.path.join(os.path.dirname(__file__), '..', '..', 'dump.log')
-        with open(dump_log_file, 'a', encoding='utf-8') as file:
+        dump_log_file = Path(__file__).parent.parent.parent / 'dump.log'
+        with dump_log_file.open('a', encoding='utf-8') as file:
             log_entry = pprint.pformat(var, sort_dicts=False, width=160)
             file.write(log_entry + "\n\n=================================================================\n\n")
         var_dump_log_size += len(log_entry)
@@ -127,8 +127,8 @@ def profile_context(amount: int = 40) -> Iterator[cProfile.Profile]:
         print_results(output, pstats.SortKey.TIME)
         profiling_results = output.getvalue()
 
-        dump_file = os.path.join(os.path.dirname(__file__), '..', '..', 'profiling_results.txt')
-        with open(dump_file, 'w', encoding='utf-8') as f:
+        dump_file = Path(__file__).parent.parent.parent / 'profiling_results.txt'
+        with dump_file.open('w', encoding='utf-8') as f:
             f.write(profiling_results)
 
 

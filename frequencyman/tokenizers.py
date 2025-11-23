@@ -8,7 +8,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from functools import cache
 import importlib
-import os
+from pathlib import Path
 import re
 import sys
 from typing import TYPE_CHECKING, Callable, Optional
@@ -132,7 +132,7 @@ class DefaultTokenizerRemovingPossessives(DefaultTokenizer):
 class UserProvidedTokenizer(Tokenizer):
     """Tokenizer loaded from user_files directory."""
 
-    def __init__(self, tokenizer_dir: str, tokenizer_id: str, lang_id: str) -> None:
+    def __init__(self, tokenizer_dir: Path, tokenizer_id: str, lang_id: str) -> None:
         self._tokenizer_dir = tokenizer_dir
         self._tokenizer_id = tokenizer_id
         self._lang_id = LangId(lang_id)
@@ -141,9 +141,9 @@ class UserProvidedTokenizer(Tokenizer):
     @override
     def is_available(self) -> bool:
         tokenizer_init_module_name = f'fm_init_{self._tokenizer_id}'
-        module_path = os.path.join(self._tokenizer_dir, f'{tokenizer_init_module_name}.py')
-        subdir_path = os.path.join(self._tokenizer_dir, self._tokenizer_id)
-        return os.path.exists(module_path) and os.path.isdir(subdir_path)
+        module_path = self._tokenizer_dir / f'{tokenizer_init_module_name}.py'
+        subdir_path = self._tokenizer_dir / self._tokenizer_id
+        return module_path.exists() and subdir_path.is_dir()
 
     @override
     def supported_languages(self) -> set[LangId]:
@@ -152,8 +152,8 @@ class UserProvidedTokenizer(Tokenizer):
     @override
     def _initialize(self) -> None:
         tokenizer_init_module_name = f'fm_init_{self._tokenizer_id}'
-        sys.path.append(self._tokenizer_dir)
-        module = importlib.import_module(tokenizer_init_module_name, self._tokenizer_dir)
+        sys.path.append(str(self._tokenizer_dir))
+        module = importlib.import_module(tokenizer_init_module_name, str(self._tokenizer_dir))
         tokenizers_provider = getattr(module, f'{self._tokenizer_id}_tokenizers_provider')
 
         # Find the tokenizer function for our language
@@ -173,14 +173,14 @@ class UserProvidedTokenizer(Tokenizer):
 class AnkiMorphsJiebaTokenizer(Tokenizer):
     """Jieba tokenizer from ankimorphs-chinese-jieba plugin."""
 
-    def __init__(self, anki_plugins_dir: str) -> None:
+    def __init__(self, anki_plugins_dir: Path) -> None:
         self._anki_plugins_dir = anki_plugins_dir
-        self._plugin_path = os.path.join(anki_plugins_dir, '1857311956')
+        self._plugin_path = anki_plugins_dir / '1857311956'
         self._jieba_module: Optional[ModuleType] = None
 
     @override
     def is_available(self) -> bool:
-        return os.path.exists(self._plugin_path)
+        return self._plugin_path.exists()
 
     @override
     def supported_languages(self) -> set[LangId]:
@@ -188,7 +188,7 @@ class AnkiMorphsJiebaTokenizer(Tokenizer):
 
     @override
     def _initialize(self) -> None:
-        sys.path.append(self._anki_plugins_dir)
+        sys.path.append(str(self._anki_plugins_dir))
         self._jieba_module = importlib.import_module("1857311956.jieba.posseg")
 
     @override
@@ -202,15 +202,15 @@ class AnkiMorphsJiebaTokenizer(Tokenizer):
 class AnkiMorphsMecabTokenizer(Tokenizer):
     """MeCab tokenizer from ankimorphs-japanese-mecab plugin."""
 
-    def __init__(self, anki_plugins_dir: str) -> None:
+    def __init__(self, anki_plugins_dir: Path) -> None:
         self._anki_plugins_dir = anki_plugins_dir
-        self._plugin_path = os.path.join(anki_plugins_dir, '1974309724')
+        self._plugin_path = anki_plugins_dir / '1974309724'
         self._mecab_module: Optional[ModuleType] = None
         self._get_morphemes_func: Optional[CallableTokenizerFn] = None
 
     @override
     def is_available(self) -> bool:
-        return os.path.exists(self._plugin_path)
+        return self._plugin_path.exists()
 
     @override
     def supported_languages(self) -> set[LangId]:
@@ -218,7 +218,7 @@ class AnkiMorphsMecabTokenizer(Tokenizer):
 
     @override
     def _initialize(self) -> None:
-        sys.path.append(self._anki_plugins_dir)
+        sys.path.append(str(self._anki_plugins_dir))
         self._mecab_module = importlib.import_module("1974309724.reading")
 
         from .anki_morphs_mecab_wrapper import setup_mecab, get_morphemes_mecab
@@ -236,14 +236,14 @@ class AnkiMorphsMecabTokenizer(Tokenizer):
 class AjtJapaneseMecabTokenizer(Tokenizer):
     """MeCab tokenizer from 'ajt japanese' plugin."""
 
-    def __init__(self, anki_plugins_dir: str) -> None:
+    def __init__(self, anki_plugins_dir: Path) -> None:
         self._anki_plugins_dir = anki_plugins_dir
-        self._plugin_path = os.path.join(anki_plugins_dir, '1344485230')
+        self._plugin_path = anki_plugins_dir / '1344485230'
         self._mecab: Optional[ModuleType] = None
 
     @override
     def is_available(self) -> bool:
-        return os.path.exists(self._plugin_path)
+        return self._plugin_path.exists()
 
     @override
     def supported_languages(self) -> set[LangId]:
@@ -251,7 +251,7 @@ class AjtJapaneseMecabTokenizer(Tokenizer):
 
     @override
     def _initialize(self) -> None:
-        sys.path.append(self._plugin_path)
+        sys.path.append(str(self._plugin_path))
         ajt_japanese_module = importlib.import_module('mecab_controller.mecab_controller')
         self._mecab = ajt_japanese_module.MecabController(verbose=False)
 
@@ -266,14 +266,14 @@ class AjtJapaneseMecabTokenizer(Tokenizer):
 class MorphmanMecabTokenizer(Tokenizer):
     """MeCab tokenizer from 'morphman' plugin."""
 
-    def __init__(self, anki_plugins_dir: str) -> None:
+    def __init__(self, anki_plugins_dir: Path) -> None:
         self._anki_plugins_dir = anki_plugins_dir
-        self._plugin_path = os.path.join(anki_plugins_dir, '900801631')
+        self._plugin_path = anki_plugins_dir / '900801631'
         self._morphemizer: Optional[ModuleType] = None
 
     @override
     def is_available(self) -> bool:
-        return os.path.exists(self._plugin_path)
+        return self._plugin_path.exists()
 
     @override
     def supported_languages(self) -> set[LangId]:
@@ -281,7 +281,7 @@ class MorphmanMecabTokenizer(Tokenizer):
 
     @override
     def _initialize(self) -> None:
-        sys.path.append(self._plugin_path)
+        sys.path.append(str(self._plugin_path))
         morphemizer_module = importlib.import_module('morph.morphemizer')
         self._morphemizer = morphemizer_module.getMorphemizerByName("MecabMorphemizer")
 
@@ -296,14 +296,14 @@ class MorphmanMecabTokenizer(Tokenizer):
 class MorphmanJiebaTokenizer(Tokenizer):
     """Jieba tokenizer from 'morphman' plugin."""
 
-    def __init__(self, anki_plugins_dir: str) -> None:
+    def __init__(self, anki_plugins_dir: Path) -> None:
         self._anki_plugins_dir = anki_plugins_dir
-        self._plugin_path = os.path.join(anki_plugins_dir, '900801631')
+        self._plugin_path = anki_plugins_dir / '900801631'
         self._morphemizer: Optional[ModuleType] = None
 
     @override
     def is_available(self) -> bool:
-        return os.path.exists(self._plugin_path)
+        return self._plugin_path.exists()
 
     @override
     def supported_languages(self) -> set[LangId]:
@@ -311,7 +311,7 @@ class MorphmanJiebaTokenizer(Tokenizer):
 
     @override
     def _initialize(self) -> None:
-        sys.path.append(self._plugin_path)
+        sys.path.append(str(self._plugin_path))
         morphemizer_module = importlib.import_module('morph.morphemizer')
         self._morphemizer = morphemizer_module.getMorphemizerByName("JiebaMorphemizer")
 
@@ -334,39 +334,39 @@ def get_tokenizer_registry() -> list[Tokenizer]:
     if _tokenizer_registry is not None:
         return _tokenizer_registry
 
-    fm_plugin_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    anki_plugins_dir = os.path.abspath(os.path.join(fm_plugin_root, '..'))
-    tokenizers_user_dir = os.path.join(fm_plugin_root, 'user_files', 'tokenizers')
+    fm_plugin_root = Path(__file__).parent.parent.resolve()
+    anki_plugins_dir = fm_plugin_root.parent.resolve()
+    tokenizers_user_dir = fm_plugin_root / 'user_files' / 'tokenizers'
 
-    if not os.path.exists(anki_plugins_dir):
+    if not anki_plugins_dir.exists():
         raise Exception("Could not find anki plugin directory!")
 
     _tokenizer_registry = []
 
     # Load custom defined tokenizers from user_files directory
-    if os.path.exists(tokenizers_user_dir):
-        for sub_dir in os.listdir(tokenizers_user_dir):
-            tokenizer_dir = os.path.join(tokenizers_user_dir, sub_dir)
+    if tokenizers_user_dir.exists():
+        for sub_dir in tokenizers_user_dir.iterdir():
+            tokenizer_dir = sub_dir
 
-            if not os.path.isdir(tokenizer_dir):
+            if not tokenizer_dir.is_dir():
                 continue
 
             tokenizer_id = None
-            for filename in os.listdir(tokenizer_dir):
-                if filename.startswith('fm_init_') and filename.endswith('.py'):
-                    tokenizer_id = filename.replace('fm_init_', '').replace('.py', '')
+            for filename in tokenizer_dir.iterdir():
+                if filename.name.startswith('fm_init_') and filename.name.endswith('.py'):
+                    tokenizer_id = filename.name.replace('fm_init_', '').replace('.py', '')
                     break
 
             if tokenizer_id is None:
                 continue
 
-            if not os.path.isdir(os.path.join(tokenizer_dir, tokenizer_id)):
+            if not (tokenizer_dir / tokenizer_id).is_dir():
                 raise Exception("Tokenizer subdirectory '{}' does not exist in '{}'.".format(tokenizer_id, tokenizer_dir))
 
             # Load the module temporarily to get language information
             tokenizer_init_module_name = 'fm_init_'+tokenizer_id
-            sys.path.append(tokenizer_dir)
-            module = importlib.import_module(tokenizer_init_module_name, tokenizer_dir)
+            sys.path.append(str(tokenizer_dir))
+            module = importlib.import_module(tokenizer_init_module_name, str(tokenizer_dir))
             tokenizers_provider = getattr(module, tokenizer_id+'_tokenizers_provider')
 
             for lang_id, _ in tokenizers_provider():

@@ -4,7 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from functools import cached_property
-import os
+from pathlib import Path
 from typing import Optional, Union
 
 from ..language_data import LanguageData
@@ -70,16 +70,16 @@ class FrequencyManTab(QWidget):
     @cached_property
     def language_data(self) -> LanguageData:
 
-        lang_data_dir = os.path.join(self.fm_window.user_files_dir, 'lang_data')
-        if not os.path.isdir(lang_data_dir):
-            os.makedirs(lang_data_dir)
+        lang_data_dir = self.fm_window.user_files_dir / 'lang_data'
+        if not lang_data_dir.is_dir():
+            lang_data_dir.mkdir(parents=True)
 
         return LanguageData(lang_data_dir)
 
     @cached_property
     def cacher(self) -> PersistentCacher:
 
-        return PersistentCacher(SqlDbFile(os.path.join(self.fm_window.user_files_dir, 'cacher_data.sqlite')))
+        return PersistentCacher(SqlDbFile(self.fm_window.user_files_dir / 'cacher_data.sqlite'))
 
     def init_new_target_list(self) -> TargetList:
 
@@ -108,8 +108,8 @@ class FrequencyManMainWindow(QMainWindow):
 
     key = "FrequencyMan"
 
-    root_dir: str
-    user_files_dir: str
+    root_dir: Path
+    user_files_dir: Path
 
     mw: AnkiQt
     col: Collection
@@ -118,7 +118,7 @@ class FrequencyManMainWindow(QMainWindow):
 
     tab_menu_options: dict[str, QWidget]
 
-    def __init__(self, mw: AnkiQt, col: Collection, fm_config: AddonConfig, root_dir: str, user_files_dir: str):
+    def __init__(self, mw: AnkiQt, col: Collection, fm_config: AddonConfig, root_dir: Path, user_files_dir: Path):
 
         super().__init__(mw)
         self.mw = mw

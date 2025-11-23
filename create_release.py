@@ -1,5 +1,5 @@
 import fnmatch
-import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
@@ -8,37 +8,37 @@ from typing import NoReturn, Optional
 import zipfile
 
 
-def copy_directory(src: str, dst: str, ignore_patterns: list[str]) -> None:
+def copy_directory(src: Path, dst: Path, ignore_patterns: list[str]) -> None:
 
-    for item in os.listdir(src):
-        src_item = os.path.join(src, item)
-        dst_item = os.path.join(dst, item)
+    for item in src.iterdir():
+        src_item = item
+        dst_item = dst / item.name
 
-        if any(fnmatch.fnmatch(item, pattern) for pattern in ignore_patterns):
+        if any(fnmatch.fnmatch(item.name, pattern) for pattern in ignore_patterns):
             continue
 
-        if os.path.isdir(src_item) and any(fnmatch.fnmatch(item+"/", pattern) for pattern in ignore_patterns):
+        if src_item.is_dir() and any(fnmatch.fnmatch(item.name+"/", pattern) for pattern in ignore_patterns):
             continue
 
-        if item.startswith("."):
+        if item.name.startswith("."):
             continue
 
-        if os.path.isfile(src_item):
-            if not os.path.exists(dst):
-                os.makedirs(dst)
+        if src_item.is_file():
+            if not dst.exists():
+                dst.mkdir(parents=True)
             shutil.copy2(src_item, dst_item)
-        elif os.path.isdir(src_item):
-            if os.path.abspath(src_item) != os.path.abspath(dst_item):
-                if not os.path.exists(dst_item):
-                    os.makedirs(dst_item)
+        elif src_item.is_dir():
+            if src_item.resolve() != dst_item.resolve():
+                if not dst_item.exists():
+                    dst_item.mkdir(parents=True)
                 copy_directory(src_item, dst_item, ignore_patterns)
 
 
-def ignore_patterns_from_gitignore_file(src: str) -> list[str]:
-    gitignore_path = os.path.join(src, '.gitignore')
+def ignore_patterns_from_gitignore_file(src: Path) -> list[str]:
+    gitignore_path = src / '.gitignore'
     ignore_patterns = []
-    if os.path.exists(gitignore_path):
-        with open(gitignore_path, 'r') as f:
+    if gitignore_path.exists():
+        with gitignore_path.open('r') as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith('#'):
@@ -52,21 +52,21 @@ def is_valid_version(version: str) -> bool:
     return bool(re.match(pattern, version))
 
 
-def set_release_version(src_dir: str) -> Optional[str]:
+def set_release_version(src_dir: Path) -> Optional[str]:
     provided_version_number = input("Version number? ")
     if not is_valid_version(provided_version_number):
         return None
 
-    file_with_version = os.path.join(src_dir, 'frequencyman', 'version.py')
+    file_with_version = src_dir / 'frequencyman' / 'version.py'
 
-    if os.path.exists(file_with_version):
-        with open(file_with_version, "r") as file:
+    if file_with_version.exists():
+        with file_with_version.open("r") as file:
             current_content = file.read()
         if provided_version_number in current_content:
             print("Version given is the current version!")
             return None
 
-    with open(file_with_version, "w") as file:
+    with file_with_version.open("w") as file:
         file.write('FREQUENCYMAN_VERSION = "{}"'.format(provided_version_number))
     return provided_version_number
 
@@ -111,12 +111,15 @@ def run_all_tests_with_success() -> bool:
     return True
 
 
-def create_zip(directory: str, zip_file: str) -> None:
+def create_zip(directory: Path, zip_file: Path) -> None:
 
+    import os
     with zipfile.ZipFile(zip_file, 'w') as zf:
         for root, _, files in os.walk(directory):
+            root_path = Path(root)
             for file in files:
-                zf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), directory))
+                file_path = root_path / file
+                zf.write(file_path, file_path.relative_to(directory))
 
 
 def print_and_exit_error(message: str) -> NoReturn:
@@ -133,13 +136,13 @@ if has_staged_changes():
      print_and_exit_error("You have staged changes, please commit or stash them before creating a release!")
 
 
-root_dir = os.getcwd()
-releases_dir = os.path.join(root_dir, 'releases')
+root_dir = Path.cwd()
+releases_dir = root_dir / 'releases'
 
 new_release_src_dir = root_dir
 
-if not os.path.exists(releases_dir):
-    os.mkdir(releases_dir)
+if not releases_dir.exists():
+    releases_dir.mkdir()
 
 
 if not run_all_tests_with_success():
@@ -152,9 +155,9 @@ if not new_release_version:
     print_and_exit_error("Failed to set new release version!")
 
 new_release_obj_name = 'release-v'+new_release_version.replace('.', '_')
-new_release_dst_dir = os.path.join(releases_dir, new_release_obj_name)
+new_release_dst_dir = releases_dir / new_release_obj_name
 
-if os.path.exists(new_release_dst_dir):
+if new_release_dst_dir.exists():
     print_and_exit_error("Release directory '{}' already exists!".format(new_release_dst_dir))
 
 ignore_patterns = ignore_patterns_from_gitignore_file(new_release_src_dir)
@@ -173,7 +176,7 @@ ignore_patterns.extend([
 
 copy_directory(new_release_src_dir, new_release_dst_dir, ignore_patterns)
 
-release_zip_file = os.path.join(releases_dir, new_release_obj_name+'.ankiaddon')
+release_zip_file = releases_dir / (new_release_obj_name + '.ankiaddon')
 create_zip(new_release_dst_dir, release_zip_file)
 
 print("Done!")

@@ -4,7 +4,6 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 import json
-import os
 import re
 import shutil
 import hashlib
@@ -157,7 +156,7 @@ class ReorderCardsTab(FrequencyManTab):
         self.targets_input_textarea = self.__create_targets_input_textarea()
 
         # check errors
-        default_wf_lists_dir = os.path.join(self.fm_window.root_dir, 'default_wf_lists')
+        default_wf_lists_dir = self.fm_window.root_dir / 'default_wf_lists'
         language_data_dir = self.language_data.data_dir
 
         def check_lang_data_id_error(new_json_result: JsonTargetsResult) -> bool:
@@ -169,17 +168,17 @@ class ReorderCardsTab(FrequencyManTab):
             if not defined_lang_data_id in get_default_wf_list_sources():
                 return False
 
-            src_file = os.path.join(default_wf_lists_dir, defined_lang_data_id+'.txt')
-            dst_dir = os.path.join(language_data_dir, defined_lang_data_id)
-            dst_file = os.path.join(dst_dir, defined_lang_data_id+'-default.txt')
-            if not os.path.isfile(src_file):
+            src_file = default_wf_lists_dir / (defined_lang_data_id + '.txt')
+            dst_dir = language_data_dir / defined_lang_data_id
+            dst_file = dst_dir / (defined_lang_data_id + '-default.txt')
+            if not src_file.is_file():
                 return False
             create_default_lang_data_dir = askUser("Language data directory doesn't yet exist for \"{}\".\n\nCreate one and use a default word frequency list?".format(defined_lang_data_id))
             if not create_default_lang_data_dir:
                 return False
 
-            if not os.path.exists(dst_dir):
-                os.makedirs(dst_dir)
+            if not dst_dir.exists():
+                dst_dir.mkdir(parents=True)
 
             shutil.copyfile(src_file, dst_file)
             return True
@@ -489,19 +488,19 @@ class ReorderCardsTab(FrequencyManTab):
         json_backup = self.target_list.dump_json()
         hash_hex = hashlib.md5(json_backup.encode('utf-8')).hexdigest()
 
-        backup_dir = os.path.join(self.fm_window.user_files_dir, 'target_list_backups')
-        if not os.path.isdir(backup_dir):
-            os.makedirs(backup_dir)
+        backup_dir = self.fm_window.user_files_dir / 'target_list_backups'
+        if not backup_dir.is_dir():
+            backup_dir.mkdir(parents=True)
 
-        json_backup_file_path = os.path.join(backup_dir, 'target_list_'+hash_hex+'.txt')
+        json_backup_file_path = backup_dir / ('target_list_' + hash_hex + '.txt')
 
-        if not os.path.exists(json_backup_file_path):
-            with open(json_backup_file_path, 'w', encoding="utf-8") as file:
+        if not json_backup_file_path.exists():
+            with json_backup_file_path.open('w', encoding="utf-8") as file:
                 # write date and time to file
                 file.write("Created on {} at {}.\n\n\n".format(time.strftime("%d-%m-%Y"), time.strftime("%H:%M:%S")))
                 file.write(json_backup)
         else:
-            os.utime(json_backup_file_path, None) # touch file (update access+modification time)
+            json_backup_file_path.touch() # touch file (update access+modification time)
 
     @staticmethod
     def __get_progress_label(target_index: int, num_targets: int) -> str:
@@ -556,7 +555,7 @@ class ReorderCardsTab(FrequencyManTab):
             # showText(result_info_str, self.fm_window, geomKey="ReorderResult")
 
             if self.fm_window.fm_config.is_enabled('log_reorder_events'):
-                event_logger.append_to_file(os.path.join(self.fm_window.root_dir, 'reorder_events.log'))
+                event_logger.append_to_file(self.fm_window.root_dir / 'reorder_events.log')
 
         def handle_results(reorder_cards_results: TargetListReorderResult) -> None:
 

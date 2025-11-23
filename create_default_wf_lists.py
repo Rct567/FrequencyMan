@@ -1,6 +1,6 @@
-import os
+from pathlib import Path
 import time
-from typing import Iterable, Iterator
+from collections.abc import Iterator
 import requests
 
 from frequencyman.static_lang_data import LANGUAGE_NAMES_ENG_AND_NATIVE, get_default_wf_list_sources
@@ -113,18 +113,18 @@ SOURCE_WF_LIST_LENGTH_LIMIT = 1_000_000
 LANG_REQUIRED_WF_LIST_LENGTH = 4_000
 RESULT_WF_LIST_LENGTH_LIMIT = 15_000
 RESULT_WF_LIST_FILE_SIZE_LIMIT = 120_000
-RESULT_WF_LIST_DIR = 'default_wf_lists'
+RESULT_WF_LIST_DIR = Path(__file__).parent / 'default_wf_lists'
 
 
 def create_default_wf_lists():
 
     for lang_id, wf_list_urls in get_default_wf_list_sources().items():
 
-        result_wf_file = os.path.join(RESULT_WF_LIST_DIR, lang_id+'.txt')
+        result_wf_file = RESULT_WF_LIST_DIR / (lang_id + '.txt')
 
         print("Creating WF LIST for {}".format(LANGUAGE_NAMES_ENG_AND_NATIVE[lang_id]['name']))
 
-        if os.path.isfile(result_wf_file):
+        if result_wf_file.is_file():
             print(format(" File {} already exists!".format(result_wf_file)))
             continue
 
@@ -193,7 +193,7 @@ def create_default_wf_lists():
 
         # Write the list to a file
 
-        with open(result_wf_file, "w", encoding="utf-8") as f:
+        with result_wf_file.open("w", encoding="utf-8") as f:
             wf_list_content = "\n".join(result_wf_list)
             f.write(wf_list_content)
             print(" Combined WF list {} created with {} words.".format(result_wf_file, len(result_wf_list)))
@@ -204,9 +204,9 @@ def create_ignore_candidates_list():
 
     print("Creating ignore candidates list...")
 
-    ignore_candidates_file = os.path.join(RESULT_WF_LIST_DIR, 'ignore_candidates.txt')
+    ignore_candidates_file = RESULT_WF_LIST_DIR / 'ignore_candidates.txt'
 
-    if os.path.isfile(ignore_candidates_file):
+    if ignore_candidates_file.is_file():
         print(format(" File {} already exists!".format(ignore_candidates_file)))
         return
 
@@ -217,9 +217,9 @@ def create_ignore_candidates_list():
         if lang_id[:3] == 'ze_':
             continue
 
-        wf_list_file = os.path.join(RESULT_WF_LIST_DIR, lang_id+'.txt')
+        wf_list_file = RESULT_WF_LIST_DIR / (lang_id + '.txt')
 
-        if not os.path.isfile(wf_list_file):
+        if not wf_list_file.is_file():
             continue
 
         for word, _ in WordFrequencyLists.get_words_from_file(wf_list_file, LangId(lang_id[:2])):
@@ -237,7 +237,7 @@ def create_ignore_candidates_list():
     if len(global_words) < 1000:
         print(" Warning: Only {} words found!".format(len(global_words)))
 
-    with open(ignore_candidates_file, "w", encoding="utf-8") as f:
+    with ignore_candidates_file.open("w", encoding="utf-8") as f:
         for word, count in global_words.items():
             f.write("{} {}\n".format(word, count))
 

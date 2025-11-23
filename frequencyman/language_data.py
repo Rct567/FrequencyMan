@@ -13,10 +13,10 @@ from typing import TYPE_CHECKING, Optional, Union
 if TYPE_CHECKING:
     from typing_extensions import Self
     from collections.abc import Iterator, Iterable
+    from pathlib import Path
 
 from .lib.utilities import normalize_dict_positional_floats_values, sort_dict_floats_values
 from .text_processing import TextProcessing, LangId
-import os
 
 
 class LangDataId(str):
@@ -25,47 +25,47 @@ class LangDataId(str):
         return str.__new__(cls, value.lower())
 
 
-def get_lang_dir(data_dir: str, lang_data_id: LangDataId) -> Optional[str]:
+def get_lang_dir(data_dir: Path, lang_data_id: LangDataId) -> Optional[Path]:
 
-    possible_lang_dir = os.path.join(data_dir, lang_data_id)
+    possible_lang_dir = data_dir / lang_data_id
 
-    if os.path.isdir(possible_lang_dir):
+    if possible_lang_dir.is_dir():
         return possible_lang_dir
 
     # check all sub directories case insensitive
-    for sub_dir in os.listdir(data_dir):
-        if sub_dir.lower() == lang_data_id:
-            return os.path.join(data_dir, sub_dir)
+    for sub_dir in data_dir.iterdir():
+        if sub_dir.name.lower() == lang_data_id:
+            return sub_dir
 
     return None
 
 
 class WordFrequencyLists:
 
-    data_dir: str
+    data_dir: Path
     word_frequency_lists: Optional[dict[LangDataId, dict[str, float]]]
 
-    def __init__(self, root_dir: str) -> None:
+    def __init__(self, root_dir: Path) -> None:
 
         self.data_dir = root_dir
         self.word_frequency_lists = None
 
-    def get_files_by_id(self, lang_data_id: LangDataId) -> set[str]:
+    def get_files_by_id(self, lang_data_id: LangDataId) -> set[Path]:
 
         possible_lang_dir = get_lang_dir(self.data_dir, lang_data_id)
 
         if not possible_lang_dir:
             return set()
 
-        files: set[str] = set()
+        files: set[Path] = set()
 
-        if os.path.isdir(possible_lang_dir):
-            for file_name in os.listdir(possible_lang_dir):
-                if not file_name.endswith('.txt') and not file_name.endswith('.csv'):
+        if possible_lang_dir.is_dir():
+            for file_path in possible_lang_dir.iterdir():
+                if file_path.suffix not in {'.txt', '.csv'}:
                     continue
-                if file_name.startswith('ignore'):
+                if file_path.name.startswith('ignore'):
                     continue
-                files.add(os.path.join(possible_lang_dir, file_name))
+                files.add(file_path)
 
         return files
 
@@ -132,7 +132,7 @@ class WordFrequencyLists:
         return {word: int(position) for word, position in combined_positions.items()}
 
     @staticmethod
-    def __produce_combined_list(files: set[str], lang_data_id: LangDataId) -> dict[str, float]:
+    def __produce_combined_list(files: set[Path], lang_data_id: LangDataId) -> dict[str, float]:
 
         lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
         words_positions_combined = {
@@ -150,16 +150,16 @@ class WordFrequencyLists:
         return words_positions_combined
 
     @staticmethod
-    def get_words_from_file(file_path: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
+    def get_words_from_file(file_path: Path, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
 
-        with open(file_path, encoding='utf-8') as text_file:
-            yield from WordFrequencyLists.get_words_from_content(text_file, file_path, lang_id)
+        with file_path.open(encoding='utf-8') as text_file:
+            yield from WordFrequencyLists.get_words_from_content(text_file, file_path.name, lang_id)
 
     @staticmethod
-    def get_words_from_content(content: Iterable[str], file_path: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
+    def get_words_from_content(content: Iterable[str], file_name: str, lang_id: Optional[LangId]) -> Iterator[tuple[str, int]]:
 
         line_number = 1
-        is_csv_file = file_path.endswith('.csv')
+        is_csv_file = file_name.endswith('.csv')
         is_acceptable_word = TextProcessing.get_word_accepter(lang_id)
 
         if is_csv_file:
@@ -188,10 +188,10 @@ class WordFrequencyLists:
 
 class IgnoreLists:
 
-    data_dir: str
+    data_dir: Path
     ignore_lists: Optional[dict[LangDataId, set[str]]]
 
-    def __init__(self, lang_data_dir: str) -> None:
+    def __init__(self, lang_data_dir: Path) -> None:
 
         self.data_dir = lang_data_dir
         self.ignore_lists = None
@@ -217,27 +217,27 @@ class IgnoreLists:
 
         return len(self.get_files_by_id(lang_data_id)) > 0
 
-    def get_files_by_id(self, lang_data_id: LangDataId) -> set[str]:
+    def get_files_by_id(self, lang_data_id: LangDataId) -> set[Path]:
 
         possible_lang_dir = get_lang_dir(self.data_dir, lang_data_id)
 
         if not possible_lang_dir:
             return set()
 
-        files: set[str] = set()
+        files: set[Path] = set()
 
-        if os.path.isdir(possible_lang_dir):
-            for file_name in os.listdir(possible_lang_dir):
-                if not file_name.endswith('.txt'):
+        if possible_lang_dir.is_dir():
+            for file_path in possible_lang_dir.iterdir():
+                if file_path.suffix != '.txt':
                     continue
-                if not file_name.startswith('ignore'):
+                if not file_path.name.startswith('ignore'):
                     continue
 
-                files.add(os.path.join(possible_lang_dir, file_name))
+                files.add(file_path)
 
         return files
 
-    def __produce_combined_list(self, files: set[str], lang_data_id: LangDataId) -> set[str]:
+    def __produce_combined_list(self, files: set[Path], lang_data_id: LangDataId) -> set[str]:
 
         ignore_list_combined: set[str] = set()
         lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
@@ -256,28 +256,28 @@ class IgnoreLists:
 
 class GlobalIgnoreLists:
 
-    lang_data_dir: str
+    lang_data_dir: Path
     ignore_lists: Optional[list[set[str]]]
     ignore_list: Optional[set[str]]
 
-    def __init__(self, lang_data_dir: str) -> None:
+    def __init__(self, lang_data_dir: Path) -> None:
 
         self.lang_data_dir = lang_data_dir
         self.ignore_lists = None
         self.ignore_list = None
 
-    def get_files(self) -> set[str]:
+    def get_files(self) -> set[Path]:
 
-        files: set[str] = set()
+        files: set[Path] = set()
 
-        if os.path.isdir(self.lang_data_dir):
-            for file_name in os.listdir(self.lang_data_dir):
-                if not file_name.endswith('.txt'):
+        if self.lang_data_dir.is_dir():
+            for file_path in self.lang_data_dir.iterdir():
+                if file_path.suffix != '.txt':
                     continue
-                if not file_name.startswith('names') and not file_name.startswith('ignore'):
+                if not file_path.name.startswith('names') and not file_path.name.startswith('ignore'):
                     continue
 
-                files.add(os.path.join(self.lang_data_dir, file_name))
+                files.add(file_path)
 
         return files
 
@@ -292,7 +292,7 @@ class GlobalIgnoreLists:
         for file in self.get_files():
             self.__load_list(file)
 
-    def __load_list(self, file: str) -> None:
+    def __load_list(self, file: Path) -> None:
 
         assert self.ignore_list is not None and self.ignore_lists is not None
 
@@ -306,16 +306,16 @@ class GlobalIgnoreLists:
 
 class LanguageData:
 
-    data_dir: str
+    data_dir: Path
     word_frequency_lists: WordFrequencyLists
     ignore_lists: IgnoreLists
     global_ignore_lists: GlobalIgnoreLists
     ids_loaded_data: set[LangDataId]
 
-    def __init__(self, lang_data_dir: str) -> None:
+    def __init__(self, lang_data_dir: Path) -> None:
 
-        if not os.path.isdir(lang_data_dir):
-            raise ValueError("Invalid 'language data' directory. Directory not found: "+lang_data_dir)
+        if not lang_data_dir.is_dir():
+            raise ValueError("Invalid 'language data' directory. Directory not found: "+str(lang_data_dir))
 
         self.data_dir = lang_data_dir
         self.ids_loaded_data = set()
@@ -328,8 +328,8 @@ class LanguageData:
         if lang_data_id == "":
             return False
 
-        possible_lang_dir = os.path.join(self.data_dir, lang_data_id)
-        return os.path.isdir(possible_lang_dir)
+        possible_lang_dir = self.data_dir / lang_data_id
+        return possible_lang_dir.is_dir()
 
     def load_data(self, lang_data_ids: Union[set[LangDataId], LangDataId]) -> None:
 

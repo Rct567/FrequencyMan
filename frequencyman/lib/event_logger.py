@@ -3,8 +3,8 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-import os
-from typing import Callable, Optional
+from pathlib import Path
+from typing import Callable, Optional, Union
 from collections.abc import Generator
 from contextlib import contextmanager
 import time
@@ -53,13 +53,14 @@ class EventLogger:
         elapsed_time = time.perf_counter() - start_time
         self.event_log[index] += " (took {:.2f} seconds)".format(elapsed_time)
 
-    def append_to_file(self, target_file: str) -> None:
-        if os.path.exists(target_file) and os.path.getsize(target_file) > 0.5 * 1024 * 1024:
+    def append_to_file(self, target_file: Union[str, Path]) -> None:
+        target_path = Path(target_file)
+        if target_path.exists() and target_path.stat().st_size > 0.5 * 1024 * 1024:
             six_hours_ago = time.time() - 6 * 60 * 60
-            if os.path.getmtime(target_file) < six_hours_ago:
-                with open(target_file, 'w', encoding='utf-8') as file:
+            if target_path.stat().st_mtime < six_hours_ago:
+                with target_path.open('w', encoding='utf-8') as file:
                     file.truncate()
-        with open(target_file, 'a', encoding='utf-8') as file:
+        with target_path.open('a', encoding='utf-8') as file:
             file.write(str(self)+"\n\n=================================================================\n\n")
 
     @override

@@ -5,7 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 from functools import partial
 from typing import NamedTuple, Optional, Callable, TYPE_CHECKING
@@ -34,11 +34,11 @@ def get_mw():
 
 mw: Optional[AnkiQt] = get_mw()
 
-FM_ROOT_DIR = os.path.dirname(__file__)
-FM_USER_FILES_DIR = os.path.join(FM_ROOT_DIR, 'user_files')
+FM_ROOT_DIR = Path(__file__).parent
+FM_USER_FILES_DIR = FM_ROOT_DIR / 'user_files'
 
-if not os.path.isdir(FM_USER_FILES_DIR):
-    os.mkdir(FM_USER_FILES_DIR)
+if not FM_USER_FILES_DIR.is_dir():
+    FM_USER_FILES_DIR.mkdir()
 
 
 def register_frequencyman_dialogs(mw: AnkiQt, fm_config: AddonConfig, reorder_logger: ReorderLogger) -> None:
@@ -86,7 +86,7 @@ def open_frequencyman_word_overview(mw: AnkiQt, target_id: str, lang_id: str) ->
 
 def add_frequencyman_menu_option_to_anki_tools_menu(mw: AnkiQt):
     menu_option_title = "FrequencyMan"
-    has_git_directory = os.path.isdir(os.path.join(FM_ROOT_DIR, '.git'))
+    has_git_directory = (FM_ROOT_DIR / '.git').is_dir()
     if has_git_directory:
         menu_option_title += " (dev)"
     action = QAction(menu_option_title, mw)
@@ -200,7 +200,7 @@ def add_frequencyman_info_to_deck_browser(mw: AnkiQt, reorder_logger: ReorderLog
 
 if isinstance(mw, AnkiQt):
 
-    reorder_logger = ReorderLogger(SqlDbFile(os.path.join(FM_USER_FILES_DIR, 'reorder_log.sqlite')))
+    reorder_logger = ReorderLogger(SqlDbFile(FM_USER_FILES_DIR / 'reorder_log.sqlite'))
     fm_config = AddonConfig.from_anki_main_window(mw)
 
     register_frequencyman_dialogs(mw, fm_config, reorder_logger)

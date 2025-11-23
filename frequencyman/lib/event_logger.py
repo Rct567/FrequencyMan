@@ -4,7 +4,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 from collections.abc import Generator
 from contextlib import contextmanager
 import time
@@ -13,6 +13,9 @@ from .utilities import override
 
 
 class EventLogger:
+
+    MAX_LOG_FILE_SIZE_BYTES = 0.5 * 1024 * 1024  # 0.5 MB
+    MAX_LOG_FILE_AGE_SECONDS = 6 * 60 * 60  # 6 hours
 
     def __init__(self) -> None:
         self.event_log: list[str] = []
@@ -53,15 +56,26 @@ class EventLogger:
         elapsed_time = time.perf_counter() - start_time
         self.event_log[index] += " (took {:.2f} seconds)".format(elapsed_time)
 
-    def append_to_file(self, target_file: Union[str, Path]) -> None:
-        target_path = Path(target_file)
-        if target_path.exists() and target_path.stat().st_size > 0.5 * 1024 * 1024:
-            six_hours_ago = time.time() - 6 * 60 * 60
-            if target_path.stat().st_mtime < six_hours_ago:
-                with target_path.open('w', encoding='utf-8') as file:
-                    file.truncate()
-        with target_path.open('a', encoding='utf-8') as file:
-            file.write(str(self)+"\n\n=================================================================\n\n")
+    def __should_truncate_log_file(self, file_path: Path) -> bool:
+        if not file_path.exists():
+            return False
+
+        file_stats = file_path.stat()
+        is_too_large = file_stats.st_size > self.MAX_LOG_FILE_SIZE_BYTES
+        is_too_old = file_stats.st_mtime < (time.time() - self.MAX_LOG_FILE_AGE_SECONDS)
+
+        return is_too_large and is_too_old
+
+    def append_to_file(self, target_file: Path) -> None:
+
+        if self.__should_truncate_log_file(target_file):
+            target_file.write_text('', encoding='utf-8')
+
+        log_separator = "=" * 65
+        log_content = f"{self}\n\n{log_separator}\n\n"
+
+        with target_file.open('a', encoding='utf-8') as file:
+            file.write(log_content)
 
     @override
     def __str__(self) -> str:

@@ -4,6 +4,9 @@ import sys
 import time
 from typing import NoReturn
 
+GREEN = "\033[92m"
+RESET = "\033[0m"
+
 
 def install_dev_requirements() -> None:
     """Install dev requirements from requirements-dev.txt."""
@@ -18,11 +21,11 @@ def install_dev_requirements() -> None:
                 text=True
             )
             if "installed" in result.stdout:
-                print(" Installation successful.")
+                print(f"{GREEN} Installation successful.{RESET}")
                 if result.stdout:
                     print(result.stdout)
             else:
-                print(" Done.")
+                print(" Nothing to install.")
     except FileNotFoundError:
         print(" No requirements-dev.txt found.")
         sys.exit(1)
@@ -60,7 +63,7 @@ def install_package(package: str) -> None:
             [sys.executable, "-m", "pip", "install", package],
             check=True
         )
-        print(f" {package} installed successfully")
+        print(f"{GREEN} {package} installed successfully{RESET}")
     except subprocess.CalledProcessError as e:
         print(f" Error installing {package}: {e}")
         sys.exit(1)
@@ -95,14 +98,14 @@ def run_and_print_on_failure(cmd: list[str], fail_label: str) -> None:
 def run_pytest() -> None:
     """Run pytest with the current Python version."""
     print("=" * 60)
-    print("Running pytest with current Python version...")
+    print("Running pytest with local Python version...")
     start_time = time.perf_counter()
 
     ensure_packages_installed(["pytest"])
     run_and_print_on_failure(["pytest"], "Pytest")
 
     elapsed_time = time.perf_counter() - start_time
-    print("Pytest was successful! ({:.0f} seconds)".format(elapsed_time))
+    print(f"{GREEN}Pytest was successful! ({elapsed_time:.0f} seconds){RESET}")
 
 def run_nox() -> None:
     """Run tests across multiple Python versions using nox."""
@@ -114,7 +117,7 @@ def run_nox() -> None:
     run_and_print_on_failure(["nox", "--stop-on-first-error"], "Nox")
 
     elapsed_time = time.perf_counter() - start_time
-    print("Nox was successful! ({:.0f} seconds)".format(elapsed_time))
+    print(f"{GREEN}Nox was successful! ({elapsed_time:.0f} seconds){RESET}")
 
 def run_tox() -> None:
     """Run tests across multiple Python versions using nox."""
@@ -126,7 +129,7 @@ def run_tox() -> None:
     run_and_print_on_failure(["tox", "--parallel", "auto"], "Tox")
 
     elapsed_time = time.perf_counter() - start_time
-    print("Tox was successful! ({:.0f} seconds)".format(elapsed_time))
+    print(f"{GREEN}Tox was successful! ({elapsed_time:.0f} seconds){RESET}")
 
 def run_mypy() -> None:
     """Run mypy."""
@@ -136,16 +139,16 @@ def run_mypy() -> None:
 
     ensure_packages_installed(["mypy"])
 
+    run_and_print_on_failure(["mypy", ".\\frequencyman", ".\\tests"], "Mypy")
+
     for py_file in Path(__file__).parent.glob('*.py'):
         if py_file.name == "__init__.py":
             run_and_print_on_failure(["mypy", ".\\{}".format(py_file.name), "--ignore-missing-imports"], "Mypy")
         else:
             run_and_print_on_failure(["mypy", ".\\{}".format(py_file.name)], "Mypy")
 
-    run_and_print_on_failure(["mypy"], "Mypy")
-
     elapsed_time = time.perf_counter() - start_time
-    print(" Mypy was successful! ({:.0f} seconds)".format(elapsed_time))
+    print(f"{GREEN} Mypy was successful! ({elapsed_time:.0f} seconds){RESET}")
 
 
 def run_ruff() -> None:
@@ -161,7 +164,7 @@ def run_ruff() -> None:
         run_and_print_on_failure(["ruff", "check", str(py_file), "--preview"], "Ruff")
 
     elapsed_time = time.perf_counter() - start_time
-    print(" Ruff was successful! ({:.0f} seconds)".format(elapsed_time))
+    print(f"{GREEN} Ruff was successful! ({elapsed_time:.0f} seconds){RESET}")
 
 def run_pyright() -> None:
     """Run pyright."""
@@ -170,20 +173,20 @@ def run_pyright() -> None:
     start_time = time.perf_counter()
 
     ensure_packages_installed(["pyright"])
-    run_and_print_on_failure(["pyright", "frequencyman", "tests"], "Pyright")
+    run_and_print_on_failure(["pyright", ".\\frequencyman", ".\\tests"], "Pyright")
 
     for py_file in Path(__file__).parent.glob('*.py'):
         run_and_print_on_failure(["pyright", str(py_file)], "Pyright")
 
     elapsed_time = time.perf_counter() - start_time
-    print(" Pyright was successful! ({:.0f} seconds)".format(elapsed_time))
+    print(f"{GREEN} Pyright was successful! ({elapsed_time:.0f} seconds){RESET}")
 
 def get_user_choice() -> str:
     print("="*60)
     print("Test Runner Options:")
 
     choices: dict[str, str] = {
-        "1":  "pytest -- Run pytest with current Python version ({}.{})".format(sys.version_info.major, sys.version_info.minor),
+        "1":  "pytest -- Run pytest with local Python version ({}.{})".format(sys.version_info.major, sys.version_info.minor),
         "2": "nox -- Test multiple Python versions using nox (3.9, 3.11, 3.13)"
     }
 
@@ -235,9 +238,9 @@ def main() -> NoReturn:
 
     print("\n" + "="*60)
     if use_nox_to_test:
-        print(" All tests completed successfully! ({:.0f} seconds)".format(elapsed_time))
+        print(f"{GREEN} All tests completed successfully! ({elapsed_time:.0f} seconds){RESET}")
     else:
-        print(" All tests completed successfully!")
+        print(f"{GREEN} All tests completed successfully!{RESET}")
     print("="*60)
     sys.exit(0)
 

@@ -253,7 +253,7 @@ def normalize_dict_positional_floats_values(input_dict: dict[K, float], absolute
 
     new_dict = input_dict.copy()
     value_index = 0
-    last_value = None
+    last_value: Optional[float] = None
 
     for key, value in input_dict.items():
         if value != last_value:

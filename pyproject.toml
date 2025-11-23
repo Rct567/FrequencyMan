@@ -14,10 +14,12 @@ extend-select = [
     "PL",       # Category selector for all Pylint rules (prefix PL).
     "E501",     # Line too long - Checks for lines that exceed the configured line length.
     "PLW0108",  # Unnecessary lambda - Checks for lambda definitions that consist of a single function call.
-    "B"         # Category selector for all flake8-bugbear rules (prefix B).
+    "B",        # Category selector for all flake8-bugbear rules (prefix B).
+    "TC",       # Category selector for all flake8-type-checking rules (prefix TC).
+    "UP",       # Category selector for all pyupgrade rules (prefix UP).
+    "RUF",      # ruff's own rules
 ]
 ignore = [
-    "F401",      # Unused import - Module imported but unused.
     "PLR6301",   # No self use - Checks for the presence of unused `self` parameter in method definitions.
     "PLR2004",   # Magic value comparison - Checks for the use of unnamed numerical constants ("magic values") in comparisons.
     "PLW0603",   # Global statement - Checks for the use of `global` statements to update identifiers.
@@ -33,7 +35,14 @@ ignore = [
     "E712",      # Comparison to true - Avoid equality comparisons to True; use the condition directly for truth checks.
     "B010",      # Set attr with constant - Do not call setattr with a constant attribute value. It is not any safer than normal property access.
     "B019",      # Cached instance method - Use of functools.lru_cache or functools.cache on methods can lead to memory leaks.
-    "B009"       # Get attr with constant - Do not call getattr with a constant attribute value. It is not any safer than normal property access.
+    "B009",      # Get attr with constant - Do not call getattr with a constant attribute value. It is not any safer than normal property access.
+    "UP032",     # f-string - Checks for `str.format` calls that can be replaced with f-strings.
+    "UP015",     # redundant-open-modes - Checks for redundant `open` mode arguments.
+    "UP045",     # non-pep604-annotation-optional - Use `X | None` for type annotations.
+    "UP007",     # non-pep604-annotation-union - Use `X | Y` for type annotations.
+    "RUF001",    # ambiguous-unicode-character-string - Checks for ambiguous unicode characters in strings.
+    "RUF003",    # ambiguous-unicode-character-comment - Checks for ambiguous unicode characters in comments.
+    "RUF005",    # collection-literal-concatenation - Checks for uses of the `+` operator to concatenate collections.
 ]
 
 [tool.ruff.lint.pylint]

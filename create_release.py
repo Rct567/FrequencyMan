@@ -89,11 +89,11 @@ def commit_and_tag(version_number: str) -> None:
 
 
 def has_unstaged_changes() -> bool:
-    result = subprocess.run(["git", "diff", "--exit-code"], capture_output=True)
+    result = subprocess.run(["git", "diff", "--exit-code"], capture_output=True, check=False)
     return result.returncode != 0
 
 def has_staged_changes() -> bool:
-    result = subprocess.run(["git", "diff", "--cached", "--exit-code"], capture_output=True)
+    result = subprocess.run(["git", "diff", "--cached", "--exit-code"], capture_output=False, check=False)
     return result.returncode != 0
 
 
@@ -101,7 +101,7 @@ def run_all_tests_with_success() -> bool:
 
     print("Running tests...")
 
-    result = subprocess.run(["python", "test.py", "--nox"], capture_output=True, text=True)
+    result = subprocess.run(["python", "test.py", "--nox"], capture_output=True, text=True, check=False)
 
     if result.returncode != 0:
         print(result.stderr if result.stderr else result.stdout)

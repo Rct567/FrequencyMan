@@ -39,8 +39,8 @@ def ignore_patterns_from_gitignore_file(src: Path) -> list[str]:
     ignore_patterns = []
     if gitignore_path.exists():
         with gitignore_path.open('r') as f:
-            for line in f:
-                line = line.strip()
+            for file_line in f:
+                line = file_line.strip()
                 if line and not line.startswith('#'):
                     ignore_patterns.append(line)
 

@@ -85,9 +85,9 @@ def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list
     content = (line.decode('utf-8') for line in response.iter_lines() if isinstance(line, bytes))
     content_filters = (line for line in content if line and line[0] != "'" and line[0] != '-' and ("--" not in line[0]))
 
-    for word, _ in WordFrequencyLists.get_words_from_content(content_filters, wf_list_url, lang_id):
+    for word_from_content, _ in WordFrequencyLists.get_words_from_content(content_filters, wf_list_url, lang_id):
 
-        word = word.strip("!@#$%^&*()_-=+{}:\"<>?,./;' ")
+        word = word_from_content.strip("!@#$%^&*()_-=+{}:\"<>?,./;' ")
 
         if lang_id in {'en', 'fr', 'it', 'ga', 'pt', 'de', 'nl', 'sv', 'fi', 'mt', 'ca', 'oc'}:
             word = word.replace("’", "'")

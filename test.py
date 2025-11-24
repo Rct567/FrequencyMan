@@ -139,13 +139,14 @@ def run_mypy() -> None:
 
     ensure_packages_installed(["mypy"])
 
-    run_and_print_on_failure(["mypy", ".\\frequencyman", ".\\tests"], "Mypy")
+    root_files_to_run = [
+        ".\\{}".format(py_file.name)
+        for py_file in Path(__file__).parent.glob('*.py')
+        if py_file.name != "__init__.py"
+    ]
+    run_and_print_on_failure(["mypy", ".\\frequencyman", ".\\tests"] + root_files_to_run, "Mypy")
 
-    for py_file in Path(__file__).parent.glob('*.py'):
-        if py_file.name == "__init__.py":
-            run_and_print_on_failure(["mypy", ".\\{}".format(py_file.name), "--ignore-missing-imports"], "Mypy")
-        else:
-            run_and_print_on_failure(["mypy", ".\\{}".format(py_file.name)], "Mypy")
+    run_and_print_on_failure(["mypy", "__init__.py", "--ignore-missing-imports"], "Mypy")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Mypy was successful! ({elapsed_time:.0f} seconds){RESET}")
@@ -161,7 +162,7 @@ def run_ruff() -> None:
     run_and_print_on_failure(["ruff", "check", ".\\frequencyman", ".\\tests", "--preview"], "Ruff")
 
     for py_file in Path(__file__).parent.glob('*.py'):
-        run_and_print_on_failure(["ruff", "check", str(py_file), "--preview"], "Ruff")
+        run_and_print_on_failure(["ruff", "check", ".\\{}".format(py_file.name), "--preview"], "Ruff")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Ruff was successful! ({elapsed_time:.0f} seconds){RESET}")
@@ -176,7 +177,7 @@ def run_pyright() -> None:
     run_and_print_on_failure(["pyright", ".\\frequencyman", ".\\tests"], "Pyright")
 
     for py_file in Path(__file__).parent.glob('*.py'):
-        run_and_print_on_failure(["pyright", str(py_file)], "Pyright")
+        run_and_print_on_failure(["pyright", ".\\{}".format(py_file.name)], "Pyright")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Pyright was successful! ({elapsed_time:.0f} seconds){RESET}")
@@ -213,10 +214,10 @@ def main() -> NoReturn:
 
     check_python_version()
     install_dev_requirements()
-    run_mypy()
-    if is_package_installed("pyright"):
-        run_pyright()
+
     run_ruff()
+    run_pyright()
+    run_mypy()
 
     use_nox_to_test = len(sys.argv) > 1 and (sys.argv[1] == "-y" or sys.argv[1] == "--nox")
 

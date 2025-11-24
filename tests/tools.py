@@ -47,8 +47,6 @@ def test_collection(request: pytest.FixtureRequest) -> Generator[MockCollection,
     Fixture that yields the collection named by @with_test_collection(...).
     Raises a RuntimeError if the decorator was not applied.
     """
-    import atexit
-    from frequencyman.language_data import LanguageData
 
     name: Optional[str] = getattr(request.function, "_test_collection_name", None)
     if name is None:
@@ -56,24 +54,12 @@ def test_collection(request: pytest.FixtureRequest) -> Generator[MockCollection,
             "test_collection fixture used but no @with_test_collection(...) decorator found."
         )
 
-    if MockCollections.last_initiated_test_collection:
-        MockCollections.last_initiated_test_collection.remove()
-    else:
-        atexit.register(MockCollections.run_cleanup_routine)
-
-    collection_dir = MockCollections.TEST_COLLECTIONS_DIR / name
-    lang_data_dir = collection_dir / 'lang_data'
-    lang_data = LanguageData(lang_data_dir)
-
-    # Pass test instance and function name directly since the test method isn't in the stack yet
     caller_context = CallerContext(
         test_instance=request.instance,
         test_function_name=request.function.__name__
     )
 
-    col = MockCollection(name, collection_dir, lang_data, caller_context)
-
-    MockCollections.last_initiated_test_collection = col
+    col = MockCollections.get_test_collection(name, caller_context)
 
     try:
         yield col
@@ -148,6 +134,8 @@ class MockCollection(Collection):
 
         self.caller_class_name, caller_fn_name = self._find_test_caller_info(caller_context)
         self.caller_full_name = f"{self.caller_class_name}_{caller_fn_name}"
+        assert self.caller_class_name.startswith('Test')
+        assert caller_fn_name.startswith('test_')
 
         # cacher
         if MockCollections.CACHER is None:
@@ -219,10 +207,8 @@ class MockCollection(Collection):
 
     def remove(self):
 
-        if not self.db:
-            return
-
-        self.close()
+        if self.db:
+           self.close()
 
         (media_dir, media_db) = media_paths_from_col_path(self.path)
 
@@ -290,7 +276,7 @@ class MockCollections:
                     pass # Not empty or cannot remove → ignore
 
     @staticmethod
-    def get_test_collection(test_collection_name: str) -> MockCollection:
+    def get_test_collection(test_collection_name: str, caller_context: CallerContext) -> MockCollection:
 
         if MockCollections.last_initiated_test_collection:
             MockCollections.last_initiated_test_collection.remove()
@@ -299,14 +285,14 @@ class MockCollections:
 
         collection_dir = MockCollections.TEST_COLLECTIONS_DIR / test_collection_name
         lang_data_dir = collection_dir / 'lang_data'
-
         lang_data = LanguageData(lang_data_dir)
-        caller_frame = inspect.stack()[1]
-        caller_context = CallerContext(caller_frame=caller_frame)
+
+        # caller_frame = inspect.stack()[1]
+        # caller_context = CallerContext(caller_frame=caller_frame)
 
         col = MockCollection(test_collection_name, collection_dir, lang_data, caller_context)
-        MockCollections.last_initiated_test_collection = col
 
+        MockCollections.last_initiated_test_collection = col
         atexit.register(col.remove)
 
         return col

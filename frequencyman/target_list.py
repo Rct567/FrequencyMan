@@ -18,7 +18,7 @@ from .lib.persistent_cacher import PersistentCacher
 from .configured_target import ConfiguredTarget
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
-from .lib.utilities import JSON_TYPE, batched, get_float, load_json
+from .lib.utilities import JSON_TYPE, batched, get_float, load_json_with_tolerance
 from .target import ConfiguredTargetNote, TargetCacheData, TargetReorderResult, Target, ValidConfiguredTarget, CardRanker
 from .language_data import LanguageData
 from .lib.event_logger import EventLogger
@@ -105,7 +105,7 @@ class TargetList:
         if json_data == "":
             return JsonTargetsResult(JsonTargetsValidity.INVALID_TARGETS, [], "", None)
         try:
-            data = load_json(json_data)
+            data = load_json_with_tolerance(json_data)
             if not isinstance(data, list):
                 return JsonTargetsResult(JsonTargetsValidity.INVALID_TARGETS, [], "Reorder target is not a list (array expected).", None)
             (validity_state, err_desc, valid_target_list) = TargetList.validate_target_list(data, col, language_data)

@@ -79,7 +79,7 @@ def get_float(val: Any) -> Optional[float]:
 
 def remove_trailing_commas_from_json(json_str: str) -> str:
 
-    return re.sub(r'("(?:\\?.)*?")|,(\s*)([]}])', r'\1\2\3', json_str)
+    return re.sub(r'("(?:\\?.)*?")|,(?:\s*,)*(\s*)([]}])', r'\1\2\3', json_str)
 
 
 if TYPE_CHECKING:
@@ -90,12 +90,17 @@ else:
     JSON_TYPE = Any
 
 
-def load_json(json_data: str) -> JSON_TYPE:
+def load_json_with_tolerance(json_data: str) -> JSON_TYPE:
 
     try:
         return json.loads(json_data)
     except json.JSONDecodeError as e:
-        if not "double quotes" in e.msg:
+        if sys.version_info >= (3, 13):
+            allowed_errors = ["trailing comma"]
+        else:
+            allowed_errors = ["Expecting value", "Expecting property"]
+
+        if not any(error in e.msg for error in allowed_errors):
             raise e
         # try again, but throw original exception if it fails
         new_json_data = remove_trailing_commas_from_json(json_data)

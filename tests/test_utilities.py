@@ -3,7 +3,7 @@ import pytest
 
 from frequencyman.lib.utilities import (
     get_float, normalize_dict_floats_values, normalize_dict_positional_floats_values,
-    positional_value_absolute, remove_bottom_percent_dict, remove_trailing_commas_from_json,
+    positional_value_absolute, remove_bottom_percent_dict, load_json_with_tolerance,
     sort_dict_floats_values
 )
 
@@ -163,24 +163,96 @@ def test_remove_bottom_percent_dict():
     assert result == {"a": 4, "b": 3, "c": 2}
 
 
-def test_remove_trailing_commas_from_json():
+def test_load_json_with_tolerance_complex():
 
     test_json_str = r'''
     [
         123, true, false, null, {",": ", "},
         {
             "\n\\\",]\\": "\n\\\",]\\",
-            "\n\\\",}\\": "\n\\\",}\\",
+            "\n\\\",}\\": "\n\\\",}\\"
         },
     ]
     '''
 
-    assert remove_trailing_commas_from_json(test_json_str) == r'''
-    [
-        123, true, false, null, {",": ", "},
+    expected = [
+        123, True, False, None, {",": ", "},
         {
             "\n\\\",]\\": "\n\\\",]\\",
             "\n\\\",}\\": "\n\\\",}\\"
         }
     ]
-    '''
+    assert load_json_with_tolerance(test_json_str) == expected
+
+
+def test_load_json_with_tolerance_simple_list():
+    json_str = '[1, 2, 3,]'
+    expected = [1, 2, 3]
+    assert load_json_with_tolerance(json_str) == expected
+
+
+def test_load_json_with_tolerance_simple_dict():
+    json_str = '{"a": 1, "b": 2,}'
+    expected = {"a": 1, "b": 2}
+    assert load_json_with_tolerance(json_str) == expected
+
+
+def test_load_json_with_tolerance_nested():
+    json_str = '{"a": [1, 2,], "b": {"c": 3,},}'
+    expected = {"a": [1, 2], "b": {"c": 3}}
+    assert load_json_with_tolerance(json_str) == expected
+
+
+def test_load_json_with_tolerance_with_strings_containing_commas():
+    json_str = '["a,b", "c, d",]'
+    expected = ["a,b", "c, d"]
+    assert load_json_with_tolerance(json_str) == expected
+
+
+def test_load_json_with_tolerance_whitespace():
+    json_str = '[1, 2, \n ]'
+    expected = [1, 2]
+    assert load_json_with_tolerance(json_str) == expected
+
+
+def test_load_json_with_tolerance_empty_obj_list():
+    assert load_json_with_tolerance('[]') == []
+    assert load_json_with_tolerance('{}') == {}
+
+
+def test_load_json_with_tolerance_list_of_objects():
+    json_str = '[{"a": 1,}, {"b": 2}]'
+    expected = [{"a": 1}, {"b": 2}]
+    assert load_json_with_tolerance(json_str) == expected
+
+
+def test_load_json_with_tolerance_nested_list_in_object():
+    json_str = '[{"a": [1, 2,]}, {"b": 2}]'
+    expected = [{"a": [1, 2]}, {"b": 2}]
+    assert load_json_with_tolerance(json_str) == expected
+
+
+def test_load_json_with_tolerance_tricky_strings():
+    # Strings containing characters that look like trailing commas should be preserved
+    assert load_json_with_tolerance(r'{"key": ", }"}') == {"key": ", }"}
+    assert load_json_with_tolerance(r'["a, ]", "b"]') == ["a, ]", "b"]
+    assert load_json_with_tolerance(r'[",",]') == [","]
+    assert load_json_with_tolerance(r'{"a": [1, 2,], "b": ", ]"}') == {"a": [1, 2], "b": ", ]"}
+    assert load_json_with_tolerance(r'["escaped \" quote , ]",]') == ["escaped \" quote , ]"]
+
+
+def test_load_json_with_tolerance_json_inside_string():
+    # Case: String literal containing a list with a trailing comma
+    assert load_json_with_tolerance(r'{"key": "[1, 2, ]"}') == {"key": "[1, 2, ]"}
+
+    # Case: String literal containing an object with a trailing comma
+    assert load_json_with_tolerance(r'{"key": "{\"a\": 1, }"}') == {"key": "{\"a\": 1, }"}
+
+    # Case: Mixed - real trailing comma outside, fake one inside string
+    assert load_json_with_tolerance(r'{"key": "[1, 2, ]",}') == {"key": "[1, 2, ]"}
+
+
+
+
+
+

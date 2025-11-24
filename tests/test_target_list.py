@@ -1,14 +1,13 @@
 from frequencyman.configured_target import ValidConfiguredTarget
 from frequencyman.target_list import JsonTargetsValidity, TargetList
 
-from tests.tools import TestCollections
-
+from tests.tools import TestCollection, TestCollectionFixture, with_test_collection, test_collection
+col: TestCollectionFixture = test_collection
 
 class TestTargetList:
 
-    def test_get_targets_from_json_valid_json(self):
-
-        col = TestCollections.get_test_collection('big_collection_es')
+    @with_test_collection("big_collection_es")
+    def test_get_targets_from_json_valid_json(self, col: TestCollection):
 
         targets = TargetList.get_targets_from_json("""[
             {
@@ -55,9 +54,8 @@ class TestTargetList:
             ]
         )
 
-    def test_target_list_is_valid_query(self):
-
-        col = TestCollections.get_test_collection('big_collection_es')
+    @with_test_collection("big_collection_es")
+    def test_target_list_is_valid_query(self, col: TestCollection):
 
         assert TargetList.is_valid_query("deck:Spanish", col)
         assert TargetList.is_valid_query("-is:due", col)
@@ -73,9 +71,8 @@ class TestTargetList:
         assert not TargetList.is_valid_query(")", col)
         assert not TargetList.is_valid_query(":missing_pre", col)
 
-    def test_get_targets_from_json_invalid_json(self):
-
-        col = TestCollections.get_test_collection('big_collection_es')
+    @with_test_collection("big_collection_es")
+    def test_get_targets_from_json_invalid_json(self, col: TestCollection):
 
         invalid_targets_data: list[str] = [
             "X",
@@ -89,9 +86,8 @@ class TestTargetList:
             assert targets.valid_targets_defined is None, json_data
             assert len(targets.targets_defined) == 0, json_data
 
-    def test_get_targets_from_json_invalid_targets(self):
-
-        col = TestCollections.get_test_collection('big_collection_es')
+    @with_test_collection("big_collection_es")
+    def test_get_targets_from_json_invalid_targets(self, col: TestCollection):
 
         invalid_targets_data: dict[str, str] = {
             '': '',

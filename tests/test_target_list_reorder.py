@@ -1,18 +1,18 @@
+import pytest
 from collections import defaultdict
 
 from frequencyman.card_ranker import CardRanker
 from frequencyman.target_list import TargetList, TargetListReorderResult
 from frequencyman.lib.event_logger import EventLogger
 
-from tests.tools import TestCollections, freeze_time_anki
-
+from tests.tools import TestCollection, TestCollectionFixture, freeze_time_anki, with_test_collection, test_collection
+col: TestCollectionFixture = test_collection
 
 class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-05")
-    def test_reorder_cards_big_collection_es(self):
-
-        col = TestCollections.get_test_collection('big_collection_es')
+    @with_test_collection("big_collection_es")
+    def test_reorder_cards_big_collection_es(self, col: TestCollection):
 
         # add additional fields to test
 
@@ -119,9 +119,8 @@ class TestTargetListReorder:
         col.lock_and_assert_order('sorted_cards_ids', target_result.sorted_cards_ids)
 
     @freeze_time_anki("2023-12-01")
-    def test_reorder_cards_big_collection_es_with_reorder_scope(self):
-
-        col = TestCollections.get_test_collection('big_collection_es')
+    @with_test_collection("big_collection_es")
+    def test_reorder_cards_big_collection_es_with_reorder_scope(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -177,9 +176,8 @@ class TestTargetListReorder:
         col.lock_and_assert_order('sorted_cards_ids', target_result.sorted_cards_ids)
 
     @freeze_time_anki("2023-12-01")
-    def test_two_deck_collection(self):
-
-        col = TestCollections.get_test_collection('two_deck_collection')
+    @with_test_collection("two_deck_collection")
+    def test_two_deck_collection(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -261,9 +259,8 @@ class TestTargetListReorder:
         col.lock_and_assert_result('focus_words', focus_words)
 
     @freeze_time_anki("2023-12-01")
-    def test_two_deck_collection_with_ignore_list(self):
-
-        col = TestCollections.get_test_collection('two_deck_collection')
+    @with_test_collection("two_deck_collection")
+    def test_two_deck_collection_with_ignore_list(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -303,9 +300,8 @@ class TestTargetListReorder:
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
     @freeze_time_anki("2023-12-01")
-    def test_two_deck_collection_with_reorder_scope(self):
-
-        col = TestCollections.get_test_collection('two_deck_collection')
+    @with_test_collection("two_deck_collection")
+    def test_two_deck_collection_with_reorder_scope(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -378,9 +374,8 @@ class TestTargetListReorder:
         col.lock_and_assert_order('sorted_cards_ids_1', result.reorder_result_list[1].sorted_cards_ids)
 
     @freeze_time_anki("2023-12-01")
-    def test_two_deck_collection_no_reviewed_cards(self):
-
-        col = TestCollections.get_test_collection('two_deck_collection')
+    @with_test_collection("two_deck_collection")
+    def test_two_deck_collection_no_reviewed_cards(self, col: TestCollection):
 
         # reset all cards
         all_card_ids = col.find_cards('*')
@@ -432,9 +427,8 @@ class TestTargetListReorder:
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
     @freeze_time_anki("2023-12-01")
-    def test_two_deck_collection_no_cards(self):
-
-        col = TestCollections.get_test_collection('two_deck_collection')
+    @with_test_collection("two_deck_collection")
+    def test_two_deck_collection_no_cards(self, col: TestCollection):
 
         # remove all notes
         col.remove_notes(list(col.find_notes('*')))
@@ -477,9 +471,8 @@ class TestTargetListReorder:
         assert len(target_list[0].get_cards_non_cached().get_notes_from_new_cards()) == 0
 
     @freeze_time_anki("2023-12-01")
-    def test_two_deck_collection_corpus_segmentation_by_note_field(self):
-
-        col = TestCollections.get_test_collection('two_deck_collection')
+    @with_test_collection("two_deck_collection")
+    def test_two_deck_collection_corpus_segmentation_by_note_field(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -521,9 +514,8 @@ class TestTargetListReorder:
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
     @freeze_time_anki("2023-12-01")
-    def test_two_deck_collection_low_familiarity(self):
-
-        col = TestCollections.get_test_collection('two_deck_collection_low_fam')
+    @with_test_collection("two_deck_collection_low_fam")
+    def test_two_deck_collection_low_familiarity(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -567,46 +559,41 @@ class TestTargetListReorder:
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
     @freeze_time_anki("2023-12-01")
-    def test_two_deck_collection_every_factor(self):
+    @pytest.mark.parametrize("ranking_factor", CardRanker.get_default_ranking_factors_span().keys())
+    @with_test_collection("two_deck_collection")
+    def test_two_deck_collection_every_factor(self, col: TestCollection, ranking_factor: str):
 
-        for ranking_factor in CardRanker. get_default_ranking_factors_span().keys():
+        target_list = TargetList(col.lang_data, col.cacher, col)
 
-            col = TestCollections.get_test_collection('two_deck_collection')
+        target_list.set_targets([
+            {
+                'decks': ['decka', 'deckb'],
+                'notes': [{
+                    "name": "Basic",
+                    "fields": {
+                        "Front": "EN",
+                        "Back": "ES"
+                    },
+                }],
+                'ranking_factors': {ranking_factor: 1}
+            }
+        ])
 
-            target_list = TargetList(col.lang_data, col.cacher, col)
+        # reorder cards
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
 
-            target_list.set_targets([
-                {
-                    'decks': ['decka', 'deckb'],
-                    'notes': [{
-                        "name": "Basic",
-                        "fields": {
-                            "Front": "EN",
-                            "Back": "ES"
-                        },
-                    }],
-                    'ranking_factors': {ranking_factor: 1}
-                }
-            ])
+        reorder_result = result.reorder_result_list[0]
+        assert reorder_result.success and reorder_result.error is None
+        assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
 
-            # reorder cards
-            event_logger = EventLogger()
-            result = target_list.reorder_cards(col, event_logger)
+        assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 16
 
-            reorder_result = result.reorder_result_list[0]
-            assert reorder_result.success and reorder_result.error is None
-            assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
-
-            assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 16
-
-            col.lock_and_assert_order('all_cards_ids_'+ranking_factor, target_list[0].get_cards_non_cached().all_cards_ids)
-
-            col.close()
+        col.lock_and_assert_order('all_cards_ids_'+ranking_factor, target_list[0].get_cards_non_cached().all_cards_ids)
 
     @freeze_time_anki("2023-12-01")
-    def test_zh_and_ja(self):
-
-        col = TestCollections.get_test_collection('zh_and_ja')  # Chinese and Japanese, one card per deck, no word frequency files
+    @with_test_collection("zh_and_ja")
+    def test_zh_and_ja(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 

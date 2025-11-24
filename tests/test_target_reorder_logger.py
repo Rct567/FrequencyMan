@@ -6,7 +6,8 @@ from frequencyman.target_list import TargetList
 from frequencyman.lib.event_logger import EventLogger
 from frequencyman.reorder_logger import ReorderLogger, SqlDbFile
 
-from tests.tools import TestCollections, freeze_time_anki
+from tests.tools import TestCollection, TestCollectionFixture, freeze_time_anki, with_test_collection, test_collection
+col: TestCollectionFixture = test_collection
 
 TEST_DATA_DIR = Path(__file__).parent / 'data'
 
@@ -25,9 +26,8 @@ def reorder_logger(tmpdir: str) -> Generator[ReorderLogger, None, None]:
 class TestTargetReorderLogger:
 
     @freeze_time_anki("2023-12-01")
-    def test_reorder_logger(self, reorder_logger: ReorderLogger) -> None:
-
-        col = TestCollections.get_test_collection('two_deck_collection')
+    @with_test_collection("two_deck_collection")
+    def test_reorder_logger(self, col: TestCollection, reorder_logger: ReorderLogger) -> None:
 
         targets: list = [
             {

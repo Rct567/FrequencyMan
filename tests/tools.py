@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 import inspect
 from itertools import chain
 import os
 from pathlib import Path
 import shutil
-from typing import Any, Optional
+from typing import Any, Optional, NamedTuple, Callable, TypeVar, TYPE_CHECKING
 from collections.abc import Generator, Sequence
+if TYPE_CHECKING:
+    from typing_extensions import TypeAlias
 import pprint
 import time
 from dateutil.parser import parse
 import atexit
+import pytest
 
 from anki.collection import Collection
 from anki.media import media_paths_from_col_path
@@ -21,7 +26,71 @@ from frequencyman.lib.persistent_cacher import PersistentCacher, SqlDbFile
 CURRENT_PID = os.getpid()
 
 
+T = TypeVar('T', bound=Callable[..., Any])
+
+
+def with_test_collection(name: str) -> Callable[[T], T]:
+    """
+    Decorator that attaches the collection name to the test function object.
+    The 'test_collection' fixture will read that attribute from request.function.
+    """
+    def decorator(func: T) -> T:
+        setattr(func, "_test_collection_name", name)
+        return func
+    return decorator
+
+
+
+@pytest.fixture
+def test_collection(request: pytest.FixtureRequest) -> Generator[TestCollection, None, None]:
+    """
+    Fixture that yields the collection named by @with_test_collection(...).
+    Raises a RuntimeError if the decorator was not applied.
+    """
+    import atexit
+    from frequencyman.language_data import LanguageData
+
+    name: Optional[str] = getattr(request.function, "_test_collection_name", None)
+    if name is None:
+        raise RuntimeError(
+            "test_collection fixture used but no @with_test_collection(...) decorator found."
+        )
+
+    if TestCollections.last_initiated_test_collection:
+        TestCollections.last_initiated_test_collection.remove()
+    else:
+        atexit.register(TestCollections.run_cleanup_routine)
+
+    collection_dir = TestCollections.TEST_COLLECTIONS_DIR / name
+    lang_data_dir = collection_dir / 'lang_data'
+    lang_data = LanguageData(lang_data_dir)
+
+    # Pass test instance and function name directly since the test method isn't in the stack yet
+    caller_context = TestCallerContext(
+        test_instance=request.instance,
+        test_function_name=request.function.__name__
+    )
+
+    col = TestCollection(name, collection_dir, lang_data, caller_context)
+
+    TestCollections.last_initiated_test_collection = col
+
+    try:
+        yield col
+    finally:
+        col.remove()  # remove test collection after test
+
+
+class TestCallerContext(NamedTuple):
+    caller_frame: Optional[inspect.FrameInfo] = None
+    test_instance: Optional[object] = None
+    test_function_name: Optional[str] = None
+
+TestCallerContext.__test__ = False  # type: ignore
+
+
 class TestCollection(Collection):
+    __test__ = False
     collection_name: str
     collection_dir: Path
     lang_data: LanguageData
@@ -30,17 +99,58 @@ class TestCollection(Collection):
     caller_class_name: str
     caller_full_name: str
 
-    def __init__(self, collection_name: str, collection_dir: Path, lang_data: LanguageData, caller_frame: inspect.FrameInfo):
+    @staticmethod
+    def _find_test_caller_info(context: TestCallerContext) -> tuple[str, str]:
+        """
+        Find the test caller information (function name and class name).
+
+        Tries multiple strategies in order:
+        1. Explicitly provided in context (test_instance, test_function_name) - for fixtures
+        2. Provided caller_frame - for backward compatibility (e.g. get_test_collection)
+        3. Stack inspection - for direct calls from test methods
+
+        Returns: (caller_class_name, caller_fn_name)
+        Raises: RuntimeError if test caller cannot be determined
+        """
+        # Strategy 1: Explicitly provided in context (highest priority)
+        if context.test_instance is not None and context.test_function_name is not None:
+            if context.test_function_name.startswith('test_') and context.test_instance.__class__.__name__.startswith('Test'):
+                return (context.test_instance.__class__.__name__, context.test_function_name)
+
+        # Strategy 2: Provided frame (backward compatibility)
+        if context.caller_frame is not None:
+            if (context.caller_frame.function.startswith('test_') and
+                'self' in context.caller_frame.frame.f_locals and
+                context.caller_frame.frame.f_locals['self'].__class__.__name__.startswith('Test')):
+                return (context.caller_frame.frame.f_locals['self'].__class__.__name__, context.caller_frame.function)
+
+        # Strategy 3: Stack inspection (fallback)
+        for frame_info in inspect.stack():
+            if (frame_info.function.startswith('test_') and
+                'self' in frame_info.frame.f_locals):
+                self_obj = frame_info.frame.f_locals['self']
+                if self_obj.__class__.__name__.startswith('Test'):
+                    return (self_obj.__class__.__name__, frame_info.function)
+
+        # Failed to find test caller
+        raise RuntimeError(
+            "Could not find test method frame. TestCollection must be called from within a test method " +
+            "(function starting with 'test_' in a class starting with 'Test'), or test_instance and " +
+            "test_function_name must be provided."
+        )
+
+    def __init__(self, collection_name: str, collection_dir: Path, lang_data: LanguageData,
+                 caller_context: Optional[TestCallerContext] = None):
         self.collection_name = collection_name
         self.collection_dir = collection_dir
-
         self.lang_data = lang_data
 
-        caller_fn_name = caller_frame.function
-        assert caller_fn_name.startswith('test_')
-        self.caller_class_name = caller_frame.frame.f_locals['self'].__class__.__name__
-        assert self.caller_class_name.startswith('Test')
-        self.caller_full_name = "{}_{}".format(self.caller_class_name, caller_fn_name)
+        # Find test caller information
+        if caller_context is None:
+            caller_context = TestCallerContext()
+
+        self.caller_class_name, caller_fn_name = self._find_test_caller_info(caller_context)
+        self.caller_full_name = f"{self.caller_class_name}_{caller_fn_name}"
 
         # cacher
         if TestCollections.CACHER is None:
@@ -135,6 +245,12 @@ class TestCollection(Collection):
             pass
 
 
+
+TestCollectionFixture: TypeAlias = Callable[
+    [pytest.FixtureRequest],
+    Generator[TestCollection, None, None]
+]
+
 class TestCollections:
 
     TEST_DATA_DIR = Path(__file__).parent / 'data'
@@ -189,8 +305,9 @@ class TestCollections:
 
         lang_data = LanguageData(lang_data_dir)
         caller_frame = inspect.stack()[1]
+        caller_context = TestCallerContext(caller_frame=caller_frame)
 
-        col = TestCollection(test_collection_name, collection_dir, lang_data, caller_frame)
+        col = TestCollection(test_collection_name, collection_dir, lang_data, caller_context)
         TestCollections.last_initiated_test_collection = col
 
         atexit.register(col.remove)

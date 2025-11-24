@@ -1,17 +1,18 @@
+
 from frequencyman.target_cards import TargetCards
 
-from tests.tools import TestCollections
-
+from tests.tools import TestCollection, TestCollectionFixture, with_test_collection, test_collection
+col: TestCollectionFixture = test_collection
 
 class TestTargetCards:
 
-    def test_days_overdue_cards(self):
+    @with_test_collection("big_collection_es")
+    def test_days_overdue_cards(self, col: TestCollection):
 
         # this test checks if days_overdue matches with Anki's due calculations.
         # note: manually test this by changing the system time (before+after rollover hour).
         # changing the time in Python alone is not enough to make it work properly.
 
-        col = TestCollections.get_test_collection('big_collection_es')
         assert col.conf['rollover'] == 7
         due_cards_ids_from_find_cards = col.find_cards('is:due')
         overdue_cards_ids_from_find_cards = col.find_cards('is:due -prop:due=0')

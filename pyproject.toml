@@ -46,6 +46,10 @@ ignore = [
     "RUF005",    # collection-literal-concatenation - Checks for uses of the `+` operator to concatenate collections.
 ]
 
+
+[tool.ruff.lint.per-file-ignores]
+"tests/test_target_*.py" = ["F401", "F811"] # pytest fixtures
+
 [tool.ruff.lint.pylint]
 max-locals = 25
 max-branches = 120

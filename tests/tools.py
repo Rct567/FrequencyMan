@@ -42,7 +42,7 @@ def with_test_collection(name: str) -> Callable[[T], T]:
 
 
 @pytest.fixture
-def test_collection(request: pytest.FixtureRequest) -> Generator[TestCollection, None, None]:
+def test_collection(request: pytest.FixtureRequest) -> Generator[MockCollection, None, None]:
     """
     Fixture that yields the collection named by @with_test_collection(...).
     Raises a RuntimeError if the decorator was not applied.
@@ -56,24 +56,24 @@ def test_collection(request: pytest.FixtureRequest) -> Generator[TestCollection,
             "test_collection fixture used but no @with_test_collection(...) decorator found."
         )
 
-    if TestCollections.last_initiated_test_collection:
-        TestCollections.last_initiated_test_collection.remove()
+    if MockCollections.last_initiated_test_collection:
+        MockCollections.last_initiated_test_collection.remove()
     else:
-        atexit.register(TestCollections.run_cleanup_routine)
+        atexit.register(MockCollections.run_cleanup_routine)
 
-    collection_dir = TestCollections.TEST_COLLECTIONS_DIR / name
+    collection_dir = MockCollections.TEST_COLLECTIONS_DIR / name
     lang_data_dir = collection_dir / 'lang_data'
     lang_data = LanguageData(lang_data_dir)
 
     # Pass test instance and function name directly since the test method isn't in the stack yet
-    caller_context = TestCallerContext(
+    caller_context = CallerContext(
         test_instance=request.instance,
         test_function_name=request.function.__name__
     )
 
-    col = TestCollection(name, collection_dir, lang_data, caller_context)
+    col = MockCollection(name, collection_dir, lang_data, caller_context)
 
-    TestCollections.last_initiated_test_collection = col
+    MockCollections.last_initiated_test_collection = col
 
     try:
         yield col
@@ -81,16 +81,13 @@ def test_collection(request: pytest.FixtureRequest) -> Generator[TestCollection,
         col.remove()  # remove test collection after test
 
 
-class TestCallerContext(NamedTuple):
+class CallerContext(NamedTuple):
     caller_frame: Optional[inspect.FrameInfo] = None
     test_instance: Optional[object] = None
     test_function_name: Optional[str] = None
 
-TestCallerContext.__test__ = False  # type: ignore
 
-
-class TestCollection(Collection):
-    __test__ = False
+class MockCollection(Collection):
     collection_name: str
     collection_dir: Path
     lang_data: LanguageData
@@ -100,7 +97,7 @@ class TestCollection(Collection):
     caller_full_name: str
 
     @staticmethod
-    def _find_test_caller_info(context: TestCallerContext) -> tuple[str, str]:
+    def _find_test_caller_info(context: CallerContext) -> tuple[str, str]:
         """
         Find the test caller information (function name and class name).
 
@@ -134,33 +131,33 @@ class TestCollection(Collection):
 
         # Failed to find test caller
         raise RuntimeError(
-            "Could not find test method frame. TestCollection must be called from within a test method " +
+            "Could not find test method frame. MockCollection must be called from within a test method " +
             "(function starting with 'test_' in a class starting with 'Test'), or test_instance and " +
             "test_function_name must be provided."
         )
 
     def __init__(self, collection_name: str, collection_dir: Path, lang_data: LanguageData,
-                 caller_context: Optional[TestCallerContext] = None):
+                 caller_context: Optional[CallerContext] = None):
         self.collection_name = collection_name
         self.collection_dir = collection_dir
         self.lang_data = lang_data
 
         # Find test caller information
         if caller_context is None:
-            caller_context = TestCallerContext()
+            caller_context = CallerContext()
 
         self.caller_class_name, caller_fn_name = self._find_test_caller_info(caller_context)
         self.caller_full_name = f"{self.caller_class_name}_{caller_fn_name}"
 
         # cacher
-        if TestCollections.CACHER is None:
-            if not TestCollections.cacher_data_cleared and TestCollections.CACHER_FILE_PATH.exists():
-                TestCollections.CACHER_FILE_PATH.unlink()
-                TestCollections.cacher_data_cleared = True
-            TestCollections.CACHER = PersistentCacher(SqlDbFile(TestCollections.CACHER_FILE_PATH))
+        if MockCollections.CACHER is None:
+            if not MockCollections.cacher_data_cleared and MockCollections.CACHER_FILE_PATH.exists():
+                MockCollections.CACHER_FILE_PATH.unlink()
+                MockCollections.cacher_data_cleared = True
+            MockCollections.CACHER = PersistentCacher(SqlDbFile(MockCollections.CACHER_FILE_PATH))
         else:
-            TestCollections.CACHER.close()
-        self.cacher = TestCollections.CACHER
+            MockCollections.CACHER.close()
+        self.cacher = MockCollections.CACHER
 
         # create temporary collection
         collection_src_path = collection_dir / (collection_name+".anki2")
@@ -246,12 +243,12 @@ class TestCollection(Collection):
 
 
 
-TestCollectionFixture: TypeAlias = Callable[
+MockCollectionFixture: TypeAlias = Callable[
     [pytest.FixtureRequest],
-    Generator[TestCollection, None, None]
+    Generator[MockCollection, None, None]
 ]
 
-class TestCollections:
+class MockCollections:
 
     TEST_DATA_DIR = Path(__file__).parent / 'data'
     TEST_COLLECTIONS_DIR = TEST_DATA_DIR / 'collections'
@@ -259,12 +256,12 @@ class TestCollections:
     CACHER: Optional[PersistentCacher] = None
 
     cacher_data_cleared = False
-    last_initiated_test_collection: Optional[TestCollection] = None
+    last_initiated_test_collection: Optional[MockCollection] = None
 
     @staticmethod
     def run_cleanup_routine():
 
-        test_collection_folder = TestCollections.TEST_COLLECTIONS_DIR
+        test_collection_folder = MockCollections.TEST_COLLECTIONS_DIR
         cutoff = time.time() - 30  # 30 seconds
 
         patterns = ["*_temp.anki2", "*_temp.anki2-wal", "*_temp.sqlite"]
@@ -293,22 +290,22 @@ class TestCollections:
                     pass # Not empty or cannot remove → ignore
 
     @staticmethod
-    def get_test_collection(test_collection_name: str) -> TestCollection:
+    def get_test_collection(test_collection_name: str) -> MockCollection:
 
-        if TestCollections.last_initiated_test_collection:
-            TestCollections.last_initiated_test_collection.remove()
+        if MockCollections.last_initiated_test_collection:
+            MockCollections.last_initiated_test_collection.remove()
         else: # set up cleanup routine on exit only once
-            atexit.register(TestCollections.run_cleanup_routine)
+            atexit.register(MockCollections.run_cleanup_routine)
 
-        collection_dir = TestCollections.TEST_COLLECTIONS_DIR / test_collection_name
+        collection_dir = MockCollections.TEST_COLLECTIONS_DIR / test_collection_name
         lang_data_dir = collection_dir / 'lang_data'
 
         lang_data = LanguageData(lang_data_dir)
         caller_frame = inspect.stack()[1]
-        caller_context = TestCallerContext(caller_frame=caller_frame)
+        caller_context = CallerContext(caller_frame=caller_frame)
 
-        col = TestCollection(test_collection_name, collection_dir, lang_data, caller_context)
-        TestCollections.last_initiated_test_collection = col
+        col = MockCollection(test_collection_name, collection_dir, lang_data, caller_context)
+        MockCollections.last_initiated_test_collection = col
 
         atexit.register(col.remove)
 

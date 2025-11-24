@@ -1,13 +1,13 @@
 from frequencyman.configured_target import ValidConfiguredTarget
 from frequencyman.target_list import JsonTargetsValidity, TargetList
 
-from tests.tools import TestCollection, TestCollectionFixture, with_test_collection, test_collection
-col: TestCollectionFixture = test_collection
+from tests.tools import MockCollection, MockCollectionFixture, with_test_collection, test_collection
+col: MockCollectionFixture = test_collection
 
 class TestTargetList:
 
     @with_test_collection("big_collection_es")
-    def test_get_targets_from_json_valid_json(self, col: TestCollection):
+    def test_get_targets_from_json_valid_json(self, col: MockCollection):
 
         targets = TargetList.get_targets_from_json("""[
             {
@@ -55,7 +55,7 @@ class TestTargetList:
         )
 
     @with_test_collection("big_collection_es")
-    def test_target_list_is_valid_query(self, col: TestCollection):
+    def test_target_list_is_valid_query(self, col: MockCollection):
 
         assert TargetList.is_valid_query("deck:Spanish", col)
         assert TargetList.is_valid_query("-is:due", col)
@@ -72,7 +72,7 @@ class TestTargetList:
         assert not TargetList.is_valid_query(":missing_pre", col)
 
     @with_test_collection("big_collection_es")
-    def test_get_targets_from_json_invalid_json(self, col: TestCollection):
+    def test_get_targets_from_json_invalid_json(self, col: MockCollection):
 
         invalid_targets_data: list[str] = [
             "X",
@@ -87,7 +87,7 @@ class TestTargetList:
             assert len(targets.targets_defined) == 0, json_data
 
     @with_test_collection("big_collection_es")
-    def test_get_targets_from_json_invalid_targets(self, col: TestCollection):
+    def test_get_targets_from_json_invalid_targets(self, col: MockCollection):
 
         invalid_targets_data: dict[str, str] = {
             '': '',

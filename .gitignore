@@ -2,6 +2,10 @@ __pycache__/
 user_files/
 .pytest_cache/
 .tox/
+.nox/
+.ruff_cache/
+.mypy_cache/
+.idea/
 meta.json
 dump.log
 releases/

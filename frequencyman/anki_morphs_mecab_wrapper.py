@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
 #
-# Originally from https://github.com/mortii/anki-morphs/blob/main/ankimorphs/mecab_wrapper.py
+# Originally from https://github.com/mortii/anki-morphs/blob/main/ankimorphs/morphemizers/mecab_wrapper.py
 # This file is used for when "ankimorphs-japanese-mecab" 1974309724 is installed.
 #
 
@@ -109,11 +109,9 @@ def _spawn_cmd(cmd: list[str], _startupinfo: Any) -> subprocess.Popen[bytes]:
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 _SPACE_CHAR_REGEX = re.compile(r" ")
 
+# the cache needs to have a max size to maintain garbage collection
+@functools.lru_cache(maxsize=131072)
 def get_morphemes_mecab(expression: str) -> list[str]:
-
-    # Remove simple spaces that could be added by other add-ons and break the parsing.
-    if _SPACE_CHAR_REGEX.search(expression):
-        expression = _SPACE_CHAR_REGEX.sub("", expression)
 
     # HACK: mecab sometimes does not produce the right morphs if there are no extra characters in the expression,
     # so we just add a whitespace and a japanese punctuation mark "。" at the end to prevent the problem.

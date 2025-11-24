@@ -4,8 +4,12 @@ import re
 import shutil
 import subprocess
 import sys
+import os
 from typing import NoReturn, Optional
 import zipfile
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def copy_directory(src: Path, dst: Path, ignore_patterns: list[str]) -> None:
@@ -37,12 +41,15 @@ def copy_directory(src: Path, dst: Path, ignore_patterns: list[str]) -> None:
 def ignore_patterns_from_gitignore_file(src: Path) -> list[str]:
     gitignore_path = src / '.gitignore'
     ignore_patterns = []
-    if gitignore_path.exists():
-        with gitignore_path.open('r') as f:
-            for file_line in f:
-                line = file_line.strip()
-                if line and not line.startswith('#'):
-                    ignore_patterns.append(line)
+
+    if not gitignore_path.exists():
+        raise Exception("File {} does not exist!".format(gitignore_path))
+
+    with gitignore_path.open('r') as f:
+        for file_line in f:
+            line = file_line.strip()
+            if line and not line.startswith('#'):
+                ignore_patterns.append(line)
 
     return ignore_patterns
 
@@ -59,12 +66,14 @@ def set_release_version(src_dir: Path) -> Optional[str]:
 
     file_with_version = src_dir / 'frequencyman' / 'version.py'
 
-    if file_with_version.exists():
-        with file_with_version.open("r") as file:
-            current_content = file.read()
-        if provided_version_number in current_content:
-            print("Version given is the current version!")
-            return None
+    if not file_with_version.exists():
+        raise Exception("File {} does not exist!".format(file_with_version))
+
+    with file_with_version.open("r") as file:
+        current_content = file.read()
+    if provided_version_number in current_content:
+        print("Version given is the current version!")
+        return None
 
     with file_with_version.open("w") as file:
         file.write('FREQUENCYMAN_VERSION = "{}"'.format(provided_version_number))
@@ -101,7 +110,7 @@ def run_all_tests_with_success() -> bool:
 
     print("Running tests...")
 
-    result = subprocess.run(["python", "test.py", "--nox"], capture_output=True, text=True, check=False)
+    result = subprocess.run(["python", str(PROJECT_ROOT / "scripts" / "test.py"), "--nox"], capture_output=True, text=True, check=False)
 
     if result.returncode != 0:
         print(result.stderr if result.stderr else result.stdout)
@@ -113,7 +122,6 @@ def run_all_tests_with_success() -> bool:
 
 def create_zip(directory: Path, zip_file: Path) -> None:
 
-    import os
     with zipfile.ZipFile(zip_file, 'w') as zf:
         for root, _, files in os.walk(directory):
             root_path = Path(root)
@@ -127,61 +135,67 @@ def print_and_exit_error(message: str) -> NoReturn:
     sys.exit(1)
 
 
-# create release
+def create_new_release() -> str:
 
-if has_unstaged_changes():
-    print_and_exit_error("You have unstaged changes, please commit or stash them before creating a release!")
+    # check git status
 
-if has_staged_changes():
-     print_and_exit_error("You have staged changes, please commit or stash them before creating a release!")
+    if has_unstaged_changes():
+        print_and_exit_error("You have unstaged changes, please commit or stash them before creating a release!")
+
+    if has_staged_changes():
+        print_and_exit_error("You have staged changes, please commit or stash them before creating a release!")
+
+    # run all tests
+
+    if not run_all_tests_with_success():
+        print_and_exit_error("Tests failed!")
+
+    # create release
+
+    releases_dir = PROJECT_ROOT / 'releases'
+    new_release_src_dir = PROJECT_ROOT
+
+    assert releases_dir.is_dir() and new_release_src_dir.is_dir()
+
+    new_release_version = set_release_version(new_release_src_dir)
+
+    if not new_release_version:
+        print_and_exit_error("Failed to set new release version!")
+
+    new_release_obj_name = 'release-v'+new_release_version.replace('.', '_')
+    new_release_dst_dir = releases_dir / new_release_obj_name
+
+    if new_release_dst_dir.exists():
+        print_and_exit_error("Release directory '{}' already exists!".format(new_release_dst_dir))
+
+    ignore_patterns = ignore_patterns_from_gitignore_file(new_release_src_dir)
+
+    ignore_patterns.extend([
+        'tests/',
+        'scripts/',
+        'pytest.ini',
+        'create_release.py',
+        'create_default_wf_lists.py',
+        'pyproject.toml',
+        'requirements-dev.txt',
+        'run_pytest_benchmark.py',
+        'noxfile.py',
+        'test.py',
+    ])
+
+    copy_directory(new_release_src_dir, new_release_dst_dir, ignore_patterns)
+
+    release_zip_file = releases_dir / (new_release_obj_name + '.ankiaddon')
+    create_zip(new_release_dst_dir, release_zip_file)
+
+    print("Done!")
+    return new_release_version
 
 
-root_dir = Path.cwd()
-releases_dir = root_dir / 'releases'
-
-new_release_src_dir = root_dir
-
-if not releases_dir.exists():
-    releases_dir.mkdir()
-
-
-if not run_all_tests_with_success():
-    print_and_exit_error("Tests failed!")
-
-
-new_release_version = set_release_version(new_release_src_dir)
-
-if not new_release_version:
-    print_and_exit_error("Failed to set new release version!")
-
-new_release_obj_name = 'release-v'+new_release_version.replace('.', '_')
-new_release_dst_dir = releases_dir / new_release_obj_name
-
-if new_release_dst_dir.exists():
-    print_and_exit_error("Release directory '{}' already exists!".format(new_release_dst_dir))
-
-ignore_patterns = ignore_patterns_from_gitignore_file(new_release_src_dir)
-
-ignore_patterns.extend([
-    'tests/',
-    'pytest.ini',
-    'create_release.py',
-    'create_default_wf_lists.py',
-    'pyproject.toml',
-    'requirements-dev.txt',
-    'run_pytest_benchmark.py',
-    'noxfile.py',
-    'test.py',
-])
-
-copy_directory(new_release_src_dir, new_release_dst_dir, ignore_patterns)
-
-release_zip_file = releases_dir / (new_release_obj_name + '.ankiaddon')
-create_zip(new_release_dst_dir, release_zip_file)
-
-print("Done!")
+new_release_version = create_new_release()
 
 commit_tag_push = input("Use GIT to commit, tag and push to v{}? (Y/N) ".format(new_release_version))
+
 if commit_tag_push.lower() == "y":
     commit_and_tag(new_release_version)
     print("New version committed!")

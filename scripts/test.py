@@ -8,6 +8,15 @@ GREEN = "\033[92m"
 RESET = "\033[0m"
 
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+TEST_TARGET_FOLDER: list[Path] = [PROJECT_ROOT / dir for dir in ["tests", "scripts", "frequencyman"]]
+
+assert all(dir.is_dir() for dir in TEST_TARGET_FOLDER)
+
+def relative_path(path: Path) -> str:
+    return "./{}".format(path.relative_to(PROJECT_ROOT))
+
+
 def install_dev_requirements() -> None:
     """Install dev requirements from requirements-dev.txt."""
     print("="*60)
@@ -140,13 +149,13 @@ def run_mypy() -> None:
     ensure_packages_installed(["mypy"])
 
     root_files_to_run = [
-        ".\\{}".format(py_file.name)
-        for py_file in Path(__file__).parent.glob('*.py')
+        relative_path(py_file)
+        for py_file in PROJECT_ROOT.glob('*.py')
         if py_file.name != "__init__.py"
     ]
-    run_and_print_on_failure(["mypy", ".\\frequencyman", ".\\tests"] + root_files_to_run, "Mypy")
+    run_and_print_on_failure(["mypy"] + [relative_path(dir) for dir in TEST_TARGET_FOLDER] + root_files_to_run, "Mypy")
 
-    run_and_print_on_failure(["mypy", "__init__.py", "--ignore-missing-imports"], "Mypy")
+    run_and_print_on_failure(["mypy", "./__init__.py", "--ignore-missing-imports"], "Mypy")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Mypy was successful! ({elapsed_time:.0f} seconds){RESET}")
@@ -159,10 +168,10 @@ def run_ruff() -> None:
     start_time = time.perf_counter()
 
     ensure_packages_installed(["ruff"])
-    run_and_print_on_failure(["ruff", "check", ".\\frequencyman", ".\\tests", "--preview"], "Ruff")
+    run_and_print_on_failure(["ruff", "check"] + [relative_path(dir) for dir in TEST_TARGET_FOLDER], "Ruff")
 
-    for py_file in Path(__file__).parent.glob('*.py'):
-        run_and_print_on_failure(["ruff", "check", ".\\{}".format(py_file.name), "--preview"], "Ruff")
+    for py_file in PROJECT_ROOT.glob('*.py'):
+        run_and_print_on_failure(["ruff", "check", relative_path(py_file), "--preview"], "Ruff")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Ruff was successful! ({elapsed_time:.0f} seconds){RESET}")
@@ -174,10 +183,10 @@ def run_pyright() -> None:
     start_time = time.perf_counter()
 
     ensure_packages_installed(["pyright"])
-    run_and_print_on_failure(["pyright", ".\\frequencyman", ".\\tests"], "Pyright")
+    run_and_print_on_failure(["pyright"] + [relative_path(dir) for dir in TEST_TARGET_FOLDER], "Pyright")
 
-    for py_file in Path(__file__).parent.glob('*.py'):
-        run_and_print_on_failure(["pyright", ".\\{}".format(py_file.name)], "Pyright")
+    for py_file in PROJECT_ROOT.glob('*.py'):
+        run_and_print_on_failure(["pyright", relative_path(py_file)], "Pyright")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Pyright was successful! ({elapsed_time:.0f} seconds){RESET}")

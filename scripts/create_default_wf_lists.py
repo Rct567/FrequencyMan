@@ -8,6 +8,16 @@ from frequencyman.text_processing import LangId, TextProcessing
 from frequencyman.language_data import WordFrequencyLists
 
 
+SOURCE_WF_LIST_LENGTH_LIMIT = 1_000_000
+LANG_REQUIRED_WF_LIST_LENGTH = 4_000
+RESULT_WF_LIST_LENGTH_LIMIT = 15_000
+RESULT_WF_LIST_FILE_SIZE_LIMIT = 120_000
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+RESULT_WF_LIST_DIR = PROJECT_ROOT / 'default_wf_lists'
+
+assert RESULT_WF_LIST_DIR.is_dir()
+
+
 def add_en_contractions(wf_list: list[str]) -> None:
 
     contractions = {
@@ -108,12 +118,6 @@ def get_words_from_content(response: requests.Response, lang_id: LangId, wf_list
         if word:
             yield word
 
-
-SOURCE_WF_LIST_LENGTH_LIMIT = 1_000_000
-LANG_REQUIRED_WF_LIST_LENGTH = 4_000
-RESULT_WF_LIST_LENGTH_LIMIT = 15_000
-RESULT_WF_LIST_FILE_SIZE_LIMIT = 120_000
-RESULT_WF_LIST_DIR = Path(__file__).parent / 'default_wf_lists'
 
 
 def create_default_wf_lists():

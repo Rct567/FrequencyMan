@@ -112,7 +112,8 @@ passenv = ["USERNAME", "USER", "USERPROFILE", "HOME"]
 skip_install = true
 deps = [
     "-r requirements-dev.txt",
-    "pytest-xdist>=3.0"
+    "pytest-xdist>=3.0",
+    "pytest-qt>=4.0"
 ]
 commands = [
     ["pytest", "tests", "-n", "auto", "--color=yes", "-vv", "{posargs}"]

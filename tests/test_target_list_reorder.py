@@ -639,3 +639,47 @@ class TestTargetListReorder:
                 all_words.extend(segment_data.all_words)
 
             col.lock_and_assert_result('all_words_'+str(target.index_num), sorted(all_words))
+
+    @freeze_time_anki("2023-12-01")
+    @with_test_collection("two_deck_collection")
+    def test_internal_word_frequency_ranking(self, col: MockCollection):
+
+        # add fm_debug_info field to model
+        model = col.models.by_name("Basic")
+        if model and "fm_debug_info" not in col.models.field_names(model):
+            field = col.models.new_field("fm_debug_info")
+            col.models.add_field(model, field)
+            col.models.save(model)
+
+        target_list = TargetList(col.lang_data, col.cacher, col)
+
+        target_list.set_targets([
+            {
+                'decks': ['decka', 'deckb'],
+                'notes': [{
+                    "name": "Basic",
+                    "fields": {
+                        "Front": "EN",
+                        "Back": "ES"
+                    },
+                }],
+                'ranking_factors': {'internal_word_frequency': 1}
+            }
+        ])
+
+        # reorder cards
+        event_logger = EventLogger()
+        result = target_list.reorder_cards(col, event_logger)
+
+        reorder_result = result.reorder_result_list[0]
+        assert reorder_result.success and reorder_result.error is None
+        assert target_list[0].corpus_data is not None
+
+        # check if internal_word_frequency was calculated and used
+        # Since we can't easily inspect the internal state of CardRanker during execution without mocking,
+        # we rely on the fact that the reorder succeeded and produced a result.
+        # We can also check if the debug info contains 'internal_fr_scores'
+
+        for note_id in col.find_notes('deck:decka OR deck:deckb'):
+            note = col.get_note(note_id)
+            assert 'internal_fr_scores' in note['fm_debug_info']

@@ -76,6 +76,23 @@ class WordFrequencyOverview(WordsOverviewOption):
         return ["Word", "Word frequency"]
 
 
+class InternalWordFrequencyOverview(WordsOverviewOption):
+
+    title = "Internal word frequency"
+
+    @override
+    def data_description(self) -> str:
+        return "Internal word frequency for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> TableDataType:
+        return [(word, [frequency]) for word, frequency in self.selected_corpus_content_metrics.internal_word_frequency.items()]
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Internal word frequency"]
+
+
 class WordUnderexposureOverview(WordsOverviewOption):
 
     title = "Word underexposure"

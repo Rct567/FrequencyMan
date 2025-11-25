@@ -259,6 +259,26 @@ class SegmentContentMetrics:
         return new_word_frequency
 
     @cached_property
+    def internal_word_frequency(self) -> dict[WordToken, float]:
+
+        word_counts: dict[WordToken, int] = defaultdict(int)
+
+        for field_data_list in self.targeted_fields_per_note.values():
+            for field_data in field_data_list:
+                for word_token in field_data.field_value_tokenized:
+                    word_counts[word_token] += 1
+
+        word_counts =  dict(sorted(word_counts.items(), key=lambda item: item[1], reverse=True))
+
+        new_word_frequency: dict[WordToken, float] = {
+            word: float(1/(index+1)) for index, word in enumerate(word_counts.keys())
+        }
+
+        new_word_frequency = sort_dict_floats_values(new_word_frequency)
+        new_word_frequency = normalize_dict_positional_floats_values(new_word_frequency)
+        return new_word_frequency
+
+    @cached_property
     def ignored_words(self) -> set[str]:
 
         return self.language_data.get_ignored_words(self.lang_data_id)

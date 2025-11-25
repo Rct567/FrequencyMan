@@ -23,6 +23,7 @@ from .target_cards import TargetCards
 @dataclass_with_slots()
 class FieldMetrics:
     words_fr_scores: dict[WordToken, float] = field(default_factory=dict)
+    words_internal_fr_scores: dict[WordToken, float] = field(default_factory=dict)
     words_ue_scores: dict[WordToken, float] = field(default_factory=dict)
 
     words_familiarity_sweetspot_scores: dict[WordToken, float] = field(default_factory=dict)
@@ -38,11 +39,13 @@ class FieldMetrics:
     lowest_familiarity_word: tuple[WordToken, float] = (WordToken(""), 0)
     lowest_fr_least_familiar_word: tuple[WordToken, float, float] = (WordToken(""), 0, 0)
     lowest_fr_word: tuple[WordToken, float] = (WordToken(""), 0)
+    lowest_internal_fr_word: tuple[WordToken, float] = (WordToken(""), 0)
 
     highest_ue_word: tuple[WordToken, float] = (WordToken(""), 0)
     most_obscure_word: tuple[WordToken, float] = (WordToken(""), 0)
 
     fr_scores: list[float] = field(default_factory=list)
+    internal_fr_scores: list[float] = field(default_factory=list)
     ue_scores: list[float] = field(default_factory=list)
 
     ideal_new_words_count_score: float = 0
@@ -58,6 +61,7 @@ class FieldMetrics:
     familiarity_sweetspot_score: float = 0
 
     fr_score: float = 0
+    internal_fr_score: float = 0
     ue_score: float = 0
 
 
@@ -91,6 +95,7 @@ class CardRanker:
     def get_default_ranking_factors_span() -> dict[str, float]:
         return {
             "word_frequency": 1.0,
+            "internal_word_frequency": 0.0,
             "familiarity": 1.0,
             "familiarity_sweetspot": 0.5,
             "lexical_underexposure": 0.25,
@@ -100,6 +105,7 @@ class CardRanker:
             "most_obscure_word": 0.5,
             "lowest_fr_least_familiar_word": 0.25,
             "lowest_word_frequency": 1.0,
+            "lowest_internal_word_frequency": 0.0,
             "lowest_familiarity": 1.0,
             "new_words": 0.5,
             "no_new_words": 0.0,
@@ -384,6 +390,11 @@ class CardRanker:
                     field_fr_score = (median(field_metrics.fr_scores) + (min(field_metrics.fr_scores)*99)) / 100
                     field_metrics.fr_score = field_fr_score
 
+                # internal word frequency scores (push down)
+                if (len(field_metrics.internal_fr_scores) > 0):
+                    field_internal_fr_score = (median(field_metrics.internal_fr_scores) + (min(field_metrics.internal_fr_scores)*99)) / 100
+                    field_metrics.internal_fr_score = field_internal_fr_score
+
                 # underexposure scores (push up)
                 if (len(field_metrics.ue_scores) > 0):
                     bucked_score = min([bucked_size, fsum(field_metrics.ue_scores)]) / bucked_size
@@ -409,6 +420,8 @@ class CardRanker:
         content_metrics = self.corpus_data.content_metrics[corpus_segment_id]
         set_lexical_underexposure = self.__is_factor_used('lexical_underexposure')
         set_familiarity_sweetspot = self.__is_factor_used('familiarity_sweetspot')
+        set_internal_word_frequency = self.__is_factor_used('internal_word_frequency')
+        set_lowest_internal_word_frequency = self.__is_factor_used('lowest_internal_word_frequency')
         ignored_words = self.language_data.get_ignored_words(field_data.target_language_data_id)
 
         for word in field_data.field_value_tokenized:
@@ -425,6 +438,18 @@ class CardRanker:
             # lowest fr word
             if field_metrics.lowest_fr_word[0] == "" or word_fr < field_metrics.lowest_fr_word[1]:
                 field_metrics.lowest_fr_word = (word, word_fr)
+
+            # internal word frequency
+            if set_internal_word_frequency:
+                word_internal_fr = content_metrics.internal_word_frequency.get(word, 0)
+                field_metrics.internal_fr_scores.append(word_internal_fr)
+                field_metrics.words_internal_fr_scores[word] = word_internal_fr
+
+            # lowest internal fr word
+            if set_lowest_internal_word_frequency:
+                word_internal_fr = content_metrics.internal_word_frequency.get(word, 0)
+                if field_metrics.lowest_internal_fr_word[0] == "" or word_internal_fr < field_metrics.lowest_internal_fr_word[1]:
+                    field_metrics.lowest_internal_fr_word = (word, word_internal_fr)
 
             # lexical underexposure
             if set_lexical_underexposure:
@@ -492,6 +517,7 @@ class CardRanker:
             # define ranking factors for note, based on avg of fields
 
             notes_ranking_factors['word_frequency'][note_id] = fmean(field_metrics.fr_score for field_metrics in note_metrics)
+            notes_ranking_factors['internal_word_frequency'][note_id] = fmean(field_metrics.internal_fr_score for field_metrics in note_metrics)
             notes_ranking_factors['familiarity'][note_id] = fmean(field_metrics.familiarity_score for field_metrics in note_metrics)
 
             most_obscure_word_scores = [field_metrics.most_obscure_word[1] for field_metrics in note_metrics]
@@ -502,6 +528,9 @@ class CardRanker:
 
             lowest_word_frequency_scores = [field_metrics.lowest_fr_word[1] for field_metrics in note_metrics]
             notes_ranking_factors['lowest_word_frequency'][note_id] = (median(lowest_word_frequency_scores) + (min(lowest_word_frequency_scores)*9_999)) / 10_000
+
+            lowest_internal_word_frequency_scores = [field_metrics.lowest_internal_fr_word[1] for field_metrics in note_metrics]
+            notes_ranking_factors['lowest_internal_word_frequency'][note_id] = (median(lowest_internal_word_frequency_scores) + (min(lowest_internal_word_frequency_scores)*9_999)) / 10_000
 
             lowest_familiarity_scores = [field_metrics.lowest_familiarity_word[1] for field_metrics in note_metrics]
             notes_ranking_factors['lowest_familiarity'][note_id] = (median(lowest_familiarity_scores) + (min(lowest_familiarity_scores)*9_999)) / 10_000
@@ -659,6 +688,13 @@ class CardRanker:
                 if field_name in note:
                     note_data[field_name] = field_metrics.lowest_fr_word[0]
 
+        # set fm_lowest_internal_fr_word_[n]
+        if self.__note_has_n_field(note, 'fm_lowest_internal_fr_word', note_metrics):
+            for index, field_metrics in enumerate(note_metrics):
+                field_name = f'fm_lowest_internal_fr_word_{index}'
+                if field_name in note:
+                    note_data[field_name] = field_metrics.lowest_internal_fr_word[0]
+
         # set fm_lowest_familiarity_word_[n]
         if self.__note_has_n_field(note, 'fm_lowest_familiarity_word', note_metrics) or self.__note_has_n_field(note, 'fm_lowest_familiarity_word_static', note_metrics):
             for index, field_metrics in enumerate(note_metrics):
@@ -697,6 +733,8 @@ class CardRanker:
         set_ideal_new_word_count = self.__is_factor_used('ideal_new_word_count')
         set_proper_introduction = self.__is_factor_used('proper_introduction')
         set_proper_introduction_dispersed = self.__is_factor_used('proper_introduction_dispersed')
+        set_internal_word_frequency = self.__is_factor_used('internal_word_frequency')
+        set_lowest_internal_word_frequency = self.__is_factor_used('lowest_internal_word_frequency')
 
         def debug_info_float(score: float) -> str:
             return f"{score:.3g}"
@@ -727,13 +765,19 @@ class CardRanker:
             if 'fm_debug_info' in note:
                 debug_info: dict[str, list[str]] = {
                     'fr_scores': [debug_info_float(field_metrics.fr_score) for field_metrics in note_metrics],
+                    #'internal_fr_scores': [debug_info_float(field_metrics.internal_fr_score) for field_metrics in note_metrics],
                     'familiarity_scores': [debug_info_float(field_metrics.familiarity_score) for field_metrics in note_metrics],
                     'most_obscure_word': [debug_info_tuple_single(field_metrics.most_obscure_word) for field_metrics in note_metrics],
                     'ideal_focus_word_count': [debug_info_float(field_metrics.ideal_focus_words_count_score) for field_metrics in note_metrics],
                     'ideal_word_count': [debug_info_float(field_metrics.ideal_words_count_score) for field_metrics in note_metrics],
                     'lowest_fr_least_familiar_word': [debug_info_tuple_double(field_metrics.lowest_fr_least_familiar_word) for field_metrics in note_metrics],
                     'lowest_fr_word': [debug_info_tuple_single(field_metrics.lowest_fr_word) for field_metrics in note_metrics],
+                    #'lowest_internal_fr_word': [debug_info_tuple_single(field_metrics.lowest_internal_fr_word) for field_metrics in note_metrics],
                 }
+                if set_internal_word_frequency:
+                    debug_info['internal_fr_scores'] = [debug_info_float(field_metrics.internal_fr_score) for field_metrics in note_metrics]
+                if set_lowest_internal_word_frequency:
+                    debug_info['lowest_internal_fr_word'] = [debug_info_tuple_single(field_metrics.lowest_internal_fr_word) for field_metrics in note_metrics]
                 if set_lexical_underexposure:
                     debug_info['ue_scores'] = [debug_info_float(field_metrics.ue_score) for field_metrics in note_metrics]
                     debug_info['highest_ue_word'] = [debug_info_tuple_single(field_metrics.highest_ue_word) for field_metrics in note_metrics]
@@ -776,6 +820,7 @@ class CardRanker:
 
                 fields_words_ue_scores_sorted = []
                 fields_words_fr_scores_sorted = []
+                fields_words_internal_fr_scores_sorted = []
                 fields_words_familiarity_sweetspot_scores_sorted = []
                 fields_words_familiarity_scores_sorted = []
 
@@ -785,6 +830,9 @@ class CardRanker:
                     )
                     fields_words_fr_scores_sorted.append(
                         dict(sorted(field_metrics.words_fr_scores.items(), key=lambda item: item[1], reverse=True))
+                    )
+                    fields_words_internal_fr_scores_sorted.append(
+                        dict(sorted(field_metrics.words_internal_fr_scores.items(), key=lambda item: item[1], reverse=True))
                     )
                     fields_words_familiarity_sweetspot_scores_sorted.append(
                         dict(sorted(field_metrics.words_familiarity_sweetspot_scores.items(), key=lambda item: item[1], reverse=True))
@@ -797,6 +845,7 @@ class CardRanker:
                     f"{target_title_html}"
                     f"words_ue_scores: {debug_info_list_dict(fields_words_ue_scores_sorted)}<br />\n"
                     f"words_fr_scores: {debug_info_list_dict(fields_words_fr_scores_sorted)}<br />\n"
+                    f"words_internal_fr_scores: {debug_info_list_dict(fields_words_internal_fr_scores_sorted)}<br />\n"
                     f"familiarity_sweetspot_scores: {debug_info_list_dict(fields_words_familiarity_sweetspot_scores_sorted)}<br />\n"
                     f"familiarity_scores: {debug_info_list_dict(fields_words_familiarity_scores_sorted)}<br />\n"
                 )

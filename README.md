@@ -138,6 +138,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 ```json
 "ranking_factors" : {
     "word_frequency": 1.0,
+    "internal_word_frequency": 0.0,
     "familiarity": 1.0,
     "familiarity_sweetspot": 0.5,
     "lexical_underexposure": 0.25,
@@ -147,6 +148,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
     "most_obscure_word": 0.5,
     "lowest_fr_least_familiar_word": 0.25,
     "lowest_word_frequency": 1.0,
+    "lowest_internal_word_frequency": 0.0,
     "lowest_familiarity": 1.0,
     "new_words": 0.5,
     "no_new_words": 0.0,
@@ -159,7 +161,8 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 ### Description
 
 - `word_frequency`: Represents the _word frequency_ of the words in the content, with a bias toward the lowest value. The _word frequency_ values come from the provided _word frequency lists_.
-- `familiarity`: Represents how familiar you are with the words in the content. Like _word_frequency_, it has a bias toward the lowest value. How familiar you are with a word depends on how many times you have seen the word and in what context that specific word was present (the interval and ease of the card, the amount of words in the content etc).
+- `internal_word_frequency`: Represents the _word frequency_ of the words based on their occurrence within the notes themselves (the target's content), rather than external frequency lists. Like `word_frequency`, it has a bias toward the lowest value.
+- `familiarity`: Represents how familiar you are with the words in the content. Like _word_frequency_, it has a bias toward the lowest value. How familiar you are with a word depends on how many times you have seen the word and in what context that specific word was present (the interval and ease of the card, the amount of words in the content etc.).
 - `familiarity_sweetspot`: Promotes cards with words close to a specific 'sweetspot' of familiarity. This can be used to promote cards with words that have already been introduced to you by reviewed cards, but might benefit from 'reinforcement'. These can be recently introduced words, or words that are 'hidden' (non-prominent) in older cards. Use target setting `familiarity_sweetspot_point` to customize the sweetspot value.
 - `lexical_underexposure`: Promotes cards with high-frequency words that you are not yet proportionally familiar with. Basically, _lexical_underexposure = (word_frequency-word_familiarity)_.
 - `ideal_focus_word_count`: Promotes cards with only a single '_focus word_'. See also _i+1_: https://en.wikipedia.org/wiki/Input_hypothesis#Input_hypothesis. A _focus word_ is a new word or a word you are not yet appropriately familiar with. Use target setting `maturity_threshold` to customize the maximum familiarity of the focus words.
@@ -171,6 +174,7 @@ FrequencyMan will use tokenizers from other plugins, if there is no custom token
 - `most_obscure_word`: Represents the most obscure word. The non-obscurity of a word is defined by either _word_frequency_ or _word_familiarity_ (depending on which is higher, and thus less 'obscure').
 - `lowest_fr_least_familiar_word`: Represents the lowest _word frequency_ among the words with the lowest familiarity score.
 - `lowest_word_frequency`: Represents the lowest _word frequency_ found in the content of any targeted field. This is different from `word_frequency`, which reflect the average _word frequency_ of all targeted fields.
+- `lowest_internal_word_frequency`: Represents the lowest _internal word frequency_ found in the content of any targeted field. This is different from `internal_word_frequency`, which reflects the average _internal word frequency_ of all targeted fields.
 - `lowest_familiarity`: Represents the lowest _familiarity_ found in the content of any targeted field. This is different from `familiarity`, which reflect the average _familiarity_ of all targeted fields.
 - `new_words`: Promotes cards with one or more new words.
 - `no_new_words`: Promotes cards with no new words. Put differently, it promotes cards who's words have all been seen before during review.

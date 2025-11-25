@@ -24,7 +24,7 @@ from ..target import Target
 from .words_overview_tab_additional_columns import (
     AdditionalColumn, WordFrequencyColumn, WordFamiliarityColumn, NumberOfCardsColumn, NumberOfNotesColumn, WordPresenceColumn)
 from .words_overview_tab_overview_options import (
-    AllWordsOverview, LearningWordsOverview, MatureWordsOverview, WordsOverviewOption, WordFamiliarityOverview, WordFrequencyOverview, WordUnderexposureOverview,
+    AllWordsOverview, LearningWordsOverview, MatureWordsOverview, WordsOverviewOption, WordFamiliarityOverview, WordFrequencyOverview, InternalWordFrequencyOverview, WordUnderexposureOverview,
     WordFamiliaritySweetspotOverview, NotInWordFrequencyListsOverview,
     NotInTargetCardsOverview, LonelyWordsOverview, NewWordsOverview, FocusWordsOverview)
 from .words_overview_filters import FilterOption, IgnoredWordsFilter, LearningWordsFilter, MatureWordsFilter
@@ -79,6 +79,7 @@ class WordsOverviewTab(FrequencyManTab):
     OVERVIEW_OPTIONS: ClassVar[Sequence[type[WordsOverviewOption]]] = (
         WordFamiliarityOverview,
         WordFrequencyOverview,
+        InternalWordFrequencyOverview,
         WordUnderexposureOverview,
         WordFamiliaritySweetspotOverview,
         NewWordsOverview,

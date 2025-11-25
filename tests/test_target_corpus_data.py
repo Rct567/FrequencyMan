@@ -5,6 +5,11 @@ from anki.notes import NoteId
 
 from frequencyman.target_cards import TargetCard
 from frequencyman.target_corpus_data import TargetCorpusData
+from frequencyman.target_list import TargetList
+from frequencyman.text_processing import WordToken
+
+from .tools import MockCollection, MockCollectionFixture, test_collection, with_test_collection
+col: MockCollectionFixture = test_collection
 
 
 def card_familiarity_score(card: TargetCard):
@@ -67,3 +72,52 @@ class TestTargetCorpusData:
             card_score = round(card_familiarity_score(card), expected_score[1])
             assert card_score == round(expected_score[0], expected_score[1]), index
 
+    @with_test_collection("empty_collection")
+    def test_internal_word_frequency(self, col: MockCollection):
+
+        # Set up deck and note type
+        did = col.decks.id("Default")
+        model = col.models.by_name("Basic")
+        assert did and model
+
+        # Create first note with "apple banana apple"
+        note1 = col.new_note(model)
+        note1["Front"] = "apple banana apple"
+        note1["Back"] = "test"
+        col.add_note(note1, did)
+
+        # Create second note with "banana cherry"
+        note2 = col.new_note(model)
+        note2["Front"] = "banana cherry"
+        note2["Back"] = "test"
+        col.add_note(note2, did)
+
+        target_list = TargetList(col.lang_data, col.cacher, col)
+
+        target_list.set_targets([
+            {
+                'deck': 'Default',
+                'notes': [{
+                    "name": "Basic",
+                    "fields": {
+                        "Front": "EN"
+                    },
+                }]
+            }
+        ])
+
+        target = target_list[0]
+
+        corpus_data = target.get_corpus_data_non_cached(target.get_cards())
+        assert corpus_data
+        assert corpus_data.content_metrics
+        content_metrics = next(iter(corpus_data.content_metrics.values()))
+        internal_wf = content_metrics.internal_word_frequency
+
+        # Expected order: words with count=2 should come before word with count=1
+        # Since apple and banana both have count=2, either order is acceptable
+        expected_order_1 = [WordToken("apple"), WordToken("banana"), WordToken("cherry")]
+        expected_order_2 = [WordToken("banana"), WordToken("apple"), WordToken("cherry")]
+
+        # Assert one of the valid orders
+        assert list(internal_wf.keys()) in [expected_order_1, expected_order_2]

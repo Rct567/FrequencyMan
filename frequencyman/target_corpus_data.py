@@ -18,7 +18,10 @@ from anki.notes import NoteId
 from .lib.persistent_cacher import PersistentCacher
 from .target_cards import TargetCard, TargetCards
 from .language_data import LangId, LangDataId, LanguageData
-from .lib.utilities import dataclass_with_slots, normalize_dict_floats_values, normalize_dict_positional_floats_values, remove_bottom_percent_dict, sort_dict_floats_values
+from .lib.utilities import (
+    dataclass_with_slots, normalize_dict_floats_values, normalize_dict_positional_floats_values,
+    remove_bottom_percent_dict, sort_dict_floats_values
+)
 from .text_processing import TextProcessing, WordToken
 
 
@@ -268,15 +271,18 @@ class SegmentContentMetrics:
                 for word_token in field_data.field_value_tokenized:
                     word_counts[word_token] += 1
 
-        word_counts =  dict(sorted(word_counts.items(), key=lambda item: item[1], reverse=True))
+        word_presence: dict[WordToken, float] = {word: max(word_presence_scores) for word, word_presence_scores in self.all_words_presence.items()}
+        max_presence = max(word_presence.values())
+        word_presence = {word: word_presence_score/max_presence for word, word_presence_score in word_presence.items()}
 
-        new_word_frequency: dict[WordToken, float] = {
-            word: float(1/(index+1)) for index, word in enumerate(word_counts.keys())
-        }
+        max_count = max(word_counts.values())
+        word_frequency = {word: (word_count/max_count) for word, word_count in word_counts.items()}
+        word_frequency = dict(sorted(word_frequency.items(), key=lambda item: (item[1], word_presence[item[0]]), reverse=True))
 
-        new_word_frequency = sort_dict_floats_values(new_word_frequency)
-        new_word_frequency = normalize_dict_positional_floats_values(new_word_frequency)
-        return new_word_frequency
+        word_frequency = {word: 1.0/index for index, word in enumerate(word_frequency.keys(), start=1)}
+
+        word_frequency = normalize_dict_positional_floats_values(word_frequency)
+        return word_frequency
 
     @cached_property
     def ignored_words(self) -> set[str]:

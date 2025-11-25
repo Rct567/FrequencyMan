@@ -24,6 +24,8 @@ from frequencyman.lib.persistent_cacher import PersistentCacher, SqlDbFile
 
 
 CURRENT_PID = os.getpid()
+TEST_DATA_DIR = Path(__file__).parent / 'data'
+TEST_COLLECTIONS_DIR = TEST_DATA_DIR / 'collections'
 
 
 T = TypeVar('T', bound=Callable[..., Any])
@@ -59,7 +61,7 @@ def test_collection(request: pytest.FixtureRequest) -> Generator[MockCollection,
         test_function_name=request.function.__name__
     )
 
-    col = MockCollections.get_test_collection(name, caller_context)
+    col = MockCollections.get_new_test_collection(name, caller_context)
 
     try:
         yield col
@@ -77,7 +79,9 @@ class MockCollection(Collection):
     collection_name: str
     collection_dir: Path
     lang_data: LanguageData
+
     cacher: PersistentCacher
+    cacher_file_path: Path
 
     caller_class_name: str
     caller_full_name: str
@@ -138,9 +142,8 @@ class MockCollection(Collection):
         assert caller_fn_name.startswith('test_')
 
         # cacher
-        MockCollections.clear_cacher()
-        MockCollections.CACHER = PersistentCacher(SqlDbFile(MockCollections.CACHER_FILE_PATH))
-        self.cacher = MockCollections.CACHER
+        self.cacher_file_path = TEST_DATA_DIR / 'cacher_data_{}_temp.sqlite'.format(CURRENT_PID)
+        self.cacher = PersistentCacher(SqlDbFile(self.cacher_file_path))
 
         # create temporary collection
         collection_src_path = collection_dir / (collection_name+".anki2")
@@ -200,12 +203,15 @@ class MockCollection(Collection):
                 file.write('\n'.join(map(str, sorted_items)))
             print("WARNING: Order file '{}' for '{}' didn't exist yet!".format(order_file_path, self.collection_name))
 
+
     def remove(self):
 
         if self.db:
            self.close()
 
-        MockCollections.clear_cacher()
+        if self.cacher:
+            self.cacher.close()
+            self.cacher_file_path.unlink(missing_ok=True)
 
         (media_dir, media_db) = media_paths_from_col_path(self.path)
 
@@ -233,24 +239,12 @@ MockCollectionFixture: TypeAlias = Callable[
 
 class MockCollections:
 
-    TEST_DATA_DIR = Path(__file__).parent / 'data'
-    TEST_COLLECTIONS_DIR = TEST_DATA_DIR / 'collections'
-    CACHER_FILE_PATH = TEST_DATA_DIR / 'cacher_data_{}_temp.sqlite'.format(CURRENT_PID)
-    CACHER: Optional[PersistentCacher] = None
-
     last_initiated_test_collection: Optional[MockCollection] = None
-
-    @staticmethod
-    def clear_cacher():
-        if MockCollections.CACHER:
-            MockCollections.CACHER.close()
-            MockCollections.CACHER_FILE_PATH.unlink(missing_ok=True)
-            MockCollections.CACHER = None
 
     @staticmethod
     def run_cleanup_routine():
 
-        test_collection_folder = MockCollections.TEST_COLLECTIONS_DIR
+        test_collection_folder = TEST_COLLECTIONS_DIR
         cutoff = time.time() - 30  # 30 seconds
 
         patterns = ["*_temp.anki2", "*_temp.anki2-wal", "*_temp.sqlite"]
@@ -279,19 +273,16 @@ class MockCollections:
                     pass # Not empty or cannot remove → ignore
 
     @staticmethod
-    def get_test_collection(test_collection_name: str, caller_context: CallerContext) -> MockCollection:
+    def get_new_test_collection(test_collection_name: str, caller_context: CallerContext) -> MockCollection:
 
         if MockCollections.last_initiated_test_collection:
             MockCollections.last_initiated_test_collection.remove()
         else: # set up cleanup routine on exit only once
             atexit.register(MockCollections.run_cleanup_routine)
 
-        collection_dir = MockCollections.TEST_COLLECTIONS_DIR / test_collection_name
+        collection_dir = TEST_COLLECTIONS_DIR / test_collection_name
         lang_data_dir = collection_dir / 'lang_data'
         lang_data = LanguageData(lang_data_dir)
-
-        # caller_frame = inspect.stack()[1]
-        # caller_context = CallerContext(caller_frame=caller_frame)
 
         col = MockCollection(test_collection_name, collection_dir, lang_data, caller_context)
 

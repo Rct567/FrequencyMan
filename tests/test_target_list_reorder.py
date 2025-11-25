@@ -427,25 +427,21 @@ class TestTargetListReorder:
         col.lock_and_assert_order('sorted_cards_ids', result.reorder_result_list[0].sorted_cards_ids)
 
     @freeze_time_anki("2023-12-01")
-    @with_test_collection("two_deck_collection")
+    @with_test_collection("empty_collection")
     def test_two_deck_collection_no_cards(self, col: MockCollection):
-
-        # remove all notes
-        col.remove_notes(list(col.find_notes('*')))
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([
             {
-                'decks': 'decka, deckb',
+                'deck': 'Default',
                 'notes': [{
                     "name": "Basic",
                     "fields": {
                         "Front": "EN",
                         "Back": "EN"
                     },
-                }],
-                'reorder_scope_query': 'deck:decka'
+                }]
             }
         ])
 

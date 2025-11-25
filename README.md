@@ -195,6 +195,7 @@ Dynamic field names (the number at the end can be replaced with the index number
 - `fm_main_focus_word_0`: The focus word with the lowest familiarity for field 0.
 - `fm_main_focus_word_static_0`: The focus word with the lowest familiarity for field 0. This field will not be updated once set.
 - `fm_lowest_fr_word_0`: The word with the lowest word frequency for field 0.
+- `fm_lowest_internal_fr_word_0`: The word with the lowest internal word frequency for field 0.
 - `fm_lowest_familiarity_word_0`: The word with the lowest familiarity for field 0.
 - `fm_lowest_familiarity_word_static_0`: The word with the lowest familiarity for field 0. This field will not be updated once set.
 

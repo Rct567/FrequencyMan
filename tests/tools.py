@@ -21,11 +21,23 @@ from anki.media import media_paths_from_col_path
 
 from frequencyman.language_data import LanguageData
 from frequencyman.lib.persistent_cacher import PersistentCacher, SqlDbFile
+from frequencyman.reorder_logger import ReorderLogger
 
 
 CURRENT_PID = os.getpid()
 TEST_DATA_DIR = Path(__file__).parent / 'data'
 TEST_COLLECTIONS_DIR = TEST_DATA_DIR / 'collections'
+
+
+@pytest.fixture
+def reorder_logger(tmp_path: Path) -> Generator[ReorderLogger, None, None]:
+    db_path = tmp_path / 'test_reorder_log.sqlite'
+    # db_path = Path(TEST_DATA_DIR) / 'test_reorder_log.sqlite'
+    if db_path.exists():
+        db_path.unlink()
+    reorder_logger = ReorderLogger(SqlDbFile(db_path))
+    yield reorder_logger
+    reorder_logger.close()
 
 
 T = TypeVar('T', bound=Callable[..., Any])

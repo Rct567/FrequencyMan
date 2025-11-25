@@ -1,26 +1,16 @@
 from pathlib import Path
-from collections.abc import Generator
+from typing import Callable
 import pytest
 
 from frequencyman.target_list import TargetList
 from frequencyman.lib.event_logger import EventLogger
 from frequencyman.reorder_logger import ReorderLogger, SqlDbFile
 
-from tests.tools import MockCollection, MockCollectionFixture, freeze_time_anki, with_test_collection, test_collection
+from tests.tools import MockCollection, MockCollectionFixture, freeze_time_anki, with_test_collection, test_collection, reorder_logger
 col: MockCollectionFixture = test_collection
+reorder_logger: Callable[[Path], ReorderLogger] = reorder_logger
 
 TEST_DATA_DIR = Path(__file__).parent / 'data'
-
-
-@pytest.fixture
-def reorder_logger(tmpdir: str) -> Generator[ReorderLogger, None, None]:
-    db_path = Path(tmpdir) / 'test_reorder_log.sqlite'
-    # db_path = Path(TEST_DATA_DIR) / 'test_reorder_log.sqlite'
-    if db_path.exists():
-        db_path.unlink()
-    reorder_logger = ReorderLogger(SqlDbFile(db_path))
-    yield reorder_logger
-    reorder_logger.close()
 
 
 class TestTargetReorderLogger:

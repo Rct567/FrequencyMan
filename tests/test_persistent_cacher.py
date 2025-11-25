@@ -12,8 +12,8 @@ def dummy_producer() -> str:
 
 
 @pytest.fixture
-def cacher(tmpdir: str) -> Generator[PersistentCacher, None, None]:
-    db_path = Path(tmpdir) / "test_cache.db"
+def cacher(tmp_path: Path) -> Generator[PersistentCacher, None, None]:
+    db_path = tmp_path / "test_cache.db"
     cacher = PersistentCacher(SqlDbFile(db_path), save_buffer_limit=2)
     yield cacher
     cacher.close()

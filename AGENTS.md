@@ -129,14 +129,20 @@ FrequencyMan is an Anki addon that allows it's user to sort new cards by word fr
 - Use PyQt6 imports from `aqt.qt`
 - Ensure compatibility with Python 3.9
 
+#### PyQt6
+- Ensure PyQt6 compatibility
+- Qt6 requires enums to be prefixed with their type name. For example:
+ `self.setWizardStyle(QWizard.ClassicStyle)` becomes `self.setWizardStyle(QWizard.WizardStyle.ClassicStyle)` and `f.setStyleHint(QFont.Monospace)` becomes `f.setStyleHint(QFont.StyleHint.Monospace)`.
+
 
 ## Workflow Summary
 
 1. **Create code** following style guidelines
-2. **Run linters** immediately: `ruff check`, `mypy`, `pyright`
+2. **Run linters** immediately: `ruff`, `mypy` and `pyright`
 3. **Fix all issues** before proceeding
 4. **Write tests** for the new code
-5. **Run tests**: `pytest -k <pattern>`
+5. **Run tests**: `pytest`
+6. **Run linters again**: `ruff`, `mypy` and `pyright`
 6. **Verify** all checks pass before considering task complete
 
 ## Quick Reference
@@ -145,7 +151,7 @@ FrequencyMan is an Anki addon that allows it's user to sort new cards by word fr
 1. Create file in appropriate directory
 2. Add proper imports and type hints
 3. Write code following style guide
-4. Run: `ruff check <file> && mypy <file> && pyright <file>`
+4. Run: `ruff check <file>', `mypy <file>` and `pyright <file>`
 5. Create corresponding test file
 6. Run: `pytest`
 
@@ -153,7 +159,7 @@ FrequencyMan is an Anki addon that allows it's user to sort new cards by word fr
 1. Create `tests/test_<module>.py`
 2. Import what you're testing
 3. Write comprehensive tests
-4. Run: `pytest -k <module> -v`
+4. Run: `pytest`
 5. Check linters: `ruff check tests/test_<module>.py`
 
 Remember: Clean code is better than clever code. Readability counts!

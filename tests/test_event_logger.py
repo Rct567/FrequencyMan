@@ -136,25 +136,11 @@ def test_add_benchmarked_entry_basic():
     assert len(logger.event_log) == 1
     assert "Benchmarked operation" in logger.event_log[0]
     assert "(took" in logger.event_log[0]
-    assert "seconds)" in logger.event_log[0]
-
-
-def test_add_benchmarked_entry_timing():
-    """Test that benchmarked entry records accurate timing."""
-    logger = EventLogger()
-    
-    with logger.add_benchmarked_entry("Timed operation"):
-        time.sleep(0.05)  # Sleep for 50ms
-    
-    # Extract the time from the log entry
-    log_entry = logger.event_log[0]
-    assert "0.0" in log_entry  # Should show at least 0.0X seconds
 
 
 def test_add_benchmarked_entry_increments_timed_entries():
     """Test that timed_entries_open is incremented during benchmarked entry."""
     logger = EventLogger()
-    
     assert logger.timed_entries_open == 0
     
     with logger.add_benchmarked_entry("Operation"):

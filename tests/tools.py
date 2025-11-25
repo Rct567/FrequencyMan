@@ -138,13 +138,8 @@ class MockCollection(Collection):
         assert caller_fn_name.startswith('test_')
 
         # cacher
-        if MockCollections.CACHER is None:
-            if not MockCollections.cacher_data_cleared and MockCollections.CACHER_FILE_PATH.exists():
-                MockCollections.CACHER_FILE_PATH.unlink()
-                MockCollections.cacher_data_cleared = True
-            MockCollections.CACHER = PersistentCacher(SqlDbFile(MockCollections.CACHER_FILE_PATH))
-        else:
-            MockCollections.CACHER.close()
+        MockCollections.clear_cacher()
+        MockCollections.CACHER = PersistentCacher(SqlDbFile(MockCollections.CACHER_FILE_PATH))
         self.cacher = MockCollections.CACHER
 
         # create temporary collection
@@ -210,6 +205,8 @@ class MockCollection(Collection):
         if self.db:
            self.close()
 
+        MockCollections.clear_cacher()
+
         (media_dir, media_db) = media_paths_from_col_path(self.path)
 
         try:
@@ -241,8 +238,14 @@ class MockCollections:
     CACHER_FILE_PATH = TEST_DATA_DIR / 'cacher_data_{}_temp.sqlite'.format(CURRENT_PID)
     CACHER: Optional[PersistentCacher] = None
 
-    cacher_data_cleared = False
     last_initiated_test_collection: Optional[MockCollection] = None
+
+    @staticmethod
+    def clear_cacher():
+        if MockCollections.CACHER:
+            MockCollections.CACHER.close()
+            MockCollections.CACHER_FILE_PATH.unlink(missing_ok=True)
+            MockCollections.CACHER = None
 
     @staticmethod
     def run_cleanup_routine():

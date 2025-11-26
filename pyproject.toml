@@ -59,7 +59,7 @@ max-returns = 70
 [tool.pyright]
 pythonVersion = "3.9"
 typeCheckingMode="strict"
-include = ["frequencyman", "tests", "./__init__.py"]
+include = ["frequencyman", "tests", "./__init__.py", "scripts"]
 exclude = ["releases", "user_files", "**/tokenizers/*/"]
 reportMissingImports = true
 reportMissingTypeStubs = true
@@ -102,7 +102,7 @@ exclude = ["^releases/", "^user_files/"]
 
 [tool.tox]
 requires = ["tox>=4.19"]
-env_list = ["py39", "py311", "py313"]
+env_list = ["py39", "py311", "py313", "coverage"]
 
 [tool.tox.env_run_base]
 description = "Run tests with pytest"
@@ -118,4 +118,40 @@ deps = [
 commands = [
     ["pytest", "tests", "-n", "auto", "--color=yes", "-vv", "{posargs}"]
 ]
+
+[tool.tox.env.coverage]
+description = "Run tests with coverage"
+runner = "uv-venv-runner"
+set_env.PYTHONPATH = "{tox_root}"
+passenv = ["USERNAME", "USER", "USERPROFILE", "HOME"]
+skip_install = true
+deps = [
+    "-r requirements-dev.txt",
+    "pytest-cov"
+]
+commands = [
+    ["pytest", "tests", "--cov=frequencyman", "--cov-report=html", "--cov-report=term"]
+]
+
+[tool.coverage.run]
+source = ["frequencyman"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
 

@@ -19,3 +19,5 @@ events.log
 cache*.sqlite
 *.sqlite-journal
 *.db-journal
+.coverage
+htmlcov/

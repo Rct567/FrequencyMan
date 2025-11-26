@@ -1,3 +1,4 @@
+import json
 import re
 import pytest
 
@@ -252,7 +253,6 @@ def test_load_json_with_tolerance_json_inside_string():
     assert load_json_with_tolerance(r'{"key": "[1, 2, ]",}') == {"key": "[1, 2, ]"}
 
 
-
-
-
-
+def test_load_json_with_tolerance_invalid_json():
+    with pytest.raises(json.JSONDecodeError):
+        load_json_with_tolerance("{invalid: json}")

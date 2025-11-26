@@ -24,6 +24,7 @@ ignore = [
     "PLR2004",   # Magic value comparison - Checks for the use of unnamed numerical constants ("magic values") in comparisons.
     "PLW0603",   # Global statement - Checks for the use of `global` statements to update identifiers.
     "E731",      # Lambda assignment - Do not assign a lambda expression, use a def.
+    "E402",      # Module level import not at top of file - Checks for import statements that should always be at the top of the file.
     "PLC0415",   # Import outside top level - `import` should be at the top-level of a module.
     "PLR2044",   # Empty comment - Checks for a # symbol appearing on a line not followed by an actual comment.
     "PLR6104",   # Non-augmented assignment - Checks for assignments that can be replaced by augmented assignments (like x = x + y -> x += y).

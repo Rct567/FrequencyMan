@@ -1,7 +1,12 @@
 from pathlib import Path
 import time
+import sys
 from collections.abc import Iterator
 import requests
+
+# Add project root to sys.path to allow importing from frequencyman
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.append(str(PROJECT_ROOT))
 
 from frequencyman.static_lang_data import LANGUAGE_NAMES_ENG_AND_NATIVE, get_default_wf_list_sources
 from frequencyman.text_processing import LangId, TextProcessing
@@ -12,7 +17,6 @@ SOURCE_WF_LIST_LENGTH_LIMIT = 1_000_000
 LANG_REQUIRED_WF_LIST_LENGTH = 4_000
 RESULT_WF_LIST_LENGTH_LIMIT = 15_000
 RESULT_WF_LIST_FILE_SIZE_LIMIT = 120_000
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RESULT_WF_LIST_DIR = PROJECT_ROOT / 'default_wf_lists'
 
 assert RESULT_WF_LIST_DIR.is_dir()

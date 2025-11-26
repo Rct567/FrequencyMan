@@ -4,8 +4,6 @@
 
 FrequencyMan allows you to __sort your new cards__ by word frequency, familiarity, and other useful factors.
 
-Tested on Anki 2.1.60 (Qt6) and 23.12.1 (Qt6).
-
 ![FrequencyMan](frequencyman_showcase_1.gif)
 
 ## Features

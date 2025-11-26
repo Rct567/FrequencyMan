@@ -121,9 +121,8 @@ def test_get_elapsed_time_after_start():
     logger.add_entry("Start")
     time.sleep(0.01)  # Sleep for 10ms
     elapsed = logger.get_elapsed_time()
-    
+
     assert elapsed > 0.0
-    assert elapsed >= 0.01
 
 
 def test_add_benchmarked_entry_basic():

@@ -6,8 +6,6 @@ from frequencyman.tokenizers import get_tokenizer_registry
 def test_acceptable_word():
 
     is_acceptable_word = TextProcessing.get_word_accepter(None)
-    is_acceptable_word_zh = TextProcessing.get_word_accepter(LangId("zh"))
-    is_acceptable_word_vi = TextProcessing.get_word_accepter(LangId("vi"))
 
     assert is_acceptable_word("app-le") == True
     assert is_acceptable_word("app---le") == True
@@ -23,9 +21,25 @@ def test_acceptable_word():
     assert is_acceptable_word("$$$$$$$") == False
     assert is_acceptable_word("___") == False
 
-    assert is_acceptable_word_zh("你") == True
+def test_acceptable_word_languages():
 
+    is_acceptable_word_zh = TextProcessing.get_word_accepter(LangId("zh"))
+    is_acceptable_word_vi = TextProcessing.get_word_accepter(LangId("vi"))
+    is_acceptable_word_ko = TextProcessing.get_word_accepter(LangId("ko"))
+    is_acceptable_word_ar = TextProcessing.get_word_accepter(LangId("ar"))
+    is_acceptable_word_am = TextProcessing.get_word_accepter(LangId("am"))
+
+    assert is_acceptable_word_zh("你") == True
     assert is_acceptable_word_vi("đường") == True
+    assert is_acceptable_word_ko("안녕하세요") == True
+    assert is_acceptable_word_ar("مرحبا") == True
+    assert is_acceptable_word_am("እኔ") == True
+
+    assert is_acceptable_word_zh("hello") == False
+    assert is_acceptable_word_vi("hello")  # Should be accepted
+    assert is_acceptable_word_ko("hello") == False
+    assert is_acceptable_word_ar("hello") == False
+    assert is_acceptable_word_am("hello") == False
 
 
 def test_get_plain_text():

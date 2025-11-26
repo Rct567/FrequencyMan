@@ -26,6 +26,7 @@ from .lib.event_logger import EventLogger
 
 @dataclass(frozen=True)
 class TargetListReorderResult:
+    reorder_canceled: bool
     reorder_result_list: list[TargetReorderResult]
     update_notes_anki_op_changes: list[OpChanges]
     modified_dirty_notes: dict[NoteId, Optional[Note]]
@@ -52,12 +53,14 @@ class TargetList:
     target_list: list[Target]
     language_data: LanguageData
     col: Collection
+    __cancel_reorder_flag: bool
 
     def __init__(self, language_data: LanguageData, cacher: PersistentCacher, col: Collection) -> None:
         self.target_list = []
         self.language_data = language_data
         self.col = col
         self.cacher = cacher
+        self.__cancel_reorder_flag = False
 
     def __iter__(self) -> Iterator[Target]:
         return iter(self.target_list)
@@ -441,7 +444,12 @@ class TargetList:
 
         return (True, "", ValidConfiguredTarget(**ordered_result))
 
+    def cancel_reorder(self) -> None:
+        self.__cancel_reorder_flag = True
+
     def reorder_cards(self, col: Collection, event_logger: EventLogger, reorder_status_callback: Optional[Callable[[int, int], None]] = None, shift_existing: bool = True) -> TargetListReorderResult:
+
+        self.__cancel_reorder_flag = False
 
         reorder_result_list: list[TargetReorderResult] = []
         modified_dirty_notes: dict[NoteId, Optional[Note]] = {}
@@ -452,6 +460,10 @@ class TargetList:
 
         # Reposition cards for each target
         for target in self.target_list:
+            if self.__cancel_reorder_flag:
+                event_logger.add_entry("Reordering cancelled by user.")
+                break
+
             with event_logger.add_benchmarked_entry("Reordering target #{}.".format(target.index_num)):
                 reorder_status_callback(target.index_num, len(self.target_list))
                 reorder_result = target.reorder_cards(shift_existing, num_cards_repositioned, event_logger, modified_dirty_notes)
@@ -464,7 +476,7 @@ class TargetList:
 
         self.cacher.db.close()
 
-        if num_cards_repositioned == 0:
+        if num_cards_repositioned == 0 and not self.__cancel_reorder_flag:
             event_logger.add_entry("Order of cards from targets was already up-to-date!")
 
         # Clear cache
@@ -483,10 +495,15 @@ class TargetList:
                     update_notes_anki_op_changes.append(op_changes)
 
         # Done
-        event_logger.add_entry("Done with reordering of all targets!")
+        if len(self.target_list) == len(reorder_result_list):
+            event_logger.add_entry("Done with reordering of all targets!")
+        else:
+            event_logger.add_entry("Reordered {:n} of {:n} targets.".format(len(reorder_result_list), len(self.target_list)))
+
         event_logger.add_entry("{:n} cards repositioned in {:.2f} seconds.".format(num_cards_repositioned, event_logger.get_elapsed_time()))
 
         return TargetListReorderResult(
+            reorder_canceled=self.__cancel_reorder_flag,
             num_cards_repositioned=num_cards_repositioned,
             num_targets_repositioned=num_targets_repositioned,
             reorder_result_list=reorder_result_list,

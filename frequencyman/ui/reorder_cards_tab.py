@@ -530,7 +530,11 @@ class ReorderCardsTab(FrequencyManTab):
             reposition_shift_existing = self.fm_window.fm_config.is_enabled('reposition_shift_existing', True)
 
             def reorder_status_callback(target_index: int, num_targets: int) -> None:
-                self.fm_window.mw.taskman.run_on_main(lambda: self.fm_window.mw.progress.update(label=self.__get_progress_label(target_index, num_targets)))
+                def update_progress():
+                    if self.fm_window.mw.progress.want_cancel():
+                        self.target_list.cancel_reorder()
+                    self.fm_window.mw.progress.update(label=self.__get_progress_label(target_index, num_targets))
+                self.fm_window.mw.taskman.run_on_main(update_progress)
 
             reorder_result = self.target_list.reorder_cards(col, event_logger, reorder_status_callback, reposition_shift_existing)
 
@@ -550,7 +554,9 @@ class ReorderCardsTab(FrequencyManTab):
 
             result_info_str += "\n\n"+str(event_logger)
 
-            msg_type: ShowResultType  = "warning" if num_errors > 0 else "information"
+            msg_type: ShowResultType = "warning" if num_errors > 0 else "information"
+            if reorder_cards_results.reorder_canceled:
+                msg_type = "warning"
             show_result(result_info_str, "Result", msg_type, self.fm_window)
             # showText(result_info_str, self.fm_window, geomKey="ReorderResult")
 
@@ -570,7 +576,8 @@ class ReorderCardsTab(FrequencyManTab):
                     self.fm_window.mw.toolbar.draw()
 
             self.reorder_logger.close()
-            QueryOp(parent=self.fm_window, op=log_reordering, success=log_reordering_success).run_in_background()
+            if not reorder_cards_results.reorder_canceled:
+                QueryOp(parent=self.fm_window, op=log_reordering, success=log_reordering_success).run_in_background()
 
             reorder_show_results(reorder_cards_results)
 

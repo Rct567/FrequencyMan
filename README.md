@@ -14,6 +14,11 @@ FrequencyMan allows you to __sort your new cards__ by word frequency, familiarit
 - Use multiple fields and languages (such as 'front' *and* 'back') to influence the ranking of a card.
 - Multiple 'word frequency' lists can be used per language.
 
+## Installation
+
+To download this add-on, please copy and paste the following code into Anki (**Tools > Add-ons > Get Add-ons...**):
+__909420026__
+
 ## Basic usage
 
 1. Open the "FrequencyMan" menu option in the __"Tools" menu__ of the main Anki window.

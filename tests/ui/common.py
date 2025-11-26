@@ -16,6 +16,7 @@ if str(PACKAGE_PARENT) not in sys.path:
 from aqt.qt import QMainWindow
 from frequencyman.lib.addon_config import AddonConfig
 from frequencyman.ui import main_window as fm_main_window
+from frequencyman.configured_target import ValidConfiguredTarget
 
 if TYPE_CHECKING:
     import pytest
@@ -46,8 +47,7 @@ class DummyDialogs:
     def markClosed(self, name: str) -> None:
         pass
 
-def build_target_list(col: Collection) -> list[dict[str, Any]]:
-    deck_name = col.decks.current()['name']
+def build_target_list(col: Collection) -> list[ValidConfiguredTarget]:
     model = col.models.current()
     model_name = model['name']
     field_names = [field['name'] for field in model['flds']]
@@ -62,16 +62,15 @@ def build_target_list(col: Collection) -> list[dict[str, Any]]:
     if not fields:
         raise ValueError("No fields available on current model.")
 
-    return [{
-        "id": "test_target",
-        "deck": deck_name,
+    return [ValidConfiguredTarget({
+        "scope_query": "*",
         "notes": [{
             "name": model_name,
             "fields": fields,
         }],
-    }]
+    })]
 
-def build_loaded_config(targets: list[dict[str, Any]]) -> AddonConfig:
+def build_loaded_config(targets: list[ValidConfiguredTarget]) -> AddonConfig:
     config_store: dict[str, Any] = {
         "reorder_target_list": targets,
         "log_reorder_events": False,

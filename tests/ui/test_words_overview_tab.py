@@ -73,8 +73,11 @@ class TestWordsOverviewTab:
             assert isinstance(selected_option_instance, option_cls)
             assert words_tab.table_label.text() == selected_option_instance.data_description()
 
-            # Verify table has content or at least headers
+            # Verify table has content
             assert words_tab.table.columnCount() > 0
+            empty_tables = {'MatureWordsOverview', 'WordUnderexposureOverview', 'WordFamiliaritySweetspotOverview'}
+            if not selected_option_instance.__class__.__name__ in empty_tables:
+                assert words_tab.table.rowCount() > 1, "Table {} should have rows".format(selected_option_instance.__class__.__name__)
 
         # 2. Test additional_columns
         # Reset to first option for consistency

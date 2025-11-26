@@ -8,7 +8,7 @@ import importlib
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Optional
 
 from anki.errors import InvalidInput
 from aqt.qt import QMainWindow
@@ -28,22 +28,33 @@ PACKAGE_PARENT = PROJECT_ROOT.parent
 if str(PACKAGE_PARENT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_PARENT))
 
+
+if TYPE_CHECKING:
+    import pytest
+    from collections.abc import Callable
+    from anki.collection import Collection
+    from pytestqt.qtbot import QtBot
+    from frequencyman.reorder_logger import ReorderLogger
+    from frequencyman.language_data import LanguageData
+    from frequencyman.ui.main_window import FrequencyManMainWindow as FrequencyManMainWindowType
+    from frequencyman.ui.reorder_cards_tab import ReorderCardsTab as ReorderCardsTabType
+    from frequencyman.ui.words_overview_tab import WordsOverviewTab as WordsOverviewTabType
+
+
+reorder_logger = reorder_logger_fixture
+test_collection = test_collection_fixture
+
+FrequencyManMainWindow: type[FrequencyManMainWindowType]
+frequencyman_window_creator: Callable[[MockAnkiQt, AddonConfig, ReorderLogger], Optional[FrequencyManMainWindowType]]
+ReorderCardsTab: type[ReorderCardsTabType]
+WordsOverviewTab: type[WordsOverviewTabType]
+
+# import from __init__.py
 FrequencyMan_module = importlib.import_module("FrequencyMan")
 frequencyman_window_creator = FrequencyMan_module.frequencyman_window_creator
 FrequencyManMainWindow = FrequencyMan_module.FrequencyManMainWindow
 ReorderCardsTab = FrequencyMan_module.ReorderCardsTab
 WordsOverviewTab = FrequencyMan_module.WordsOverviewTab
-
-
-if TYPE_CHECKING:
-    import pytest
-    from anki.collection import Collection
-    from pytestqt.qtbot import QtBot
-    from frequencyman.reorder_logger import ReorderLogger
-    from frequencyman.language_data import LanguageData
-
-reorder_logger = reorder_logger_fixture
-test_collection = test_collection_fixture
 
 
 def _geom_stub(*_args: object) -> None:
@@ -234,13 +245,13 @@ class TestFrequencyManMainWindow:
         def mock_close_event(a0): # type: ignore
             if a0 is not None:
                 for tab in fm_window.tab_widget.findChildren(type(list(fm_window.tab_menu_options.values())[1])):
-                    result = tab.on_window_closing()
+                    result = tab.on_window_closing() # type: ignore
                     if result is not None and result == 1:
                         a0.ignore()
                         return
                 a0.accept()
 
-        fm_window.closeEvent = mock_close_event
+        fm_window.closeEvent = mock_close_event # type: ignore[method-assign]
         fm_window.close()
         qtbot.waitUntil(lambda: not fm_window.isVisible(), timeout=5_000)
         assert not fm_window.isVisible(), "Window should be hidden after close"

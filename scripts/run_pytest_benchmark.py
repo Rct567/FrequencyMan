@@ -2,6 +2,9 @@ from pathlib import Path
 import subprocess
 import time
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+assert (PROJECT_ROOT / "frequencyman").is_dir()
+
 def main() -> None:
     runs = 30
     durations: list[float] = []
@@ -46,7 +49,7 @@ def main() -> None:
     print(result_summary_txt)
 
     # add to log file
-    log_file = Path(__file__).parent / 'pytest_benchmark.tmp.log'
+    log_file = PROJECT_ROOT / 'pytest_benchmark.tmp.log'
     with log_file.open("a") as f:
         f.write(result_summary_txt+"\n")
 

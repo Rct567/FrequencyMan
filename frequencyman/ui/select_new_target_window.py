@@ -268,7 +268,7 @@ class SelectNewTargetWindow(QDialog):
 
     def get_selected_target(self) -> ValidConfiguredTarget:
         new_target_note: ConfiguredTargetNote = {'name': self.selected_note_type, 'fields': self.selected_fields}
-        return ValidConfiguredTarget({
-            'deck': self.selected_deck,
-            'notes': [new_target_note],
-        })
+        return ValidConfiguredTarget(
+            deck=self.selected_deck,
+            notes=[new_target_note],
+        )

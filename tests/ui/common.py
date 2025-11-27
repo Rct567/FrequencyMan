@@ -62,13 +62,13 @@ def build_target_list(col: Collection) -> list[ValidConfiguredTarget]:
     if not fields:
         raise ValueError("No fields available on current model.")
 
-    return [ValidConfiguredTarget({
-        "scope_query": "*",
-        "notes": [{
+    return [ValidConfiguredTarget(
+        scope_query="*",
+        notes=[{
             "name": model_name,
             "fields": fields,
         }],
-    })]
+    )]
 
 def build_loaded_config(targets: list[ValidConfiguredTarget]) -> AddonConfig:
     config_store: dict[str, Any] = {

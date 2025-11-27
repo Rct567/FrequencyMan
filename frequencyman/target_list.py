@@ -15,7 +15,7 @@ from anki.collection import Collection, OpChanges
 from anki.notes import Note, NoteId
 
 from .lib.persistent_cacher import PersistentCacher
-from .configured_target import ConfiguredTarget
+from .configured_target import ConfiguredTarget, ConfiguredTargetDict
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
 from .lib.utilities import JSON_TYPE, batched, get_float, load_json_with_tolerance
@@ -182,7 +182,7 @@ class TargetList:
         return TargetList.__query_executes_validly(query, col)
 
     @staticmethod
-    def __validate_target_data(target_data: JSON_TYPE, index: int, col: Collection, language_data: LanguageData) -> tuple[bool, str, Optional[ValidConfiguredTarget]]:
+    def __validate_target_data(target_data: JSON_TYPE, index: int, col: Collection, language_data: LanguageData, reorder_keys: bool = False) -> tuple[bool, str, Optional[ValidConfiguredTarget]]:
 
         if not isinstance(target_data, dict):
             return (False, "Target #{} is not a valid type (object expected). ".format(index), None)
@@ -438,11 +438,16 @@ class TargetList:
 
         ordered_result = {}
 
-        for key in target_data.keys():
+        if reorder_keys:
+            ordered_keys = ConfiguredTargetDict.__annotations__.keys()
+        else:
+            ordered_keys = target_data.keys()
+
+        for key in ordered_keys:
             if key in result:
                 ordered_result[key] = result.get(key)
 
-        return (True, "", ValidConfiguredTarget(**ordered_result))
+        return (True, "", ValidConfiguredTarget(**ordered_result)) # type: ignore[arg-type]
 
     def cancel_reorder(self) -> None:
         self.__cancel_reorder_flag = True

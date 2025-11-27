@@ -5,6 +5,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 import re
 from typing import Any, Literal, Optional, TypedDict, Union, overload
+from typing_extensions import Unpack
 from collections.abc import Sequence
 
 from .language_data import LangDataId
@@ -34,6 +35,24 @@ ConfiguredTargetKeys = Literal[
     'corpus_segmentation_strategy',
     'notes'
 ]
+
+
+class ConfiguredTargetDict(TypedDict, total=False):
+    id: str
+    deck: str
+    decks: Union[str, list[str]]
+    scope_query: str
+    reorder_scope_query: str
+    familiarity_sweetspot_point: Union[float, str]
+    maturity_threshold: float
+    maturity_min_num_cards: int
+    maturity_min_num_notes: int
+    suspended_card_value: float
+    suspended_leech_card_value: float
+    ideal_word_count: list[int]
+    ranking_factors: dict[str, float]
+    corpus_segmentation_strategy: str
+    notes: list[ConfiguredTargetNote]
 
 
 class ConfiguredTarget:
@@ -80,6 +99,9 @@ class ConfiguredTarget:
 
 
 class ConfiguredTargetTypedDict(dict):
+
+    def __init__(self, **kwargs: Unpack[ConfiguredTargetDict]) -> None:
+        super().__init__(kwargs)
 
     @overload
     def __getitem__(self, key: Literal['id', 'deck', 'scope_query', 'reorder_scope_query', 'corpus_segmentation_strategy']) -> str:

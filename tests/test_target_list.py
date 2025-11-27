@@ -156,3 +156,48 @@ class TestTargetList:
         # The test above should test with an order that is non default
         assert list(valid_target.keys()) != list(ConfiguredTargetDict.__annotations__.keys())
 
+    @with_test_collection("two_deck_collection")
+    def test_rename_ranking_factors(self, col: MockCollection):
+
+        notes: list[JSON_TYPE] = [{
+            "name": "Basic",
+            "fields": {"Front": "ES"}
+        }]
+
+        target_data: JSON_TYPE = {
+            "deck": "decka",
+            "focus_words_max_familiarity": 1.0,
+            "ranking_ideal_unseen_word_count": 0.5,
+            "notes": notes,
+        }
+
+        target_data_2: JSON_TYPE = {
+            "deck": "deckb",
+            "notes": notes,
+            "ranking_factors": {
+                "reinforce_focus_words": 1.0
+            }
+        }
+
+        # validate list of targets
+        targets_data: JSON_TYPE = [target_data, target_data_2]
+        (_, _, valid_target_list) = TargetList.validate_target_list(targets_data, col, col.lang_data)
+
+        assert valid_target_list is not None
+        assert len(valid_target_list) == 2
+
+        # check if keys have been renamed
+
+        assert dict(valid_target_list[0]) == {
+            'deck': 'decka',
+            'maturity_threshold': 1.0, # changed
+            'ranking_ideal_new_word_count': 0.5, # changed
+            'notes': notes
+        }
+
+        assert dict(valid_target_list[1]) == {
+            'deck': 'deckb',
+            'notes': notes,
+            'ranking_factors': {'reinforce_learning_words': 1.0} # changed
+        }
+

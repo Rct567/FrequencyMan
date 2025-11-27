@@ -9,13 +9,13 @@ from functools import cache
 import json
 import re
 from typing import Callable, Optional, Any
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 
 from anki.collection import Collection, OpChanges
 from anki.notes import Note, NoteId
 
 from .lib.persistent_cacher import PersistentCacher
-from .configured_target import ConfiguredTarget, ConfiguredTargetDict, ConfiguredTargetNote, ValidConfiguredTarget
+from .configured_target import ConfiguredTargetDict, ConfiguredTargetNote, JsonConfiguredTarget, ValidConfiguredTarget
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
 from .lib.utilities import JSON_TYPE, batched, get_float, load_json_with_tolerance
@@ -182,40 +182,29 @@ class TargetList:
         return TargetList.__query_executes_validly(query, col)
 
     @staticmethod
-    def __validate_target_data(target_data: JSON_TYPE, index: int, col: Collection, language_data: LanguageData, reorder_keys: bool = False) -> tuple[bool, str, Optional[ValidConfiguredTarget]]:
+    def __validate_target_data(defined_target_data: JSON_TYPE, index: int, col: Collection, language_data: LanguageData, reorder_keys: bool = False) -> tuple[bool, str, Optional[ValidConfiguredTarget]]:
 
-        if not isinstance(target_data, dict):
+        if not isinstance(defined_target_data, dict):
             return (False, "Target #{} is not a valid type (object expected). ".format(index), None)
-        if len(target_data.keys()) == 0:
+        if len(defined_target_data.keys()) == 0:
             return (False, "Target #{} does not have any keys.".format(index), None)
-        if "deck" not in target_data and "decks" not in target_data and "scope_query" not in target_data:
+        if "deck" not in defined_target_data and "decks" not in defined_target_data and "scope_query" not in defined_target_data:
             return (False, "Target #{} is missing key 'deck', 'decks' or 'scope_query'.".format(index), None)
 
         result = ValidConfiguredTarget(notes=[])
 
+        target_data = JsonConfiguredTarget(defined_target_data)
+
         # handle renamed properties
 
         renamed_properties = {'focus_words_max_familiarity': 'maturity_threshold'}
-
-        for old_property_name, new_property_name in renamed_properties.items():
-            if old_property_name in target_data:
-                target_data[new_property_name] = target_data[old_property_name]
-                del target_data[old_property_name]
+        target_data.rename_properties(renamed_properties)
 
         # handle renamed ranking factors
 
         renamed_ranking_factors = {'ideal_unseen_word_count': 'ideal_new_word_count', 'reinforce_focus_words': 'reinforce_learning_words'}
 
-        for old_factor_name, new_factor_name in renamed_ranking_factors.items():
-            if 'ranking_'+old_factor_name in target_data:
-                target_data['ranking_'+new_factor_name] = target_data['ranking_'+old_factor_name]
-                del target_data['ranking_'+old_factor_name]
-
-        if 'ranking_factors' in target_data and isinstance(target_data['ranking_factors'], dict) and len(target_data['ranking_factors']) > 0:
-            for old_factor_name, new_factor_name in renamed_ranking_factors.items():
-                if old_factor_name in target_data['ranking_factors']:
-                    target_data['ranking_factors'][new_factor_name] = target_data['ranking_factors'][old_factor_name]
-                    del target_data['ranking_factors'][old_factor_name]
+        target_data.rename_ranking_factors(renamed_ranking_factors)
 
         # check id
 
@@ -261,7 +250,7 @@ class TargetList:
                 return (False, "Scope query defined in target #{} is not a valid query.".format(index), None)
             result['scope_query'] = target_data['scope_query']
 
-        defined_decks = ConfiguredTarget.get_deck_names_from_config_target(target_data.get('deck'), target_data.get('decks'))
+        defined_decks = target_data.get_deck_names()
 
         if 'scope_query' not in result and len(defined_decks) == 0:
             return (False, "Target #{} has an invalid deck defined using deck, decks or scope_query.".format(index), None)
@@ -356,7 +345,7 @@ class TargetList:
                 return (False, "Corpus segmentation strategy '{}' defined in target #{} is unknown.".format(target_data['corpus_segmentation_strategy'], index), None)
             result['corpus_segmentation_strategy'] = target_data['corpus_segmentation_strategy'].lower()
 
-        if ConfiguredTarget.get_query_from_defined_main_scope(target_data.get('deck'), target_data.get('decks'), target_data.get('scope_query')) is None:
+        if target_data.get_query_from_defined_main_scope() is None:
             return (False, "Target #{} has an invalid scope defined using deck, decks or scope_query.".format(index), None)
 
         # custom ranking factors object
@@ -438,16 +427,18 @@ class TargetList:
 
         ordered_result = {}
 
+        ordered_keys: Sequence[str]
+
         if reorder_keys:
-            ordered_keys = ConfiguredTargetDict.__annotations__.keys()
-        else:
-            ordered_keys = target_data.keys()
+            ordered_keys = list(ConfiguredTargetDict.__annotations__.keys())
+        else: # use order from data provided
+            ordered_keys = list(target_data.keys())
 
         for key in ordered_keys:
             if key in result:
                 ordered_result[key] = result.get(key)
 
-        return (True, "", ValidConfiguredTarget(**ordered_result)) # type: ignore[arg-type]
+        return (True, "", ValidConfiguredTarget(**ordered_result))  # type: ignore[arg-type]
 
     def cancel_reorder(self) -> None:
         self.__cancel_reorder_flag = True

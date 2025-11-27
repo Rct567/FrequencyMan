@@ -1,6 +1,6 @@
 
 
-from frequencyman.configured_target import ConfiguredTarget, ValidConfiguredTarget
+from frequencyman.configured_target import ValidConfiguredTarget
 from frequencyman.language_data import LangDataId
 from typing import get_args
 from frequencyman.configured_target import ConfiguredTargetKeys, ConfiguredTargetDict
@@ -147,12 +147,6 @@ class TestConfiguredTarget:
         reorder_scope = defined_target.get_reorder_scope_query()
         assert reorder_scope == '("deck:big_collection_es") AND ("note:basic") AND (-card:*Reading*)'
         assert defined_target.construct_main_scope_query() in reorder_scope
-
-    def test_non_valid_config_target(self):
-
-        non_valid_target = ConfiguredTarget()
-
-        assert not isinstance(non_valid_target, ValidConfiguredTarget)
 
     def test_configured_target_keys_matches_dict_annotations(self):
 

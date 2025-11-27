@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, TypedDict
 
 from .lib.utilities import get_float, is_numeric_value, override
-from .configured_target import ValidConfiguredTarget, CardRanker, TargetCards, ConfiguredTargetNote as ConfiguredTargetNote
+from .card_ranker import CardRanker, TargetCards
 from .target_corpus_data import CorpusSegmentationStrategy, MaturityRequirements, TargetCorpusData
 from .tokenizers import get_user_provided_tokenizer
 from .language_data import LanguageData
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from anki.collection import Collection, OpChangesWithCount
     from .lib.persistent_cacher import PersistentCacher
     from .lib.event_logger import EventLogger
+    from .configured_target import ValidConfiguredTarget
 
 
 class TargetReorderResult:

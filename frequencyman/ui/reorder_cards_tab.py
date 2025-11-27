@@ -30,7 +30,7 @@ from ..lib.event_logger import EventLogger
 from ..lib.utilities import ShowResultType, show_result, override
 
 from ..reorder_logger import ReorderLogger
-from ..target import ValidConfiguredTarget
+from ..configured_target import ValidConfiguredTarget
 from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult
 
 

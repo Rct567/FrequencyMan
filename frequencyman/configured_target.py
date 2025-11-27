@@ -10,7 +10,7 @@ from collections.abc import Sequence
 
 from .language_data import LangDataId
 from .lib.utilities import override
-from .card_ranker import CardRanker as CardRanker, TargetCards as TargetCards
+from .card_ranker import CardRanker
 
 
 class ConfiguredTargetNote(TypedDict):
@@ -56,6 +56,7 @@ class ConfiguredTargetDict(TypedDict, total=False):
 
 
 class ConfiguredTarget:
+    """Utility class for working with unvalidated target configuration data."""
 
     @staticmethod
     def get_deck_names_from_config_target(defined_deck: Any, defined_decks: Any) -> Sequence[str]:
@@ -98,7 +99,8 @@ class ConfiguredTarget:
         return None
 
 
-class ConfiguredTargetTypedDict(dict):
+class ValidConfiguredTarget(dict):
+    """Validated target configuration that has passed validation checks."""
 
     def __init__(self, **kwargs: Unpack[ConfiguredTargetDict]) -> None:
         super().__init__(kwargs)
@@ -179,29 +181,10 @@ class ConfiguredTargetTypedDict(dict):
         assert key.startswith('ranking_')
         return super().__setitem__(key, value)
 
-
-class ValidConfiguredTarget(ConfiguredTargetTypedDict):
-
-    # deck: str
-    # decks: Union[str, list[str]]
-    # scope_query: str
-    # reorder_scope_query: str
-    # familiarity_sweetspot_point: Union[float, str]
-    # maturity_threshold: float
-    # maturity_min_num_cards: int
-    # maturity_min_num_notes: int
-    # suspended_card_value: float
-    # suspended_leech_card_value: float
-    # ideal_word_count: list[int]
-    # ranking_factors: dict[str, float]
-    # corpus_segmentation_strategy: str
-    # notes: list[ConfiguredTargetNote]
-
     @staticmethod
     def get_valid_keys() -> set[str]:
-        valid_keys = set()
-        for key in getattr(ConfiguredTargetKeys, '__args__'):
-            valid_keys.add(key)
+
+        valid_keys = set(ConfiguredTargetDict.__annotations__.keys())
         assert len(valid_keys) > 0 and all(isinstance(key, str) for key in valid_keys)
 
         for rankin_factor in CardRanker.get_default_ranking_factors_span().keys():

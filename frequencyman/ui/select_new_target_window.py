@@ -18,7 +18,7 @@ from aqt.qt import (
 )
 
 from ..static_lang_data import NAMES_FOR_THE_ENGLISH_LANGUAGE, LANGUAGE_NAMES_ENG_AND_NATIVE
-from ..target import ConfiguredTargetNote, ValidConfiguredTarget
+from ..configured_target import ConfiguredTargetNote, ValidConfiguredTarget
 
 from .main_window import FrequencyManMainWindow
 

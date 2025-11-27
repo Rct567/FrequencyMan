@@ -15,11 +15,11 @@ from anki.collection import Collection, OpChanges
 from anki.notes import Note, NoteId
 
 from .lib.persistent_cacher import PersistentCacher
-from .configured_target import ConfiguredTarget, ConfiguredTargetDict
+from .configured_target import ConfiguredTarget, ConfiguredTargetDict, ConfiguredTargetNote, ValidConfiguredTarget
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
 from .lib.utilities import JSON_TYPE, batched, get_float, load_json_with_tolerance
-from .target import ConfiguredTargetNote, TargetCacheData, TargetReorderResult, Target, ValidConfiguredTarget, CardRanker
+from .target import TargetCacheData, TargetReorderResult, Target, CardRanker
 from .language_data import LanguageData
 from .lib.event_logger import EventLogger
 

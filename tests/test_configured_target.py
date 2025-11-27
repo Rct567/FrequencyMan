@@ -1,7 +1,9 @@
 
 
-from frequencyman.configured_target import ValidConfiguredTarget
+from frequencyman.configured_target import ConfiguredTarget, ValidConfiguredTarget
 from frequencyman.language_data import LangDataId
+from typing import get_args
+from frequencyman.configured_target import ConfiguredTargetKeys, ConfiguredTargetDict
 
 
 class TestConfiguredTarget:
@@ -145,3 +147,28 @@ class TestConfiguredTarget:
         reorder_scope = defined_target.get_reorder_scope_query()
         assert reorder_scope == '("deck:big_collection_es") AND ("note:basic") AND (-card:*Reading*)'
         assert defined_target.construct_main_scope_query() in reorder_scope
+
+    def test_non_valid_config_target(self):
+
+        non_valid_target = ConfiguredTarget()
+
+        assert not isinstance(non_valid_target, ValidConfiguredTarget)
+
+    def test_configured_target_keys_matches_dict_annotations(self):
+
+        # Get keys from the Literal type
+        literal_keys = set(get_args(ConfiguredTargetKeys))
+
+        # Get keys from the TypedDict annotations
+        typeddict_keys = set(ConfiguredTargetDict.__annotations__.keys())
+
+        # They should match exactly
+        assert literal_keys == typeddict_keys, (
+            f"ConfiguredTargetKeys Literal is out of sync with ConfiguredTargetDict!\n"
+            f"Missing in Literal: {typeddict_keys - literal_keys}\n"
+            f"Extra in Literal: {literal_keys - typeddict_keys}"
+        )
+
+        # All TypedDict annotations must be in 'valid keys'
+        assert all(annotation_key in ValidConfiguredTarget.get_valid_keys() for annotation_key in ConfiguredTargetDict.__annotations__.keys())
+

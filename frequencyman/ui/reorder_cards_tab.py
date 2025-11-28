@@ -170,6 +170,10 @@ class ReorderCardsTab(FrequencyManTab):
 
             src_file = default_wf_lists_dir / (defined_lang_data_id + '.txt')
             dst_dir = language_data_dir / defined_lang_data_id
+
+            if dst_dir.exists():
+                return False
+
             dst_file = dst_dir / (defined_lang_data_id + '-default.txt')
             if not src_file.is_file():
                 return False

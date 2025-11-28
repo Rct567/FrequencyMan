@@ -25,7 +25,7 @@ class LangDataId(str):
         return str.__new__(cls, value.lower())
 
 
-def get_lang_dir(data_dir: Path, lang_data_id: LangDataId) -> Optional[Path]:
+def get_lang_data_dir(data_dir: Path, lang_data_id: LangDataId) -> Optional[Path]:
 
     possible_lang_dir = data_dir / lang_data_id
 
@@ -52,7 +52,7 @@ class WordFrequencyLists:
 
     def get_files_by_id(self, lang_data_id: LangDataId) -> set[Path]:
 
-        possible_lang_dir = get_lang_dir(self.data_dir, lang_data_id)
+        possible_lang_dir = get_lang_data_dir(self.data_dir, lang_data_id)
 
         if not possible_lang_dir:
             return set()
@@ -219,7 +219,7 @@ class IgnoreLists:
 
     def get_files_by_id(self, lang_data_id: LangDataId) -> set[Path]:
 
-        possible_lang_dir = get_lang_dir(self.data_dir, lang_data_id)
+        possible_lang_dir = get_lang_data_dir(self.data_dir, lang_data_id)
 
         if not possible_lang_dir:
             return set()
@@ -328,8 +328,8 @@ class LanguageData:
         if lang_data_id == "":
             return False
 
-        possible_lang_dir = self.data_dir / lang_data_id
-        return possible_lang_dir.is_dir()
+        possible_lang_dir = get_lang_data_dir(self.data_dir, LangDataId(lang_data_id))
+        return possible_lang_dir is not None and possible_lang_dir.is_dir()
 
     def load_data(self, lang_data_ids: Union[set[LangDataId], LangDataId]) -> None:
 

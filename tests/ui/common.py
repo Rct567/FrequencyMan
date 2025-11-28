@@ -119,7 +119,7 @@ def mock_close_event(a0: Any, fm_window: FrequencyManMainWindowType) -> None:
     if a0 is not None:
         for tab_id, tab_obj in fm_window.tab_menu_options.items():
             if tab_id == 'words_overview':
-                 result = tab_obj.on_window_closing() # type: ignore
+                 result = tab_obj.on_window_closing() # type: ignore[attr-defined]
                  if result is not None and result == 1:
                      a0.ignore()
                      return

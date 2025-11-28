@@ -15,7 +15,7 @@ col: MockCollectionFixture = test_collection
 def card_familiarity_score(card: TargetCard):
     cards = [card]
     cards_familiarity_score_fn:  Callable[[list[TargetCard]], dict[CardId, float]]
-    cards_familiarity_score_fn = TargetCorpusData._TargetCorpusData__get_cards_familiarity_score # type: ignore
+    cards_familiarity_score_fn = TargetCorpusData._TargetCorpusData__get_cards_familiarity_score # type: ignore[attr-defined]
     cards_scores = cards_familiarity_score_fn(cards)
     return cards_scores[card.id]
 

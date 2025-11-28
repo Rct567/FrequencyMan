@@ -310,7 +310,7 @@ def show_result(message: str, title: str, type: ShowResultType, parent: QWidget)
         raise ValueError("Invalid type!")
 
     icon_label = QLabel()
-    icon_label.setPixmap(dialog.style().standardIcon(style_icon).pixmap(32, 32))  # type: ignore
+    icon_label.setPixmap(dialog.style().standardIcon(style_icon).pixmap(32, 32))  # type: ignore[union-attr]
 
     icon_label.setAlignment(Qt.AlignmentFlag.AlignTop)  # Align icon to top
     icon_label.setContentsMargins(0, 0, 5, 0)

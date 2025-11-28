@@ -43,7 +43,7 @@ class TestTargetList:
             id="spanish_audio_only",
             deck="Spanish",
             decks=["Spanish"],
-            ranking_word_frequency=0.0, # type: ignore
+            ranking_word_frequency=0.0, # type: ignore[call-arg]
             suspended_card_value=0.1,
             suspended_leech_card_value=0.2,
             ideal_word_count=[1, 10],

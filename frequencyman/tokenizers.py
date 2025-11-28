@@ -33,10 +33,11 @@ CallableTokenizerFn = Callable[[str], Sequence[str]]
 class Tokenizer(ABC):
 
     _initialized: bool = False
+    _tokenizer_id: str
 
     def name(self) -> str:
         if hasattr(self, '_tokenizer_id'):
-            return self.__class__.__name__+'('+self._tokenizer_id+')'  # type: ignore
+            return self.__class__.__name__+'('+self._tokenizer_id+')'
 
         return self.__class__.__name__
 

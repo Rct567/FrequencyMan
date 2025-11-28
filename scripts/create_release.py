@@ -72,8 +72,12 @@ def set_release_version(src_dir: Path) -> Optional[str]:
     with file_with_version.open("r") as file:
         current_content = file.read()
     if provided_version_number in current_content:
-        print("Version given is the current version!")
-        return None
+        print("Version given is the current version in {}!".format(file_with_version))
+        user_wants_to_continue = input("Do you want to continue anyway? (Y/N) ")
+        if user_wants_to_continue.lower() != "y":
+            return None
+        else:
+            return provided_version_number
 
     with file_with_version.open("w") as file:
         file.write('FREQUENCYMAN_VERSION = "{}"'.format(provided_version_number))
@@ -204,3 +208,5 @@ if commit_tag_push.lower() == "y":
     print("\nNext step:\nCreate a new release on Github: https://github.com/Rct567/FrequencyMan/releases/new")
 else:
     print("Skipped commit, tag and push...")
+
+print("Check the release directory for new version {}!".format(new_release_version))

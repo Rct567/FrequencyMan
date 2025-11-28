@@ -8,12 +8,13 @@ from dataclasses import dataclass, field
 from functools import cached_property
 from math import fsum
 from statistics import fmean, median
-from typing import NewType, Union
+from typing import NewType, Optional, Union
 from collections.abc import Sequence
 from enum import Enum
 
 from anki.cards import CardId
 from anki.notes import NoteId
+from anki.models import NotetypeDict
 
 from .lib.persistent_cacher import PersistentCacher
 from .target_cards import TargetCard, TargetCards
@@ -370,15 +371,7 @@ class TargetCorpusData:
 
                     lang_data_id = target_note_fields[field_name]
                     lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
-
-                    if self.segmentation_strategy == CorpusSegmentationStrategy.BY_LANG_DATA_ID:
-                        corpus_segment_id = CorpusSegmentId(lang_data_id)
-                    elif self.segmentation_strategy == CorpusSegmentationStrategy.BY_LANG_ID:
-                        corpus_segment_id = CorpusSegmentId(lang_id)
-                    elif self.segmentation_strategy == CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME:
-                        corpus_segment_id = CorpusSegmentId(str(note_type['id'])+" => "+field_name)
-                    else:
-                        raise Exception("Invalid segmentation_strategy set!")
+                    corpus_segment_id = self.get_segment_id(lang_id, lang_data_id, field_name, note_type=note_type)
 
                     content_data = NoteFieldContentData(
                         corpus_segment_id=corpus_segment_id,
@@ -411,9 +404,45 @@ class TargetCorpusData:
 
             self.targeted_fields_per_note[note.id] = card_note_fields_in_target
 
+
+    def get_segment_id(self, lang_id: LangId, lang_data_id: LangDataId, field_name: str, note_type: Optional[NotetypeDict] = None, note_name: Optional[str] = None) -> CorpusSegmentId:
+
+        if not note_type and not note_name:
+            raise Exception("Either note_type or note_name must be provided!")
+
+        if self.segmentation_strategy == CorpusSegmentationStrategy.BY_LANG_DATA_ID:
+            return CorpusSegmentId(lang_data_id)
+        elif self.segmentation_strategy == CorpusSegmentationStrategy.BY_LANG_ID:
+            return CorpusSegmentId(lang_id)
+        elif self.segmentation_strategy == CorpusSegmentationStrategy.BY_NOTE_MODEL_ID_AND_FIELD_NAME:
+            if not note_type and note_name:
+                note_type = self.target_cards.get_model_by_name(note_name)
+            if not note_type:
+                raise Exception("Note type not found for note name '{}'!".format(note_name))
+            return CorpusSegmentId(str(note_type['id'])+" => "+field_name)
+        else:
+            raise Exception("Invalid segmentation_strategy set!")
+
+
     @cached_property
     def segments_ids(self) -> Sequence[CorpusSegmentId]:
-        return list(self.content_metrics.keys())
+
+        corpus_segment_ids_found: set[CorpusSegmentId] = set()
+        corpus_segment_ids: list[CorpusSegmentId] = []
+
+        for note_name, fields in self.target_fields_per_note_type.items():
+            for field_name, lang_data_id in fields.items():
+
+                lang_id = LanguageData.get_lang_id_from_data_id(lang_data_id)
+                corpus_segment_id = self.get_segment_id(lang_id, lang_data_id, field_name, note_name=note_name)
+
+                if corpus_segment_id in corpus_segment_ids_found:
+                    continue
+                corpus_segment_ids.append(corpus_segment_id)
+                corpus_segment_ids_found.add(corpus_segment_id)
+
+        return corpus_segment_ids
+
 
     @staticmethod
     def __get_cards_familiarity_score(cards: Sequence[TargetCard]) -> dict[CardId, float]:

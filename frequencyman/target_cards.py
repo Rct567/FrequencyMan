@@ -189,6 +189,10 @@ class TargetCards:
 
         return self.col.models.get(model_id)
 
+    def get_model_by_name(self, model_name: str) -> Optional[NotetypeDict]:
+
+        return self.col.models.by_name(model_name)
+
     def __len__(self) -> int:
 
         return len(self.all_cards_ids)

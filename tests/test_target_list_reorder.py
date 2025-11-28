@@ -215,6 +215,8 @@ class TestTargetListReorder:
         # check result
         assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
         assert target_list[1].corpus_data is not None and len(target_list[1].corpus_data.segments_ids) == 2
+        assert list(target_list[0].corpus_data.content_metrics.keys()) == target_list[0].corpus_data.segments_ids
+        assert list(target_list[1].corpus_data.content_metrics.keys()) == target_list[1].corpus_data.segments_ids
 
         assert result.reorder_result_list[0].success and result.reorder_result_list[0].cards_repositioned
         assert result.reorder_result_list[0].error is None
@@ -286,6 +288,7 @@ class TestTargetListReorder:
 
         # check result
         assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
+        assert list(target_list[0].corpus_data.content_metrics.keys()) == target_list[0].corpus_data.segments_ids
 
         assert result.num_cards_repositioned == 11
         reorder_result = result.reorder_result_list[0]
@@ -340,6 +343,7 @@ class TestTargetListReorder:
 
         # check result
         assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
+        assert list(target_list[0].corpus_data.content_metrics.keys()) == target_list[0].corpus_data.segments_ids
         assert target_list[1].corpus_data is None  # was cached
 
         reorder_result = result.reorder_result_list[0]
@@ -405,6 +409,7 @@ class TestTargetListReorder:
 
         # check result
         assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 1
+        assert list(target_list[0].corpus_data.content_metrics.keys()) == target_list[0].corpus_data.segments_ids
 
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success and reorder_result.cards_repositioned
@@ -495,7 +500,7 @@ class TestTargetListReorder:
         # check result
         assert target_list[0].corpus_data is not None
         assert len(target_list[0].corpus_data.segments_ids) == 2
-        assert len(target_list[0].corpus_data.content_metrics.keys()) == 2
+        assert list(target_list[0].corpus_data.content_metrics.keys()) == target_list[0].corpus_data.segments_ids
 
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success and reorder_result.cards_repositioned
@@ -582,6 +587,7 @@ class TestTargetListReorder:
         reorder_result = result.reorder_result_list[0]
         assert reorder_result.success and reorder_result.error is None
         assert target_list[0].corpus_data is not None and len(target_list[0].corpus_data.segments_ids) == 2
+        assert list(target_list[0].corpus_data.content_metrics.keys()) == target_list[0].corpus_data.segments_ids
 
         assert len(target_list[0].get_cards_non_cached().all_cards_ids) == 16
 

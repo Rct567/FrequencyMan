@@ -73,7 +73,7 @@ class WordsOverviewTab(FrequencyManTab):
     selected_overview_option: Optional[type[WordsOverviewOption]]
     selected_target_by_id_str: Optional[str]
     selected_lang_id: Optional[str]
-    selected_corpus_segment_id: CorpusSegmentId
+    selected_corpus_segment_id: Optional[CorpusSegmentId]
     targets_dropdown: QComboBox
     target_corpus_segment_dropdown: QComboBox
     OVERVIEW_OPTIONS: ClassVar[Sequence[type[WordsOverviewOption]]] = (
@@ -104,6 +104,7 @@ class WordsOverviewTab(FrequencyManTab):
     def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
         super().__init__(fm_window, col)
         self.selected_target_index = 0
+        self.selected_corpus_segment_id = None
         self.selected_overview_option_index = 0
         self.additional_columns = [
             WordFrequencyColumn(),
@@ -143,6 +144,11 @@ class WordsOverviewTab(FrequencyManTab):
         except Exception as e:
             showWarning("Error loading target list: "+str(e))
             return
+
+        # reset selections
+        self.selected_target_index = 0
+        self.selected_corpus_segment_id = None
+        self.selected_overview_option_index = 0
 
         # Target selection
         label = QLabel("Target:")
@@ -261,6 +267,17 @@ class WordsOverviewTab(FrequencyManTab):
             self.__set_selected_target_corpus_segment(0)
 
 
+    def __selected_target_has_content(self) -> bool:
+
+        if not len(self.__get_selected_target().get_cards()) > 0:
+            return False
+
+        if not self.__get_selected_target_corpus_data().content_metrics:
+            return False
+
+        return True
+
+
     def __set_selected_target_corpus_segment(self, index: int) -> None:
 
         if self.target_corpus_segment_dropdown.currentIndex() != index:
@@ -270,10 +287,13 @@ class WordsOverviewTab(FrequencyManTab):
         selected_target = self.__get_selected_target()
         target_corpus_data = self.__get_selected_target_corpus_data()
         selected_corpus_segment_id: CorpusSegmentId = list(target_corpus_data.segments_ids)[index]
-        content_metrics = target_corpus_data.content_metrics[selected_corpus_segment_id]
 
-        self.selected_corpus_segment_id = selected_corpus_segment_id
-        self.overview_options_available = [option(selected_target, selected_corpus_segment_id, content_metrics) for option in self.OVERVIEW_OPTIONS]
+        if self.__selected_target_has_content():
+            content_metrics = target_corpus_data.content_metrics[selected_corpus_segment_id]
+            self.selected_corpus_segment_id = selected_corpus_segment_id
+            self.overview_options_available = [option(selected_target, selected_corpus_segment_id, content_metrics) for option in self.OVERVIEW_OPTIONS]
+        else:
+            self.overview_options_available = []
 
         if hasattr(self, 'selected_overview_option') and self.selected_overview_option is not None and issubclass(self.selected_overview_option, WordsOverviewOption):
             self.selected_overview_option_index = self.OVERVIEW_OPTIONS.index(self.selected_overview_option)
@@ -335,6 +355,12 @@ class WordsOverviewTab(FrequencyManTab):
         return item
 
     def __update_table(self) -> None:
+
+        if not self.__selected_target_has_content():
+            self.table.setDisabled(True)
+            self.table.clearContents()
+            self.table.setRowCount(0)
+            return
 
         overview_option_selected = self.overview_options_available[self.selected_overview_option_index]
 
@@ -434,6 +460,10 @@ class WordsOverviewTab(FrequencyManTab):
         self.table.setDisabled(False)
 
     def __show_context_menu(self, position: QPoint) -> None:
+
+        if not self.selected_corpus_segment_id:
+            return
+
         menu = QMenu()
 
         # Get the row under the cursor

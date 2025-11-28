@@ -5,8 +5,14 @@ from frequencyman.card_ranker import CardRanker
 from frequencyman.target_list import TargetList, TargetListReorderResult
 from frequencyman.lib.event_logger import EventLogger
 
-from tests.tools import MockCollection, MockCollectionFixture, freeze_time_anki, with_test_collection, test_collection
-col: MockCollectionFixture = test_collection
+from tests.tools import (
+    MockCollection,
+    freeze_time_anki,
+    with_test_collection,
+    test_collection as test_collection_fixture
+)
+
+col = test_collection_fixture
 
 class TestTargetListReorder:
 

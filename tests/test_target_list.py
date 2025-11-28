@@ -5,8 +5,13 @@ from frequencyman.target_list import JsonTargetsValidity, TargetList
 if TYPE_CHECKING:
     from frequencyman.lib.utilities import JSON_TYPE
 
-from tests.tools import MockCollection, MockCollectionFixture, with_test_collection, test_collection
-col: MockCollectionFixture = test_collection
+from tests.tools import (
+    MockCollection,
+    with_test_collection,
+    test_collection as test_collection_fixture
+)
+
+col = test_collection_fixture
 
 class TestTargetList:
 

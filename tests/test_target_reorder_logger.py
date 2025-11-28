@@ -8,14 +8,14 @@ from frequencyman.reorder_logger import ReorderLogger, SqlDbFile
 
 from tests.tools import (
     MockCollection,
-    MockCollectionFixture,
     freeze_time_anki,
     with_test_collection,
     test_collection as test_collection_fixture,
     reorder_logger as reorder_logger_fixture,
 )
-col: MockCollectionFixture = test_collection_fixture
-reorder_logger: Callable[[Path], ReorderLogger] = reorder_logger_fixture
+
+col = test_collection_fixture
+reorder_logger = reorder_logger_fixture
 
 TEST_DATA_DIR = Path(__file__).parent / 'data'
 

@@ -8,8 +8,13 @@ from frequencyman.target_corpus_data import TargetCorpusData
 from frequencyman.target_list import TargetList
 from frequencyman.text_processing import WordToken
 
-from .tools import MockCollection, MockCollectionFixture, test_collection, with_test_collection
-col: MockCollectionFixture = test_collection
+from .tools import (
+    MockCollection,
+    test_collection as test_collection_fixture,
+    with_test_collection
+
+)
+col = test_collection_fixture
 
 
 def card_familiarity_score(card: TargetCard):

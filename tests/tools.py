@@ -7,9 +7,8 @@ import os
 from pathlib import Path
 import shutil
 from typing import Any, Optional, NamedTuple, Callable, TypeVar, TYPE_CHECKING
-from collections.abc import Generator, Sequence
 if TYPE_CHECKING:
-    from typing_extensions import TypeAlias
+    from collections.abc import Generator, Sequence
 import pprint
 import time
 from dateutil.parser import parse
@@ -243,11 +242,6 @@ class MockCollection(Collection):
             pass
 
 
-
-MockCollectionFixture: TypeAlias = Callable[
-    [pytest.FixtureRequest],
-    Generator[MockCollection, None, None]
-]
 
 class MockCollections:
 

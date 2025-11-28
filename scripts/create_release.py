@@ -172,6 +172,7 @@ def create_new_release() -> str:
 
     ignore_patterns.extend([
         'tests/',
+        'typings/',
         'scripts/',
         'pytest.ini',
         'create_release.py',
@@ -181,6 +182,7 @@ def create_new_release() -> str:
         'run_pytest_benchmark.py',
         'noxfile.py',
         'test.py',
+        'AGENTS.md',
     ])
 
     copy_directory(new_release_src_dir, new_release_dst_dir, ignore_patterns)

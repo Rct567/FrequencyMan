@@ -603,6 +603,16 @@ class TestTargetListReorder:
     @with_test_collection("zh_and_ja")
     def test_zh_and_ja(self, col: MockCollection):
 
+        # Check if required tokenizers are available
+        from frequencyman.tokenizers import get_tokenizer_registry
+        from frequencyman.text_processing import LangId
+        
+        ja_tokenizers = [t for t in get_tokenizer_registry() if LangId('ja') in t.supported_languages() and t.is_available()]
+        zh_tokenizers = [t for t in get_tokenizer_registry() if LangId('zh') in t.supported_languages() and t.is_available()]
+        
+        if not ja_tokenizers or not zh_tokenizers:
+            pytest.skip(f"Skipping test: Required tokenizers not available (JA: {len(ja_tokenizers)}, ZH: {len(zh_tokenizers)})")
+
         target_list = TargetList(col.lang_data, col.cacher, col)
 
         target_list.set_targets([

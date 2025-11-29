@@ -8,7 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from functools import partial
-from typing import NamedTuple, Optional, Callable, TYPE_CHECKING
+from typing import Any, NamedTuple, Optional, Callable, TYPE_CHECKING
 
 from aqt.qt import QTimer, QAction
 from aqt.main import AnkiQt
@@ -19,7 +19,7 @@ from anki.collection import Collection
 from .frequencyman.lib.addon_config import AddonConfig
 from .frequencyman.reorder_logger import LanguageInfoData, SqlDbFile, ReorderLogger
 
-from .frequencyman.ui.words_overview_tab import WordsOverviewTab, MatureWordsOverview
+from .frequencyman.ui.words_overview_tab import WordsOverviewTab, MatureWordsOverview, WordsOverviewOption
 from .frequencyman.ui.reorder_cards_tab import ReorderCardsTab
 from .frequencyman.ui.main_window import FrequencyManMainWindow
 
@@ -61,8 +61,9 @@ def frequencyman_window_creator(mw: AnkiQt, fm_config: AddonConfig, reorder_logg
     fm_window.show()
     return fm_window
 
+OverviewOption = Optional[type[WordsOverviewOption]]
 
-def open_frequencyman_word_overview(mw: AnkiQt, target_id: str, lang_id: str) -> None:
+def open_frequencyman_word_overview(mw: AnkiQt, target_id: str, lang_id: str, overview_option: OverviewOption=None) -> None:
 
     fm_window: FrequencyManMainWindow = dialogs.open(FrequencyManMainWindow.key, mw)
 
@@ -71,7 +72,7 @@ def open_frequencyman_word_overview(mw: AnkiQt, target_id: str, lang_id: str) ->
     if not isinstance(overview_tab, WordsOverviewTab):
         return
 
-    overview_tab.selected_overview_option = MatureWordsOverview
+    overview_tab.selected_overview_option = overview_option
     overview_tab.selected_lang_id = lang_id
 
     if target_id != "*":
@@ -103,7 +104,7 @@ class InfoItem(NamedTuple):
     data: LanguageInfoData
     open_words_overview_tab: Callable[[], None]
 
-def get_info_items_from_config(mw: AnkiQt, config: JSON_TYPE, reorder_logger: ReorderLogger) -> Optional[list[InfoItem]]:
+def get_info_items_from_config(mw: AnkiQt, config: JSON_TYPE, reorder_logger: ReorderLogger, overview_option: OverviewOption=None) -> Optional[list[InfoItem]]:
 
     info_items: list[InfoItem] = []
 
@@ -133,8 +134,8 @@ def get_info_items_from_config(mw: AnkiQt, config: JSON_TYPE, reorder_logger: Re
 
         target_display_id = "Global (all logged targets)" if info_target_id == "*" else info_target_id
         open_words_overview_tab = (
-            lambda target_id=info_target_id, lang_id=info_lang_id:
-            open_frequencyman_word_overview(mw, str(target_id), str(lang_id))
+            lambda target_id=info_target_id, lang_id=info_lang_id, overview_option=overview_option:
+            open_frequencyman_word_overview(mw, str(target_id), str(lang_id), overview_option)
         )
         info_items.append(InfoItem(info_target_id, target_display_id, info_lang_id, lang_data, open_words_overview_tab))
 
@@ -154,7 +155,7 @@ def add_frequencyman_info_to_toolbar_items(mw: AnkiQt, reorder_logger: ReorderLo
         if 'show_info_toolbar' not in fm_config:
             return
 
-        info_items = get_info_items_from_config(mw, fm_config['show_info_toolbar'], reorder_logger)
+        info_items = get_info_items_from_config(mw, fm_config['show_info_toolbar'], reorder_logger, MatureWordsOverview)
 
         if info_items is None:
             return
@@ -176,25 +177,40 @@ def add_frequencyman_info_to_toolbar_items(mw: AnkiQt, reorder_logger: ReorderLo
 
 def add_frequencyman_info_to_deck_browser(mw: AnkiQt, reorder_logger: ReorderLogger, fm_config: AddonConfig) -> None:
 
+    deck_browser_open_cmds: dict[str, Callable[[], None]] = {}
+
     def update_deck_browser(_: DeckBrowser, content: DeckBrowserContent) -> None:
 
         if 'show_info_deck_browser' not in fm_config:
             return
 
-        info_items = get_info_items_from_config(mw, fm_config['show_info_deck_browser'], reorder_logger)
+        info_items = get_info_items_from_config(mw, fm_config['show_info_deck_browser'], reorder_logger, None)
 
         if info_items is None:
             return
+
+        deck_browser_open_cmds.clear()
 
         content.stats += "<table cellspacing=0 cellpadding=5 style=\"min-width:340px\">"
         content.stats += "<tr style=\"text-align:left\"> <th>Language</th ><th title=\"Number of words still learning.\">Learning</th> <th title=\"Number of mature words.\">Mature</th> </tr>"
         for info_item in info_items:
             target_info = "Target: {}".format(info_item.target_display_id)
-            row_content = "<td title=\"{}\">{}</td> <td>{}</td> <td><b>{}</b></td>".format(target_info, info_item.lang_id.upper(), info_item.data['num_words_learning'], info_item.data['num_words_mature'])
+            cmd = "frequencyman_open_words_overview:{}:{}".format(info_item.target_id, info_item.lang_id)
+            deck_browser_open_cmds[cmd] = info_item.open_words_overview_tab
+            first_td = "<td title=\"{}\" onclick=\"return pycmd('{}')\" style=\"cursor:pointer;\">{}</td>".format(target_info, cmd, info_item.lang_id.upper())
+            row_content = "{} <td>{}</td> <td><b>{}</b></td>".format(first_td, info_item.data['num_words_learning'], info_item.data['num_words_mature'])
             content.stats += "<tr>{}</tr>".format(row_content)
         content.stats += "</table>"
 
     gui_hooks.deck_browser_will_render_content.append(update_deck_browser)
+
+    def handle_js_message(handled: tuple[bool, None], message: str, context: Any) -> tuple[bool, None]:
+        if message in deck_browser_open_cmds:
+            deck_browser_open_cmds[message]()
+            return (True, None)
+        return handled
+
+    gui_hooks.webview_did_receive_js_message.append(handle_js_message)
 
 # init FrequencyMan
 

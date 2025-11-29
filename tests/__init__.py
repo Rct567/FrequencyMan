@@ -11,7 +11,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 try:
 
-    import frequencyman.language_data
+    import frequencyman.language_data # noqa: F401
 
 except (ImportError, ModuleNotFoundError):
 

@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+import pytest
 from frequencyman.text_processing import LangId, TextProcessing, WordToken
 from frequencyman.tokenizers import get_tokenizer_registry
 
@@ -88,7 +89,17 @@ def test_get_word_tokens_from_text_user_tokenizer_ja():
 
     assert(len(ja_tokenizers) >= 3)
 
-    for tokenizer in ja_tokenizers:
+    # Filter to only available tokenizers
+    available_tokenizers = [t for t in ja_tokenizers if t.is_available()]
+    skipped_tokenizers = [t for t in ja_tokenizers if not t.is_available()]
+    
+    if skipped_tokenizers:
+        print(f"WARNING: Skipping {len(skipped_tokenizers)} unavailable JA tokenizers: {', '.join(t.name() for t in skipped_tokenizers)}")
+    
+    if not available_tokenizers:
+        pytest.skip("No available JA tokenizers found")
+
+    for tokenizer in available_tokenizers:
         print("User tokenizer for JA tested: "+tokenizer.name())
         assert TextProcessing.get_word_tokens_from_text("すもももももももものうち", LangId('ja'), tokenizer) == ['すもも', 'も', 'もも', 'も', 'もも', 'の', 'うち'], tokenizer.name()
         assert TextProcessing.get_word_tokens_from_text("こんにちは。私の名前はシャンです。", LangId('ja'), tokenizer) == ["こんにちは", "私", "の", "名前", "は", "シャン", "です"], tokenizer.name()
@@ -104,7 +115,17 @@ def test_get_word_tokens_from_text_user_tokenizer_zh():
 
     assert(len(zh_tokenizers) >= 2)
 
-    for tokenizer in zh_tokenizers:
+    # Filter to only available tokenizers
+    available_tokenizers = [t for t in zh_tokenizers if t.is_available()]
+    skipped_tokenizers = [t for t in zh_tokenizers if not t.is_available()]
+    
+    if skipped_tokenizers:
+        print(f"WARNING: Skipping {len(skipped_tokenizers)} unavailable ZH tokenizers: {', '.join(t.name() for t in skipped_tokenizers)}")
+    
+    if not available_tokenizers:
+        pytest.skip("No available ZH tokenizers found")
+
+    for tokenizer in available_tokenizers:
         print("User tokenizer for ZH tested: "+tokenizer.name())
         assert TextProcessing.get_word_tokens_from_text("你跟我", LangId('zh'), tokenizer) == ['你', '跟', '我'],tokenizer.name()
         assert TextProcessing.get_word_tokens_from_text("hello 吃饭了吗😊? ", LangId('zh'), tokenizer) == ["吃饭", "了", "吗"], tokenizer.name()

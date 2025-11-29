@@ -125,8 +125,16 @@ def mock_close_event(a0: Any, fm_window: FrequencyManMainWindowType) -> None:
                      return
         a0.accept()
 
-# Import FrequencyMan module components
-FrequencyMan_module = importlib.import_module("FrequencyMan")
+# Import FrequencyMan module components from the root __init__.py
+# We need to load it as a separate module because 'frequencyman' resolves to the library package
+import importlib.util
+spec = importlib.util.spec_from_file_location("FrequencyMan_addon", PROJECT_ROOT / "__init__.py")
+if spec is None or spec.loader is None:
+    raise ImportError(f"Could not load FrequencyMan addon from {PROJECT_ROOT / '__init__.py'}")
+FrequencyMan_module = importlib.util.module_from_spec(spec)
+sys.modules["FrequencyMan_addon"] = FrequencyMan_module
+spec.loader.exec_module(FrequencyMan_module)
+
 frequencyman_window_creator: Callable[[MockAnkiQt, AddonConfig, ReorderLogger], Optional[FrequencyManMainWindowType]] = FrequencyMan_module.frequencyman_window_creator
 FrequencyManMainWindow: type[FrequencyManMainWindowType] = FrequencyMan_module.FrequencyManMainWindow
 ReorderCardsTab: type[ReorderCardsTabType] = FrequencyMan_module.ReorderCardsTab

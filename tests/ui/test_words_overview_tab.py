@@ -17,7 +17,6 @@ from tests.ui.common import (
     build_target_list,
     build_loaded_config,
     setup_mock_main_window,
-    mock_close_event,
     frequencyman_window_creator,
     WordsOverviewTab
 )
@@ -43,7 +42,7 @@ class TestWordsOverviewTab:
         reorder_logger: ReorderLogger,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        
+
         setup_mock_main_window(monkeypatch)
 
         addon_config = build_loaded_config(build_target_list(test_collection))
@@ -118,8 +117,6 @@ class TestWordsOverviewTab:
                 checkbox.setChecked(original_state) # Restore
                 qtbot.wait(50)
 
-        # Override closeEvent to avoid dialogs.markClosed issues
-        fm_window.closeEvent = lambda a0: mock_close_event(a0, fm_window) # type: ignore[method-assign]
         fm_window.close()
         qtbot.waitUntil(lambda: not fm_window.isVisible(), timeout=5_000)
         mw.close()

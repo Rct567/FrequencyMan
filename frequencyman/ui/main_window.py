@@ -177,6 +177,13 @@ class FrequencyManMainWindow(QMainWindow):
                 return
 
         saveGeom(self, self.key)
-        dialogs.markClosed(FrequencyManMainWindow.key)
+
+        # Mark dialog as closed
+        try:
+            if hasattr(dialogs, "markClosed"):
+                dialogs.markClosed(FrequencyManMainWindow.key)
+        except Exception:
+            # In non‑Anki or test environments, dialogs may not be fully initialized
+            pass
 
         a0.accept()

@@ -115,15 +115,7 @@ def setup_mock_main_window(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy_pm = SimpleNamespace(profile={})
     monkeypatch.setattr("aqt.mw", SimpleNamespace(pm=dummy_pm), raising=False)
 
-def mock_close_event(a0: Any, fm_window: FrequencyManMainWindowType) -> None:
-    if a0 is not None:
-        for tab_id, tab_obj in fm_window.tab_menu_options.items():
-            if tab_id == 'words_overview':
-                 result = tab_obj.on_window_closing() # type: ignore[attr-defined]
-                 if result is not None and result == 1:
-                     a0.ignore()
-                     return
-        a0.accept()
+
 
 # Import FrequencyMan module components from the root __init__.py
 # We need to load it as a separate module because 'frequencyman' resolves to the library package

@@ -68,8 +68,12 @@ def get_windows_startup_info() -> Any:
     if not sys.platform.startswith("win"):
         return None
 
-    startup_info = subprocess.STARTUPINFO()
-    startup_info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startup_info_cls = getattr(subprocess, "STARTUPINFO", None)
+    if startup_info_cls is None:
+        return None
+
+    startup_info = startup_info_cls()
+    startup_info.dwFlags |= getattr(subprocess, "STARTF_USESHOWWINDOW", 0)
     return startup_info
 
 

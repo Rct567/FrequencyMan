@@ -12,3 +12,6 @@ pytest-qt
 python-dateutil
 PyQt6-stubs; python_version >= "3.10"
 pytest-cov
+requests
+types-requests
+types-python-dateutil

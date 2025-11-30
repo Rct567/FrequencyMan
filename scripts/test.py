@@ -2,7 +2,8 @@ from pathlib import Path
 import subprocess
 import sys
 import time
-from typing import NoReturn
+from typing import NoReturn, Callable, Optional
+from dataclasses import dataclass
 
 GREEN = "\033[92m"
 RESET = "\033[0m"
@@ -91,7 +92,7 @@ def run_and_print_on_failure(cmd: list[str], fail_label: str) -> None:
     Run `cmd`. If it fails, print stdout/stderr (if present) and exit with the subprocess return code.
     """
 
-    print(" > "+"".join(part+" " for part in cmd))
+    print(" > " + " ".join(cmd))
 
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -168,10 +169,10 @@ def run_ruff() -> None:
     start_time = time.perf_counter()
 
     ensure_packages_installed(["ruff"])
-    run_and_print_on_failure(["ruff", "check"] + [relative_path(dir) for dir in TEST_TARGET_FOLDER], "Ruff")
+    run_and_print_on_failure(["ruff", "check"] + [relative_path(dir) for dir in TEST_TARGET_FOLDER] + ["--preview"], "Ruff")
 
-    for py_file in PROJECT_ROOT.glob('*.py'):
-        run_and_print_on_failure(["ruff", "check", relative_path(py_file), "--preview"], "Ruff")
+    root_files_to_run = [relative_path(py_file) for py_file in PROJECT_ROOT.glob('*.py')]
+    run_and_print_on_failure(["ruff", "check"] + root_files_to_run + ["--preview"], "Ruff")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Ruff was successful! ({elapsed_time:.0f} seconds){RESET}")
@@ -185,33 +186,77 @@ def run_pyright() -> None:
     ensure_packages_installed(["pyright"])
     run_and_print_on_failure(["pyright"] + [relative_path(dir) for dir in TEST_TARGET_FOLDER], "Pyright")
 
-    for py_file in PROJECT_ROOT.glob('*.py'):
-        run_and_print_on_failure(["pyright", relative_path(py_file)], "Pyright")
+    root_files_to_run = [relative_path(py_file) for py_file in PROJECT_ROOT.glob('*.py')]
+    run_and_print_on_failure(["pyright"] + root_files_to_run, "Pyright")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Pyright was successful! ({elapsed_time:.0f} seconds){RESET}")
+
+@dataclass(frozen=True)
+class MenuTestOption:
+    key: str
+    description: str
+    action: Callable[[], None]
+    available: Optional[Callable[[], bool]] = None
+
+    def is_available(self) -> bool:
+        return self.available() if self.available is not None else True
+
+def get_test_menu_options() -> list[MenuTestOption]:
+    return [
+        MenuTestOption(
+            key="pytest",
+            description="pytest -- Run pytest with local Python version ({}.{})".format(
+                sys.version_info.major, sys.version_info.minor
+            ),
+            action=run_pytest,
+        ),
+        MenuTestOption(
+            key="nox",
+            description="nox -- Test multiple Python versions using nox (3.9, 3.11, 3.13)",
+            action=run_nox,
+        ),
+        MenuTestOption(
+            key="tox",
+            description="tox -- Test multiple Python versions in parallel using tox (3.9, 3.11, 3.13)",
+            action=run_tox,
+            available=lambda: is_package_installed("tox") and is_package_installed("tox-uv"),
+        ),
+    ]
+
+def parse_cli_choice() -> Optional[str]:
+    args = sys.argv[1:]
+    for arg in args:
+        if arg == "-y":
+            return "nox"
+        if arg.startswith("--"):
+            key = arg[2:]
+            for opt in get_test_menu_options():
+                if opt.key == key and opt.is_available():
+                    return key
+    return None
 
 def get_user_choice() -> str:
     print("="*60)
     print("Test Runner Options:")
 
-    choices: dict[str, str] = {
-        "1":  "pytest -- Run pytest with local Python version ({}.{})".format(sys.version_info.major, sys.version_info.minor),
-        "2": "nox -- Test multiple Python versions using nox (3.9, 3.11, 3.13)"
-    }
+    menu_options = [option for option in get_test_menu_options() if option.is_available()]
+    for i, opt in enumerate(menu_options, start=1):
+        print(" {}. {}".format(i, opt.description))
 
-    if is_package_installed("tox") and is_package_installed("tox-uv"):
-        choices["3"] = "tox -- Test multiple Python versions in parallel using tox (3.9, 3.11, 3.13)"
-
-    for choice, description in choices.items():
-        print(" {}. {}".format(choice, description))
-
+    valid_indices = [str(i) for i in range(1, len(menu_options) + 1)]
     while True:
-        choices_num_str = ", ".join(choices.keys())
-        choices_num_str = choices_num_str.replace(", {}".format(len(choices)), " or {}".format(len(choices)))
-        choice = input("\nEnter your choice ({}): ".format(choices_num_str).strip())
-        if choice in choices:
-            return choice
+        choices_num_str = ", ".join(valid_indices)
+        if len(valid_indices) > 1:
+            choices_num_str = choices_num_str.replace(
+                ", {}".format(valid_indices[-1]), " or {}".format(valid_indices[-1])
+            )
+        choice = input("\nEnter your choice ({}): ".format(choices_num_str)).strip()
+        if choice in valid_indices:
+            return menu_options[int(choice) - 1].key
+        for opt in menu_options:
+            if choice.lower() == opt.key.lower():
+                return opt.key
         print("Invalid choice. Please enter {}.".format(choices_num_str))
 
 
@@ -228,26 +273,20 @@ def main() -> NoReturn:
     run_pyright()
     run_mypy()
 
-    use_nox_to_test = len(sys.argv) > 1 and (sys.argv[1] == "-y" or sys.argv[1] == "--nox")
+    parsed_choice = parse_cli_choice()
+    non_interactive = parsed_choice is not None
+    choice_key = parsed_choice if parsed_choice is not None else get_user_choice()
 
-    if use_nox_to_test:
-        choice = "2"
-    else:
-        choice = get_user_choice()
-
-    if choice == "1":
-        run_pytest()
-    elif choice == "2":
-        run_nox()
-    elif choice == "3" and is_package_installed("tox"):
-        run_tox()
-    else:
+    options_by_key = {opt.key: opt for opt in get_test_menu_options()}
+    selected = options_by_key.get(choice_key)
+    if selected is None or not selected.is_available():
         raise Exception("Invalid choice.")
+    selected.action()
 
     elapsed_time = time.perf_counter() - start_time
 
     print("\n" + "="*60)
-    if use_nox_to_test:
+    if non_interactive:
         print(f"{GREEN} All tests completed successfully! ({elapsed_time:.0f} seconds){RESET}")
     else:
         print(f"{GREEN} All tests completed successfully!{RESET}")

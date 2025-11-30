@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 from ..target_corpus_data import SegmentContentMetrics, TargetCorpusData, CorpusSegmentId
 from ..target_list import TargetList
 from ..target import Target
+from ..lib.addon_config import AddonConfig
 
 from .words_overview_tab_additional_columns import (
     AdditionalColumn, WordFrequencyColumn, WordFamiliarityColumn, NumberOfCardsColumn, NumberOfNotesColumn, WordPresenceColumn)
@@ -67,6 +68,8 @@ class WordsOverviewTab(FrequencyManTab):
     id = 'words_overview'
     name = 'Words overview'
 
+    fm_config: AddonConfig
+
     target_list: TargetList
     selected_target_index: int
     selected_overview_option_index: int
@@ -101,8 +104,9 @@ class WordsOverviewTab(FrequencyManTab):
     filters: list[FilterOption]
     filter_checkboxes: dict[str, QCheckBox]
 
-    def __init__(self, fm_window: FrequencyManMainWindow, col: Collection) -> None:
+    def __init__(self, fm_config: AddonConfig, fm_window: FrequencyManMainWindow, col: Collection) -> None:
         super().__init__(fm_window, col)
+        self.fm_config = fm_config
         self.selected_target_index = 0
         self.selected_corpus_segment_id = None
         self.selected_overview_option_index = 0
@@ -125,10 +129,10 @@ class WordsOverviewTab(FrequencyManTab):
 
         self.target_list = self.init_new_target_list()
 
-        if 'reorder_target_list' not in self.fm_window.fm_config:
+        if 'reorder_target_list' not in self.fm_config:
             raise Exception("'reorder_target_list' is not defined.")
 
-        defined_target_list = self.fm_window.fm_config['reorder_target_list']
+        defined_target_list = self.fm_config['reorder_target_list']
         self.target_list.set_targets_from_json(defined_target_list)
 
     @override

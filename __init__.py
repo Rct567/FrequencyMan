@@ -56,8 +56,8 @@ def frequencyman_window_creator(mw: AnkiQt, fm_config: AddonConfig, reorder_logg
         return None
 
     fm_window = FrequencyManMainWindow(mw, mw.col, fm_config, FM_ROOT_DIR, FM_USER_FILES_DIR)
-    fm_window.add_tab(ReorderCardsTab(fm_window, mw.col, reorder_logger))
-    fm_window.add_tab(WordsOverviewTab(fm_window, mw.col))
+    fm_window.add_tab(ReorderCardsTab(fm_config, fm_window, mw.col, reorder_logger))
+    fm_window.add_tab(WordsOverviewTab(fm_config, fm_window, mw.col))
     fm_window.show()
     return fm_window
 

@@ -206,19 +206,19 @@ def get_test_menu_options() -> list[MenuTestOption]:
     return [
         MenuTestOption(
             key="pytest",
-            description="pytest -- Run pytest with local Python version ({}.{})".format(
+            description="Run pytest with local Python version ({}.{})".format(
                 sys.version_info.major, sys.version_info.minor
             ),
             action=run_pytest,
         ),
         MenuTestOption(
             key="nox",
-            description="nox -- Test multiple Python versions using nox (3.9, 3.11, 3.13)",
+            description="Test multiple Python versions using nox (3.9, 3.11, 3.13)",
             action=run_nox,
         ),
         MenuTestOption(
             key="tox",
-            description="tox -- Test multiple Python versions in parallel using tox (3.9, 3.11, 3.13)",
+            description="Test multiple Python versions in parallel using tox (3.9, 3.11, 3.13)",
             action=run_tox,
             available=lambda: is_package_installed("tox") and is_package_installed("tox-uv"),
         ),
@@ -242,7 +242,7 @@ def get_user_choice() -> str:
 
     menu_options = [option for option in get_test_menu_options() if option.is_available()]
     for i, opt in enumerate(menu_options, start=1):
-        print(" {}. {}".format(i, opt.description))
+        print(" {}. {} -- {}".format(i, opt.key, opt.description))
 
     valid_indices = [str(i) for i in range(1, len(menu_options) + 1)]
     while True:

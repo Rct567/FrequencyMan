@@ -14,7 +14,7 @@ def main() -> None:
         start = time.perf_counter()
 
         result = subprocess.run(
-            ["pytest", "-q", "-k", "target_list_reorder"],
+            ["pytest", "-q", "-k", "reorder_cards_big_collection_es"],
             capture_output=True,
             text=True,
             check=False

@@ -129,6 +129,7 @@ spec.loader.exec_module(FrequencyMan_module)
 # Patch FM_USER_FILES_DIR to point to test data
 TEST_DATA_DIR = PROJECT_ROOT / "tests" / "data"
 FrequencyMan_module.FM_USER_FILES_DIR = TEST_DATA_DIR / "lang_data_test" # type: ignore
+assert (FrequencyMan_module.FM_USER_FILES_DIR / 'lang_data').is_dir()
 
 frequencyman_window_creator: Callable[[MockAnkiQt, AddonConfig, ReorderLogger], Optional[FrequencyManMainWindowType]] = FrequencyMan_module.frequencyman_window_creator
 FrequencyManMainWindow: type[FrequencyManMainWindowType] = FrequencyMan_module.FrequencyManMainWindow

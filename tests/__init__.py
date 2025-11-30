@@ -1,6 +1,9 @@
 import sys
 import os
 
+# Force offscreen Qt platform for tests to avoid display issues
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+
 # Ensure the project root is in sys.path so that 'frequencyman' package can be imported
 # This is critical when running tests as a package (e.g. pytest tests/)
 

@@ -80,7 +80,8 @@ class Target:
 
     name: str
     corpus_data: Optional[TargetCorpusData]
-    cache_data: Optional[TargetCacheData]
+    corpus_data_config_key: tuple
+    cache_data: Optional[TargetCacheData] # reorder process cache
 
     main_scope_query: str
     reorder_scope_query: Optional[str]
@@ -145,10 +146,14 @@ class Target:
 
     def get_corpus_data_non_cached(self, target_cards: TargetCards) -> TargetCorpusData:
 
+        if self.corpus_data and self.corpus_data_config_key != self.__get_config_key(target_cards):
+            self.corpus_data = None
+
         if self.corpus_data:
             return self.corpus_data
 
         self.corpus_data = TargetCorpusData(target_cards, self.config_target.get_config_fields_per_note_type(), self.language_data, self.cacher)
+        self.corpus_data_config_key = self.__get_config_key(target_cards)
 
         # familiarity_sweetspot_point
         configured_familiarity_sweetspot_point = self.config_target.get('familiarity_sweetspot_point')
@@ -190,15 +195,21 @@ class Target:
         # done
         return self.corpus_data
 
-    def get_corpus_data(self, target_cards: TargetCards) -> TargetCorpusData:
-
-        if self.cache_data is None:
-            raise ValueError("Cache data object required for get_corpus_data!")
+    def __get_config_key(self, target_cards: TargetCards) -> tuple:
 
         cache_key = (str(target_cards.all_cards_ids), str(self.config_target.get_config_fields_per_note_type()), self.col, self.language_data,
                      self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'),
                      self.config_target.get('suspended_leech_card_value'), self.config_target.get('corpus_segmentation_strategy'),
                      self.config_target.get('maturity_threshold'))
+
+        return cache_key
+
+    def get_corpus_data(self, target_cards: TargetCards) -> TargetCorpusData:
+
+        if self.cache_data is None:
+            raise ValueError("Cache data object required for get_corpus_data!")
+
+        cache_key = self.__get_config_key(target_cards)
 
         if self.cache_data and cache_key in self.cache_data['corpus']:
             return self.cache_data['corpus'][cache_key]

@@ -52,7 +52,7 @@ ignore = [
 "tests/test_target_*.py" = ["F401", "F811"] # pytest fixtures
 
 [tool.ruff.lint.pylint]
-max-locals = 25
+max-locals = 30
 max-branches = 120
 max-statements = 135
 max-returns = 70

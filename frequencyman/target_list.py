@@ -281,7 +281,7 @@ class TargetList:
 
         # check ideal_word_count
         if 'ideal_word_count' in target_data:
-            if not isinstance(target_data['ideal_word_count'], list):
+            if not isinstance(target_data['ideal_word_count'], (list, tuple)):
                 return (False, "Ideal word count specified in target #{} is not a valid type (array expected).".format(index), None)
             if len(target_data['ideal_word_count']) == 0:
                 return (False, "Ideal word count specified in target #{} is empty.".format(index), None)
@@ -293,7 +293,7 @@ class TargetList:
                 return (False, "Value for 'ideal_word_count' max specified in target[{}] is not a number (integer).".format(index), None)
             if target_data['ideal_word_count'][0] > target_data['ideal_word_count'][1]:
                 return (False, "Ideal word count specified in target #{} should has a min value that is higher or equal to the max value.".format(index), None)
-            result['ideal_word_count'] = [int(val) for val in target_data['ideal_word_count'] if val is not None and isinstance(val, int)]
+            result['ideal_word_count'] = (target_data['ideal_word_count'][0], target_data['ideal_word_count'][1])
 
         if 'familiarity_sweetspot_point' in target_data:
             if isinstance(target_data['familiarity_sweetspot_point'], float) or isinstance(target_data['familiarity_sweetspot_point'], int):

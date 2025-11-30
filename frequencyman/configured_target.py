@@ -49,7 +49,7 @@ class ConfiguredTargetDict(TypedDict, total=False):
     maturity_min_num_notes: int
     suspended_card_value: float
     suspended_leech_card_value: float
-    ideal_word_count: list[int]
+    ideal_word_count: tuple[int, int]
     ranking_factors: dict[str, float]
     corpus_segmentation_strategy: str
     notes: list[ConfiguredTargetNote]
@@ -81,7 +81,7 @@ class ValidConfiguredTarget(dict):
         ...
 
     @overload
-    def __getitem__(self, key: Literal['ideal_word_count']) -> list[int]:
+    def __getitem__(self, key: Literal['ideal_word_count']) -> tuple[int, int]:
         ...
 
     @overload
@@ -117,7 +117,7 @@ class ValidConfiguredTarget(dict):
         ...
 
     @overload
-    def __setitem__(self, key: Literal['ideal_word_count'], value: list[int]) -> None:
+    def __setitem__(self, key: Literal['ideal_word_count'], value: tuple[int, int]) -> None:
         ...
 
     @overload
@@ -129,7 +129,7 @@ class ValidConfiguredTarget(dict):
         ...
 
     @override
-    def __setitem__(self, key: ConfiguredTargetKeys, value: Union[str, float, list, dict]) -> None:
+    def __setitem__(self, key: ConfiguredTargetKeys, value: Union[str, float, list, tuple[int, int], dict]) -> None:
         return super().__setitem__(key, value)
 
     def set_custom_ranking_weight(self, key: str, value: float) -> None:

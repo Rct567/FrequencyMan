@@ -5,8 +5,9 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, TypedDict
+from typing import TYPE_CHECKING, Optional, TypedDict, get_args
 
+from .configured_target import ConfiguredTargetKeys, ValidConfiguredTarget
 from .lib.utilities import get_float, is_numeric_value, override
 from .card_ranker import CardRanker, TargetCards
 from .target_corpus_data import CorpusSegmentationStrategy, MaturityRequirements, TargetCorpusData
@@ -15,13 +16,12 @@ from .language_data import LanguageData
 
 if TYPE_CHECKING:
     from typing_extensions import Self
-    from collections.abc import Sequence
+    from collections.abc import Sequence, Hashable
     from anki.cards import CardId
     from anki.notes import Note, NoteId
     from anki.collection import Collection, OpChangesWithCount
     from .lib.persistent_cacher import PersistentCacher
     from .lib.event_logger import EventLogger
-    from .configured_target import ValidConfiguredTarget
 
 
 class TargetReorderResult:
@@ -195,14 +195,29 @@ class Target:
         # done
         return self.corpus_data
 
-    def __get_config_key(self, target_cards: TargetCards) -> tuple:
+    def __get_config_key(self, target_cards: TargetCards) -> tuple[Hashable, ...]:
 
-        cache_key = (str(target_cards.all_cards_ids), str(self.config_target.get_config_fields_per_note_type()), self.col, self.language_data,
-                     self.config_target.get('familiarity_sweetspot_point'), self.config_target.get('suspended_card_value'),
-                     self.config_target.get('suspended_leech_card_value'), self.config_target.get('corpus_segmentation_strategy'),
-                     self.config_target.get('maturity_threshold'))
+        cache_key: list[Hashable] = [
+            str(target_cards.all_cards_ids),
+            str(self.config_target.get_config_fields_per_note_type()),
+            self.config_target.construct_main_scope_query(),
+            self.col,
+            self.language_data
+        ]
 
-        return cache_key
+        for key in set(get_args(ConfiguredTargetKeys)):
+
+            if key in {'reorder_scope_query', 'ranking_factors', 'id', 'notes', 'decks'}:
+                continue
+
+            key_element = self.config_target.get(key, None)
+
+            if not isinstance(key_element, (str, float, int, tuple, type(None))):
+                raise Exception("Key element {} has unexpected type {}!".format(key, type(key_element)))
+
+            cache_key.append(key_element)
+
+        return tuple(cache_key)
 
     def get_corpus_data(self, target_cards: TargetCards) -> TargetCorpusData:
 
@@ -315,7 +330,7 @@ class Target:
 
             # use custom ideal_word_count
             if 'ideal_word_count' in self.config_target:
-                if isinstance(self.config_target['ideal_word_count'], list) and len(self.config_target['ideal_word_count']) == 2:
+                if isinstance(self.config_target['ideal_word_count'], (list, tuple)) and len(self.config_target['ideal_word_count']) == 2:
                     if all(isinstance(val, int) for val in self.config_target['ideal_word_count']):
                         card_ranker.ideal_word_count_min = self.config_target['ideal_word_count'][0]
                         card_ranker.ideal_word_count_max = self.config_target['ideal_word_count'][1]

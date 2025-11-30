@@ -126,6 +126,10 @@ FrequencyMan_module = importlib.util.module_from_spec(spec)
 sys.modules["FrequencyMan_addon"] = FrequencyMan_module
 spec.loader.exec_module(FrequencyMan_module)
 
+# Patch FM_USER_FILES_DIR to point to test data
+TEST_DATA_DIR = PROJECT_ROOT / "tests" / "data"
+FrequencyMan_module.FM_USER_FILES_DIR = TEST_DATA_DIR / "lang_data_test" # type: ignore
+
 frequencyman_window_creator: Callable[[MockAnkiQt, AddonConfig, ReorderLogger], Optional[FrequencyManMainWindowType]] = FrequencyMan_module.frequencyman_window_creator
 FrequencyManMainWindow: type[FrequencyManMainWindowType] = FrequencyMan_module.FrequencyManMainWindow
 ReorderCardsTab: type[ReorderCardsTabType] = FrequencyMan_module.ReorderCardsTab

@@ -74,9 +74,11 @@ class TestWordsOverviewTab:
 
             # Verify table has content
             assert words_tab.table.columnCount() > 0
-            empty_tables = {'MatureWordsOverview', 'WordUnderexposureOverview', 'WordFamiliaritySweetspotOverview'}
-            if not selected_option_instance.__class__.__name__ in empty_tables:
-                assert words_tab.table.rowCount() > 1, "Table {} should have rows".format(selected_option_instance.__class__.__name__)
+            empty_tables = {'MatureWordsOverview', 'WordFamiliaritySweetspotOverview'}
+            if selected_option_instance.__class__.__name__ in empty_tables:
+                assert words_tab.table.rowCount() == 0, "Table {} should have 0 rows".format(selected_option_instance.__class__.__name__)
+            else:
+                assert words_tab.table.rowCount() > 0, "Table {} should have rows".format(selected_option_instance.__class__.__name__)
 
         # 2. Test additional_columns
         # Reset to first option for consistency

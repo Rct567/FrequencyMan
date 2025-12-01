@@ -337,9 +337,14 @@ class Target:
                         card_ranker.ideal_word_count_max = self.config_target['ideal_word_count'][1]
 
             # Calculate ranking and sort cards
-            card_rankings = card_ranker.calc_cards_ranking(target_cards, reorder_scope_target_cards)
+            card_rankings, set_fields_meta_data_for_notes = card_ranker.calc_cards_ranking(target_cards, reorder_scope_target_cards)
             sorted_cards = sorted(reorder_scope_target_cards.new_cards, key=lambda card: card_rankings[card.id], reverse=True)
             sorted_cards_ids = [card.id for card in sorted_cards]
+
+        # set meta data that will be saved in note fields
+        if card_ranker.target_may_need_fields_meta_data(target_cards):
+            with event_logger.add_benchmarked_entry("Processing meta data for note fields."):
+                set_fields_meta_data_for_notes()
 
         # Reposition cards
         repositioning_required = reorder_scope_target_cards.new_cards_ids != sorted_cards_ids

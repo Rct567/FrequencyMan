@@ -6,6 +6,7 @@ See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 from __future__ import annotations
 
 from datetime import datetime
+from functools import cache
 from typing import Callable, ClassVar, Optional, TYPE_CHECKING
 
 from anki.utils import int_time
@@ -162,6 +163,7 @@ class TargetCards:
 
         return self.notes_from_cards_cached[note_id]
 
+    @cache
     def get_notes_from_all_cards(self) -> dict[NoteId, Note]:
 
         notes_from_all_cards: dict[NoteId, Note] = {}
@@ -176,6 +178,7 @@ class TargetCards:
 
         return notes_from_all_cards
 
+    @cache
     def get_notes_from_new_cards(self) -> dict[NoteId, Note]:
 
         notes_from_new_cards: dict[NoteId, Note] = {}
@@ -188,6 +191,31 @@ class TargetCards:
         assert self.notes_ids_new_cards == list(notes_from_new_cards.keys())
 
         return notes_from_new_cards
+
+    @cache
+    def get_models_from_all_cards(self) -> dict[NotetypeId, NotetypeDict]:
+
+        models: dict[NotetypeId, NotetypeDict] = {}
+        for note in self.get_notes_from_all_cards().values():
+            if note.mid not in models:
+                note_model = self.get_model(note.mid)
+                if note_model:
+                    models[note.mid] = note_model
+
+        return models
+
+    @cache
+    def has_notes_with_fm_fields(self) -> bool:
+
+        fm_field_found = False
+
+        for note_model in self.get_models_from_all_cards().values():
+            for field in note_model['flds']:
+                if field['name'].startswith('fm_'):
+                    fm_field_found = True
+                    break
+
+        return fm_field_found
 
     def get_model(self, model_id: NotetypeId) -> Optional[NotetypeDict]:
 

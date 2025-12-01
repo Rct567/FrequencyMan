@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from .target_cards import TargetCards
     from .language_data import LanguageData
     from .target_corpus_data import CorpusSegmentId, TargetCorpusData, NoteFieldContentData
-    from collections.abc import Sequence
+    from collections.abc import Sequence, Callable
 
 
 @dataclass_with_slots()
@@ -194,7 +194,7 @@ class CardRanker:
 
         return (intro_word, proper_introduction_score)
 
-    def calc_cards_ranking(self, target_cards: TargetCards, reorder_scope_target_cards: TargetCards) -> dict[CardId, float]:
+    def calc_cards_ranking(self, target_cards: TargetCards, reorder_scope_target_cards: TargetCards) -> tuple[dict[CardId, float], Callable[[], int]]:
 
         # boost weight of lowest_word_frequency if there are not enough reviewed cards for other factors to be useful
 
@@ -211,9 +211,9 @@ class CardRanker:
         notes_ranking_scores_normalized, notes_rankings = self.__calc_notes_ranking(notes_ranking_factors, reorder_scope_target_cards)
 
         # set meta data that will be saved in note fields
-
-        notes_all_card = target_cards.get_notes_from_all_cards()
-        self.__set_fields_meta_data_for_notes(notes_all_card, target_cards.notes_ids_new_cards_set, notes_ranking_scores_normalized, notes_metrics)
+        def set_fields_meta_data_for_notes() -> int:
+            notes_all_card = target_cards.get_notes_from_all_cards()
+            return self.__set_fields_meta_data_for_notes(notes_all_card, target_cards.notes_ids_new_cards_set, notes_ranking_scores_normalized, notes_metrics)
 
         # cards ranking based on note ranking
 
@@ -222,7 +222,7 @@ class CardRanker:
             card_rankings[card.id] = notes_rankings[card.nid]
 
         # done
-        return card_rankings
+        return card_rankings, set_fields_meta_data_for_notes
 
     def __calc_notes_ranking(self, notes_ranking_scores: dict[str, dict[NoteId, float]], reorder_scope_target_cards: TargetCards) -> tuple[dict[str, dict[NoteId, float]], dict[NoteId, float]]:
 
@@ -314,6 +314,17 @@ class CardRanker:
             return self.ranking_factors_span[factor_name] > 0
         except KeyError:
             return False
+
+    def target_may_need_fields_meta_data(self, target_cards: TargetCards) -> bool:
+
+        clean_note_found = False
+
+        for note_id in target_cards.notes_ids_all_cards:
+            if note_id not in self.modified_dirty_notes:
+                clean_note_found = True
+                break
+
+        return clean_note_found and target_cards.has_notes_with_fm_fields()
 
     def __get_notes_field_metrics(self, notes_ids_all_cards: Sequence[NoteId], notes_ids_new_cards: set[NoteId]) -> dict[NoteId, list[FieldMetrics]]:
 
@@ -594,7 +605,7 @@ class CardRanker:
         return False
 
     def __set_fields_meta_data_for_notes(self, notes_all_card: dict[NoteId, Note], notes_ids_new_cards: set[NoteId], notes_ranking_scores: dict[str, dict[NoteId, float]],
-                                         notes_metrics: dict[NoteId, list[FieldMetrics]]) -> None:
+                                         notes_metrics: dict[NoteId, list[FieldMetrics]]) -> int:
 
         first_dict = next(iter(notes_ranking_scores.values()), {})
         reorder_scope_note_ids = set(first_dict)
@@ -608,6 +619,8 @@ class CardRanker:
             notes_ids_new_cards,
             reorder_scope_note_ids
         )
+
+        num_updated_notes = 0
 
         for note_id, note in non_modified_notes.items():
 
@@ -629,8 +642,11 @@ class CardRanker:
 
             if update_note_data:
                 self.modified_dirty_notes[note_id] = note
+                num_updated_notes += 1
             elif lock_note_data:  # lock to keep it as it is
                 self.modified_dirty_notes[note_id] = None
+
+        return num_updated_notes
 
     def __get_new_meta_data_for_note(self, note: Note, note_metrics: list[FieldMetrics], notes_all_card: dict[NoteId, Note]) -> dict[str, str]:
 

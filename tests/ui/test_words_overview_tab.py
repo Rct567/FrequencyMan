@@ -64,25 +64,34 @@ class TestWordsOverviewTab:
         qtbot.waitUntil(lambda: getattr(words_tab, "target_list", None) is not None, timeout=5_000)
 
         # 1. Test OVERVIEW_OPTIONS
-        for index, option_cls in enumerate(WordsOverviewTab.OVERVIEW_OPTIONS):
-            words_tab.overview_options_dropdown.setCurrentIndex(index)
-            qtbot.wait(50)
+        dropdown_index = 0
+        for category, options in WordsOverviewTab.OVERVIEW_OPTIONS.items():
+            dropdown_index += 1  # Skip header
+            
+            for option_cls in options:
+                # Set by dropdown index
+                words_tab._WordsOverviewTab__set_selected_overview_option(dropdown_index)
+                
+                # Wait for the table to update
+                expected_description = words_tab.overview_options_available[dropdown_index].data_description()
+                qtbot.waitUntil(lambda desc=expected_description: words_tab.table_label.text() == desc, timeout=1000)
 
-            selected_option_instance = words_tab.overview_options_available[index]
-            assert isinstance(selected_option_instance, option_cls)
-            assert words_tab.table_label.text() == selected_option_instance.data_description()
+                selected_option_instance = words_tab.overview_options_available[dropdown_index]
+                assert isinstance(selected_option_instance, option_cls)
+                assert words_tab.table_label.text() == selected_option_instance.data_description()
 
-            # Verify table has content
-            assert words_tab.table.columnCount() > 0
-            empty_tables = {'MatureWordsOverview', 'WordFamiliaritySweetspotOverview'}
-            if selected_option_instance.__class__.__name__ in empty_tables:
-                assert words_tab.table.rowCount() == 0, "Table {} should have 0 rows".format(selected_option_instance.__class__.__name__)
-            else:
-                assert words_tab.table.rowCount() > 0, "Table {} should have rows".format(selected_option_instance.__class__.__name__)
+                # Verify table has content
+                assert words_tab.table.columnCount() > 0
+                empty_tables = {'MatureWordsOverview', 'WordFamiliaritySweetspotOverview'}
+                if selected_option_instance.__class__.__name__ in empty_tables:
+                    assert words_tab.table.rowCount() == 0, "Table {} should have 0 rows".format(selected_option_instance.__class__.__name__)
+                else:
+                    assert words_tab.table.rowCount() > 0, "Table {} should have rows".format(selected_option_instance.__class__.__name__)
+                
+                dropdown_index += 1
 
         # 2. Test additional_columns
-        # Reset to first option for consistency
-        words_tab.overview_options_dropdown.setCurrentIndex(0)
+        words_tab._WordsOverviewTab__set_selected_overview_option(1) # Reset to first option (index 1)
         qtbot.wait(50)
 
         initial_column_count = words_tab.table.columnCount()

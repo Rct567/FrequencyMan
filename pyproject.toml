@@ -18,6 +18,7 @@ extend-select = [
     "TC",       # Category selector for all flake8-type-checking rules (prefix TC).
     "UP",       # Category selector for all pyupgrade rules (prefix UP).
     "RUF",      # ruff's own rules
+    "FA",       # flake8-future-annotations ruleset
 ]
 ignore = [
     "PLR6301",   # No self use - Checks for the presence of unused `self` parameter in method definitions.

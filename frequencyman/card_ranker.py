@@ -3,21 +3,25 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 from dataclasses import field
 from math import fsum, log
 from statistics import fmean, median
-from typing import Optional
-from collections.abc import Sequence
+from typing import Optional, TYPE_CHECKING
 
-from anki.cards import CardId
-from anki.notes import Note, NoteId
 
 from .text_processing import WordToken
 from .lib.utilities import dataclass_with_slots
-from .target_corpus_data import CorpusSegmentId, TargetCorpusData, NoteFieldContentData
-from .language_data import LanguageData
-from .target_cards import TargetCards
+
+if TYPE_CHECKING:
+    from anki.notes import Note, NoteId
+    from anki.cards import CardId
+    from .target_cards import TargetCards
+    from .language_data import LanguageData
+    from .target_corpus_data import CorpusSegmentId, TargetCorpusData, NoteFieldContentData
+    from collections.abc import Sequence
 
 
 @dataclass_with_slots()

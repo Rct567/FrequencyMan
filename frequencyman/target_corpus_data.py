@@ -3,27 +3,31 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
 from math import fsum
 from statistics import fmean, median
-from typing import NewType, Optional, Union
-from collections.abc import Sequence
+from typing import NewType, Optional, Union, TYPE_CHECKING
 from enum import Enum
 
-from anki.cards import CardId
-from anki.notes import NoteId
-from anki.models import NotetypeDict
 
-from .lib.persistent_cacher import PersistentCacher
-from .target_cards import TargetCard, TargetCards
 from .language_data import LangId, LangDataId, LanguageData
 from .lib.utilities import (
     dataclass_with_slots, normalize_dict_floats_values, normalize_dict_positional_floats_values,
     remove_bottom_percent_dict, sort_dict_floats_values
 )
 from .text_processing import TextProcessing, WordToken
+
+if TYPE_CHECKING:
+    from anki.cards import CardId
+    from .lib.persistent_cacher import PersistentCacher
+    from anki.notes import NoteId
+    from collections.abc import Sequence
+    from .target_cards import TargetCard, TargetCards
+    from anki.models import NotetypeDict
 
 
 class CorpusSegmentationStrategy(Enum):

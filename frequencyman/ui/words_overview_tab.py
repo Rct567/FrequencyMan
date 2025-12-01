@@ -3,9 +3,9 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from collections.abc import Sequence
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union
-from anki.collection import Collection
 
 from aqt.qt import (
     QLabel, QSpacerItem, QSizePolicy, QLayout, QTimer, QHBoxLayout, QFrame, Qt, QApplication,
@@ -15,12 +15,14 @@ from aqt import dialogs
 from aqt.utils import showWarning
 
 if TYPE_CHECKING:
+    from anki.collection import Collection
+    from ..lib.addon_config import AddonConfig
+    from ..target_list import TargetList
+    from ..target import Target
+    from ..target_corpus_data import SegmentContentMetrics, TargetCorpusData, CorpusSegmentId
+    from collections.abc import Sequence
     from aqt.browser.browser import Browser
 
-from ..target_corpus_data import SegmentContentMetrics, TargetCorpusData, CorpusSegmentId
-from ..target_list import TargetList
-from ..target import Target
-from ..lib.addon_config import AddonConfig
 
 from .words_overview_tab_additional_columns import (
     AdditionalColumn, WordFrequencyColumn, WordFamiliarityColumn, NumberOfCardsColumn, NumberOfNotesColumn, WordPresenceColumn)
@@ -34,7 +36,6 @@ from .main_window import FrequencyManMainWindow, FrequencyManTab
 
 from ..lib.utilities import batched, override
 from ..text_processing import WordToken
-
 
 
 class KeyedTable(QTableWidget):

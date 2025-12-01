@@ -3,12 +3,16 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 import os
 import sqlite3
 import time
-from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 from collections.abc import Iterable, Sequence
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 QueryParameters = Union[Sequence[Union[int, float, str, bytes]], int, float, str, bytes]
 

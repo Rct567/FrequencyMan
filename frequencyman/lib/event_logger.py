@@ -3,13 +3,17 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from pathlib import Path
-from typing import Callable, Optional
-from collections.abc import Generator
+from __future__ import annotations
+
+from typing import Callable, Optional, TYPE_CHECKING
 from contextlib import contextmanager
 import time
 
 from .utilities import override
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from pathlib import Path
 
 
 class EventLogger:

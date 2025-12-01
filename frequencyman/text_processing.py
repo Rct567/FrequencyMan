@@ -3,12 +3,16 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 import re
 import html
-from typing import Callable, ClassVar, NewType, Optional
-from collections.abc import Sequence
+from typing import Callable, ClassVar, NewType, Optional, TYPE_CHECKING
 
 from .tokenizers import get_user_provided_tokenizer, Tokenizer, LangId
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 WordToken = NewType('WordToken', str)

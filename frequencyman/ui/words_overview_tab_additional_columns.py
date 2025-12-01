@@ -3,15 +3,17 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Union
-from collections.abc import Sequence
-
-
-from ..text_processing import WordToken
-from ..target_corpus_data import SegmentContentMetrics
+from typing import Union, TYPE_CHECKING
 
 from ..lib.utilities import override
+
+if TYPE_CHECKING:
+    from ..text_processing import WordToken
+    from ..target_corpus_data import SegmentContentMetrics
+    from collections.abc import Sequence
 
 
 class AdditionalColumn(ABC):

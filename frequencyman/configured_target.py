@@ -3,14 +3,18 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 import re
-from typing import Any, Literal, Optional, TypedDict, Union, overload
+from typing import Any, Literal, Optional, TypedDict, Union, overload, TYPE_CHECKING
 from typing_extensions import Unpack
-from collections.abc import Sequence, KeysView
 
 from .language_data import LangDataId
 from .lib.utilities import JSON_TYPE, override
 from .card_ranker import CardRanker
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence, KeysView
 
 
 class ConfiguredTargetNote(TypedDict):

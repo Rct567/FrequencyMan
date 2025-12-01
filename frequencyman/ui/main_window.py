@@ -3,23 +3,27 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 from functools import cached_property
-from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, TYPE_CHECKING
 
 from ..language_data import LanguageData
 from ..target_list import TargetList
 
 from ..lib.persistent_cacher import PersistentCacher, SqlDbFile
-from ..lib.addon_config import AddonConfig
 from ..lib.utilities import override
 
 from aqt.qt import QMainWindow, QWidget, QVBoxLayout, QLayout, QPaintEvent, QCloseEvent, QTabWidget, QHideEvent
-from aqt.main import AnkiQt
 
-from anki.collection import Collection
 from aqt import dialogs
 from aqt.utils import restoreGeom, saveGeom
+
+if TYPE_CHECKING:
+    from aqt.main import AnkiQt
+    from ..lib.addon_config import AddonConfig
+    from anki.collection import Collection
+    from pathlib import Path
 
 try:
     from ..version import FREQUENCYMAN_VERSION
@@ -35,9 +39,9 @@ class FrequencyManTab(QWidget):
     first_paint_event_done: bool
     focus_event_done: bool
     col: Collection
-    fm_window: 'FrequencyManMainWindow'
+    fm_window: FrequencyManMainWindow
 
-    def __init__(self, parent: 'FrequencyManMainWindow', col: Collection):
+    def __init__(self, parent: FrequencyManMainWindow, col: Collection):
         super().__init__(parent)
         self.first_paint_event_done = False
         self.focus_event_done = False

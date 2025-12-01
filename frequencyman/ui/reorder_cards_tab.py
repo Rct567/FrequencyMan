@@ -3,12 +3,14 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 import json
 import re
 import shutil
 import hashlib
 import time
-from typing import Optional, Callable, Union
+from typing import Optional, Callable, Union, TYPE_CHECKING
 
 from anki.collection import Collection
 from aqt.operations import QueryOp
@@ -19,7 +21,6 @@ from aqt.qt import (
     Qt, QColor, QPalette, QLayout, QPaintEvent, QTextEdit, pyqtSlot
 )
 
-from ..lib.addon_config import AddonConfig
 
 from ..static_lang_data import get_default_wf_list_sources
 
@@ -29,9 +30,12 @@ from .select_new_target_window import SelectNewTargetWindow
 from ..lib.event_logger import EventLogger
 from ..lib.utilities import ShowResultType, show_result, override
 
-from ..reorder_logger import ReorderLogger
-from ..configured_target import ValidConfiguredTarget
 from ..target_list import JSON_TYPE, JsonTargetsValidity, TargetList, TargetListReorderResult, JsonTargetsResult
+
+if TYPE_CHECKING:
+    from ..configured_target import ValidConfiguredTarget
+    from ..reorder_logger import ReorderLogger
+    from ..lib.addon_config import AddonConfig
 
 
 class TargetsDefiningTextArea(QTextEdit):
@@ -39,9 +43,9 @@ class TargetsDefiningTextArea(QTextEdit):
     fm_config: AddonConfig
     json_result: Optional[JsonTargetsResult]
     json_interpreter: Callable[[str], JsonTargetsResult]
-    on_validity_change_callbacks: list[Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]]
-    on_change_callbacks: list[Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]]
-    on_first_paint_callbacks: list[Callable[['TargetsDefiningTextArea'], None]]
+    on_validity_change_callbacks: list[Callable[[JsonTargetsResult, TargetsDefiningTextArea], None]]
+    on_change_callbacks: list[Callable[[JsonTargetsResult, TargetsDefiningTextArea], None]]
+    on_first_paint_callbacks: list[Callable[[TargetsDefiningTextArea], None]]
     error_interceptors: list[Callable[[JsonTargetsResult], bool]]
 
     def __init__(self, parent: QWidget, fm_config: AddonConfig):
@@ -98,13 +102,13 @@ class TargetsDefiningTextArea(QTextEdit):
     def set_interpreter(self, callback: Callable[[str], JsonTargetsResult]):
         self.json_interpreter = callback
 
-    def on_validity_change(self, callback: Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]):
+    def on_validity_change(self, callback: Callable[[JsonTargetsResult, TargetsDefiningTextArea], None]):
         self.on_validity_change_callbacks.append(callback)
 
-    def on_change(self, callback: Callable[[JsonTargetsResult, 'TargetsDefiningTextArea'], None]):
+    def on_change(self, callback: Callable[[JsonTargetsResult, TargetsDefiningTextArea], None]):
         self.on_change_callbacks.append(callback)
 
-    def on_first_paint(self, callback: Callable[['TargetsDefiningTextArea'], None]):
+    def on_first_paint(self, callback: Callable[[TargetsDefiningTextArea], None]):
         self.on_first_paint_callbacks.append(callback)
 
     def set_content(self, target_list: Union[list[ValidConfiguredTarget], list[JSON_TYPE], TargetList]):

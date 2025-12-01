@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Optional, TypedDict, get_args
 
 from .configured_target import ConfiguredTargetKeys, ValidConfiguredTarget
 from .lib.utilities import get_float, is_numeric_value, override
-from .card_ranker import CardRanker, TargetCards
+from .card_ranker import CardRanker
+from .target_cards import TargetCards
 from .target_corpus_data import CorpusSegmentationStrategy, MaturityRequirements, TargetCorpusData
 from .tokenizers import get_user_provided_tokenizer
 from .language_data import LanguageData

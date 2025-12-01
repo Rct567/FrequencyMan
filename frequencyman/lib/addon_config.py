@@ -3,11 +3,15 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
 
-from typing import Any, Callable, Optional, Union
-from aqt.main import AnkiQt
 
-from .utilities import JSON_TYPE
+from typing import Any, Callable, Optional, Union, TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from .utilities import JSON_TYPE
+    from aqt.main import AnkiQt
 
 
 class AddonConfig:
@@ -62,7 +66,7 @@ class AddonConfig:
         self.__config_save(self.__config)
 
     @staticmethod
-    def from_anki_main_window(mw: AnkiQt) -> 'AddonConfig':
+    def from_anki_main_window(mw: AnkiQt) -> AddonConfig:
 
         addon_manager = mw.addonManager
         config_loader: Callable[[], Optional[dict[str, Any]]] = lambda: addon_manager.getConfig(__name__)

@@ -1,3 +1,10 @@
+"""
+FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
+See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
+"""
+
+from __future__ import annotations
+
 import fnmatch
 from pathlib import Path
 import re

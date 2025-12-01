@@ -3,25 +3,29 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
 from functools import cache
 import json
 import re
-from typing import Callable, Optional, Any
-from collections.abc import Iterator, Sequence
+from typing import Callable, Optional, Any, TYPE_CHECKING
 
-from anki.collection import Collection, OpChanges
-from anki.notes import Note, NoteId
 
-from .lib.persistent_cacher import PersistentCacher
 from .configured_target import ConfiguredTargetDict, ConfiguredTargetNote, JsonConfiguredTarget, ValidConfiguredTarget
 from .target_corpus_data import CorpusSegmentationStrategy
 from .target_cards import TargetCards
 from .lib.utilities import JSON_TYPE, batched, get_float, load_json_with_tolerance
 from .target import TargetCacheData, TargetReorderResult, Target, CardRanker
-from .language_data import LanguageData
-from .lib.event_logger import EventLogger
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+    from .lib.event_logger import EventLogger
+    from anki.collection import Collection, OpChanges
+    from anki.notes import Note, NoteId
+    from .language_data import LanguageData
+    from .lib.persistent_cacher import PersistentCacher
 
 
 @dataclass(frozen=True)

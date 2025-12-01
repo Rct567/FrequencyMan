@@ -3,17 +3,21 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
-from datetime import datetime
-from typing import Callable, ClassVar, Optional
-from collections.abc import Sequence
+from __future__ import annotations
 
-from anki.collection import Collection
-from anki.cards import CardId
-from anki.notes import Note, NoteId
-from anki.models import NotetypeId, NotetypeDict
+from datetime import datetime
+from typing import Callable, ClassVar, Optional, TYPE_CHECKING
+
 from anki.utils import int_time
 
 from .lib.utilities import dataclass_with_slots
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from anki.notes import Note, NoteId
+    from anki.models import NotetypeId, NotetypeDict
+    from anki.cards import CardId
+    from anki.collection import Collection
 
 
 @dataclass_with_slots(frozen=True)

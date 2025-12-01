@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 from .words_overview_tab_additional_columns import (
     AdditionalColumn, WordFrequencyColumn, WordFamiliarityColumn, NumberOfCardsColumn, NumberOfNotesColumn, WordPresenceColumn)
 from .words_overview_tab_overview_options import (
-    AllWordsOverview, LearningWordsOverview, MatureWordsOverview, WordsOverviewOption, WordFamiliarityOverview, WordFrequencyOverview, InternalWordFrequencyOverview, WordUnderexposureOverview,
+    AllWordsOverview, LearningWordsOverview, MatureWordsOverview, WordFrequencyListsOverview, WordsOverviewOption, WordFamiliarityOverview, WordFrequencyOverview, InternalWordFrequencyOverview, WordUnderexposureOverview,
     WordFamiliaritySweetspotOverview, NotInWordFrequencyListsOverview,
     NotInTargetCardsOverview, LonelyWordsOverview, NewWordsOverview, FocusWordsOverview)
 from .words_overview_filters import FilterOption, IgnoredWordsFilter, LearningWordsFilter, MatureWordsFilter
@@ -90,14 +90,15 @@ class WordsOverviewTab(FrequencyManTab):
             WordFamiliaritySweetspotOverview,
         ),
         "Content": (
-            NewWordsOverview,
             AllWordsOverview,
+            NewWordsOverview,
             FocusWordsOverview,
             LearningWordsOverview,
             MatureWordsOverview,
             LonelyWordsOverview,
         ),
-        "Word frequency lists": (
+        "Language data": (
+            WordFrequencyListsOverview,
             NotInWordFrequencyListsOverview,
             NotInTargetCardsOverview,
         ),

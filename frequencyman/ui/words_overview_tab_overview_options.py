@@ -161,6 +161,34 @@ class NotInWordFrequencyListsOverview(WordsOverviewOption):
     def labels(self) -> list[str]:
         return ["Word", "Number of cards"]
 
+
+class WordFrequencyListsOverview(WordsOverviewOption):
+
+    title = "Word frequency lists"
+
+    @override
+    def data_description(self) -> str:
+        return "Word frequency lists for segment '{}' of target '{}':".format(self.selected_corpus_segment_id, self.selected_target.name)
+
+    @override
+    def data(self) -> TableDataType:
+
+        word_frequency_list = self.selected_corpus_content_metrics.language_data.get_word_frequency_list(self.selected_corpus_content_metrics.lang_data_id)
+
+        if self.selected_corpus_content_metrics.language_data.word_frequency_lists.word_frequency_lists is None:
+            showWarning("No word frequency lists loaded.")
+            return []
+
+        words_in_frequency_lists_with_position = {word: position+1 for position, word in enumerate(word_frequency_list.keys())}
+
+        words_in_frequency_lists: TableDataType = [(WordToken(word), [position]) for word, position in words_in_frequency_lists_with_position.items()]
+        words_in_frequency_lists = sorted(words_in_frequency_lists, key=lambda x: x[1][0], reverse=False)
+        return words_in_frequency_lists
+
+    @override
+    def labels(self) -> list[str]:
+        return ["Word", "Word frequency list position"]
+
 class NotInTargetCardsOverview(WordsOverviewOption):
 
     title = "Not in target cards"

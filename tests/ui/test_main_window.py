@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from aqt.qt import QTabWidget
+
 from tests.tools import (
     reorder_logger as reorder_logger_fixture,
     test_collection as test_collection_fixture,
@@ -44,7 +46,7 @@ class TestFrequencyManMainWindow:
         reorder_logger: ReorderLogger,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        
+
         setup_mock_main_window(monkeypatch)
 
         addon_config = build_loaded_config(build_target_list(test_collection))
@@ -59,6 +61,11 @@ class TestFrequencyManMainWindow:
 
         qtbot.addWidget(fm_window)
         qtbot.waitExposed(fm_window)
+
+        assert (central := fm_window.centralWidget())
+        assert (central_layout := central.layout())
+        assert central_layout.count() == 1, f"Expected 1 widget in central layout, got {central_layout.count()}"
+        assert len(fm_window.findChildren(QTabWidget)) == 1, f"Expected 1 QTabWidget, got {len(fm_window.findChildren(QTabWidget))}"
 
         # Assert window is visible after being shown
         assert fm_window.isVisible(), "Main window should be visible"
@@ -81,6 +88,9 @@ class TestFrequencyManMainWindow:
         assert reorder_tab.id == "reorder_cards"
         assert reorder_tab.name is not None
         qtbot.waitUntil(lambda: reorder_tab.first_paint_event_done, timeout=5_000)
+
+        assert (reorder_layout := reorder_tab.layout())
+        assert reorder_layout.count() == 4, f"Expected 4 widgets in ReorderCardsTab layout, got {reorder_layout.count()}"
 
         # Assert the reorder tab is the first/current tab initially
         assert fm_window.tab_widget.currentWidget() == reorder_tab, "Reorder tab should be the initial tab"

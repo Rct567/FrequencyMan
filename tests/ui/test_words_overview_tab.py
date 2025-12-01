@@ -4,7 +4,9 @@ Tests for WordsOverviewTab.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
+
+from aqt.qt import QComboBox, QTableWidget
 
 from tests.tools import (
     reorder_logger as reorder_logger_fixture,
@@ -57,24 +59,30 @@ class TestWordsOverviewTab:
 
         # Switch to Words Overview Tab
         fm_window.show_tab(WordsOverviewTab.id)
-        words_tab = fm_window.tab_menu_options[WordsOverviewTab.id]
+        words_tab = cast('Any', fm_window.tab_menu_options[WordsOverviewTab.id])
         assert isinstance(words_tab, WordsOverviewTab)
 
         qtbot.waitUntil(lambda: words_tab.first_paint_event_done, timeout=5_000)
         qtbot.waitUntil(lambda: getattr(words_tab, "target_list", None) is not None, timeout=5_000)
 
+        assert (layout := words_tab.layout())
+        assert layout.count() == 10, f"Expected 10 widgets in layout, got {layout.count()}"
+        assert len(words_tab.findChildren(QComboBox)) == 3, f"Expected 3 QComboBoxes, got {len(words_tab.findChildren(QComboBox))}"
+        assert len(words_tab.findChildren(QTableWidget)) == 1, f"Expected 1 QTableWidget, got {len(words_tab.findChildren(QTableWidget))}"
+
         # 1. Test OVERVIEW_OPTIONS
         dropdown_index = 0
-        for category, options in WordsOverviewTab.OVERVIEW_OPTIONS.items():
+        words_tab = cast('Any', words_tab)
+        for options in WordsOverviewTab.OVERVIEW_OPTIONS.values():
             dropdown_index += 1  # Skip header
-            
+
             for option_cls in options:
                 # Set by dropdown index
                 words_tab._WordsOverviewTab__set_selected_overview_option(dropdown_index)
-                
+
                 # Wait for the table to update
-                expected_description = words_tab.overview_options_available[dropdown_index].data_description()
-                qtbot.waitUntil(lambda desc=expected_description: words_tab.table_label.text() == desc, timeout=1000)
+                expected_description: str = words_tab.overview_options_available[dropdown_index].data_description()
+                qtbot.waitUntil(lambda expected_description=expected_description: words_tab.table_label.text() == expected_description, timeout=1000)
 
                 selected_option_instance = words_tab.overview_options_available[dropdown_index]
                 assert isinstance(selected_option_instance, option_cls)
@@ -87,7 +95,7 @@ class TestWordsOverviewTab:
                     assert words_tab.table.rowCount() == 0, "Table {} should have 0 rows".format(selected_option_instance.__class__.__name__)
                 else:
                     assert words_tab.table.rowCount() > 0, "Table {} should have rows".format(selected_option_instance.__class__.__name__)
-                
+
                 dropdown_index += 1
 
         # 2. Test additional_columns

@@ -12,6 +12,7 @@ from typing import Any, Callable, TypeVar
 from time import time
 
 from .sql_db_file import SqlDbFile
+from .utilities import override
 
 T = TypeVar('T')
 
@@ -163,3 +164,41 @@ class PersistentCacher:
 
     def close(self) -> None:
         self.db.close()
+
+
+class NullPersistentCacher(PersistentCacher):
+
+    def __init__(self) -> None:
+        pass
+
+    @override
+    def pre_load_all_items(self) -> None:
+        pass
+
+    @override
+    def num_items_stored(self) -> int:
+        return 0
+
+    @override
+    def get_item(self, cache_id: str, producer: Callable[..., T]) -> T:
+        return producer()
+
+    @override
+    def delete_item(self, cache_id: str) -> None:
+        pass
+
+    @override
+    def save_item(self, cache_id: str, value: Any) -> None:
+        pass
+
+    @override
+    def clear_pre_loaded_cache(self) -> None:
+        pass
+
+    @override
+    def flush_save_buffer(self) -> None:
+        pass
+
+    @override
+    def close(self) -> None:
+        pass

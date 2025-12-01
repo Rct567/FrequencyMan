@@ -11,7 +11,7 @@ from typing import Optional, Union, TYPE_CHECKING
 from ..language_data import LanguageData
 from ..target_list import TargetList
 
-from ..lib.persistent_cacher import PersistentCacher, SqlDbFile
+from ..lib.persistent_cacher import PersistentCacher, NullPersistentCacher, SqlDbFile
 from ..lib.utilities import override
 
 from aqt.qt import QMainWindow, QWidget, QVBoxLayout, QLayout, QPaintEvent, QCloseEvent, QTabWidget, QHideEvent
@@ -40,13 +40,15 @@ class FrequencyManTab(QWidget):
     focus_event_done: bool
     col: Collection
     fm_window: FrequencyManMainWindow
+    fm_config: AddonConfig
 
-    def __init__(self, parent: FrequencyManMainWindow, col: Collection):
+    def __init__(self, parent: FrequencyManMainWindow, fm_config: AddonConfig, col: Collection):
         super().__init__(parent)
         self.first_paint_event_done = False
         self.focus_event_done = False
         self.col = col
         self.fm_window = parent
+        self.fm_config = fm_config
 
     def on_tab_created(self, tab_layout: QVBoxLayout):
         pass
@@ -83,7 +85,10 @@ class FrequencyManTab(QWidget):
     @cached_property
     def cacher(self) -> PersistentCacher:
 
-        return PersistentCacher(SqlDbFile(self.fm_window.user_files_dir / 'cacher_data.sqlite'))
+        if self.fm_config.is_enabled('use_persistent_cache', default=True):
+            return PersistentCacher(SqlDbFile(self.fm_window.user_files_dir / 'cacher_data.sqlite'))
+        else:
+            return NullPersistentCacher()
 
     def init_new_target_list(self) -> TargetList:
 

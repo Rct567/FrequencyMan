@@ -150,7 +150,7 @@ class ReorderCardsTab(FrequencyManTab):
 
     def __init__(self, fm_config: AddonConfig, fm_window: FrequencyManMainWindow, col: Collection, reorder_logger: ReorderLogger) -> None:
 
-        super().__init__(fm_window, col)
+        super().__init__(fm_window, fm_config, col)
         self.fm_config = fm_config
         self.reorder_logger = reorder_logger
 

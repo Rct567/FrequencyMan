@@ -73,6 +73,7 @@ def build_loaded_config(targets: list[ValidConfiguredTarget]) -> AddonConfig:
     config_store: dict[str, Any] = {
         "reorder_target_list": targets,
         "log_reorder_events": False,
+        "use_persistent_cache": False,
     }
 
     def loader() -> dict[str, Any]:

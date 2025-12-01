@@ -106,7 +106,7 @@ class WordsOverviewTab(FrequencyManTab):
     filter_checkboxes: dict[str, QCheckBox]
 
     def __init__(self, fm_config: AddonConfig, fm_window: FrequencyManMainWindow, col: Collection) -> None:
-        super().__init__(fm_window, col)
+        super().__init__(fm_window, fm_config, col)
         self.fm_config = fm_config
         self.selected_target_index = 0
         self.selected_corpus_segment_id = None

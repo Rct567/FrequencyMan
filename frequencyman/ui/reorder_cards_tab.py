@@ -396,7 +396,7 @@ class ReorderCardsTab(FrequencyManTab):
         def user_clicked_save_button():
             json_result = TargetList.get_targets_from_json(self.targets_input_textarea.toPlainText(), self.col, self.language_data)
 
-            if (json_result.valid_targets_defined is not None and json_result.validity_state == JsonTargetsValidity.VALID_TARGETS and self.fm_config['reorder_target_list'] != json_result.valid_targets_defined):
+            if (json_result.valid_targets_defined is not None and json_result.validity_state == JsonTargetsValidity.VALID_TARGETS and self.fm_config['reorder_target_list'] != json_result.targets_defined):
                 self.targets_input_textarea.save_current_to_config()
                 reset_button.setDisabled(True)
 
@@ -405,7 +405,7 @@ class ReorderCardsTab(FrequencyManTab):
         def update_save_button_state(new_json_result: JsonTargetsResult, targets_input_textarea: TargetsDefiningTextArea):
 
             if (new_json_result.validity_state == JsonTargetsValidity.VALID_TARGETS and new_json_result.valid_targets_defined is not None):
-                if self.fm_config['reorder_target_list'] != new_json_result.valid_targets_defined:
+                if self.fm_config['reorder_target_list'] != new_json_result.targets_defined:
                     save_button.setDisabled(False)
                     return
             save_button.setDisabled(True)

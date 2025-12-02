@@ -82,7 +82,10 @@ class TestWordsOverviewTab:
 
                 # Wait for the table to update
                 expected_description: str = words_tab.overview_options_available[dropdown_index].data_description()
-                qtbot.waitUntil(lambda expected_description=expected_description: words_tab.table_label.text() == expected_description, timeout=1000)
+                def check_label(desc: str = expected_description) -> bool:
+                    return words_tab.table_label.text() == desc
+
+                qtbot.waitUntil(check_label, timeout=1000)
 
                 selected_option_instance = words_tab.overview_options_available[dropdown_index]
                 assert isinstance(selected_option_instance, option_cls)

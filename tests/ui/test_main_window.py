@@ -101,7 +101,7 @@ class TestFrequencyManMainWindow:
 
         # Assert button states (assuming fm_config['reorder_target_list'] is valid and same as textarea)
         # Wait for the textarea to process and update button states
-        qtbot.waitUntil(lambda: reorder_tab.reorder_button.isEnabled(), timeout=5_000)
+        qtbot.waitUntil(reorder_tab.reorder_button.isEnabled, timeout=5_000)
         assert reorder_tab.reorder_button.isEnabled(), "Reorder button should be enabled by default when targets are valid"
 
         # Find save and reset buttons

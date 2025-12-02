@@ -42,6 +42,11 @@ class AddonConfig:
             raise ValueError("Config not loaded!")
         return self.__config[key]
 
+    def get(self, key: str, default: JSON_TYPE) -> JSON_TYPE:
+        if self.__config is None:
+            raise ValueError("Config not loaded!")
+        return self.__config.get(key, default)
+
     def __contains__(self, key: str) -> bool:
         if self.__config is None:
             raise ValueError("Config not loaded!")

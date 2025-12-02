@@ -266,9 +266,9 @@ class ReorderCardsTab(FrequencyManTab):
         if self.targets_input_textarea.json_result is None:
             return False
 
-        stored_target_list = self.fm_config['reorder_target_list'] if 'reorder_target_list' in self.fm_config else None
+        stored_target_list = self.fm_config.get('reorder_target_list', None)
 
-        if stored_target_list == self.targets_input_textarea.json_result.valid_targets_defined:
+        if stored_target_list == self.targets_input_textarea.json_result.targets_defined:
             return False
 
         stored_valid_list = TargetList.validate_target_list(self.fm_config['reorder_target_list'], self.col, self.language_data)[2]
@@ -381,8 +381,7 @@ class ReorderCardsTab(FrequencyManTab):
                 reset_button.setDisabled(True)
                 return
 
-            targets_defined_same_as_stored = self.fm_config['reorder_target_list'] == current_json_result.targets_defined
-            reset_button.setDisabled(targets_defined_same_as_stored)
+            reset_button.setDisabled(not self.__defined_targets_have_changed())
 
         reset_button = QPushButton("Reset")
         reset_button.setToolTip("Reset to targets stored in the config.")
@@ -405,7 +404,7 @@ class ReorderCardsTab(FrequencyManTab):
         def update_save_button_state(new_json_result: JsonTargetsResult, targets_input_textarea: TargetsDefiningTextArea):
 
             if (new_json_result.validity_state == JsonTargetsValidity.VALID_TARGETS and new_json_result.valid_targets_defined is not None):
-                if self.fm_config['reorder_target_list'] != new_json_result.targets_defined:
+                if self.__defined_targets_have_changed():
                     save_button.setDisabled(False)
                     return
             save_button.setDisabled(True)

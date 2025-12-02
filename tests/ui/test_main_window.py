@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from aqt.qt import QTabWidget
+from aqt.qt import QTabWidget, QPushButton, QWidget
 
 from tests.tools import (
     reorder_logger as reorder_logger_fixture,
@@ -34,6 +34,12 @@ if TYPE_CHECKING:
 
 reorder_logger = reorder_logger_fixture
 test_collection = test_collection_fixture
+
+
+def find_button_by_text(parent: QWidget, text: str) -> QPushButton | None:
+    """Find a QPushButton by its text within a parent widget."""
+    buttons = parent.findChildren(QPushButton)
+    return next((btn for btn in buttons if btn.text() == text), None)
 
 
 class TestFrequencyManMainWindow:
@@ -89,8 +95,23 @@ class TestFrequencyManMainWindow:
         assert reorder_tab.name is not None
         qtbot.waitUntil(lambda: reorder_tab.first_paint_event_done, timeout=5_000)
 
-        assert (reorder_layout := reorder_tab.layout())
+        reorder_layout = reorder_tab.layout()
+        assert reorder_layout is not None
         assert reorder_layout.count() == 4, f"Expected 4 widgets in ReorderCardsTab layout, got {reorder_layout.count()}"
+
+        # Assert button states (assuming fm_config['reorder_target_list'] is valid and same as textarea)
+        # Wait for the textarea to process and update button states
+        qtbot.waitUntil(lambda: reorder_tab.reorder_button.isEnabled(), timeout=5_000)
+        assert reorder_tab.reorder_button.isEnabled(), "Reorder button should be enabled by default when targets are valid"
+
+        # Find save and reset buttons
+        save_button = find_button_by_text(reorder_tab, "Save")
+        reset_button = find_button_by_text(reorder_tab, "Reset")
+
+        assert save_button is not None, "Save button should exist"
+        assert reset_button is not None, "Reset button should exist"
+        assert not save_button.isEnabled(), "Save button should be disabled by default when targets match config"
+        assert not reset_button.isEnabled(), "Reset button should be disabled by default when targets match config"
 
         # Assert the reorder tab is the first/current tab initially
         assert fm_window.tab_widget.currentWidget() == reorder_tab, "Reorder tab should be the initial tab"

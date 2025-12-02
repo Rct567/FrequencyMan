@@ -113,6 +113,8 @@ class WordsOverviewTab(FrequencyManTab):
     filters: list[FilterOption]
     filter_checkboxes: dict[str, QCheckBox]
 
+    _is_loading_selected_target: bool
+
 
     def reset_selections(self) -> None:
         self.selected_target_index = 0
@@ -141,6 +143,9 @@ class WordsOverviewTab(FrequencyManTab):
             MatureWordsFilter()
         ]
         self.filter_checkboxes = {}
+
+        self._is_loading_selected_target = False
+
 
     def __load_target_list(self) -> None:
 
@@ -261,8 +266,8 @@ class WordsOverviewTab(FrequencyManTab):
 
         tab_layout.addWidget(filter_frame)
 
-        # Set first target as default
-        QTimer.singleShot(1, lambda: self.__set_selected_target(self.selected_target_index))
+        # Set first target as default - use 0ms to schedule after event loop is idle
+        QTimer.singleShot(0, lambda: self.__set_selected_target(self.selected_target_index))
 
     def get_target_index_by_id(self, target_id: str) -> Optional[int]:
         for target_index, target in enumerate(self.target_list):
@@ -278,27 +283,36 @@ class WordsOverviewTab(FrequencyManTab):
 
     def __set_selected_target(self, index: int) -> None:
 
-        self.selected_target_index = index
-        selected_target_corpus_data = self.__get_selected_target_corpus_data()
+        if self._is_loading_selected_target:
+            return
 
-        self.target_corpus_segment_dropdown.blockSignals(True)
-        self.target_corpus_segment_dropdown.clear()
-        self.target_corpus_segment_dropdown.addItems([segment_id for segment_id in selected_target_corpus_data.segments_ids])
-        self.target_corpus_segment_dropdown.blockSignals(False)
+        self._is_loading_selected_target = True
 
-        if hasattr(self, 'selected_lang_id') and isinstance(self.selected_lang_id, str):
-            lang_id_matched = False
-            for segment_index, segment_id in enumerate(selected_target_corpus_data.segments_ids):
-                if self.selected_lang_id.lower() == segment_id.lower():
-                    lang_id_matched = True
-                    self.__set_selected_target_corpus_segment(segment_index)
-                    break
-            if not lang_id_matched:
-                showWarning("Language id '{}' not found as segment in corpus data of target #{}.".format(self.selected_lang_id, self.selected_target_index))
+        try:
+            self.selected_target_index = index
+            selected_target_corpus_data = self.__get_selected_target_corpus_data()
+
+            self.target_corpus_segment_dropdown.blockSignals(True)
+            self.target_corpus_segment_dropdown.clear()
+            self.target_corpus_segment_dropdown.addItems([segment_id for segment_id in selected_target_corpus_data.segments_ids])
+            self.target_corpus_segment_dropdown.blockSignals(False)
+
+            if hasattr(self, 'selected_lang_id') and isinstance(self.selected_lang_id, str):
+                lang_id_matched = False
+                for segment_index, segment_id in enumerate(selected_target_corpus_data.segments_ids):
+                    if self.selected_lang_id.lower() == segment_id.lower():
+                        lang_id_matched = True
+                        self.__set_selected_target_corpus_segment(segment_index)
+                        break
+                if not lang_id_matched:
+                    showWarning("Language id '{}' not found as segment in corpus data of target #{}.".format(self.selected_lang_id, self.selected_target_index))
+                    self.__set_selected_target_corpus_segment(0)
+                self.selected_lang_id = None
+            else:
                 self.__set_selected_target_corpus_segment(0)
-            self.selected_lang_id = None
-        else:
-            self.__set_selected_target_corpus_segment(0)
+        finally:
+            self._is_loading_selected_target = False
+
 
 
     def __selected_target_has_content(self) -> bool:

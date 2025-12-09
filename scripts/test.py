@@ -8,8 +8,11 @@ from pathlib import Path
 import subprocess
 import sys
 import time
-from typing import NoReturn, Callable, Optional
+from typing import NoReturn, Callable, Optional, TYPE_CHECKING
 from dataclasses import dataclass
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 GREEN = "\033[92m"
 RESET = "\033[0m"
@@ -20,8 +23,26 @@ TEST_TARGET_FOLDER: list[Path] = [PROJECT_ROOT / dir for dir in ["tests", "scrip
 
 assert all(dir.is_dir() for dir in TEST_TARGET_FOLDER)
 
+
 def relative_path(path: Path) -> str:
     return "./{}".format(path.relative_to(PROJECT_ROOT))
+
+
+def get_staged_python_files() -> list[str]:
+    """Get list of staged Python files from git."""
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        staged_files = result.stdout.strip().split('\n')
+        python_files = [f for f in staged_files if f.endswith('.py')]
+        return python_files
+    except subprocess.CalledProcessError:
+        # If git command fails (e.g., not in a git repo), return empty list
+        return []
 
 
 def install_dev_requirements() -> None:
@@ -111,6 +132,18 @@ def run_and_print_on_failure(cmd: list[str], fail_label: str) -> None:
         # propagate the exit code from the subprocess
         sys.exit(e.returncode)
 
+
+def check_staged_files(command_prefix: list[str], tool_name: str) -> bool:
+    """Run a command on all staged Python files."""
+    staged_files = get_staged_python_files()
+    if staged_files:
+        print(f"Checking {len(staged_files)} staged Python file(s) with {tool_name}")
+        run_and_print_on_failure(command_prefix + staged_files, tool_name)
+        return True
+    else:
+        print(f"No staged Python files found, skipping {tool_name}")
+        return False
+
 def run_pytest() -> None:
     """Run pytest with the current Python version."""
     print("=" * 60)
@@ -147,7 +180,15 @@ def run_tox() -> None:
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN}Tox was successful! ({elapsed_time:.0f} seconds){RESET}")
 
-def run_mypy() -> None:
+
+def things_to_type_check() -> list[str]:
+
+    root_dirs = [relative_path(dir) for dir in TEST_TARGET_FOLDER]
+    root_files_to_run = [relative_path(py_file) for py_file in PROJECT_ROOT.glob('*.py')]
+    return root_dirs + root_files_to_run
+
+
+def run_mypy(options: Sequence[str]) -> None:
     """Run mypy."""
     print("="*60)
     print("Running mypy...")
@@ -155,45 +196,44 @@ def run_mypy() -> None:
 
     ensure_packages_installed(["mypy"])
 
-    root_files_to_run = [
-        relative_path(py_file)
-        for py_file in PROJECT_ROOT.glob('*.py')
-        if py_file.name != "__init__.py"
-    ]
-    run_and_print_on_failure(["mypy"] + [relative_path(dir) for dir in TEST_TARGET_FOLDER] + root_files_to_run, "Mypy")
-
-    run_and_print_on_failure(["mypy", "./__init__.py", "--ignore-missing-imports"], "Mypy")
+    if "staged" in options:
+        check_staged_files(["mypy"], "mypy")
+    else:
+        run_and_print_on_failure(["mypy"] + things_to_type_check(),  "Mypy")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Mypy was successful! ({elapsed_time:.0f} seconds){RESET}")
 
 
-def run_ruff() -> None:
+def run_ruff(options: Sequence[str]) -> None:
     """Run ruff."""
     print("=" * 60)
     print("Running ruff...")
     start_time = time.perf_counter()
 
     ensure_packages_installed(["ruff"])
-    run_and_print_on_failure(["ruff", "check"] + [relative_path(dir) for dir in TEST_TARGET_FOLDER] + ["--preview"], "Ruff")
 
-    root_files_to_run = [relative_path(py_file) for py_file in PROJECT_ROOT.glob('*.py')]
-    run_and_print_on_failure(["ruff", "check"] + root_files_to_run + ["--preview"], "Ruff")
+    if "staged" in options:
+        check_staged_files(["ruff", "check"], "ruff")
+    else:
+        run_and_print_on_failure(["ruff", "check"] + things_to_type_check(), "Ruff")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Ruff was successful! ({elapsed_time:.0f} seconds){RESET}")
 
-def run_pyright() -> None:
+
+def run_pyright(options: Sequence[str]) -> None:
     """Run pyright."""
     print("=" * 60)
     print("Running pyright...")
     start_time = time.perf_counter()
 
     ensure_packages_installed(["pyright"])
-    run_and_print_on_failure(["pyright"] + [relative_path(dir) for dir in TEST_TARGET_FOLDER], "Pyright")
 
-    root_files_to_run = [relative_path(py_file) for py_file in PROJECT_ROOT.glob('*.py')]
-    run_and_print_on_failure(["pyright"] + root_files_to_run, "Pyright")
+    if "staged" in options:
+        check_staged_files(["pyright"], "pyright")
+    else:
+        run_and_print_on_failure(["pyright"] + things_to_type_check(), "Pyright")
 
     elapsed_time = time.perf_counter() - start_time
     print(f"{GREEN} Pyright was successful! ({elapsed_time:.0f} seconds){RESET}")
@@ -230,19 +270,30 @@ def get_test_menu_options() -> list[MenuTestOption]:
         ),
     ]
 
-def parse_cli_choice() -> Optional[str]:
+def parse_cli_args() -> list[str]:
+    """Parse CLI arguments and return (choice, options_set)."""
     args = sys.argv[1:]
+
+    selected_options = []
+
     for arg in args:
         if arg == "-y":
-            return "nox"
-        if arg.startswith("--"):
+            selected_options.append("nox")
+        elif arg == "--pytest":
+            selected_options.append("pytest")
+        elif arg == "--staged":
+            selected_options.append("staged")
+            selected_options.insert(0, "pytest")
+        elif arg.startswith("--"):
             key = arg[2:]
             for opt in get_test_menu_options():
                 if opt.key == key and opt.is_available():
-                    return key
-    return None
+                    selected_options.append(key)
+                    break
 
-def get_user_choice() -> str:
+    return selected_options
+
+def get_user_choice() -> MenuTestOption:
     print("="*60)
     print("Test Runner Options:")
 
@@ -259,10 +310,10 @@ def get_user_choice() -> str:
             )
         choice = input("\nEnter your choice ({}): ".format(choices_num_str)).strip()
         if choice in valid_indices:
-            return menu_options[int(choice) - 1].key
+            return menu_options[int(choice) - 1]
         for opt in menu_options:
             if choice.lower() == opt.key.lower():
-                return opt.key
+                return opt
         print("Invalid choice. Please enter {}.".format(choices_num_str))
 
 
@@ -275,27 +326,26 @@ def main() -> NoReturn:
     check_python_version()
     install_dev_requirements()
 
-    run_ruff()
-    run_pyright()
-    run_mypy()
+    # Parse CLI arguments early so flags like --staged are set before running checks
+    selected_options = parse_cli_args()
 
-    parsed_choice = parse_cli_choice()
-    non_interactive = parsed_choice is not None
-    choice_key = parsed_choice if parsed_choice is not None else get_user_choice()
+    run_ruff(selected_options)
+    run_pyright(selected_options)
+    run_mypy(selected_options)
 
-    options_by_key = {opt.key: opt for opt in get_test_menu_options()}
-    selected = options_by_key.get(choice_key)
-    if selected is None or not selected.is_available():
-        raise Exception("Invalid choice.")
-    selected.action()
+    selected_menu_options = [option for option in get_test_menu_options() if option.is_available() and option.key in selected_options]
+
+    if len(selected_menu_options) == 0:
+        selected = get_user_choice()
+    else:
+        selected = selected_menu_options[0]
+
+    selected.action() # run the selected menu option
 
     elapsed_time = time.perf_counter() - start_time
 
     print("\n" + "="*60)
-    if non_interactive:
-        print(f"{GREEN} All tests completed successfully! ({elapsed_time:.0f} seconds){RESET}")
-    else:
-        print(f"{GREEN} All tests completed successfully!{RESET}")
+    print(f"{GREEN} All tests completed successfully! ({elapsed_time:.0f} seconds){RESET}")
     print("="*60)
     sys.exit(0)
 

@@ -3,6 +3,8 @@ FrequencyMan by Rick Zuidhoek. Licensed under the GNU GPL-3.0.
 See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
 """
 
+# mypy: disable-error-code="import-not-found"
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -26,7 +28,7 @@ from .frequencyman.ui.main_window import FrequencyManMainWindow
 if TYPE_CHECKING:
     from aqt.deckbrowser import DeckBrowser, DeckBrowserContent
     from aqt.toolbar import Toolbar
-    from .frequencyman.lib.utilities import JSON_TYPE
+    from .frequencyman.lib.utilities import JSON_TYPE # type: ignore[import-not-found]
 
 
 def get_mw():

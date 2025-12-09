@@ -301,8 +301,6 @@ class GlobalIgnoreLists:
         self.ignore_list.update(words)
         self.ignore_lists.append(words)
 
-        self.lists_loaded = True
-
 
 class LanguageData:
 

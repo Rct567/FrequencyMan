@@ -41,7 +41,7 @@ class MockAnkiQt(QMainWindow):
 
 class DummyDialogs:
     def __init__(self):
-        self._dialogs: dict[str, list] = {}
+        pass
 
     def markClosed(self, name: str) -> None:
         pass

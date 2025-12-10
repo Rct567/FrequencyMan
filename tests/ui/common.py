@@ -69,19 +69,23 @@ def build_target_list(col: Collection) -> list[ValidConfiguredTarget]:
         }],
     )]
 
-def build_loaded_config(targets: list[ValidConfiguredTarget]) -> AddonConfig:
-    config_store: dict[str, Any] = {
-        "reorder_target_list": targets,
-        "log_reorder_events": False,
-        "use_persistent_cache": False,
-    }
+def build_loaded_config(targets: list[ValidConfiguredTarget], set_defaults: bool = True) -> AddonConfig:
+    config_store: dict[str, Any] = {}
+    if set_defaults:
+        config_store.update({
+            "reorder_target_list": targets,
+            "log_reorder_events": False,
+            "use_persistent_cache": False,
+        })
 
     def loader() -> dict[str, Any]:
         return config_store
 
     def saver(new_config: dict[str, Any]) -> None:
+        # Create a copy to avoid clearing the same dict
+        copy = new_config.copy()
         config_store.clear()
-        config_store.update(new_config)
+        config_store.update(copy)
 
     addon_config = AddonConfig(loader, saver)
     addon_config.load()

@@ -134,6 +134,7 @@ class FrequencyManMainWindow(QMainWindow):
         self.col = col
         self.fm_config = fm_config
         self.is_dark_mode = mw.app.styleSheet().lower().find("dark") != -1
+        self.forced_closing = False
 
         if fm_version != "":
             self.setWindowTitle("FrequencyMan v"+fm_version)
@@ -173,6 +174,11 @@ class FrequencyManMainWindow(QMainWindow):
         self.tab_widget.setCurrentWidget(self.tab_menu_options[tab_id])
         return self.tab_menu_options[tab_id]
 
+
+    def forceClose(self) -> None:
+        self.forced_closing = True
+        self.close()
+
     @override
     def closeEvent(self, a0: Union[QCloseEvent, None]) -> None:
 
@@ -181,7 +187,7 @@ class FrequencyManMainWindow(QMainWindow):
 
         for tab in self.tab_widget.findChildren(FrequencyManTab):
             result = tab.on_window_closing()
-            if result is not None and result == 1:
+            if result is not None and result == 1 and not self.forced_closing:
                 a0.ignore()
                 return
 

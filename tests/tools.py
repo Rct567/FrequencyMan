@@ -53,9 +53,8 @@ def with_test_collection(name: str) -> Callable[[T], T]:
     return decorator
 
 
-
 @pytest.fixture
-def test_collection(request: pytest.FixtureRequest) -> Generator[MockCollection, None, None]:
+def test_collection(request: pytest.FixtureRequest) -> Generator[TestCollection, None, None]:
     """
     Fixture that yields the collection named by @with_test_collection(...).
     Raises a RuntimeError if the decorator was not applied.
@@ -72,7 +71,7 @@ def test_collection(request: pytest.FixtureRequest) -> Generator[MockCollection,
         test_function_name=request.function.__name__
     )
 
-    col = MockCollections.get_new_test_collection(name, caller_context)
+    col = TestCollections.get_new_test_collection(name, caller_context)
 
     try:
         yield col
@@ -86,7 +85,10 @@ class CallerContext(NamedTuple):
     test_function_name: Optional[str] = None
 
 
-class MockCollection(Collection):
+class TestCollection(Collection):
+
+    __test__ = False
+
     collection_name: str
     collection_dir: Path
     lang_data: LanguageData
@@ -119,13 +121,13 @@ class MockCollection(Collection):
         if context.caller_frame is not None:
             if (context.caller_frame.function.startswith('test_') and
                 'self' in context.caller_frame.frame.f_locals and
-                context.caller_frame.frame.f_locals['self'].__class__.__name__.startswith('Test')):
+                    context.caller_frame.frame.f_locals['self'].__class__.__name__.startswith('Test')):
                 return (context.caller_frame.frame.f_locals['self'].__class__.__name__, context.caller_frame.function)
 
         # Strategy 3: Stack inspection (fallback)
         for frame_info in inspect.stack():
             if (frame_info.function.startswith('test_') and
-                'self' in frame_info.frame.f_locals):
+                    'self' in frame_info.frame.f_locals):
                 self_obj = frame_info.frame.f_locals['self']
                 if self_obj.__class__.__name__.startswith('Test'):
                     return (self_obj.__class__.__name__, frame_info.function)
@@ -214,11 +216,10 @@ class MockCollection(Collection):
                 file.write('\n'.join(map(str, sorted_items)))
             print("WARNING: Order file '{}' for '{}' didn't exist yet!".format(order_file_path, self.collection_name))
 
-
     def remove(self):
 
         if self.db:
-           self.close()
+            self.close()
 
         if self.cacher:
             self.cacher.close()
@@ -242,10 +243,11 @@ class MockCollection(Collection):
             pass
 
 
+class TestCollections:
 
-class MockCollections:
+    __test__ = False
 
-    last_initiated_test_collection: Optional[MockCollection] = None
+    last_initiated_test_collection: Optional[TestCollection] = None
 
     @staticmethod
     def run_cleanup_routine():
@@ -259,7 +261,7 @@ class MockCollections:
         try:
             for file in all_temp_files:
                 name = file.name
-                name_match  = name.endswith("_temp.anki2") or name.endswith("_temp.anki2-wal") or name.endswith("_temp.sqlite")
+                name_match = name.endswith("_temp.anki2") or name.endswith("_temp.anki2-wal") or name.endswith("_temp.sqlite")
                 if not name_match:
                     raise Exception("Invalid file name '{}'".format(name))
                 try:
@@ -274,25 +276,25 @@ class MockCollections:
             if path.is_dir() and path.name.endswith("_temp.media"):
                 try:
                     if path.stat().st_mtime < cutoff:
-                        path.rmdir() # rmdir only succeeds if directory is empty
+                        path.rmdir()  # rmdir only succeeds if directory is empty
                 except OSError:
-                    pass # Not empty or cannot remove → ignore
+                    pass  # Not empty or cannot remove → ignore
 
     @staticmethod
-    def get_new_test_collection(test_collection_name: str, caller_context: CallerContext) -> MockCollection:
+    def get_new_test_collection(test_collection_name: str, caller_context: CallerContext) -> TestCollection:
 
-        if MockCollections.last_initiated_test_collection:
-            MockCollections.last_initiated_test_collection.remove()
-        else: # set up cleanup routine on exit only once
-            atexit.register(MockCollections.run_cleanup_routine)
+        if TestCollections.last_initiated_test_collection:
+            TestCollections.last_initiated_test_collection.remove()
+        else:  # set up cleanup routine on exit only once
+            atexit.register(TestCollections.run_cleanup_routine)
 
         collection_dir = TEST_COLLECTIONS_DIR / test_collection_name
         lang_data_dir = collection_dir / 'lang_data'
         lang_data = LanguageData(lang_data_dir)
 
-        col = MockCollection(test_collection_name, collection_dir, lang_data, caller_context)
+        col = TestCollection(test_collection_name, collection_dir, lang_data, caller_context)
 
-        MockCollections.last_initiated_test_collection = col
+        TestCollections.last_initiated_test_collection = col
         atexit.register(col.remove)
 
         return col

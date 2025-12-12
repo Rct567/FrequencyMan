@@ -6,17 +6,18 @@ if TYPE_CHECKING:
     from frequencyman.lib.utilities import JSON_TYPE
 
 from tests.tools import (
-    MockCollection,
+    TestCollection,
     with_test_collection,
     test_collection as test_collection_fixture
 )
 
 col = test_collection_fixture
 
+
 class TestTargetList:
 
     @with_test_collection("big_collection_es")
-    def test_get_targets_from_json_valid_json(self, col: MockCollection):
+    def test_get_targets_from_json_valid_json(self, col: TestCollection):
 
         targets = TargetList.get_targets_from_json("""[
             {
@@ -48,7 +49,7 @@ class TestTargetList:
             id="spanish_audio_only",
             deck="Spanish",
             decks=["Spanish"],
-            ranking_word_frequency=0.0, # type: ignore[call-arg]
+            ranking_word_frequency=0.0,  # type: ignore[call-arg]
             suspended_card_value=0.1,
             suspended_leech_card_value=0.2,
             ideal_word_count=(1, 10),
@@ -64,7 +65,7 @@ class TestTargetList:
         )
 
     @with_test_collection("big_collection_es")
-    def test_target_list_is_valid_query(self, col: MockCollection):
+    def test_target_list_is_valid_query(self, col: TestCollection):
 
         assert TargetList.is_valid_query("deck:Spanish", col)
         assert TargetList.is_valid_query("-is:due", col)
@@ -81,7 +82,7 @@ class TestTargetList:
         assert not TargetList.is_valid_query(":missing_pre", col)
 
     @with_test_collection("big_collection_es")
-    def test_get_targets_from_json_invalid_json(self, col: MockCollection):
+    def test_get_targets_from_json_invalid_json(self, col: TestCollection):
 
         invalid_targets_data: list[str] = [
             "X",
@@ -96,7 +97,7 @@ class TestTargetList:
             assert len(targets.targets_defined) == 0, json_data
 
     @with_test_collection("big_collection_es")
-    def test_get_targets_from_json_invalid_targets(self, col: MockCollection):
+    def test_get_targets_from_json_invalid_targets(self, col: TestCollection):
 
         invalid_targets_data: dict[str, str] = {
             '': '',
@@ -126,7 +127,7 @@ class TestTargetList:
                 assert len(targets_result.targets_defined) == 0
 
     @with_test_collection("big_collection_es")
-    def test_validate_target_list_preserves_key_order(self, col: MockCollection):
+    def test_validate_target_list_preserves_key_order(self, col: TestCollection):
 
         # Define a target with a specific key order
         target_data: JSON_TYPE = {
@@ -156,13 +157,13 @@ class TestTargetList:
         valid_target = valid_target_list[0]
 
         # Check if keys are in the same order as in the input
-        assert list(valid_target.keys()) == list(target_data.keys()) # type: ignore[union-attr]
+        assert list(valid_target.keys()) == list(target_data.keys())  # type: ignore[union-attr]
 
         # The test above should test with an order that is non default
         assert list(valid_target.keys()) != list(ConfiguredTargetDict.__annotations__.keys())
 
     @with_test_collection("two_deck_collection")
-    def test_rename_ranking_factors(self, col: MockCollection):
+    def test_rename_ranking_factors(self, col: TestCollection):
 
         notes: list[JSON_TYPE] = [{
             "name": "Basic",
@@ -195,14 +196,13 @@ class TestTargetList:
 
         assert dict(valid_target_list[0]) == {
             'deck': 'decka',
-            'maturity_threshold': 1.0, # changed
-            'ranking_ideal_new_word_count': 0.5, # changed
+            'maturity_threshold': 1.0,  # changed
+            'ranking_ideal_new_word_count': 0.5,  # changed
             'notes': notes
         }
 
         assert dict(valid_target_list[1]) == {
             'deck': 'deckb',
             'notes': notes,
-            'ranking_factors': {'reinforce_learning_words': 1.0} # changed
+            'ranking_factors': {'reinforce_learning_words': 1.0}  # changed
         }
-

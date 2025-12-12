@@ -7,7 +7,7 @@ from frequencyman.lib.event_logger import EventLogger
 from frequencyman.reorder_logger import ReorderLogger, SqlDbFile
 
 from tests.tools import (
-    MockCollection,
+    TestCollection,
     freeze_time_anki,
     with_test_collection,
     test_collection as test_collection_fixture,
@@ -24,7 +24,7 @@ class TestTargetReorderLogger:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("two_deck_collection")
-    def test_reorder_logger(self, col: MockCollection, reorder_logger: ReorderLogger) -> None:
+    def test_reorder_logger(self, col: TestCollection, reorder_logger: ReorderLogger) -> None:
 
         targets: list = [
             {

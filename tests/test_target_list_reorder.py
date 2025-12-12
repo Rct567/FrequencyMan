@@ -6,7 +6,7 @@ from frequencyman.target_list import TargetList, TargetListReorderResult
 from frequencyman.lib.event_logger import EventLogger
 
 from tests.tools import (
-    MockCollection,
+    TestCollection,
     freeze_time_anki,
     with_test_collection,
     test_collection as test_collection_fixture
@@ -14,11 +14,12 @@ from tests.tools import (
 
 col = test_collection_fixture
 
+
 class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-05")
     @with_test_collection("big_collection_es")
-    def test_reorder_cards_big_collection_es(self, col: MockCollection):
+    def test_reorder_cards_big_collection_es(self, col: TestCollection):
 
         # add additional fields to test
 
@@ -27,10 +28,10 @@ class TestTargetListReorder:
         if not model:
             raise Exception("Model not found")
 
-        additional_fields = [ # field don't exist in collection
+        additional_fields = [  # field don't exist in collection
             'fm_seen_words',
             'fm_new_words',
-            'fm_unseen_words', # deprecated
+            'fm_unseen_words',  # deprecated
             'fm_lowest_fr_word_0',
             'fm_lowest_fr_word_1',
             'fm_lowest_familiarity_word_0',
@@ -126,7 +127,7 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("big_collection_es")
-    def test_reorder_cards_big_collection_es_with_reorder_scope(self, col: MockCollection):
+    def test_reorder_cards_big_collection_es_with_reorder_scope(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -183,7 +184,7 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("two_deck_collection")
-    def test_two_deck_collection(self, col: MockCollection):
+    def test_two_deck_collection(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -268,7 +269,7 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("two_deck_collection")
-    def test_two_deck_collection_with_ignore_list(self, col: MockCollection):
+    def test_two_deck_collection_with_ignore_list(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -310,7 +311,7 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("two_deck_collection")
-    def test_two_deck_collection_with_reorder_scope(self, col: MockCollection):
+    def test_two_deck_collection_with_reorder_scope(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -385,7 +386,7 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("two_deck_collection")
-    def test_two_deck_collection_no_reviewed_cards(self, col: MockCollection):
+    def test_two_deck_collection_no_reviewed_cards(self, col: TestCollection):
 
         # reset all cards
         all_card_ids = col.find_cards('*')
@@ -439,7 +440,7 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("empty_collection")
-    def test_two_deck_collection_no_cards(self, col: MockCollection):
+    def test_two_deck_collection_no_cards(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -479,7 +480,7 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("two_deck_collection")
-    def test_two_deck_collection_corpus_segmentation_by_note_field(self, col: MockCollection):
+    def test_two_deck_collection_corpus_segmentation_by_note_field(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -522,7 +523,7 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("two_deck_collection_low_fam")
-    def test_two_deck_collection_low_familiarity(self, col: MockCollection):
+    def test_two_deck_collection_low_familiarity(self, col: TestCollection):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -568,7 +569,7 @@ class TestTargetListReorder:
     @freeze_time_anki("2023-12-01")
     @pytest.mark.parametrize("ranking_factor", CardRanker.get_default_ranking_factors_span().keys())
     @with_test_collection("two_deck_collection")
-    def test_two_deck_collection_every_factor(self, col: MockCollection, ranking_factor: str):
+    def test_two_deck_collection_every_factor(self, col: TestCollection, ranking_factor: str):
 
         target_list = TargetList(col.lang_data, col.cacher, col)
 
@@ -601,15 +602,15 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("zh_and_ja")
-    def test_zh_and_ja(self, col: MockCollection):
+    def test_zh_and_ja(self, col: TestCollection):
 
         # Check if required tokenizers are available
         from frequencyman.tokenizers import get_tokenizer_registry
         from frequencyman.text_processing import LangId
-        
+
         ja_tokenizers = [t for t in get_tokenizer_registry() if LangId('ja') in t.supported_languages() and t.is_available()]
         zh_tokenizers = [t for t in get_tokenizer_registry() if LangId('zh') in t.supported_languages() and t.is_available()]
-        
+
         if not ja_tokenizers or not zh_tokenizers:
             pytest.skip(f"Skipping test: Required tokenizers not available (JA: {len(ja_tokenizers)}, ZH: {len(zh_tokenizers)})")
 
@@ -660,7 +661,7 @@ class TestTargetListReorder:
 
     @freeze_time_anki("2023-12-01")
     @with_test_collection("two_deck_collection")
-    def test_internal_word_frequency_ranking(self, col: MockCollection):
+    def test_internal_word_frequency_ranking(self, col: TestCollection):
 
         # add fm_debug_info field to model
         model = col.models.by_name("Basic")

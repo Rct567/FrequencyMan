@@ -9,7 +9,7 @@ from frequencyman.target_list import TargetList
 from frequencyman.text_processing import WordToken
 
 from .tools import (
-    MockCollection,
+    TestCollection,
     test_collection as test_collection_fixture,
     with_test_collection
 
@@ -20,7 +20,7 @@ col = test_collection_fixture
 def card_familiarity_score(card: TargetCard):
     cards = [card]
     cards_familiarity_score_fn:  Callable[[list[TargetCard]], dict[CardId, float]]
-    cards_familiarity_score_fn = TargetCorpusData._TargetCorpusData__get_cards_familiarity_score # type: ignore[attr-defined]
+    cards_familiarity_score_fn = TargetCorpusData._TargetCorpusData__get_cards_familiarity_score  # type: ignore[attr-defined]
     cards_scores = cards_familiarity_score_fn(cards)
     return cards_scores[card.id]
 
@@ -38,7 +38,7 @@ class TestTargetCorpusData:
         mature_scored_cards: list[TargetCard] = [
             create_card(700, 2000, 20),
             create_card(320, 2200, 12),
-            create_card(300, 2500, 12), # base
+            create_card(300, 2500, 12),  # base
             create_card(280, 2600, 14),
             create_card(270, 3200, 14),
         ]
@@ -78,7 +78,7 @@ class TestTargetCorpusData:
             assert card_score == round(expected_score[0], expected_score[1]), index
 
     @with_test_collection("empty_collection")
-    def test_internal_word_frequency(self, col: MockCollection):
+    def test_internal_word_frequency(self, col: TestCollection):
 
         # Set up deck and note type
         did = col.decks.id("Default")

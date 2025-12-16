@@ -4,7 +4,7 @@
 
 FrequencyMan allows you to __sort your new cards__ by word frequency, familiarity, and other useful factors.
 
-![FrequencyMan](frequencyman_showcase_1.gif)
+![FrequencyMan](frequencyman_showcase.gif)
 
 ## Features
 - More than 50 default word frequency lists.
